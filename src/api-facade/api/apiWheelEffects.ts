@@ -1,7 +1,7 @@
 import type { WheelResult } from '../../types/wheelResult'
 import {
-	convertFreePointChangeResult,
 	convertRolledWheelEffectDto,
+	convertRolledWheelEffectHistoryDto,
 } from '../dto'
 import { http } from '../http'
 import type {
@@ -17,7 +17,9 @@ export const apiWheelEffects = {
 	getHistory: ({ path: { login } }: GetWheelEffectsHistory['request']) =>
 		http
 			.get<GetWheelEffectsHistory>(`/wheel-effects/${login}/history`)
-			.then(({ body: effects }) => effects.map(convertRolledWheelEffectDto)),
+			.then(({ body: effects }) =>
+				effects.map(convertRolledWheelEffectHistoryDto),
+			),
 
 	getAvailable: () =>
 		http
@@ -50,10 +52,5 @@ export const apiWheelEffects = {
 			.post<PostApplyWheelEffectRoll>('/wheel-effects/available/roll/apply', {
 				body,
 			})
-			.then(({ body: results }) =>
-				results.map((result) => ({
-					...result,
-					changeResult: convertFreePointChangeResult(result.changeResult),
-				})),
-			),
+			.then(({ body }) => body),
 }

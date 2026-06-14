@@ -1,30 +1,22 @@
-import { type DtoStringToDate } from '../dto'
-
-export type Points = number
+import type { DtoStringToDate } from '../dto.ts'
 
 export type PointInfo = {
 	availableRolls: number
-	experiencePoints: Points
-	freePoints: Points
+	experiencePoints: number
+	freePoints: number
 	territoryHours: number
-	territoryPoints: Points
+	territoryPoints: number
 }
 
 export type PointChange = {
-	changeSource?: string
-	desiredChangeValue?: number
+	changeSource: string
+	desiredChangeValue: number
 }
 
-export type PointChangeResultDto = {
+export type PointChangeResult =  PointChange & {
 	actualChangeValue: number
-	changeDate: string
-	finalValue: Points
-} & PointChange
-
-export type PointChangeResult = DtoStringToDate<
-	PointChangeResultDto,
-	'changeDate'
->
+	finalValue: number
+}
 
 export enum TerritoryChangeSource {
 	ObtainingTerritory = 'territory-obtaining',
@@ -32,29 +24,43 @@ export enum TerritoryChangeSource {
 	Other = 'other',
 }
 
-export type TerritoryPointChangeResultDto = PointChangeResultDto & {
-	changeSource?: TerritoryChangeSource
+export type TerritoryPointChangeResult = PointChangeResult & {
+	changeSource: TerritoryChangeSource
 }
 
-export type TerritoryPointChangeResult = DtoStringToDate<
-	TerritoryPointChangeResultDto,
+export type TerritoryPointChangeHistoryDto = TerritoryPointChangeResult & {
+	changeDate: string
+	sourceLogin?: string
+}
+
+export type TerritoryPointChangeHistory = DtoStringToDate<
+	TerritoryPointChangeHistoryDto,
 	'changeDate'
 >
 
 export enum FreePointChangeSource {
-	OwnWheelEffect = 'own-wheel-effect',
-	OtherWheelEffect = 'other-wheel-effect',
+	WheelEffect = 'wheel-effect',
 	Quest = 'quest',
 	BaseTeleport = 'base-teleport',
 	Sandstorm = 'sandstorm',
 	Other = 'other',
 }
 
-export type FreePointChangeResultDto = PointChangeResultDto & {
+export type FreePointChange = PointChange & {
+	wheelEffectName?: string
+}
+
+export type FreePointChangeResult = PointChangeResult & {
 	changeSource: FreePointChangeSource
 }
 
-export type FreePointChangeResult = DtoStringToDate<
-	FreePointChangeResultDto,
+export type FreePointChangeHistoryDto = FreePointChangeResult & {
+	changeDate: string
+	sourceLogin?: string
+	wheelEffectName?: string
+}
+
+export type FreePointChangeHistory = DtoStringToDate<
+	FreePointChangeHistoryDto,
 	'changeDate'
 >

@@ -1,7 +1,11 @@
 import type { WheelResultDto } from '../../types/wheelResult'
-import type { FreePointChangeResultDto, PointChange } from '../models/points-models'
+import type {
+	FreePointChangeResult,
+	PointChange,
+} from '../models/points-models'
 import type {
 	RolledWheelEffectDto,
+	RolledWheelEffectHistoryDto,
 	WheelEffect,
 } from '../models/wheel-effects-models'
 
@@ -11,7 +15,7 @@ export type GetWheelEffectsHistory = {
 			login: string
 		}
 	}
-	response: RolledWheelEffectDto[]
+	response: RolledWheelEffectHistoryDto[]
 }
 
 export type GetWheelEffectsAvailable = {
@@ -19,7 +23,7 @@ export type GetWheelEffectsAvailable = {
 }
 
 export type PostRollWheelEffect = {
-	response: WheelResultDto
+	response: RolledWheelEffectDto[]
 }
 
 export type GetAvailableWheelEffectCount = {
@@ -33,12 +37,15 @@ export type GetLastRolledWheelEffects = {
 export type PostApplyWheelEffectRoll = {
 	request: {
 		body: {
-			login: string
-			pointChange: PointChange
-		}[]
+			pointChanges: {
+				login: string
+				pointChange: PointChange
+			}[]
+			wheelEffectName: string
+		}
 	}
 	response: {
 		login: string
-		changeResult: FreePointChangeResultDto
+		changeResult: FreePointChangeResult
 	}[]
 }
