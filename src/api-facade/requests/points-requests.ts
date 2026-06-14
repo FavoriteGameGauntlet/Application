@@ -1,9 +1,12 @@
 import type {
-	FreePointChangeResultDto,
+	FreePointChange,
+	FreePointChangeHistoryDto,
+	FreePointChangeResult,
 	PointChange,
-	PointChangeResultDto,
+	PointChangeResult,
 	PointInfo,
-	TerritoryPointChangeResultDto,
+	TerritoryPointChangeHistoryDto,
+	TerritoryPointChangeResult,
 } from '../models/points-models'
 
 export type GetPointsInfo = {
@@ -29,7 +32,7 @@ export type PostTerritoryPoints = {
 		}
 		body: PointChange
 	}
-	response: TerritoryPointChangeResultDto[]
+	response: TerritoryPointChangeResult
 }
 
 export type GetTerritoryPoints = {
@@ -47,17 +50,25 @@ export type GetTerritoryPointsHistory = {
 			login: string
 		}
 	}
-	response: TerritoryPointChangeResultDto
+	response: TerritoryPointChangeHistoryDto[]
 }
 
 export type PostFreePoints = {
 	request: {
-		body: PointChange
+		path: {
+			login: string
+		}
+		body: FreePointChange
 	}
-	response: FreePointChangeResultDto
+	response: FreePointChangeResult
 }
 
 export type GetFreePoints = {
+	request: {
+		path: {
+			login: string
+		}
+	}
 	response: number
 }
 
@@ -67,22 +78,17 @@ export type GetFreePointsHistory = {
 			login: string
 		}
 	}
-	response: FreePointChangeResultDto[]
+	response: FreePointChangeHistoryDto[]
 }
 
 export type PostExperiencePoints = {
 	request: {
 		body: PointChange
 	}
-	response: PointChangeResultDto
+	response: PointChangeResult
 }
 
 export type GetExperiencePoints = {
-	// request: {
-	// 	path: {
-	// 		login: string
-	// 	}
-	// }
 	response: number
 }
 
@@ -90,14 +96,9 @@ export type PostTerritoryHours = {
 	request: {
 		body: PointChange
 	}
-	response: PointChangeResultDto
+	response: PointChangeResult
 }
 
 export type GetTerritoryHours = {
-	// request: {
-	// 	path: {
-	// 		login: string
-	// 	}
-	// }
 	response: number
 }

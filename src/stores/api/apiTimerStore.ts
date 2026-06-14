@@ -18,6 +18,7 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 	const durationTotal = ref(Temporal.Duration.from(DEFAULT_DURATION))
 
 	const currentLoading = useLoading()
+	const currentFromUserLoading = useLoading()
 	const actionLoading = useLoading()
 
 	const lastActionDate = ref<Temporal.Instant | null>(null)
@@ -104,7 +105,7 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 		if (!canPause.value) return Promise.reject()
 		if (actionLoading.state.value === LoadingState.LOADING) return
 
-		actionLoading.state.value = LoadingState.LOADING
+		currentFromUserLoading.state.value = LoadingState.LOADING
 
 		const prevLastActionDate = lastActionDate.value
 		const prevState = state.value

@@ -4,14 +4,14 @@ import type { Timer, TimerDto } from './models/timers-models'
 import type {
 	RolledWheelEffect,
 	RolledWheelEffectDto,
+	RolledWheelEffectHistory,
+	RolledWheelEffectHistoryDto,
 } from './models/wheel-effects-models'
 import type {
-	FreePointChangeResult,
-	FreePointChangeResultDto,
-	PointChangeResult,
-	PointChangeResultDto,
-	TerritoryPointChangeResult,
-	TerritoryPointChangeResultDto,
+	FreePointChangeHistory,
+	FreePointChangeHistoryDto,
+	TerritoryPointChangeHistory,
+	TerritoryPointChangeHistoryDto,
 } from './models/points-models'
 
 export type DtoStringToDate<
@@ -47,28 +47,30 @@ export const convertTimerDto = (timer: TimerDto): Timer => ({
 			: undefined,
 })
 
+export const convertTerritoryPointChangeHistoryDto = (
+	history: TerritoryPointChangeHistoryDto,
+): TerritoryPointChangeHistory => ({
+	...history,
+	changeDate: Temporal.Instant.from(history.changeDate),
+})
+
+export const convertFreePointChangeHistoryDto = (
+	history: FreePointChangeHistoryDto,
+): FreePointChangeHistory => ({
+	...history,
+	changeDate: Temporal.Instant.from(history.changeDate),
+})
+
+export const convertRolledWheelEffectHistoryDto = (
+	history: RolledWheelEffectHistoryDto,
+): RolledWheelEffectHistory => ({
+	...history,
+	rollDate: Temporal.Instant.from(history.rollDate),
+})
+
 export const convertRolledWheelEffectDto = (
 	effect: RolledWheelEffectDto,
 ): RolledWheelEffect => ({
 	...effect,
 	rollDate: Temporal.Instant.from(effect.rollDate),
 })
-
-const _convertPointChangeResult = <T extends PointChangeResultDto>(result: T) =>
-	({
-		...result,
-		changeDate: Temporal.Instant.from(result.changeDate),
-	}) satisfies PointChangeResult
-
-export const convertPointChangeResult: (
-	result: PointChangeResultDto,
-) => PointChangeResult = _convertPointChangeResult<PointChangeResultDto>
-
-export const convertTerritoryPointChangeResult: (
-	result: TerritoryPointChangeResultDto,
-) => TerritoryPointChangeResult =
-	_convertPointChangeResult<TerritoryPointChangeResultDto>
-
-export const convertFreePointChangeResult: (
-	result: FreePointChangeResultDto,
-) => FreePointChangeResult = _convertPointChangeResult<FreePointChangeResultDto>
