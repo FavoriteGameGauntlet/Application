@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import UiButton from '../../components/ui/UiButton.vue'
-import { RouterLink } from 'vue-router'
 import { useFeatureWheelStore } from '../../stores/feature/featureWheelStore'
 import { computed, onMounted } from 'vue'
 import { funnyEffects } from './constants/funnyEffects'
+import UiView from '../../components/ui/UiView.vue'
 
 const visibleCount = 5
 
@@ -49,21 +49,21 @@ onMounted(() => {
 </script>
 
 <template>
-	<div class="wheel-rolls-view">
-		<RouterLink class="nav-link" to="/rolls/games"> Игры </RouterLink>
+	<UiView>
+		<div class="wheel-rolls-view">
+			<h1 class="title">Роллы</h1>
 
-		<h1 class="title">Роллы</h1>
-
-		<div class="effects-grid">
-			<div class="effect-card" :key="i" v-for="i in visibleCount">
-				{{ visibleEffects.at(i)?.name ?? 'кто прочитал тот фурри' }}
+			<div class="effects-grid">
+				<div class="effect-card" :key="i" v-for="i in visibleCount">
+					{{ visibleEffects.at(i)?.name ?? 'кто прочитал тот фурри' }}
+				</div>
 			</div>
-		</div>
 
-		<UiButton class="roll-button" @click="onRollButtonClick">
-			Прокрутить
-		</UiButton>
-	</div>
+			<UiButton class="roll-button" @click="onRollButtonClick">
+				Прокрутить
+			</UiButton>
+		</div>
+	</UiView>
 </template>
 
 <style scoped>

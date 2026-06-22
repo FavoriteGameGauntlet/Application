@@ -5,9 +5,9 @@ import { router } from '../router/router'
 export const useTabs = () => {
 	const tabTargets = [
 		RouteName.Timer,
-		RouteName.Players,
-		[RouteName.WheelRolls, RouteName.GameRolls],
+		RouteName.Effects,
 		RouteName.Games,
+		RouteName.Players,
 		RouteName.Dev,
 	] as const
 
