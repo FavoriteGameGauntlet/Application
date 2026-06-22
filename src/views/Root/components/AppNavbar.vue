@@ -14,13 +14,13 @@ const wheelStore = useApiWheelStore()
 		<div class="navbar__links">
 			<NavbarLink :to="RouteName.Timer"> Таймер </NavbarLink>
 
-			<NavbarLink :to="RouteName.Players"> Игроки </NavbarLink>
-
-			<NavbarLink :to="RouteName.WheelRolls">
+			<NavbarLink :to="RouteName.Effects">
 				Роллы {{ wheelStore.pendingRoll ? '🔵' : '' }}
 			</NavbarLink>
 
 			<NavbarLink :to="RouteName.Games"> Игры </NavbarLink>
+
+			<NavbarLink :to="RouteName.Players"> Игроки </NavbarLink>
 
 			<NavbarLink :to="RouteName.Dev"> Dev </NavbarLink>
 		</div>

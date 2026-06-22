@@ -1,13 +1,11 @@
 import type { RouteRecordRaw } from 'vue-router'
 import DevView from '../views/Dev/DevView.vue'
-import GameRollsView from '../views/GameRolls/GameRollsView.vue'
 import GamesView from '../views/Games/GamesView.vue'
 import LoginView from '../views/Login/LoginView.vue'
 import PlayersView from '../views/Players/PlayersView.vue'
 import RootView from '../views/Root/RootView.vue'
 import SignUpView from '../views/SignUp/SignUpView.vue'
 import TimerView from '../views/Timer/TimerView.vue'
-import WheelEffectsView from '../views/WheelEffects/WheelEffectsView.vue'
 import WheelRollsView from '../views/WheelRolls/WheelRollsView.vue'
 import { RouteName } from './routeNames'
 
@@ -38,27 +36,9 @@ export const routes: RouteRecordRaw[] = [
 			},
 
 			{
-				path: 'rolls',
-				redirect: 'rolls/wheel',
-				children: [
-					{
-						path: 'wheel',
-						component: WheelRollsView,
-						name: RouteName.WheelRolls,
-					},
-
-					{
-						path: 'games',
-						component: GameRollsView,
-						name: RouteName.GameRolls,
-					},
-				],
-			},
-
-			{
-				path: 'wheel-effects',
-				component: WheelEffectsView,
-				name: RouteName.WheelEffects,
+				path: 'wheel',
+				name: RouteName.Effects,
+				component: WheelRollsView,
 			},
 
 			{

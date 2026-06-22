@@ -10,7 +10,7 @@ export const apiUsers = {
 		http.get<GetAllLogins>('/users/all/names').then(({ body }) => body),
 
 	postDisplayName: ({ body }: PostDisplayName['request']) =>
-		http.post('/users/display-name', { body }).then(({ body }) => body),
+		http.post('/users/display-name', { body }),
 
 	getDisplayName: () =>
 		http.get<GetDisplayName>('/users/display-name').then(({ body }) => body),

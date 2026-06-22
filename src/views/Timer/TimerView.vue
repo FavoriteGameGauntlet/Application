@@ -13,6 +13,7 @@ import { useFeatureTimerStore } from '../../stores/feature/featureTimerStore'
 import GameTimer from './components/GameTimer.vue'
 import WheelTimer from './components/WheelTimer.vue'
 import { useAuthStore } from '../../stores/authStore'
+import UiView from '../../components/ui/UiView.vue'
 
 const timerStore = useFeatureTimerStore()
 const gameStore = useFeatureGameStore()
@@ -44,9 +45,9 @@ const onStartButtonClick = () => {
 </script>
 
 <template>
-	<div class="timer-view">
+	<UiView>
 		<div class="container">
-			<RouterLink class="game-link" :to="{ name: RouteName.GameRolls }">
+			<RouterLink class="game-link" :to="{ name: RouteName.Games }">
 				{{ gameNameText }}
 			</RouterLink>
 
@@ -85,17 +86,14 @@ const onStartButtonClick = () => {
 				class="wheel-action"
 				:class="{ 'wheel-action_disabled': !wheelStore.pendingRoll }"
 			>
-				<RouterLink
-					class="wheel-action-link"
-					:to="{ name: RouteName.WheelRolls }"
-				>
+				<RouterLink class="wheel-action-link" :to="{ name: RouteName.Effects }">
 					<UiButton class="wheel-action-button">{{
 						wheelStore.pendingRoll ? 'Крути колесо!' : 'Ждём таймер...'
 					}}</UiButton>
 				</RouterLink>
 			</div>
 		</div>
-	</div>
+	</UiView>
 </template>
 
 <style scoped>

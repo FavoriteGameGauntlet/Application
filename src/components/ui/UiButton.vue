@@ -67,7 +67,7 @@ watch([svg, roughSvg, roughnessModifier], () => {
 </script>
 
 <template>
-	<button class="ui-button">
+	<button class="ui-button" :disabled>
 		<svg class="svg" ref="svg"></svg>
 		<div class="slot"><slot /></div>
 	</button>
@@ -82,8 +82,8 @@ watch([svg, roughSvg, roughnessModifier], () => {
 	width: 100%;
 }
 
-.ui-button[disabled] {
-	opacity: 40%;
+.ui-button:disabled {
+	opacity: 50%;
 	pointer-events: none;
 }
 

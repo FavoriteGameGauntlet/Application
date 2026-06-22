@@ -37,6 +37,7 @@ export const apiGames = {
 			.then(({ body }) => convertGameDto(body)),
 
 	postFinishCurrent: () => http.post('/games/current/finish'),
+
 	postCancelCurrent: () => http.post('/games/current/cancel'),
 
 	getHistory: ({ path: { login } }: GetGamesHistory['request']) =>
