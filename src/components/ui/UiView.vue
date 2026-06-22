@@ -9,25 +9,22 @@
 <style scoped>
 .ui-view {
 	display: flex;
-	flex-direction: center;
+	flex-direction: column;
 	align-items: center;
-	justify-content: center;
+	justify-content: flex-start;
 
 	overflow: auto;
 
 	max-block-size: 100%;
 	min-block-size: 100%;
 	block-size: 100%;
-
-	max-inline-size: 100%;
-	min-inline-size: 100%;
-	inline-size: 100%;
 }
 
 .ui-view__column {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+	margin: auto;
 
 	max-inline-size: 700px;
 	min-inline-size: 320px;

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { computed, onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiView from '../../components/ui/UiView.vue'
 import { LoadingState } from '../../composables/useLoading'
@@ -18,13 +18,6 @@ gameStore.wishlistLoading.on([LoadingState.LOADED]).then(() => {
 })
 
 const rollText = ref('Загрузка...')
-
-const showWishlistCountHint = computed(
-	() =>
-		!gameStore.enoughGamesInWishlist &&
-		gameStore.currentLoading.state === LoadingState.LOADED &&
-		gameStore.wishlistLoading.state === LoadingState.LOADED,
-)
 
 gameStore.currentLoading.on([LoadingState.LOADED]).then(() => {
 	watch(
@@ -128,6 +121,11 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.games-view {
+	height: 100%;
+	overflow: auto;
+}
+
 .games-view > * {
 	display: flex;
 	flex-direction: column;
