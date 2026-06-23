@@ -4,8 +4,12 @@ import { computed, ref } from 'vue'
 import { api } from '../../api-facade/api'
 import type { HttpErrorResponse } from '../../api-facade/http'
 import { TimerState } from '../../api-facade/models/timers-models'
-import { LoadingState, useLoading } from '../../composables/useLoading'
 import { StoreName } from '../../enums/storeName'
+import {
+	LoadingStatus,
+	makeLoadingState,
+	withLoading,
+} from '../../utils/loadingState'
 
 const DEFAULT_DURATION = Temporal.Duration.from({
 	hours: 2,
@@ -17,12 +21,10 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 	const state = ref<TimerState | null>(null)
 	const durationTotal = ref(Temporal.Duration.from(DEFAULT_DURATION))
 
-	const currentLoading = useLoading()
-	const currentFromUserLoading = useLoading()
-	const actionLoading = useLoading()
-
 	const lastActionDate = ref<Temporal.Instant | null>(null)
 	const durationLeft = ref(Temporal.Duration.from({ hours: 0 }))
+
+	const toggleState = makeLoadingState()
 
 	const canStart = computed(() =>
 		[null, TimerState.Created, TimerState.Paused, TimerState.Finished].includes(
@@ -34,10 +36,10 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 
 	const canToggle = computed(() => canPause.value || canStart.value)
 
-	const getCurrent = async () => {
-		if (currentLoading.state.value === LoadingState.LOADING) return
+	const [getCurrent, getCurrentState] = withLoading(async (status) => {
+		if (status.value === LoadingStatus.LOADING) return
 
-		currentLoading.state.value = LoadingState.LOADING
+		status.value = LoadingStatus.LOADING
 
 		await api.timers
 			.getCurrent()
@@ -47,29 +49,29 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 				state.value = timer.state
 				lastActionDate.value = timer.lastActionDate ?? Temporal.Now.instant()
 
-				currentLoading.state.value = LoadingState.LOADED
+				status.value = LoadingStatus.LOADED
 			})
 			.catch((error: HttpErrorResponse) => {
 				if (error.body?.code === 'AVAILABLE_ROLLS_EXIST') {
 					durationLeft.value = Temporal.Duration.from({ hours: 0 })
-					actionLoading.state.value = LoadingState.LOADED
+					status.value = LoadingStatus.LOADED
 					state.value = null
 					lastActionDate.value = null
 
 					return
 				}
 
-				currentLoading.state.value = LoadingState.ERROR
+				status.value = LoadingStatus.ERROR
 
 				throw error
 			})
-	}
+	})
 
 	const start = async () => {
 		if (!canStart.value) return Promise.reject()
-		if (actionLoading.state.value === LoadingState.LOADING) return
+		if (toggleState.isLoading.value) return
 
-		actionLoading.state.value = LoadingState.LOADING
+		toggleState.status.value = LoadingStatus.LOADING
 
 		const prevState = state.value
 		const prevLastActionDate = lastActionDate.value
@@ -80,20 +82,21 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 		await api.timers
 			.postStart()
 			.then((timer) => {
-				actionLoading.state.value = LoadingState.LOADED
+				toggleState.status.value = LoadingStatus.LOADED
 
 				durationLeft.value = timer.remainingTime
 				durationTotal.value = timer.duration
-				// lastActionDate.value = timer.lastActionDate ?? null
+				lastActionDate.value = timer.lastActionDate ?? null
 			})
 			.catch((error: HttpErrorResponse) => {
 				if (error.body?.code === 'CURRENT_TIMER_NOT_FOUND') {
-					actionLoading.state.value = LoadingState.LOADED
+					toggleState.status.value = LoadingStatus.LOADED
 					state.value = null
 					lastActionDate.value = null
+					return
 				}
 
-				actionLoading.state.value = LoadingState.ERROR
+				toggleState.status.value = LoadingStatus.ERROR
 				state.value = prevState
 				lastActionDate.value = prevLastActionDate
 
@@ -103,9 +106,9 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 
 	const pause = async () => {
 		if (!canPause.value) return Promise.reject()
-		if (actionLoading.state.value === LoadingState.LOADING) return
+		if (toggleState.isLoading.value) return
 
-		currentFromUserLoading.state.value = LoadingState.LOADING
+		toggleState.status.value = LoadingStatus.LOADING
 
 		const prevLastActionDate = lastActionDate.value
 		const prevState = state.value
@@ -116,7 +119,7 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 		await api.timers
 			.postPause()
 			.then((timer) => {
-				actionLoading.state.value = LoadingState.LOADED
+				toggleState.status.value = LoadingStatus.LOADED
 
 				lastActionDate.value = timer.lastActionDate ?? null
 				durationLeft.value = timer.remainingTime
@@ -124,14 +127,14 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 			})
 			.catch((error: HttpErrorResponse) => {
 				if (error.body?.code === 'CURRENT_TIMER_NOT_FOUND') {
-					actionLoading.state.value = LoadingState.LOADED
+					toggleState.status.value = LoadingStatus.LOADED
 					state.value = null
 					lastActionDate.value = null
 
 					return
 				}
 
-				actionLoading.state.value = LoadingState.ERROR
+				toggleState.status.value = LoadingStatus.ERROR
 				state.value = prevState
 				lastActionDate.value = prevLastActionDate
 
@@ -156,9 +159,6 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 		durationTotal,
 		durationLeft,
 
-		currentLoading,
-		actionLoading,
-
 		lastActionDate,
 
 		canStart,
@@ -166,8 +166,12 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 		canToggle,
 
 		getCurrent,
+		getCurrentState,
+
 		start,
 		pause,
+
 		toggle,
+		toggleState,
 	}
 })

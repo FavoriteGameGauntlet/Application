@@ -24,9 +24,9 @@ export const useFeatureUserStore = defineStore(StoreName.FeatureUser, () => {
 		currentUser,
 		users,
 
-		setDisplayLoading: apiStore.setDisplayLoading,
-		getDisplayNameLoading: apiStore.getDisplayNameLoading,
-		getAllNamesLoading: apiStore.getAllNamesLoading,
+		setDisplayState: apiStore.setDisplayNameState,
+		getDisplayNameState: apiStore.getDisplayNameState,
+		getAllNamesState: apiStore.getAllUsersState,
 
 		getAllUsers: apiStore.getAllUsers,
 		setDisplayName: apiStore.setDisplayName,

@@ -26,8 +26,6 @@ export const useFeatureWheelStore = defineStore(StoreName.FeatureWheel, () => {
 
 	const roll = () => wheelStore.roll()
 
-	const reroll = () => wheelStore.reroll()
-
 	const getLastRoll = () => wheelStore.getLastRoll()
 
 	const init = () => {
@@ -59,9 +57,15 @@ export const useFeatureWheelStore = defineStore(StoreName.FeatureWheel, () => {
 		init,
 
 		getHistory,
+		getHistoryState: wheelStore.getHistoryState,
+
 		getAvailableEffects,
+		getAvailableEffectsState: wheelStore.getAvailableEffectsState,
+
 		roll,
-		reroll,
+		rollState: wheelStore.rollState,
+
 		getLastRoll,
+		getLastRollState: wheelStore.getLastRollState,
 	}
 })

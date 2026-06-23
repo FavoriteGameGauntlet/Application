@@ -1,4 +1,4 @@
-import type { WheelResultDto } from '../../types/wheelResult'
+import type { WheelResult } from '../../types/wheelResult.ts'
 import type {
 	FreePointChangeResult,
 	PointChange,
@@ -31,7 +31,7 @@ export type GetAvailableWheelEffectCount = {
 }
 
 export type GetLastRolledWheelEffects = {
-	response: WheelResultDto
+	response: WheelResult
 }
 
 export type PostApplyWheelEffectRoll = {

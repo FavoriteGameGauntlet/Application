@@ -6,100 +6,160 @@ import {
 	type CurrentGame,
 	type WishlistedGame,
 } from '../../api-facade/models/games-models'
-import { LoadingState, useLoading } from '../../composables/useLoading'
 import { StoreName } from '../../enums/storeName'
+import { LoadingStatus, withLoading } from '../../utils/loadingState'
 
 export const useApiGameStore = defineStore(StoreName.ApiGame, () => {
 	const wishlist = ref<Record<string, WishlistedGame[]>>({})
-	const wishlistLoading = useLoading()
 
 	const current = ref<Record<string, CurrentGame | null>>({})
-	const currentLoading = useLoading()
 
-	const addToWishlist = async (login: string, game: WishlistedGame) => {
-		return api.games.postWishlist({ path: { login }, body: game }).then(() => {
-			wishlist.value[login] = [...wishlist.value[login], game]
-		})
-	}
+	const [addToWishlist, addToWishlistState] = withLoading(
+		async (status, login: string, game: WishlistedGame) => {
+			if (status.value === LoadingStatus.LOADING) return
 
-	const getWishlist = async (login: string) => {
-		wishlistLoading.state.value = LoadingState.LOADING
+			status.value = LoadingStatus.LOADING
+
+			return api.games
+				.postWishlist({ path: { login }, body: game })
+				.then(() => {
+					status.value = LoadingStatus.LOADED
+					wishlist.value[login] = [...wishlist.value[login], game]
+				})
+				.catch((e) => {
+					status.value = LoadingStatus.ERROR
+					throw e
+				})
+		},
+	)
+
+	const [getWishlist, getWishlistState] = withLoading(
+		async (status, login: string) => {
+			if (status.value === LoadingStatus.LOADING) return
+
+			status.value = LoadingStatus.LOADING
+
+			return api.games
+				.getWishlist({ path: { login } })
+				.then((games) => {
+					wishlist.value[login] = games
+					status.value = LoadingStatus.LOADED
+
+					return games
+				})
+				.catch((e) => {
+					status.value = LoadingStatus.ERROR
+					wishlist.value[login] ??= []
+
+					throw e
+				})
+		},
+	)
+
+	const [getCurrent, getCurrentState] = withLoading(
+		async (status, login: string) => {
+			if (status.value === LoadingStatus.LOADING) return
+
+			status.value = LoadingStatus.LOADING
+
+			return api.games
+				.getCurrent({ path: { login } })
+				.then((game) => {
+					current.value[login] = game
+					status.value = LoadingStatus.LOADED
+
+					return current.value
+				})
+				.catch((error: HttpErrorResponse) => {
+					if (error.status === 404) {
+						current.value[login] ??= null
+						status.value = LoadingStatus.LOADED
+
+						return current.value[login]
+					}
+
+					status.value = LoadingStatus.ERROR
+					throw error
+				})
+		},
+	)
+
+	const [roll, rollState] = withLoading(async (status, login: string) => {
+		if (status.value === LoadingStatus.LOADING) return
+
+		status.value = LoadingStatus.LOADING
 
 		return api.games
-			.getWishlist({ path: { login } })
-			.then((games) => {
-				wishlist.value[login] = games
-				wishlistLoading.state.value = LoadingState.LOADED
-
-				return games
-			})
-			.catch(() => {
-				wishlistLoading.state.value = LoadingState.ERROR
-				wishlist.value[login] ??= []
-
-				return wishlist.value[login]
-			})
-	}
-
-	const getCurrent = async (login: string) => {
-		currentLoading.state.value = LoadingState.LOADING
-
-		return api.games
-			.getCurrent({ path: { login } })
-			.then((game) => {
-				current.value[login] = game
-				currentLoading.state.value = LoadingState.LOADED
+			.postRoll()
+			.then((newGame) => {
+				status.value = LoadingStatus.LOADED
+				current.value[login] = newGame
+				wishlist.value[login] = wishlist.value[login].filter(
+					(game) => game.name !== newGame.name,
+				)
 
 				return current.value
 			})
-			.catch((error: HttpErrorResponse) => {
-				if (error.status === 404) {
-					current.value[login] ??= null
-					currentLoading.state.value = LoadingState.LOADED
-
-					return current.value[login]
-				}
-
-				currentLoading.state.value = LoadingState.ERROR
-				return error
+			.catch((e) => {
+				status.value = LoadingStatus.ERROR
+				throw e
 			})
-	}
+	})
 
-	const roll = async (login: string) => {
-		return api.games.postRoll().then((newGame) => {
-			current.value[login] = newGame
-			wishlist.value[login] = wishlist.value[login].filter(
-				(game) => game.name !== newGame.name,
-			)
+	const [cancel, cancelState] = withLoading(async (status, login: string) => {
+		if (status.value === LoadingStatus.LOADING) return
 
-			return current.value
-		})
-	}
+		status.value = LoadingStatus.LOADING
 
-	const cancel = async (login: string) => {
-		return api.games.postCancelCurrent().then(() => {
-			current.value[login] = null
-		})
-	}
+		return api.games
+			.postCancelCurrent()
+			.then(() => {
+				status.value = LoadingStatus.LOADED
+				current.value[login] = null
+			})
+			.catch((e) => {
+				status.value = LoadingStatus.ERROR
+				throw e
+			})
+	})
 
-	const finish = async (login: string) => {
-		return api.games.postFinishCurrent().then(() => {
-			current.value[login] = null
-		})
-	}
+	const [finish, finishState] = withLoading(async (status, login: string) => {
+		if (status.value === LoadingStatus.LOADING) return
+
+		status.value = LoadingStatus.LOADING
+
+		return api.games
+			.postFinishCurrent()
+			.then(() => {
+				status.value = LoadingStatus.LOADED
+				current.value[login] = null
+			})
+			.catch((e) => {
+				status.value = LoadingStatus.ERROR
+				throw e
+			})
+	})
 
 	return {
 		current,
-		currentLoading,
-
 		wishlist,
-		wishlistLoading,
 
 		getCurrent,
+		getCurrentState,
+
 		addToWishlist,
+		addToWishlistState,
+
 		getWishlist,
+		getWishlistState,
+
 		roll,
+		rollState,
+
 		cancel,
+		cancelState,
+
 		finish,
+		finishState,
 	}
 })

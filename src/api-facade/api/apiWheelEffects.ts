@@ -1,8 +1,5 @@
-import type { WheelResult } from '../../types/wheelResult'
-import {
-	convertRolledWheelEffectDto,
-	convertRolledWheelEffectHistoryDto,
-} from '../dto'
+import type { WheelResult } from '../../types/wheelResult.ts'
+import { convertRolledWheelEffectHistoryDto } from '../dto'
 import { http } from '../http'
 import type {
 	GetAvailableWheelEffectCount,
@@ -29,10 +26,7 @@ export const apiWheelEffects = {
 	postRoll: (): Promise<WheelResult> =>
 		http
 			.post<PostRollWheelEffect>('/wheel-effects/available/roll')
-			.then(
-				({ body: effect }) =>
-					effect.map(convertRolledWheelEffectDto) as WheelResult,
-			),
+			.then(({ body }) => body as WheelResult),
 
 	getAvailableCount: () =>
 		http
@@ -42,10 +36,7 @@ export const apiWheelEffects = {
 	getLastRolled: (): Promise<WheelResult> =>
 		http
 			.get<GetLastRolledWheelEffects>('/wheel-effects/available/roll/last')
-			.then(
-				({ body: effects }) =>
-					effects.map(convertRolledWheelEffectDto) as WheelResult,
-			),
+			.then(({ body }) => body as WheelResult),
 
 	postApplyRoll: ({ body }: PostApplyWheelEffectRoll['request']) =>
 		http

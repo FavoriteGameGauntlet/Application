@@ -3,7 +3,7 @@ import { storeToRefs } from 'pinia'
 import { onMounted, ref, watch } from 'vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiView from '../../components/ui/UiView.vue'
-import { LoadingState } from '../../composables/useLoading'
+import { LoadingStatus } from '../../utils/loadingState'
 import { useAuthStore } from '../../stores/authStore'
 import { useFeatureGameStore } from '../../stores/feature/featureGameStore'
 import AddGameForm from './components/AddGameForm.vue'
@@ -13,13 +13,13 @@ const gameStore = useFeatureGameStore()
 const { current, canRoll, wishlist } = storeToRefs(gameStore)
 const showCountHint = ref(false)
 
-gameStore.wishlistLoading.on([LoadingState.LOADED]).then(() => {
+gameStore.getWishlistState.on([LoadingStatus.LOADED]).then(() => {
 	showCountHint.value = !gameStore.enoughGamesInWishlist
 })
 
 const rollText = ref('Загрузка...')
 
-gameStore.currentLoading.on([LoadingState.LOADED]).then(() => {
+gameStore.getCurrentState.on([LoadingStatus.LOADED]).then(() => {
 	watch(
 		current,
 		() => {
@@ -31,8 +31,8 @@ gameStore.currentLoading.on([LoadingState.LOADED]).then(() => {
 
 onMounted(() => {
 	if (
-		[LoadingState.ERROR, LoadingState.INIT].includes(
-			gameStore.wishlistLoading.state,
+		[LoadingStatus.ERROR, LoadingStatus.INIT].includes(
+			gameStore.getWishlistState.status,
 		)
 	) {
 		gameStore.getWishlist()
@@ -46,8 +46,8 @@ const updateGamesOnLoginChange = () => {
 		() => authStore.login,
 		(login) => {
 			if (
-				[LoadingState.ERROR, LoadingState.INIT].includes(
-					gameStore.wishlistLoading.state,
+				[LoadingStatus.ERROR, LoadingStatus.INIT].includes(
+					gameStore.getWishlistState.status,
 				) &&
 				login
 			) {

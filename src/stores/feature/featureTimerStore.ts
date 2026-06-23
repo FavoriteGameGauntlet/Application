@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { computed, watch } from 'vue'
-import { LoadingState } from '../../composables/useLoading'
 import { StoreName } from '../../enums/storeName'
 import { useApiTimerStore } from '../api/apiTimerStore'
 import { useAuthStore } from '../authStore'
@@ -18,8 +17,7 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 
 	const loading = computed(
 		() =>
-			timerStore.actionLoading.state === LoadingState.LOADING ||
-			timerStore.currentLoading.state === LoadingState.LOADING,
+			timerStore.toggleState.isLoading || timerStore.getCurrentState.isLoading,
 	)
 
 	const toggle = () => timerStore.toggle()

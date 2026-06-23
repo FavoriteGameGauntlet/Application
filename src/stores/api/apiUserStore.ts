@@ -3,10 +3,10 @@ import { ref } from 'vue'
 import { api } from '../../api-facade/api'
 import type { HttpErrorResponse } from '../../api-facade/http'
 import { type Login } from '../../api-facade/models/users-models'
-import { LoadingState, useLoading } from '../../composables/useLoading'
 import { usePersistentRef } from '../../composables/usePersistentRef'
 import { StoreName } from '../../enums/storeName'
 import { StoreKey } from '../../services/persistentStorage'
+import { LoadingStatus, withLoading } from '../../utils/loadingState'
 
 export const useApiUserStore = defineStore(StoreName.ApiUser, () => {
 	const users = ref<Login[] | null>(null)
@@ -14,82 +14,81 @@ export const useApiUserStore = defineStore(StoreName.ApiUser, () => {
 		StoreKey.DisplayName,
 	)
 
-	const getAllNamesLoading = useLoading()
-	const getDisplayNameLoading = useLoading()
-	const setDisplayLoading = useLoading()
+	const [getAllUsers, getAllUsersState] = withLoading(async (status) => {
+		if (status.value === LoadingStatus.LOADING) return
 
-	const getAllUsers = async () => {
-		if (getAllNamesLoading.state.value === LoadingState.LOADING) return
-
-		getAllNamesLoading.state.value = LoadingState.LOADING
+		status.value = LoadingStatus.LOADING
 
 		await api.users
 			.getAllNames()
 			.then((newUsers) => {
 				users.value = newUsers
-				getAllNamesLoading.state.value = LoadingState.LOADED
+				status.value = LoadingStatus.LOADED
 			})
 			.catch((error) => {
-				getAllNamesLoading.state.value = LoadingState.ERROR
+				status.value = LoadingStatus.ERROR
 
 				throw error
 			})
-	}
+	})
 
-	const getDisplayName = async () => {
-		if (getDisplayNameLoading.state.value === LoadingState.LOADING) return
+	const [getDisplayName, getDisplayNameState] = withLoading(async (status) => {
+		if (status.value === LoadingStatus.LOADING) return
 
-		getDisplayNameLoading.state.value = LoadingState.LOADING
+		status.value = LoadingStatus.LOADING
 
 		await api.users
 			.getDisplayName()
 			.then((name) => {
 				currentUserDisplayName.value = name
-				getDisplayNameLoading.state.value = LoadingState.LOADED
+				status.value = LoadingStatus.LOADED
 			})
 			.catch((error) => {
 				if (error.status === 404) {
 					currentUserDisplayName.value = undefined
-					getDisplayNameLoading.state.value = LoadingState.LOADED
+					status.value = LoadingStatus.LOADED
 					return
 				}
 
-				getDisplayNameLoading.state.value = LoadingState.ERROR
+				status.value = LoadingStatus.ERROR
 
 				throw error
 			})
-	}
+	})
 
-	const setDisplayName = async (newName: string) => {
-		if (setDisplayLoading.state.value === LoadingState.LOADING) return
+	const [setDisplayName, setDisplayNameState] = withLoading(
+		async (status, newName: string) => {
+			if (status.value === LoadingStatus.LOADING) return
 
-		const oldName = currentUserDisplayName.value
-		currentUserDisplayName.value = newName
-		setDisplayLoading.state.value = LoadingState.LOADING
+			const oldName = currentUserDisplayName.value
+			currentUserDisplayName.value = newName
+			status.value = LoadingStatus.LOADING
 
-		await api.users
-			.postDisplayName({ body: { name: newName } })
-			.then(() => {
-				setDisplayLoading.state.value = LoadingState.LOADED
-			})
-			.catch((error: HttpErrorResponse) => {
-				setDisplayLoading.state.value = LoadingState.ERROR
-				currentUserDisplayName.value = oldName
+			await api.users
+				.postDisplayName({ body: { name: newName } })
+				.then(() => {
+					status.value = LoadingStatus.LOADED
+				})
+				.catch((error: HttpErrorResponse) => {
+					status.value = LoadingStatus.ERROR
+					currentUserDisplayName.value = oldName
 
-				throw error
-			})
-	}
+					throw error
+				})
+		},
+	)
 
 	return {
 		users,
 		currentUserDisplayName,
 
-		getAllNamesLoading,
-		getDisplayNameLoading,
-		setDisplayLoading,
-
 		getAllUsers,
+		getAllUsersState,
+
 		getDisplayName,
+		getDisplayNameState,
+
 		setDisplayName,
+		setDisplayNameState,
 	}
 })

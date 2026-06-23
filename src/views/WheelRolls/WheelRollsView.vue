@@ -5,8 +5,6 @@ import { computed, onMounted } from 'vue'
 import { funnyEffects } from './constants/funnyEffects'
 import UiView from '../../components/ui/UiView.vue'
 
-const visibleCount = 5
-
 const wheelStore = useFeatureWheelStore()
 
 const getRandomNumber = (min: number, max: number) => {
@@ -16,11 +14,9 @@ const getRandomNumber = (min: number, max: number) => {
 const getRandomItems = <T,>(collection: T[], count: number = 1): T[] => {
 	const randomizedCollection: T[] = []
 
-	for (let i = 0; i < count; i++) {
-		if (collection.length <= count) break
-
-		getRandomNumber(0, collection.length)
-		randomizedCollection.push(collection.at(i)!)
+	for (let i = 0; i < count && i < collection.length; i++) {
+		const index = getRandomNumber(0, collection.length)
+		randomizedCollection.push(collection.at(index)!)
 	}
 
 	return randomizedCollection
@@ -54,8 +50,8 @@ onMounted(() => {
 			<h1 class="title">Роллы</h1>
 
 			<div class="effects-grid">
-				<div class="effect-card" :key="i" v-for="i in visibleCount">
-					{{ visibleEffects.at(i)?.name ?? 'кто прочитал тот фурри' }}
+				<div class="effect-card" :key="effect.name" v-for="effect in visibleEffects">
+					{{ effect.name }}
 				</div>
 			</div>
 
