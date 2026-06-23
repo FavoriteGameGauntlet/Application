@@ -2,17 +2,14 @@
 import { storeToRefs } from 'pinia'
 import { computed, ref, useTemplateRef, watchEffect } from 'vue'
 import { useFeatureGameStore } from '../../../stores/feature/featureGameStore'
-import { LoadingState } from '../../../composables/useLoading'
 
 const gameStore = useFeatureGameStore()
-const { wishlist, wishlistLoading } = storeToRefs(gameStore)
+const { wishlist, getWishlistState } = storeToRefs(gameStore)
 
 const gameName = ref('')
 const addGameInput = useTemplateRef('add-game-input')
 
-const isLoading = computed(
-	() => wishlistLoading.value.state === LoadingState.LOADING,
-)
+const isLoading = computed(() => getWishlistState.value.isLoading.value)
 
 const validator = computed(() => {
 	const result: { ok: boolean; message?: string } = { ok: true }
