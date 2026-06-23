@@ -5,6 +5,7 @@ import { usePersistentRef } from '../composables/usePersistentRef'
 import { StoreName } from '../enums/storeName'
 import { router } from '../router/router'
 import { persistentStorage, StoreKey } from '../services/persistentStorage'
+import { LoadingStatus, withLoading } from '../utils/loadingState'
 
 export const useAuthStore = defineStore(StoreName.Auth, () => {
 	const { state: login, isReady: isLoginReady } = usePersistentRef(
@@ -18,41 +19,77 @@ export const useAuthStore = defineStore(StoreName.Auth, () => {
 
 	const isLoggedIn = computed(() => login.value !== undefined)
 
-	const signUp = async (data: {
-		login: string
-		password: string
-		email: string
-	}) => {
+	const [signUp, signUpState] = withLoading(
+		async (
+			status,
+			data: { login: string; password: string; email: string },
+		) => {
+			if (status.value === LoadingStatus.LOADING) return
+			if (!isLoginReady)
+				throw new Error('Persistent storage is not yet initialized')
+
+			status.value = LoadingStatus.LOADING
+
+			return api.auth
+				.signUp({ body: data })
+				.then(() => {
+					login.value = data.login
+					return api.auth.logIn({
+						body: { login: data.login, password: data.password },
+					})
+				})
+				.then(() => {
+					status.value = LoadingStatus.LOADED
+				})
+				.catch((e) => {
+					status.value = LoadingStatus.ERROR
+					throw e
+				})
+		},
+	)
+
+	const [logIn, logInState] = withLoading(
+		async (status, data: { login: string; password: string }) => {
+			if (status.value === LoadingStatus.LOADING) return
+			if (!isLoginReady)
+				throw new Error('Persistent storage is not yet initialized')
+
+			status.value = LoadingStatus.LOADING
+
+			return api.auth
+				.logIn({ body: data })
+				.then(() => {
+					login.value = data.login
+					status.value = LoadingStatus.LOADED
+				})
+				.catch((e) => {
+					status.value = LoadingStatus.ERROR
+					throw e
+				})
+		},
+	)
+
+	const [logOut, logOutState] = withLoading(async (status) => {
+		if (status.value === LoadingStatus.LOADING) return
 		if (!isLoginReady)
 			throw new Error('Persistent storage is not yet initialized')
 
-		return api.auth.signUp({ body: data }).then(() => {
-			login.value = data.login
+		status.value = LoadingStatus.LOADING
 
-			return api.auth.logIn({
-				body: { login: data.login, password: data.password },
+		return api.auth
+			.logOut()
+			.then(() => {
+				status.value = LoadingStatus.LOADED
 			})
-		})
-	}
-
-	const logIn = async (data: { login: string; password: string }) => {
-		if (!isLoginReady)
-			throw new Error('Persistent storage is not yet initialized')
-
-		return api.auth.logIn({ body: data }).then(() => {
-			login.value = data.login
-		})
-	}
-
-	const logOut = () => {
-		if (!isLoginReady)
-			throw new Error('Persistent storage is not yet initialized')
-
-		api.auth.logOut().finally(() => {
-			login.value = undefined
-			router.push('/login')
-		})
-	}
+			.catch((e) => {
+				status.value = LoadingStatus.ERROR
+				throw e
+			})
+			.finally(() => {
+				login.value = undefined
+				router.push('/login')
+			})
+	})
 
 	return {
 		login,
@@ -60,7 +97,12 @@ export const useAuthStore = defineStore(StoreName.Auth, () => {
 		isLoggedIn,
 
 		signUp,
+		signUpState,
+
 		logIn,
+		logInState,
+
 		logOut,
+		logOutState,
 	}
 })
