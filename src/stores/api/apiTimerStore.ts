@@ -86,13 +86,14 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 
 				durationLeft.value = timer.remainingTime
 				durationTotal.value = timer.duration
-				// lastActionDate.value = timer.lastActionDate ?? null
+				lastActionDate.value = timer.lastActionDate ?? null
 			})
 			.catch((error: HttpErrorResponse) => {
 				if (error.body?.code === 'CURRENT_TIMER_NOT_FOUND') {
 					toggleState.status.value = LoadingStatus.LOADED
 					state.value = null
 					lastActionDate.value = null
+					return
 				}
 
 				toggleState.status.value = LoadingStatus.ERROR

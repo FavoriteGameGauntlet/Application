@@ -16,6 +16,8 @@ export const useApiGameStore = defineStore(StoreName.ApiGame, () => {
 
 	const [addToWishlist, addToWishlistState] = withLoading(
 		async (status, login: string, game: WishlistedGame) => {
+			if (status.value === LoadingStatus.LOADING) return
+
 			status.value = LoadingStatus.LOADING
 
 			return api.games
@@ -33,6 +35,8 @@ export const useApiGameStore = defineStore(StoreName.ApiGame, () => {
 
 	const [getWishlist, getWishlistState] = withLoading(
 		async (status, login: string) => {
+			if (status.value === LoadingStatus.LOADING) return
+
 			status.value = LoadingStatus.LOADING
 
 			return api.games
@@ -43,17 +47,19 @@ export const useApiGameStore = defineStore(StoreName.ApiGame, () => {
 
 					return games
 				})
-				.catch(() => {
+				.catch((e) => {
 					status.value = LoadingStatus.ERROR
 					wishlist.value[login] ??= []
 
-					return wishlist.value[login]
+					throw e
 				})
 		},
 	)
 
 	const [getCurrent, getCurrentState] = withLoading(
 		async (status, login: string) => {
+			if (status.value === LoadingStatus.LOADING) return
+
 			status.value = LoadingStatus.LOADING
 
 			return api.games
@@ -73,12 +79,14 @@ export const useApiGameStore = defineStore(StoreName.ApiGame, () => {
 					}
 
 					status.value = LoadingStatus.ERROR
-					return error
+					throw error
 				})
 		},
 	)
 
 	const [roll, rollState] = withLoading(async (status, login: string) => {
+		if (status.value === LoadingStatus.LOADING) return
+
 		status.value = LoadingStatus.LOADING
 
 		return api.games
@@ -99,6 +107,8 @@ export const useApiGameStore = defineStore(StoreName.ApiGame, () => {
 	})
 
 	const [cancel, cancelState] = withLoading(async (status, login: string) => {
+		if (status.value === LoadingStatus.LOADING) return
+
 		status.value = LoadingStatus.LOADING
 
 		return api.games
@@ -114,6 +124,8 @@ export const useApiGameStore = defineStore(StoreName.ApiGame, () => {
 	})
 
 	const [finish, finishState] = withLoading(async (status, login: string) => {
+		if (status.value === LoadingStatus.LOADING) return
+
 		status.value = LoadingStatus.LOADING
 
 		return api.games
