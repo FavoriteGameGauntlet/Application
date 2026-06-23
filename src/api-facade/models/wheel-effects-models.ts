@@ -15,12 +15,8 @@ export type RolledWheelEffectHistory = DtoStringToDate<
 >
 
 export type RolledWheelEffectDto = WheelEffect & {
-	rollDate: string
 	isApplied: boolean
 	position: number
 }
 
-export type RolledWheelEffect = DtoStringToDate<
-	RolledWheelEffectDto,
-	'rollDate'
->
+export type RolledWheelEffect = RolledWheelEffectDto

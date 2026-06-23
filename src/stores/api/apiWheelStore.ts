@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { api } from '../../api-facade/api'
 import type {
-	RolledWheelEffect,
+	RolledWheelEffectHistory,
 	WheelEffect,
 } from '../../api-facade/models/wheel-effects-models'
 import { StoreName } from '../../enums/storeName'
@@ -11,9 +11,9 @@ import { LoadingStatus, withLoading } from '../../utils/loadingState'
 
 export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
 	const availableRollCount = ref(0)
-	const effectsHistory = ref<Record<string, RolledWheelEffect[] | undefined>>(
-		{},
-	)
+	const effectsHistory = ref<
+		Record<string, RolledWheelEffectHistory[] | undefined>
+	>({})
 	const availableEffects = ref<WheelEffect[] | null>(null)
 	const currentEffects = ref<WheelResult | null>(null)
 
@@ -21,12 +21,15 @@ export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
 
 	const [getHistory, getHistoryState] = withLoading(
 		async (status, login: string) => {
+			if (status.value === LoadingStatus.LOADING) return
+
 			status.value = LoadingStatus.LOADING
 
 			await api.wheelEffects
 				.getHistory({ path: { login } })
 				.then((rolls) => {
 					effectsHistory.value[login] = rolls
+					status.value = LoadingStatus.LOADED
 				})
 				.catch((e) => {
 					status.value = LoadingStatus.ERROR
@@ -38,6 +41,7 @@ export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
 	const [getAvailableEffects, getAvailableEffectsState] = withLoading(
 		async (status) => {
 			if (availableEffects.value) return
+			if (status.value === LoadingStatus.LOADING) return
 
 			status.value = LoadingStatus.LOADING
 
@@ -58,6 +62,7 @@ export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
 		if (!pendingRoll.value) {
 			return Promise.reject('No pending rolls')
 		}
+		if (status.value === LoadingStatus.LOADING) return
 
 		status.value = LoadingStatus.LOADING
 
@@ -75,6 +80,8 @@ export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
 
 	const [getAvailableCount, getAvailableCountState] = withLoading(
 		async (status) => {
+			if (status.value === LoadingStatus.LOADING) return
+
 			status.value = LoadingStatus.LOADING
 
 			await api.wheelEffects
@@ -92,6 +99,7 @@ export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
 
 	const [getLastRoll, getLastRollState] = withLoading(async (status) => {
 		if (currentEffects.value) return currentEffects.value
+		if (status.value === LoadingStatus.LOADING) return
 
 		status.value = LoadingStatus.LOADING
 

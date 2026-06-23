@@ -2,8 +2,6 @@ import { Temporal } from '@js-temporal/polyfill'
 import type { CurrentGame, CurrentGameDto } from './models/games-models'
 import type { Timer, TimerDto } from './models/timers-models'
 import type {
-	RolledWheelEffect,
-	RolledWheelEffectDto,
 	RolledWheelEffectHistory,
 	RolledWheelEffectHistoryDto,
 } from './models/wheel-effects-models'
@@ -68,9 +66,3 @@ export const convertRolledWheelEffectHistoryDto = (
 	rollDate: Temporal.Instant.from(history.rollDate),
 })
 
-export const convertRolledWheelEffectDto = (
-	effect: RolledWheelEffectDto,
-): RolledWheelEffect => ({
-	...effect,
-	rollDate: Temporal.Instant.from(effect.rollDate),
-})
