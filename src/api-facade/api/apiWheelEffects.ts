@@ -1,4 +1,4 @@
-import type { WheelResult } from '../../types/wheelResult'
+import type { WheelResult } from '../../types/wheelResult.ts'
 import { convertRolledWheelEffectHistoryDto } from '../dto'
 import { http } from '../http'
 import type {

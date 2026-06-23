@@ -18,5 +18,3 @@ export type RolledWheelEffectDto = WheelEffect & {
 	isApplied: boolean
 	position: number
 }
-
-export type RolledWheelEffect = RolledWheelEffectDto

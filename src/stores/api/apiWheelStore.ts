@@ -6,7 +6,7 @@ import type {
 	WheelEffect,
 } from '../../api-facade/models/wheel-effects-models'
 import { StoreName } from '../../enums/storeName'
-import type { WheelResult } from '../../types/wheelResult'
+import type { WheelResult } from '../../types/wheelResult.ts'
 import { LoadingStatus, withLoading } from '../../utils/loadingState'
 
 export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
