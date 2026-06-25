@@ -5,9 +5,6 @@ import { computed, onMounted, ref } from 'vue'
 import { funnyEffects } from './constants/funnyEffects'
 import UiView from '../../components/ui/UiView.vue'
 import type { RolledWheelEffectDto } from '../../api-facade/models/wheel-effects-models'
-import type { Login } from '../../api-facade/models/users-models'
-import { FreePointChangeSource } from '../../api-facade/models/points-models'
-import { api } from '../../api-facade/api'
 
 const wheelStore = useFeatureWheelStore()
 
@@ -42,22 +39,17 @@ const onRollButtonClick = () => {
 
 const selectedEffect = ref<RolledWheelEffectDto | null>(null)
 const showApplyForm = ref(false)
-const players = ref<Login[]>([])
 const pointChanges = ref<Record<string, number>>({})
-const applying = ref(false)
 
 const closeModal = () => {
 	selectedEffect.value = null
 	showApplyForm.value = false
 }
 
-const openApplyForm = async () => {
-	if (!players.value.length) {
-		players.value = await api.users.getAllNames()
-		pointChanges.value = Object.fromEntries(
-			players.value.map((p) => [p.login, 0]),
-		)
-	}
+const openApplyForm = () => {
+	pointChanges.value = Object.fromEntries(
+		(wheelStore.users ?? []).map((user) => [user.login, 0]),
+	)
 	showApplyForm.value = true
 }
 
@@ -73,32 +65,16 @@ const submitApply = async () => {
 
 	const changes = Object.entries(pointChanges.value)
 		.filter(([, value]) => value !== 0)
-		.map(([login, desiredChangeValue]) => ({
-			login,
-			pointChange: {
-				changeSource: FreePointChangeSource.WheelEffect,
-				desiredChangeValue,
-			},
-		}))
+		.map(([login, desiredChangeValue]) => ({ login, desiredChangeValue }))
 
-	applying.value = true
-	try {
-		await api.wheelEffects.postApplyRoll({
-			body: {
-				wheelEffectName: selectedEffect.value.name,
-				pointChanges: changes,
-			},
-		})
-		selectedEffect.value.isApplied = true
-		showApplyForm.value = false
-	} finally {
-		applying.value = false
-	}
+	await wheelStore.applyRoll(selectedEffect.value.name, changes)
+	showApplyForm.value = false
 }
 
 onMounted(() => {
 	wheelStore.getLastRoll()
 	wheelStore.getAvailableEffects()
+	wheelStore.getAllUsers()
 })
 </script>
 
@@ -158,29 +134,29 @@ onMounted(() => {
 
 					<template v-else>
 						<h2 class="modal-title">Применить: {{ selectedEffect.name }}</h2>
-						<div class="players-list">
+						<div class="users-list">
 							<div
-								v-for="player in players"
-								:key="player.login"
-								class="player-row"
+								v-for="user in wheelStore.users"
+								:key="user.login"
+								class="user-row"
 							>
-								<span class="player-name">{{
-									player.displayName ?? player.login
+								<span class="user-name">{{
+									user.displayName ?? user.login
 								}}</span>
 								<input
 									class="point-input"
 									type="number"
 									min="-100"
 									max="100"
-									:value="pointChanges[player.login]"
-									@input="onPointInput(player.login, $event)"
+									:value="pointChanges[user.login]"
+									@input="onPointInput(user.login, $event)"
 								/>
 							</div>
 						</div>
 						<div class="modal-actions">
 							<button
 								class="modal-button modal-button--primary"
-								:disabled="applying"
+								:disabled="wheelStore.applyRollState.isLoading"
 								@click="submitApply"
 							>
 								Подтвердить
@@ -330,7 +306,7 @@ onMounted(() => {
 	background-color: #2563eb;
 }
 
-.players-list {
+.users-list {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
@@ -338,14 +314,14 @@ onMounted(() => {
 	overflow-y: auto;
 }
 
-.player-row {
+.user-row {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
 }
 
-.player-name {
+.user-name {
 	flex: 1;
 	overflow: hidden;
 	text-overflow: ellipsis;

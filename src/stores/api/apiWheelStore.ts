@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '../../api-facade/api'
+import { FreePointChangeSource } from '../../api-facade/models/points-models'
 import type {
 	RolledWheelEffectHistory,
 	WheelEffect,
@@ -114,10 +115,40 @@ export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
 			})
 	})
 
-	// const applyRoll = async () => {
-	//  @todo remove applied from available
-	// 	await api.wheelEffects.postApplyRoll()
-	// }
+	const [applyRoll, applyRollState] = withLoading(
+		async (
+			status,
+			effectName: string,
+			changes: { login: string; desiredChangeValue: number }[],
+		) => {
+			if (status.value === LoadingStatus.LOADING) return
+
+			status.value = LoadingStatus.LOADING
+
+			await api.wheelEffects
+				.postApplyRoll({
+					body: {
+						wheelEffectName: effectName,
+						pointChanges: changes.map(({ login, desiredChangeValue }) => ({
+							login,
+							pointChange: {
+								changeSource: FreePointChangeSource.WheelEffect,
+								desiredChangeValue,
+							},
+						})),
+					},
+				})
+				.then(() => {
+					const effect = currentEffects.value?.find((e) => e.name === effectName)
+					if (effect) effect.isApplied = true
+					status.value = LoadingStatus.LOADED
+				})
+				.catch((e) => {
+					status.value = LoadingStatus.ERROR
+					throw e
+				})
+		},
+	)
 
 	return {
 		availableRollCount,
@@ -140,7 +171,7 @@ export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
 		getLastRoll,
 		getLastRollState,
 
-		// applyRoll,
-		// applyRollState,
+		applyRoll,
+		applyRollState,
 	}
 })

@@ -3,18 +3,20 @@ import { computed, watch } from 'vue'
 import { TimerState } from '../../api-facade/models/timers-models'
 import { StoreName } from '../../enums/storeName'
 import { useApiTimerStore } from '../api/apiTimerStore'
+import { useApiUserStore } from '../api/apiUserStore'
 import { useApiWheelStore } from '../api/apiWheelStore'
 import { useAuthStore } from '../authStore'
 
 export const useFeatureWheelStore = defineStore(StoreName.FeatureWheel, () => {
 	const wheelStore = useApiWheelStore()
+	const userStore = useApiUserStore()
 	const timerStore = useApiTimerStore()
 	const authStore = useAuthStore()
 
 	const currentEffects = computed(() => wheelStore.currentEffects)
 	const availableEffects = computed(() => wheelStore.availableEffects)
 
-	const pendingRoll = computed(() => wheelStore.pendingRoll)
+	const availableRollCount = computed(() => wheelStore.availableRollCount)
 
 	const getHistory = async (login: string | undefined = authStore.login) => {
 		if (!login) return Promise.reject('No current user login')
@@ -52,7 +54,7 @@ export const useFeatureWheelStore = defineStore(StoreName.FeatureWheel, () => {
 		currentEffects,
 		availableEffects,
 
-		pendingRoll,
+		availableRollCount,
 
 		init,
 
@@ -67,5 +69,12 @@ export const useFeatureWheelStore = defineStore(StoreName.FeatureWheel, () => {
 
 		getLastRoll,
 		getLastRollState: wheelStore.getLastRollState,
+
+		users: computed(() => userStore.users),
+		getAllUsers: userStore.getAllUsers,
+		getAllUsersState: userStore.getAllUsersState,
+
+		applyRoll: wheelStore.applyRoll,
+		applyRollState: wheelStore.applyRollState,
 	}
 })
