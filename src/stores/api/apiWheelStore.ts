@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { api } from '../../api-facade/api'
+import { PointChangeWithLogin } from '../../api-facade/models/points-models'
 import type {
 	RolledWheelEffectHistory,
 	WheelEffect,
@@ -16,8 +17,6 @@ export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
 	>({})
 	const availableEffects = ref<WheelEffect[] | null>(null)
 	const currentEffects = ref<WheelResult | null>(null)
-
-	const pendingRoll = computed(() => availableRollCount.value !== 0)
 
 	const [getHistory, getHistoryState] = withLoading(
 		async (status, login: string) => {
@@ -59,7 +58,7 @@ export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
 	)
 
 	const [roll, rollState] = withLoading(async (status) => {
-		if (!pendingRoll.value) {
+		if (availableRollCount.value <= 0) {
 			return Promise.reject('No pending rolls')
 		}
 		if (status.value === LoadingStatus.LOADING) return
@@ -70,6 +69,7 @@ export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
 			.postRoll()
 			.then((effects) => {
 				currentEffects.value = effects
+				availableRollCount.value--
 				status.value = LoadingStatus.LOADED
 			})
 			.catch((e) => {
@@ -115,18 +115,42 @@ export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
 			})
 	})
 
-	// const applyRoll = async () => {
-	//  @todo remove applied from available
-	// 	await api.wheelEffects.postApplyRoll()
-	// }
+	const [applyRoll, applyRollState] = withLoading(
+		async (
+			status,
+			effectName: string,
+			pointChanges: PointChangeWithLogin[],
+		) => {
+			if (status.value === LoadingStatus.LOADING) return
+
+			status.value = LoadingStatus.LOADING
+
+			await api.wheelEffects
+				.postApplyRoll({
+					body: {
+						wheelEffectName: effectName,
+						pointChanges: pointChanges,
+					},
+				})
+				.then(() => {
+					const effect = currentEffects.value?.find(
+						(e) => e.name === effectName,
+					)
+					if (effect) effect.isApplied = true
+					status.value = LoadingStatus.LOADED
+				})
+				.catch((e) => {
+					status.value = LoadingStatus.ERROR
+					throw e
+				})
+		},
+	)
 
 	return {
 		availableRollCount,
 		effectsHistory,
 		availableEffects,
 		currentEffects,
-
-		pendingRoll,
 
 		getHistory,
 		getHistoryState,
@@ -143,7 +167,7 @@ export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
 		getLastRoll,
 		getLastRollState,
 
-		// applyRoll,
-		// applyRollState,
+		applyRoll,
+		applyRollState,
 	}
 })
