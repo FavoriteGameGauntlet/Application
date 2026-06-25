@@ -5,6 +5,7 @@ import { computed, onMounted, ref } from 'vue'
 import { funnyEffects } from './constants/funnyEffects'
 import UiView from '../../components/ui/UiView.vue'
 import type { RolledWheelEffectDto } from '../../api-facade/models/wheel-effects-models'
+import { FreePointChangeSource } from '../../api-facade/models/points-models'
 
 const wheelStore = useFeatureWheelStore()
 
@@ -65,7 +66,13 @@ const submitApply = async () => {
 
 	const changes = Object.entries(pointChanges.value)
 		.filter(([, value]) => value !== 0)
-		.map(([login, desiredChangeValue]) => ({ login, desiredChangeValue }))
+		.map(([login, desiredChangeValue]) => ({
+			login,
+			pointChange: {
+				changeSource: FreePointChangeSource.WheelEffect,
+				desiredChangeValue,
+			},
+		}))
 
 	await wheelStore.applyRoll(selectedEffect.value.name, changes)
 	showApplyForm.value = false

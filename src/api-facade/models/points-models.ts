@@ -13,9 +13,14 @@ export type PointChange = {
 	desiredChangeValue: number
 }
 
-export type PointChangeResult =  PointChange & {
+export type PointChangeResult = PointChange & {
 	actualChangeValue: number
 	finalValue: number
+}
+
+export type PointChangeWithLogin = {
+	login: string
+	pointChange: PointChange
 }
 
 export enum TerritoryChangeSource {
