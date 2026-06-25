@@ -25,7 +25,7 @@ const getRandomItems = <T,>(collection: T[], count: number = 1): T[] => {
 
 const visibleEffects = computed(() => {
 	if (wheelStore.currentEffects) {
-		return wheelStore.currentEffects
+		return [...wheelStore.currentEffects].sort((a, b) => a.position - b.position)
 	}
 
 	if (wheelStore.availableEffects) {
