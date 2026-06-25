@@ -10,12 +10,7 @@ import AddGameForm from './components/AddGameForm.vue'
 
 const gameStore = useFeatureGameStore()
 
-const { current, canRoll, wishlist } = storeToRefs(gameStore)
-const showCountHint = ref(false)
-
-gameStore.getWishlistState.on([LoadingStatus.LOADED]).then(() => {
-	showCountHint.value = !gameStore.enoughGamesInWishlist
-})
+const { current, canRoll, wishlist, enoughGamesInWishlist } = storeToRefs(gameStore)
 
 const rollText = ref('Загрузка...')
 
@@ -103,7 +98,7 @@ onMounted(() => {
 			<div class="container">
 				<AddGameForm />
 
-				<p class="hint" v-if="showCountHint">
+				<p class="hint" v-if="!enoughGamesInWishlist">
 					Чтобы крутить следующую игру, надо 6 игр, нужно ещё
 					{{ 6 - wishlist.length }}.
 				</p>
