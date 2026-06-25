@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import UiButton from '../../components/ui/UiButton.vue'
 import { useFeatureWheelStore } from '../../stores/feature/featureWheelStore'
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { funnyEffects } from './constants/funnyEffects'
 import UiView from '../../components/ui/UiView.vue'
+import type { WheelEffect } from '../../api-facade/models/wheel-effects-models'
 
 const wheelStore = useFeatureWheelStore()
 
@@ -38,6 +39,8 @@ const onRollButtonClick = () => {
 	wheelStore.roll()
 }
 
+const selectedEffect = ref<WheelEffect | null>(null)
+
 onMounted(() => {
 	wheelStore.getLastRoll()
 	wheelStore.getAvailableEffects()
@@ -50,8 +53,13 @@ onMounted(() => {
 			<h1 class="title">Роллы</h1>
 
 			<div class="effects-grid">
-				<div class="effect-card" :key="effect.name" v-for="effect in visibleEffects">
-					{{ effect.name }}
+				<div
+					class="effect-card"
+					:key="effect.name"
+					v-for="effect in visibleEffects"
+					@click="selectedEffect = effect"
+				>
+					<span class="effect-name">{{ effect.name }}</span>
 				</div>
 			</div>
 
@@ -59,6 +67,25 @@ onMounted(() => {
 				Прокрутить
 			</UiButton>
 		</div>
+
+		<Teleport to="body">
+			<div
+				v-if="selectedEffect"
+				class="modal-overlay"
+				@click.self="selectedEffect = null"
+			>
+				<div class="modal">
+					<h2 class="modal-title">{{ selectedEffect.name }}</h2>
+					<p v-if="selectedEffect.description" class="modal-description">
+						{{ selectedEffect.description }}
+					</p>
+					<p v-else class="modal-empty">Описание отсутствует</p>
+					<button class="modal-close" @click="selectedEffect = null">
+						Закрыть
+					</button>
+				</div>
+			</div>
+		</Teleport>
 	</UiView>
 </template>
 
@@ -92,14 +119,77 @@ onMounted(() => {
 }
 
 .effect-card {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 8px;
 	height: 160px;
 	width: 120px;
 	border: 1px solid #64748b;
+	overflow: hidden;
+	cursor: pointer;
+}
+
+.effect-card:hover {
+	background-color: #f8fafc;
+}
+
+.effect-name {
+	font-weight: 600;
 }
 
 .roll-button {
 	height: 56px;
 	width: 224px;
 	justify-self: center;
+}
+
+.modal-overlay {
+	position: fixed;
+	inset: 0;
+	background-color: rgba(0, 0, 0, 0.4);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 100;
+}
+
+.modal {
+	background: #fff;
+	border-radius: 8px;
+	padding: 24px;
+	max-width: 400px;
+	width: 90%;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.modal-title {
+	font-size: 1.25rem;
+	font-weight: 600;
+}
+
+.modal-description {
+	color: #334155;
+	line-height: 1.6;
+}
+
+.modal-empty {
+	color: #94a3b8;
+	font-style: italic;
+}
+
+.modal-close {
+	align-self: flex-end;
+	padding: 6px 16px;
+	border: 1px solid #64748b;
+	border-radius: 4px;
+	cursor: pointer;
+	background: transparent;
+}
+
+.modal-close:hover {
+	background-color: #f1f5f9;
 }
 </style>
