@@ -5,6 +5,9 @@ import { computed, onMounted, ref } from 'vue'
 import { funnyEffects } from './constants/funnyEffects'
 import UiView from '../../components/ui/UiView.vue'
 import type { RolledWheelEffectDto } from '../../api-facade/models/wheel-effects-models'
+import type { Login } from '../../api-facade/models/users-models'
+import { FreePointChangeSource } from '../../api-facade/models/points-models'
+import { api } from '../../api-facade/api'
 
 const wheelStore = useFeatureWheelStore()
 
@@ -25,7 +28,9 @@ const getRandomItems = <T,>(collection: T[], count: number = 1): T[] => {
 
 const visibleEffects = computed(() => {
 	if (wheelStore.currentEffects) {
-		return [...wheelStore.currentEffects].sort((a, b) => a.position - b.position)
+		return [...wheelStore.currentEffects].sort(
+			(a, b) => a.position - b.position,
+		)
 	}
 
 	return getRandomItems(funnyEffects, 5)
@@ -36,6 +41,60 @@ const onRollButtonClick = () => {
 }
 
 const selectedEffect = ref<RolledWheelEffectDto | null>(null)
+const showApplyForm = ref(false)
+const players = ref<Login[]>([])
+const pointChanges = ref<Record<string, number>>({})
+const applying = ref(false)
+
+const closeModal = () => {
+	selectedEffect.value = null
+	showApplyForm.value = false
+}
+
+const openApplyForm = async () => {
+	if (!players.value.length) {
+		players.value = await api.users.getAllNames()
+		pointChanges.value = Object.fromEntries(
+			players.value.map((p) => [p.login, 0]),
+		)
+	}
+	showApplyForm.value = true
+}
+
+const clamp = (value: number) => Math.min(100, Math.max(-100, value))
+
+const onPointInput = (login: string, event: Event) => {
+	const raw = Number((event.target as HTMLInputElement).value)
+	pointChanges.value[login] = clamp(isNaN(raw) ? 0 : raw)
+}
+
+const submitApply = async () => {
+	if (!selectedEffect.value) return
+
+	const changes = Object.entries(pointChanges.value)
+		.filter(([, value]) => value !== 0)
+		.map(([login, desiredChangeValue]) => ({
+			login,
+			pointChange: {
+				changeSource: FreePointChangeSource.WheelEffect,
+				desiredChangeValue,
+			},
+		}))
+
+	applying.value = true
+	try {
+		await api.wheelEffects.postApplyRoll({
+			body: {
+				wheelEffectName: selectedEffect.value.name,
+				pointChanges: changes,
+			},
+		})
+		selectedEffect.value.isApplied = true
+		showApplyForm.value = false
+	} finally {
+		applying.value = false
+	}
+}
 
 onMounted(() => {
 	wheelStore.getLastRoll()
@@ -69,24 +128,68 @@ onMounted(() => {
 		</div>
 
 		<Teleport to="body">
-			<div
-				v-if="selectedEffect"
-				class="modal-overlay"
-				@click.self="selectedEffect = null"
-			>
+			<div v-if="selectedEffect" class="modal-overlay" @click.self="closeModal">
 				<div class="modal">
-					<h2 class="modal-title">{{ selectedEffect.name }}</h2>
-					<p v-if="selectedEffect.description" class="modal-description">
-						{{ selectedEffect.description }}
-					</p>
-					<p v-else class="modal-empty">Описание отсутствует</p>
-					<label class="effect-applied">
-						<input type="checkbox" :checked="selectedEffect.isApplied" disabled />
-						Применён
-					</label>
-					<button class="modal-close" @click="selectedEffect = null">
-						Закрыть
-					</button>
+					<template v-if="!showApplyForm">
+						<h2 class="modal-title">{{ selectedEffect.name }}</h2>
+						<p v-if="selectedEffect.description" class="modal-description">
+							{{ selectedEffect.description }}
+						</p>
+						<p v-else class="modal-empty">Описание отсутствует</p>
+						<label class="effect-applied">
+							<input
+								type="checkbox"
+								:checked="selectedEffect.isApplied"
+								disabled
+							/>
+							Применён
+						</label>
+						<div class="modal-actions">
+							<button
+								v-if="!selectedEffect.isApplied"
+								class="modal-button modal-button--primary"
+								@click="openApplyForm"
+							>
+								Применить
+							</button>
+							<button class="modal-button" @click="closeModal">Закрыть</button>
+						</div>
+					</template>
+
+					<template v-else>
+						<h2 class="modal-title">Применить: {{ selectedEffect.name }}</h2>
+						<div class="players-list">
+							<div
+								v-for="player in players"
+								:key="player.login"
+								class="player-row"
+							>
+								<span class="player-name">{{
+									player.displayName ?? player.login
+								}}</span>
+								<input
+									class="point-input"
+									type="number"
+									min="-100"
+									max="100"
+									:value="pointChanges[player.login]"
+									@input="onPointInput(player.login, $event)"
+								/>
+							</div>
+						</div>
+						<div class="modal-actions">
+							<button
+								class="modal-button modal-button--primary"
+								:disabled="applying"
+								@click="submitApply"
+							>
+								Подтвердить
+							</button>
+							<button class="modal-button" @click="showApplyForm = false">
+								Назад
+							</button>
+						</div>
+					</template>
 				</div>
 			</div>
 		</Teleport>
@@ -194,8 +297,13 @@ onMounted(() => {
 	font-style: italic;
 }
 
-.modal-close {
-	align-self: flex-end;
+.modal-actions {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+}
+
+.modal-button {
 	padding: 6px 16px;
 	border: 1px solid #64748b;
 	border-radius: 4px;
@@ -203,7 +311,52 @@ onMounted(() => {
 	background: transparent;
 }
 
-.modal-close:hover {
+.modal-button:hover:not(:disabled) {
 	background-color: #f1f5f9;
+}
+
+.modal-button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.modal-button--primary {
+	background-color: #3b82f6;
+	border-color: #3b82f6;
+	color: #fff;
+}
+
+.modal-button--primary:hover:not(:disabled) {
+	background-color: #2563eb;
+}
+
+.players-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	max-height: 300px;
+	overflow-y: auto;
+}
+
+.player-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.player-name {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.point-input {
+	width: 72px;
+	padding: 4px 8px;
+	border: 1px solid #cbd5e1;
+	border-radius: 4px;
+	text-align: right;
 }
 </style>
