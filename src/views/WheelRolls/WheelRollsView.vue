@@ -4,7 +4,7 @@ import { useFeatureWheelStore } from '../../stores/feature/featureWheelStore'
 import { computed, onMounted, ref } from 'vue'
 import { funnyEffects } from './constants/funnyEffects'
 import UiView from '../../components/ui/UiView.vue'
-import type { WheelEffect } from '../../api-facade/models/wheel-effects-models'
+import type { RolledWheelEffectDto } from '../../api-facade/models/wheel-effects-models'
 
 const wheelStore = useFeatureWheelStore()
 
@@ -28,10 +28,6 @@ const visibleEffects = computed(() => {
 		return [...wheelStore.currentEffects].sort((a, b) => a.position - b.position)
 	}
 
-	if (wheelStore.availableEffects) {
-		return getRandomItems(wheelStore.availableEffects, 5)
-	}
-
 	return getRandomItems(funnyEffects, 5)
 })
 
@@ -39,7 +35,7 @@ const onRollButtonClick = () => {
 	wheelStore.roll()
 }
 
-const selectedEffect = ref<WheelEffect | null>(null)
+const selectedEffect = ref<RolledWheelEffectDto | null>(null)
 
 onMounted(() => {
 	wheelStore.getLastRoll()
@@ -60,6 +56,10 @@ onMounted(() => {
 					@click="selectedEffect = effect"
 				>
 					<span class="effect-name">{{ effect.name }}</span>
+					<label class="effect-applied" @click.stop>
+						<input type="checkbox" :checked="effect.isApplied" disabled />
+						Применён
+					</label>
 				</div>
 			</div>
 
@@ -80,6 +80,10 @@ onMounted(() => {
 						{{ selectedEffect.description }}
 					</p>
 					<p v-else class="modal-empty">Описание отсутствует</p>
+					<label class="effect-applied">
+						<input type="checkbox" :checked="selectedEffect.isApplied" disabled />
+						Применён
+					</label>
 					<button class="modal-close" @click="selectedEffect = null">
 						Закрыть
 					</button>
@@ -136,6 +140,16 @@ onMounted(() => {
 
 .effect-name {
 	font-weight: 600;
+}
+
+.effect-applied {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 0.75rem;
+	color: #64748b;
+	margin-top: auto;
+	cursor: default;
 }
 
 .roll-button {
