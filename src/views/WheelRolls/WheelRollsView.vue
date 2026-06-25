@@ -122,7 +122,7 @@ onMounted(() => {
 				</div>
 			</div>
 
-			<UiButton class="roll-button" @click="onRollButtonClick">
+			<UiButton class="roll-button" :disabled="!wheelStore.availableRollCount" @click="onRollButtonClick">
 				Прокрутить
 			</UiButton>
 		</div>
