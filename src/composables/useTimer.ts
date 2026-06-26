@@ -40,8 +40,7 @@ export const useTimer = ({
 			({ now }) => updateElapsed(now),
 		))
 
-		startedAt =
-			mode === 'add' ? newStartedAt : newStartedAt?.add({ seconds: 1 })
+		startedAt = newStartedAt
 
 		updateElapsed()
 	}
@@ -50,7 +49,6 @@ export const useTimer = ({
 		if (startedAt) {
 			const diff = newElapsed.subtract(elapsed.value)
 			startedAt = startedAt[mode === 'add' ? 'subtract' : 'add'](diff) ?? null
-			startedAt = mode === 'add' ? startedAt : startedAt?.add({ seconds: 1 })
 
 			updateElapsed()
 		} else {

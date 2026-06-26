@@ -17,7 +17,7 @@ const calcElapsed = () => {
 	const now = Temporal.Now.instant()
 	const timeSinceLastAction = now.since(timerStore.lastActionDate)
 
-	return timerStore.durationTotal.subtract(timeSinceLastAction)
+	return timerStore.durationLeft.subtract(timeSinceLastAction)
 }
 
 watch(
