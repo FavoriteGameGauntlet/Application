@@ -19,22 +19,19 @@ const { login } = defineProps<Props>()
 const { elapsed, start, stop } = useTimer({ mode: 'add' })
 
 const calcElapsed = () => {
-	if (!timerStore.lastActionDate || timerStore.state !== TimerState.Running) {
-		return (
-			gameStore.current[login]?.timeSpent ??
-			Temporal.Duration.from({ seconds: 0 })
-		)
-	}
+	const base =
+		gameStore.current[login]?.timeSpent ?? Temporal.Duration.from({ seconds: 0 })
 
-	return (
-		gameStore.current[login]?.timeSpent ??
-		Temporal.Duration.from({ seconds: 0 })
-	)
+	if (!timerStore.lastActionDate || timerStore.state !== TimerState.Running)
+		return base
+
+	return base.add(Temporal.Now.instant().since(timerStore.lastActionDate))
 }
 
 watch(
 	() => timerStore.durationLeft,
 	() => {
+		if (timerStore.state !== TimerState.Running) return
 		elapsed.value = calcElapsed()
 	},
 	{ immediate: true },
