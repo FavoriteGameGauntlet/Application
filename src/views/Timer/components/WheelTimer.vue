@@ -33,6 +33,8 @@ watch(elapsed, () => {
 
 	stop()
 	elapsed.value = Temporal.Duration.from({ seconds: 0 })
+	timerStore.state = TimerState.Finished
+	timerStore.getCurrent()
 })
 
 watch(
