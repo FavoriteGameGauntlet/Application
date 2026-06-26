@@ -29,7 +29,7 @@ watch(
 )
 
 watch(elapsed, () => {
-	if (elapsed.value.total({ unit: 'milliseconds' }) > 0) return
+	if (elapsed.value.sign !== -1) return
 	if (timerStore.state !== TimerState.Running) return
 
 	stop()

@@ -28,8 +28,7 @@ export const useTimer = ({
 	const updateElapsed = (time: Temporal.Instant = Temporal.Now.instant()) => {
 		elapsed.value = baseElapsed[mode](time.since(startedAt!)).round({
 			largestUnit: 'hour',
-			smallestUnit: 'second',
-			roundingMode: mode === 'subtract' ? 'ceil' : 'trunc',
+			roundingMode: 'trunc',
 		})
 	}
 
@@ -43,7 +42,7 @@ export const useTimer = ({
 
 		startedAt = newStartedAt
 
-		updateElapsed()
+		updateElapsed(startedAt)
 	}
 
 	const set = (newElapsed: Temporal.Duration) => {
