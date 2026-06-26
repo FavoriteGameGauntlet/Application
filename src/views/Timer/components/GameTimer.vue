@@ -41,6 +41,7 @@ watch(
 	() => gameStore.current[login],
 	(game) => {
 		if (!game) return
+		if (timerStore.state === TimerState.Running) return
 		elapsed.value = calcElapsed()
 	},
 	{ immediate: true },
