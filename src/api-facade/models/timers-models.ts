@@ -10,7 +10,7 @@ export enum TimerState {
 export type TimerDto = {
 	/** format: Duration */
 	duration: string
-	lastActionDate?: string
+	lastActionDate: string
 	/** format: Duration */
 	remainingTime: string
 	state: TimerState

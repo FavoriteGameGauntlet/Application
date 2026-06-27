@@ -1,6 +1,6 @@
 import { Temporal } from '@js-temporal/polyfill'
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { api } from '../../api-facade/api'
 import type { HttpErrorResponse } from '../../api-facade/http'
 import { TimerState } from '../../api-facade/models/timers-models'
@@ -47,22 +47,21 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 				durationTotal.value = timer.duration
 				durationLeft.value = timer.remainingTime
 				state.value = timer.state
-				lastActionDate.value = timer.lastActionDate ?? Temporal.Now.instant()
+				lastActionDate.value = timer.lastActionDate
 
 				status.value = LoadingStatus.LOADED
 			})
 			.catch((error: HttpErrorResponse) => {
 				if (error.body?.code === 'AVAILABLE_ROLLS_EXIST') {
 					durationLeft.value = Temporal.Duration.from({ hours: 0 })
-					status.value = LoadingStatus.LOADED
 					state.value = null
 					lastActionDate.value = null
 
+					status.value = LoadingStatus.LOADED
 					return
 				}
 
 				status.value = LoadingStatus.ERROR
-
 				throw error
 			})
 	})
@@ -82,24 +81,25 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 		await api.timers
 			.postStart()
 			.then((timer) => {
-				toggleState.status.value = LoadingStatus.LOADED
-
 				durationLeft.value = timer.remainingTime
 				durationTotal.value = timer.duration
-				lastActionDate.value = timer.lastActionDate ?? null
+				lastActionDate.value = timer.lastActionDate
+
+				toggleState.status.value = LoadingStatus.LOADED
 			})
 			.catch((error: HttpErrorResponse) => {
 				if (error.body?.code === 'CURRENT_TIMER_NOT_FOUND') {
-					toggleState.status.value = LoadingStatus.LOADED
 					state.value = null
 					lastActionDate.value = null
+
+					toggleState.status.value = LoadingStatus.LOADED
 					return
 				}
 
-				toggleState.status.value = LoadingStatus.ERROR
 				state.value = prevState
 				lastActionDate.value = prevLastActionDate
 
+				toggleState.status.value = LoadingStatus.ERROR
 				throw error
 			})
 	}
@@ -119,25 +119,25 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 		await api.timers
 			.postPause()
 			.then((timer) => {
-				toggleState.status.value = LoadingStatus.LOADED
-
-				lastActionDate.value = timer.lastActionDate ?? null
 				durationLeft.value = timer.remainingTime
 				durationTotal.value = timer.duration
+				lastActionDate.value = timer.lastActionDate
+
+				toggleState.status.value = LoadingStatus.LOADED
 			})
 			.catch((error: HttpErrorResponse) => {
 				if (error.body?.code === 'CURRENT_TIMER_NOT_FOUND') {
-					toggleState.status.value = LoadingStatus.LOADED
 					state.value = null
 					lastActionDate.value = null
 
+					toggleState.status.value = LoadingStatus.LOADED
 					return
 				}
 
-				toggleState.status.value = LoadingStatus.ERROR
 				state.value = prevState
 				lastActionDate.value = prevLastActionDate
 
+				toggleState.status.value = LoadingStatus.ERROR
 				throw error
 			})
 	}
@@ -154,10 +154,53 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 		}
 	}
 
+	const remaining = ref(Temporal.Duration.from({ seconds: 0 }))
+	let interval: ReturnType<typeof setInterval> | null = null
+
+	const calcRemaining = (): Temporal.Duration => {
+		if (!lastActionDate.value || state.value !== TimerState.Running)
+			return durationLeft.value
+
+		return durationLeft.value
+			.subtract(Temporal.Now.instant().since(lastActionDate.value))
+			.round({ largestUnit: 'hour', smallestUnit: 'second', roundingMode: 'ceil' })
+	}
+
+	watch(
+		() => state.value,
+		(newState) => {
+			if (interval) { clearInterval(interval); interval = null }
+			remaining.value = calcRemaining()
+
+			if (newState === TimerState.Running) {
+				interval = setInterval(() => {
+					remaining.value = calcRemaining()
+
+					if (remaining.value.total({ unit: 'seconds' }) <= 0) {
+						clearInterval(interval!)
+						interval = null
+						remaining.value = Temporal.Duration.from({ seconds: 0 })
+						state.value = TimerState.Finished
+						getCurrent()
+					}
+				}, 1000)
+			}
+		},
+		{ immediate: true },
+	)
+
+	watch(
+		() => durationLeft.value,
+		() => {
+			remaining.value = calcRemaining()
+		},
+	)
+
 	return {
 		state,
 		durationTotal,
 		durationLeft,
+		remaining,
 
 		lastActionDate,
 

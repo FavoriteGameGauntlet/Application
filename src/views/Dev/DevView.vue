@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import { Temporal } from '@js-temporal/polyfill'
 import { storeToRefs } from 'pinia'
-import { computed, ref, useTemplateRef, watch, watchEffect } from 'vue'
+import { computed, onUnmounted, ref, useTemplateRef, watch, watchEffect } from 'vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiTimestamp from '../../components/ui/UiTimestamp.vue'
-import { useTimer } from '../../composables/useTimer'
 import { useSettingsStore } from '../../stores/settingsStore'
 
 const button = useTemplateRef('button')
@@ -27,7 +27,25 @@ watch([roughnessValue], () => {
 		: +roughnessValue.value
 })
 
-const { elapsed, start, stop, isRunning } = useTimer({ mode: 'add' })
+const elapsed = ref(Temporal.Duration.from({ seconds: 0 }))
+const isRunning = ref(false)
+let interval: ReturnType<typeof setInterval> | null = null
+
+const start = () => {
+	if (isRunning.value) return
+	isRunning.value = true
+	interval = setInterval(() => {
+		elapsed.value = elapsed.value.add({ seconds: 1 })
+	}, 1000)
+}
+
+const stop = () => {
+	if (!isRunning.value) return
+	isRunning.value = false
+	if (interval) { clearInterval(interval); interval = null }
+}
+
+onUnmounted(() => { if (interval) clearInterval(interval) })
 
 const onToggleButton = () => {
 	if (isRunning.value) {

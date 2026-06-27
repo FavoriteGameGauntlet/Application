@@ -12,13 +12,11 @@ import { useFeatureGameStore } from '../../stores/feature/featureGameStore'
 import { useFeatureTimerStore } from '../../stores/feature/featureTimerStore'
 import GameTimer from './components/GameTimer.vue'
 import WheelTimer from './components/WheelTimer.vue'
-import { useAuthStore } from '../../stores/authStore'
 import UiView from '../../components/ui/UiView.vue'
 
 const timerStore = useFeatureTimerStore()
 const gameStore = useFeatureGameStore()
 const wheelStore = useApiWheelStore()
-const authStore = useAuthStore()
 
 const {
 	durationTotal,
@@ -28,9 +26,9 @@ const {
 const { current: currentGame } = storeToRefs(gameStore)
 
 const gameNameText = computed(() =>
-	gameStore.getCurrentState.status === LoadingStatus.LOADED
-		? (currentGame.value?.name ?? 'Крути новую игру')
-		: 'Загрузка...',
+	gameStore.getCurrentState.isLoading
+		? 'Загрузка...'
+		: (currentGame.value?.name ?? 'Крути новую игру'),
 )
 
 const timerButtonSvg = computed(() =>
@@ -74,21 +72,21 @@ const onStartButtonClick = () => {
 
 				<div class="game-time">
 					В игре:
-					<GameTimer
-						class="inline"
-						v-if="authStore.login"
-						:login="authStore.login"
-					/>
+					<GameTimer class="inline" />
 				</div>
 			</div>
 
 			<div
 				class="wheel-action"
-				:class="{ 'wheel-action_disabled': !wheelStore.pendingRoll }"
+				:class="{
+					'wheel-action_disabled': wheelStore.availableRollCount === 0,
+				}"
 			>
 				<RouterLink class="wheel-action-link" :to="{ name: RouteName.Effects }">
 					<UiButton class="wheel-action-button">{{
-						wheelStore.pendingRoll ? 'Крути колесо!' : 'Ждём таймер...'
+						wheelStore.availableRollCount > 0
+							? 'Крути колесо!'
+							: 'Ждём таймер...'
 					}}</UiButton>
 				</RouterLink>
 			</div>

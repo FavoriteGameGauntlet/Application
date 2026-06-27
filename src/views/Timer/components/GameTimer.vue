@@ -1,48 +1,21 @@
 <script setup lang="ts">
 import { Temporal } from '@js-temporal/polyfill'
-import { watch } from 'vue'
+import { onUnmounted, ref, watch } from 'vue'
 import { TimerState } from '../../../api-facade/models/timers-models'
 import UiTimestamp from '../../../components/ui/UiTimestamp.vue'
-import { useTimer } from '../../../composables/useTimer'
-import { useApiGameStore } from '../../../stores/api/apiGameStore'
 import { useApiTimerStore } from '../../../stores/api/apiTimerStore'
+import { useFeatureGameStore } from '../../../stores/feature/featureGameStore'
 
-type Props = {
-	login: string
-}
-
-const gameStore = useApiGameStore()
+const gameStore = useFeatureGameStore()
 const timerStore = useApiTimerStore()
 
-const { login } = defineProps<Props>()
-
-const { elapsed, start, stop } = useTimer({ mode: 'add' })
-
-const calcElapsed = () => {
-	const base =
-		gameStore.current[login]?.timeSpent ?? Temporal.Duration.from({ seconds: 0 })
-
-	if (!timerStore.lastActionDate || timerStore.state !== TimerState.Running)
-		return base
-
-	return base.add(Temporal.Now.instant().since(timerStore.lastActionDate))
-}
+const elapsed = ref(Temporal.Duration.from({ seconds: 0 }))
+let interval: ReturnType<typeof setInterval> | null = null
 
 watch(
-	() => timerStore.durationLeft,
-	() => {
-		if (timerStore.state !== TimerState.Running) return
-		elapsed.value = calcElapsed()
-	},
-	{ immediate: true },
-)
-
-watch(
-	() => gameStore.current[login],
-	(game) => {
-		if (!game) return
-		if (timerStore.state === TimerState.Running) return
-		elapsed.value = calcElapsed()
+	() => gameStore.current?.timeSpent,
+	(timeSpent) => {
+		if (timeSpent !== undefined) elapsed.value = timeSpent
 	},
 	{ immediate: true },
 )
@@ -50,19 +23,26 @@ watch(
 watch(
 	() => timerStore.state,
 	(state) => {
-		console.log(state)
+		if (interval) {
+			clearInterval(interval)
+			interval = null
+		}
 		if (state === TimerState.Running) {
-			start()
-		} else {
-			stop()
+			interval = setInterval(() => {
+				elapsed.value = elapsed.value.add({ seconds: 1 })
+			}, 1000)
 		}
 	},
 	{ immediate: true },
 )
+
+onUnmounted(() => {
+	if (interval) clearInterval(interval)
+})
 </script>
 
 <template>
-	<UiTimestamp :time="elapsed" />
+	<UiTimestamp v-if="gameStore.current" :time="elapsed" />
 </template>
 
 <style scoped></style>
