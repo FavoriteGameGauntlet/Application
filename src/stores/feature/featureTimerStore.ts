@@ -14,30 +14,47 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 	const gameStore = useFeatureGameStore()
 	const wheelStore = useFeatureWheelStore()
 
-	const state = computed(() => timerStore.state)
-
-	const durationTotal = computed(() => timerStore.durationTotal)
+	const init = () => {
+		// Get current timer on login
+		watch(
+			() => authStore.isLoggedIn,
+			(isLoggedIn) => {
+				if (isLoggedIn) {
+					timerStore.getCurrent()
+				} else {
+					timerStore.reset()
+				}
+			},
+			{ immediate: true },
+		)
+	}
 
 	const loading = computed(
 		() =>
 			timerStore.toggleState.isLoading || timerStore.getCurrentState.isLoading,
 	)
 
-	const toggle = () => timerStore.toggle()
-
 	const remaining = ref(Temporal.Duration.from({ seconds: 0 }))
 	let interval: ReturnType<typeof setInterval> | null = null
 
 	const calcRemaining = (): Temporal.Duration => {
-		if (!timerStore.lastActionDate || timerStore.state !== TimerState.Running)
+		if (!timerStore.syncedAt || timerStore.state !== TimerState.Running)
 			return timerStore.durationLeft
 
-		const elapsed = Temporal.Now.instant().since(timerStore.lastActionDate)
-		if (elapsed.sign < 0) return timerStore.durationLeft
+		const elapsed = Temporal.Now.instant().since(timerStore.syncedAt)
 
-		return timerStore.durationLeft
-			.subtract(elapsed)
-			.round({ largestUnit: 'hour', smallestUnit: 'second', roundingMode: 'ceil' })
+		const left = timerStore.durationLeft.subtract(elapsed)
+		if (left.sign <= 0) return Temporal.Duration.from({ seconds: 0 })
+
+		const floored = left.round({
+			largestUnit: 'hour',
+			smallestUnit: 'second',
+			roundingMode: 'floor',
+		})
+		// floor может дать 0 когда осталось < 1с, но таймер ещё не истёк
+		return floored.total({ unit: 'seconds' }) > 0
+			? floored
+			: Temporal.Duration.from({ seconds: 1 })
 	}
 
 	watch(
@@ -88,36 +105,23 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 	const elapsed = computed(() => {
 		const timeSpent =
 			gameStore.current?.timeSpent ?? Temporal.Duration.from({ seconds: 0 })
-		const timerElapsed = remainingAtLastGameUpdate.value.subtract(remaining.value)
+		const timerElapsed = remainingAtLastGameUpdate.value.subtract(
+			remaining.value,
+		)
 		if (timerElapsed.sign < 0) return timeSpent
 		return timeSpent.add(timerElapsed)
 	})
 
-	const init = () => {
-		// Get current timer on login
-		watch(
-			() => authStore.isLoggedIn,
-			(isLoggedIn) => {
-				if (isLoggedIn) {
-					timerStore.getCurrent()
-				} else {
-					timerStore.reset()
-				}
-			},
-			{ immediate: true },
-		)
-	}
-
 	return {
-		state,
+		state: computed(() => timerStore.state),
 
-		durationTotal,
+		durationTotal: computed(() => timerStore.durationTotal),
 		remaining,
 		elapsed,
 
 		loading,
 
-		toggle,
+		toggle: timerStore.toggle,
 		canToggle: computed(() => timerStore.canToggle && !wheelStore.pendingRoll),
 
 		init,
