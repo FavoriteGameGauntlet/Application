@@ -5,7 +5,6 @@ import { RouterLink } from 'vue-router'
 import { TimerState } from '../../api-facade/models/timers-models.ts'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiTimestamp from '../../components/ui/UiTimestamp.vue'
-import { LoadingStatus } from '../../utils/loadingState'
 import { RouteName } from '../../router/routeNames'
 import { useApiWheelStore } from '../../stores/api/apiWheelStore'
 import { useFeatureGameStore } from '../../stores/feature/featureGameStore'
@@ -95,15 +94,6 @@ const onStartButtonClick = () => {
 </template>
 
 <style scoped>
-.timer-view {
-	display: flex;
-	width: 100%;
-	height: 100%;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-}
-
 .container {
 	display: flex;
 	width: min-content;

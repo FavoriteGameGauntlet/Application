@@ -1,6 +1,6 @@
 import { Temporal } from '@js-temporal/polyfill'
 import { defineStore } from 'pinia'
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { api } from '../../api-facade/api'
 import type { HttpErrorResponse } from '../../api-facade/http'
 import { TimerState } from '../../api-facade/models/timers-models'
@@ -72,15 +72,10 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 
 		toggleState.status.value = LoadingStatus.LOADING
 
-		const prevState = state.value
-		const prevLastActionDate = lastActionDate.value
-
-		state.value = TimerState.Running
-		lastActionDate.value = Temporal.Now.instant()
-
 		await api.timers
 			.postStart()
 			.then((timer) => {
+				state.value = timer.state
 				durationLeft.value = timer.remainingTime
 				durationTotal.value = timer.duration
 				lastActionDate.value = timer.lastActionDate
@@ -95,9 +90,6 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 					toggleState.status.value = LoadingStatus.LOADED
 					return
 				}
-
-				state.value = prevState
-				lastActionDate.value = prevLastActionDate
 
 				toggleState.status.value = LoadingStatus.ERROR
 				throw error
@@ -154,53 +146,10 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 		}
 	}
 
-	const remaining = ref(Temporal.Duration.from({ seconds: 0 }))
-	let interval: ReturnType<typeof setInterval> | null = null
-
-	const calcRemaining = (): Temporal.Duration => {
-		if (!lastActionDate.value || state.value !== TimerState.Running)
-			return durationLeft.value
-
-		return durationLeft.value
-			.subtract(Temporal.Now.instant().since(lastActionDate.value))
-			.round({ largestUnit: 'hour', smallestUnit: 'second', roundingMode: 'ceil' })
-	}
-
-	watch(
-		() => state.value,
-		(newState) => {
-			if (interval) { clearInterval(interval); interval = null }
-			remaining.value = calcRemaining()
-
-			if (newState === TimerState.Running) {
-				interval = setInterval(() => {
-					remaining.value = calcRemaining()
-
-					if (remaining.value.total({ unit: 'seconds' }) <= 0) {
-						clearInterval(interval!)
-						interval = null
-						remaining.value = Temporal.Duration.from({ seconds: 0 })
-						state.value = TimerState.Finished
-						getCurrent()
-					}
-				}, 1000)
-			}
-		},
-		{ immediate: true },
-	)
-
-	watch(
-		() => durationLeft.value,
-		() => {
-			remaining.value = calcRemaining()
-		},
-	)
-
 	return {
 		state,
 		durationTotal,
 		durationLeft,
-		remaining,
 
 		lastActionDate,
 

@@ -1,48 +1,23 @@
 <script setup lang="ts">
 import { Temporal } from '@js-temporal/polyfill'
-import { onUnmounted, ref, watch } from 'vue'
-import { TimerState } from '../../../api-facade/models/timers-models'
 import UiTimestamp from '../../../components/ui/UiTimestamp.vue'
-import { useApiTimerStore } from '../../../stores/api/apiTimerStore'
 import { useFeatureGameStore } from '../../../stores/feature/featureGameStore'
+import { useFeatureTimerStore } from '../../../stores/feature/featureTimerStore'
+import { computed } from 'vue'
 
 const gameStore = useFeatureGameStore()
-const timerStore = useApiTimerStore()
+const timerStore = useFeatureTimerStore()
 
-const elapsed = ref(Temporal.Duration.from({ seconds: 0 }))
-let interval: ReturnType<typeof setInterval> | null = null
-
-watch(
-	() => gameStore.current?.timeSpent,
-	(timeSpent) => {
-		if (timeSpent !== undefined) elapsed.value = timeSpent
-	},
-	{ immediate: true },
-)
-
-watch(
-	() => timerStore.state,
-	(state) => {
-		if (interval) {
-			clearInterval(interval)
-			interval = null
-		}
-		if (state === TimerState.Running) {
-			interval = setInterval(() => {
-				elapsed.value = elapsed.value.add({ seconds: 1 })
-			}, 1000)
-		}
-	},
-	{ immediate: true },
-)
-
-onUnmounted(() => {
-	if (interval) clearInterval(interval)
+const elapsed = computed(() => {
+	const gameElapsed =
+		gameStore.current?.timeSpent ?? Temporal.Duration.from({ seconds: 0 })
+	const timerElapsed = timerStore.durationLeft.subtract(timerStore.remaining)
+	return gameElapsed.add(timerElapsed)
 })
 </script>
 
 <template>
-	<UiTimestamp v-if="gameStore.current" :time="elapsed" />
+	<UiTimestamp :time="elapsed" />
 </template>
 
 <style scoped></style>

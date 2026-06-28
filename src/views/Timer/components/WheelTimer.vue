@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import UiTimestamp from '../../../components/ui/UiTimestamp.vue'
-import { useApiTimerStore } from '../../../stores/api/apiTimerStore'
+import { useFeatureTimerStore } from '../../../stores/feature/featureTimerStore'
 
-const timerStore = useApiTimerStore()
+const timerStore = useFeatureTimerStore()
 </script>
 
 <template>
