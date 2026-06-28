@@ -146,6 +146,15 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 		}
 	}
 
+	const markFinished = () => {
+		state.value = TimerState.Finished
+		getCurrent()
+	}
+
+	const reset = () => {
+		state.value = null
+	}
+
 	return {
 		state,
 		durationTotal,
@@ -165,5 +174,8 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 
 		toggle,
 		toggleState,
+
+		markFinished,
+		reset,
 	}
 })

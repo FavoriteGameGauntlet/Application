@@ -6,15 +6,16 @@ import { StoreName } from '../../enums/storeName'
 import { useApiTimerStore } from '../api/apiTimerStore'
 import { useAuthStore } from '../authStore'
 import { useFeatureGameStore } from './featureGameStore'
+import { useFeatureWheelStore } from './featureWheelStore'
 
 export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 	const timerStore = useApiTimerStore()
 	const authStore = useAuthStore()
 	const gameStore = useFeatureGameStore()
+	const wheelStore = useFeatureWheelStore()
 
 	const state = computed(() => timerStore.state)
 
-	const durationLeft = computed(() => timerStore.durationLeft)
 	const durationTotal = computed(() => timerStore.durationTotal)
 
 	const loading = computed(
@@ -59,8 +60,7 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 						clearInterval(interval!)
 						interval = null
 						remaining.value = Temporal.Duration.from({ seconds: 0 })
-						timerStore.state = TimerState.Finished
-						timerStore.getCurrent()
+						timerStore.markFinished()
 					}
 				}, 1000)
 			}
@@ -101,7 +101,7 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 				if (isLoggedIn) {
 					timerStore.getCurrent()
 				} else {
-					timerStore.state = null
+					timerStore.reset()
 				}
 			},
 			{ immediate: true },
@@ -111,7 +111,6 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 	return {
 		state,
 
-		durationLeft,
 		durationTotal,
 		remaining,
 		elapsed,
@@ -119,8 +118,7 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 		loading,
 
 		toggle,
-		/** @todo add wheelStore.pendingRoll to condition */
-		canToggle: computed(() => timerStore.canToggle),
+		canToggle: computed(() => timerStore.canToggle && !wheelStore.pendingRoll),
 
 		init,
 	}
