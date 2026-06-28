@@ -85,23 +85,6 @@ export const useFeatureGameStore = defineStore(StoreName.FeatureGame, () => {
 			},
 		)
 
-		// update timer on timer change
-		watch(
-			() => timerStore.durationLeft,
-			(newDuration, oldDuration) => {
-				const delta = oldDuration.subtract(newDuration)
-
-				if (delta.sign === -1) return
-
-				current.value =
-					current.value !== null
-						? ({
-								...current.value,
-								timeSpent: current.value.timeSpent.add(delta),
-							} satisfies CurrentGame)
-						: null
-			},
-		)
 	}
 
 	return {

@@ -5,10 +5,12 @@ import { TimerState } from '../../api-facade/models/timers-models'
 import { StoreName } from '../../enums/storeName'
 import { useApiTimerStore } from '../api/apiTimerStore'
 import { useAuthStore } from '../authStore'
+import { useFeatureGameStore } from './featureGameStore'
 
 export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 	const timerStore = useApiTimerStore()
 	const authStore = useAuthStore()
+	const gameStore = useFeatureGameStore()
 
 	const state = computed(() => timerStore.state)
 
@@ -29,9 +31,12 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 		if (!timerStore.lastActionDate || timerStore.state !== TimerState.Running)
 			return timerStore.durationLeft
 
-		return timerStore.durationLeft.subtract(
-			Temporal.Now.instant().since(timerStore.lastActionDate),
-		)
+		const elapsed = Temporal.Now.instant().since(timerStore.lastActionDate)
+		if (elapsed.sign < 0) return timerStore.durationLeft
+
+		return timerStore.durationLeft
+			.subtract(elapsed)
+			.round({ largestUnit: 'hour', smallestUnit: 'second', roundingMode: 'ceil' })
 	}
 
 	watch(
@@ -70,6 +75,24 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 		},
 	)
 
+	const remainingAtLastGameUpdate = ref(Temporal.Duration.from({ seconds: 0 }))
+
+	watch(
+		() => gameStore.current?.timeSpent,
+		() => {
+			remainingAtLastGameUpdate.value = remaining.value
+		},
+		{ immediate: true },
+	)
+
+	const elapsed = computed(() => {
+		const timeSpent =
+			gameStore.current?.timeSpent ?? Temporal.Duration.from({ seconds: 0 })
+		const timerElapsed = remainingAtLastGameUpdate.value.subtract(remaining.value)
+		if (timerElapsed.sign < 0) return timeSpent
+		return timeSpent.add(timerElapsed)
+	})
+
 	const init = () => {
 		// Get current timer on login
 		watch(
@@ -91,6 +114,7 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 		durationLeft,
 		durationTotal,
 		remaining,
+		elapsed,
 
 		loading,
 
