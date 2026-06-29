@@ -19,9 +19,9 @@ export const useApiSystemParametersStore = defineStore(
 				await api.systemParameters
 					.getAllSystemParameters()
 					.then((params) => {
-						const missingParams = Object.keys(systemParameters).filter(
-							(name) => !params.some((p) => p.name === name),
-						)
+						const missingParams = Object.values(systemParameters)
+							.map((p) => p.name)
+							.filter((name) => !params.some((p) => p.name === name))
 
 						if (missingParams.length > 0)
 							throw new Error(
