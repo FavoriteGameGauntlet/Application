@@ -2,6 +2,7 @@ import type { RouteRecordRaw } from 'vue-router'
 import DevView from '../views/Dev/DevView.vue'
 import GamesView from '../views/Games/GamesView.vue'
 import LoginView from '../views/Login/LoginView.vue'
+import PlayerDetailView from '../views/Players/PlayerDetailView.vue'
 import PlayersView from '../views/Players/PlayersView.vue'
 import RootView from '../views/Root/RootView.vue'
 import SignUpView from '../views/SignUp/SignUpView.vue'
@@ -27,6 +28,12 @@ export const routes: RouteRecordRaw[] = [
 				path: 'players',
 				component: PlayersView,
 				name: RouteName.Players,
+			},
+
+			{
+				path: 'players/:login',
+				component: PlayerDetailView,
+				name: RouteName.PlayerDetail,
 			},
 
 			{
