@@ -57,26 +57,30 @@ export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
 		},
 	)
 
-	const [roll, rollState] = withLoading(async (status, change: number) => {
-		if (availableRollCount.value <= 0) {
-			return Promise.reject('No pending rolls')
-		}
-		if (status.value === LoadingStatus.LOADING) return
+	const [roll, rollState] = withLoading(
+		async (status, minimum: number, change: number) => {
+			if (availableRollCount.value < minimum) {
+				return Promise.reject(
+					`Not enough available rolls (minimum: ${minimum})`,
+				)
+			}
+			if (status.value === LoadingStatus.LOADING) return
 
-		status.value = LoadingStatus.LOADING
+			status.value = LoadingStatus.LOADING
 
-		await api.wheelEffects
-			.postRoll()
-			.then((effects) => {
-				currentEffects.value = effects
-				availableRollCount.value += change
-				status.value = LoadingStatus.LOADED
-			})
-			.catch((e) => {
-				status.value = LoadingStatus.ERROR
-				throw e
-			})
-	})
+			await api.wheelEffects
+				.postRoll()
+				.then((effects) => {
+					currentEffects.value = effects
+					availableRollCount.value += change
+					status.value = LoadingStatus.LOADED
+				})
+				.catch((e) => {
+					status.value = LoadingStatus.ERROR
+					throw e
+				})
+		},
+	)
 
 	const [getAvailableCount, getAvailableCountState] = withLoading(
 		async (status) => {

@@ -19,6 +19,11 @@ export const useFeatureWheelStore = defineStore(StoreName.FeatureWheel, () => {
 	const availableEffects = computed(() => wheelStore.availableEffects)
 
 	const availableRollCount = computed(() => wheelStore.availableRollCount)
+	const pendingRoll = computed(
+		() =>
+			wheelStore.availableRollCount >=
+			systemParametersStore.minimumAvailableRollCountForRoll,
+	)
 
 	const getHistory = async (login: string | undefined = authStore.login) => {
 		if (!login) return Promise.reject('No current user login')
@@ -29,7 +34,10 @@ export const useFeatureWheelStore = defineStore(StoreName.FeatureWheel, () => {
 	const getAvailableEffects = () => wheelStore.getAvailableEffects()
 
 	const roll = () =>
-		wheelStore.roll(systemParametersStore.availableRollChangeByRoll)
+		wheelStore.roll(
+			systemParametersStore.minimumAvailableRollCountForRoll,
+			systemParametersStore.availableRollChangeByRoll,
+		)
 
 	const getLastRoll = () => wheelStore.getLastRoll()
 
@@ -58,6 +66,7 @@ export const useFeatureWheelStore = defineStore(StoreName.FeatureWheel, () => {
 		availableEffects,
 
 		availableRollCount,
+		pendingRoll,
 
 		init,
 
