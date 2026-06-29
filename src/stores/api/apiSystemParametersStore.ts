@@ -3,7 +3,6 @@ import { ref } from 'vue'
 import { api } from '../../api-facade/api'
 import type { SystemParameter } from '../../api-facade/models/system-parameters-models'
 import { StoreName } from '../../enums/storeName'
-import { systemParameters } from '../../enums/systemParameters'
 import { LoadingStatus, withLoading } from '../../utils/loadingState'
 
 export const useApiSystemParametersStore = defineStore(

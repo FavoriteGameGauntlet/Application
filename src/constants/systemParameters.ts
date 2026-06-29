@@ -13,9 +13,3 @@ export const systemParameters = {
 	ExperiencePointChangeByLevelUp: (v: string): number => Number(v),
 	TerritoryHourChangeBySeizeSlice: (v: string): number[] => JSON.parse(v),
 }
-
-export type SystemParameterName = keyof typeof systemParameters
-
-export type SystemParameterType<K extends SystemParameterName> = ReturnType<
-	(typeof systemParameters)[K]
->

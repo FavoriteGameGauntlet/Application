@@ -1,11 +1,8 @@
 import { defineStore } from 'pinia'
 import { computed } from 'vue'
 import { StoreName } from '../../enums/storeName'
-import {
-	type SystemParameterName,
-	systemParameters,
-	type SystemParameterType,
-} from '../../enums/systemParameters'
+import { systemParameters } from '../../constants/systemParameters'
+import type { SystemParameterName, SystemParameterType } from '../../types/systemParameters'
 import { useApiSystemParametersStore } from '../api/apiSystemParametersStore'
 
 export const useFeatureSystemParametersStore = defineStore(
