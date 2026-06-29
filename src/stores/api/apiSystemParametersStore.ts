@@ -30,8 +30,14 @@ export const useApiSystemParametersStore = defineStore(
 			},
 		)
 
+		const init = () => {
+			getAllSystemParameters()
+		}
+
 		return {
 			systemParameters,
+
+			init,
 
 			getAllSystemParameters,
 			getAllSystemParametersState,
