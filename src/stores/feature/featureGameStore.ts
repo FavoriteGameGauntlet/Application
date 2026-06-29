@@ -29,7 +29,7 @@ export const useFeatureGameStore = defineStore(StoreName.FeatureGame, () => {
 	const enoughGamesInWishlist = computed(
 		() =>
 			wishlist.value.length >=
-			Number(systemParametersStore.minimumNumberOfWishlistGames.value),
+			systemParametersStore.minimumNumberOfWishlistGames.value,
 	)
 	const currentGameIsFinished = computed(() => current.value === null)
 

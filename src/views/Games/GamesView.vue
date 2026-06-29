@@ -103,7 +103,7 @@ onMounted(() => {
 
 				<p class="hint" v-if="!enoughGamesInWishlist">
 					Чтобы крутить следующую игру, надо {{ minimumNumberOfWishlistGames }} игр, нужно ещё
-					{{ Number(minimumNumberOfWishlistGames) - wishlist.length }}.
+					{{ minimumNumberOfWishlistGames - wishlist.length }}.
 				</p>
 
 				<ol class="game-list" v-if="wishlist.length">

@@ -1,7 +1,11 @@
 import { defineStore } from 'pinia'
 import { computed } from 'vue'
 import { StoreName } from '../../enums/storeName'
-import { SystemParameterName } from '../../enums/systemParameterName'
+import {
+	systemParameters,
+	type SystemParameterName,
+	type SystemParameterType,
+} from '../../enums/systemParameters'
 import { useApiSystemParametersStore } from '../api/apiSystemParametersStore'
 
 export const useFeatureSystemParametersStore = defineStore(
@@ -9,45 +13,35 @@ export const useFeatureSystemParametersStore = defineStore(
 	() => {
 		const systemParametersStore = useApiSystemParametersStore()
 
-		const getByName = (name: SystemParameterName) =>
-			computed(
-				() =>
-					systemParametersStore.systemParameters?.find((p) => p.name === name)
-						?.value as string,
+		const getByName = <K extends SystemParameterName>(name: K) =>
+			computed(() =>
+				systemParameters[name](
+					systemParametersStore.systemParameters?.find(
+						(p) => p.name === name,
+					)?.value as string,
+				) as SystemParameterType<K>,
 			)
 
-		const timerDurationInS = getByName(SystemParameterName.TimerDurationInS)
-		const shouldLimitFreePoints = getByName(
-			SystemParameterName.ShouldLimitFreePoints,
-		)
-		const freePointsMinimum = getByName(SystemParameterName.FreePointsMinimum)
-		const minimumNumberOfWishlistGames = getByName(
-			SystemParameterName.MinimumNumberOfWishlistGames,
-		)
-		const availableRollChangeByRoll = getByName(
-			SystemParameterName.AvailableRollChangeByRoll,
-		)
+		const timerDurationInS = getByName('TimerDurationInS')
+		const shouldLimitFreePoints = getByName('ShouldLimitFreePoints')
+		const freePointsMinimum = getByName('FreePointsMinimum')
+		const minimumNumberOfWishlistGames = getByName('MinimumNumberOfWishlistGames')
+		const availableRollChangeByRoll = getByName('AvailableRollChangeByRoll')
 		const maximumAvailableRollCountForTimer = getByName(
-			SystemParameterName.MaximumAvailableRollCountForTimer,
+			'MaximumAvailableRollCountForTimer',
 		)
 		const minimumAvailableRollCountForRoll = getByName(
-			SystemParameterName.MinimumAvailableRollCountForRoll,
+			'MinimumAvailableRollCountForRoll',
 		)
-		const seizePenaltyPoints = getByName(SystemParameterName.SeizePenaltyPoints)
-		const availableRollChangeByTimer = getByName(
-			SystemParameterName.AvailableRollChangeByTimer,
-		)
-		const territoryHourChangeByTimer = getByName(
-			SystemParameterName.TerritoryHourChangeByTimer,
-		)
-		const experiencePointChangeByTimer = getByName(
-			SystemParameterName.ExperiencePointChangeByTimer,
-		)
+		const seizePenaltyPoints = getByName('SeizePenaltyPoints')
+		const availableRollChangeByTimer = getByName('AvailableRollChangeByTimer')
+		const territoryHourChangeByTimer = getByName('TerritoryHourChangeByTimer')
+		const experiencePointChangeByTimer = getByName('ExperiencePointChangeByTimer')
 		const experiencePointChangeByLevelUp = getByName(
-			SystemParameterName.ExperiencePointChangeByLevelUp,
+			'ExperiencePointChangeByLevelUp',
 		)
 		const territoryHourChangeBySeizeSlice = getByName(
-			SystemParameterName.TerritoryHourChangeBySeizeSlice,
+			'TerritoryHourChangeBySeizeSlice',
 		)
 
 		const init = () => {

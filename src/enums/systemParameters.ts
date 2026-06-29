@@ -1,0 +1,21 @@
+export const systemParameters = {
+	TimerDurationInS: (v: string): number => Number(v),
+	ShouldLimitFreePoints: (v: string): boolean => v === '1',
+	FreePointsMinimum: (v: string): number => Number(v),
+	MinimumNumberOfWishlistGames: (v: string): number => Number(v),
+	AvailableRollChangeByRoll: (v: string): number => Number(v),
+	MaximumAvailableRollCountForTimer: (v: string): number => Number(v),
+	MinimumAvailableRollCountForRoll: (v: string): number => Number(v),
+	SeizePenaltyPoints: (v: string): number => Number(v),
+	AvailableRollChangeByTimer: (v: string): number => Number(v),
+	TerritoryHourChangeByTimer: (v: string): number => Number(v),
+	ExperiencePointChangeByTimer: (v: string): number => Number(v),
+	ExperiencePointChangeByLevelUp: (v: string): number => Number(v),
+	TerritoryHourChangeBySeizeSlice: (v: string): number[] => JSON.parse(v),
+}
+
+export type SystemParameterName = keyof typeof systemParameters
+
+export type SystemParameterType<K extends SystemParameterName> = ReturnType<
+	(typeof systemParameters)[K]
+>
