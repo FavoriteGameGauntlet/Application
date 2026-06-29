@@ -8,11 +8,13 @@ import { StoreName } from '../../enums/storeName'
 import { useApiGameStore } from '../api/apiGameStore'
 import { useApiTimerStore } from '../api/apiTimerStore'
 import { useAuthStore } from '../authStore'
+import { useFeatureSystemParametersStore } from './featureSystemParametersStore'
 
 export const useFeatureGameStore = defineStore(StoreName.FeatureGame, () => {
 	const authStore = useAuthStore()
 	const gameStore = useApiGameStore()
 	const timerStore = useApiTimerStore()
+	const systemParametersStore = useFeatureSystemParametersStore()
 
 	const current = computed<CurrentGame | null>({
 		get: () =>
@@ -24,7 +26,11 @@ export const useFeatureGameStore = defineStore(StoreName.FeatureGame, () => {
 		authStore.login ? (gameStore.wishlist[authStore.login] ?? []) : [],
 	)
 
-	const enoughGamesInWishlist = computed(() => wishlist.value.length >= 6)
+	const enoughGamesInWishlist = computed(
+		() =>
+			wishlist.value.length >=
+			Number(systemParametersStore.minimumNumberOfWishlistGames.value),
+	)
 	const currentGameIsFinished = computed(() => current.value === null)
 
 	const canRoll = computed(
