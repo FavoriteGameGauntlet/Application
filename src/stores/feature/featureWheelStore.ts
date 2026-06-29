@@ -17,6 +17,7 @@ export const useFeatureWheelStore = defineStore(StoreName.FeatureWheel, () => {
 	const availableEffects = computed(() => wheelStore.availableEffects)
 
 	const availableRollCount = computed(() => wheelStore.availableRollCount)
+	const pendingRoll = computed(() => wheelStore.availableRollCount > 0)
 
 	const getHistory = async (login: string | undefined = authStore.login) => {
 		if (!login) return Promise.reject('No current user login')
@@ -55,6 +56,7 @@ export const useFeatureWheelStore = defineStore(StoreName.FeatureWheel, () => {
 		availableEffects,
 
 		availableRollCount,
+		pendingRoll,
 
 		init,
 

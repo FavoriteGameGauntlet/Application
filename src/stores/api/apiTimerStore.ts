@@ -22,13 +22,14 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 	const durationTotal = ref(Temporal.Duration.from(DEFAULT_DURATION))
 
 	const lastActionDate = ref<Temporal.Instant | null>(null)
+	const syncedAt = ref<Temporal.Instant | null>(null)
 	const durationLeft = ref(Temporal.Duration.from({ hours: 0 }))
 
 	const toggleState = makeLoadingState()
 
 	const canStart = computed(() =>
-		[null, TimerState.Created, TimerState.Paused, TimerState.Finished].includes(
-			state.value,
+		[TimerState.Created, TimerState.Paused, TimerState.Finished].includes(
+			state.value as TimerState,
 		),
 	)
 
@@ -47,22 +48,22 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 				durationTotal.value = timer.duration
 				durationLeft.value = timer.remainingTime
 				state.value = timer.state
-				lastActionDate.value = timer.lastActionDate ?? Temporal.Now.instant()
+				lastActionDate.value = timer.lastActionDate
+				syncedAt.value = Temporal.Now.instant()
 
 				status.value = LoadingStatus.LOADED
 			})
 			.catch((error: HttpErrorResponse) => {
 				if (error.body?.code === 'AVAILABLE_ROLLS_EXIST') {
 					durationLeft.value = Temporal.Duration.from({ hours: 0 })
-					status.value = LoadingStatus.LOADED
 					state.value = null
 					lastActionDate.value = null
 
+					status.value = LoadingStatus.LOADED
 					return
 				}
 
 				status.value = LoadingStatus.ERROR
-
 				throw error
 			})
 	})
@@ -73,33 +74,27 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 
 		toggleState.status.value = LoadingStatus.LOADING
 
-		const prevState = state.value
-		const prevLastActionDate = lastActionDate.value
-
-		state.value = TimerState.Running
-		lastActionDate.value = Temporal.Now.instant()
-
 		await api.timers
 			.postStart()
 			.then((timer) => {
-				toggleState.status.value = LoadingStatus.LOADED
-
+				state.value = timer.state
 				durationLeft.value = timer.remainingTime
 				durationTotal.value = timer.duration
-				lastActionDate.value = timer.lastActionDate ?? null
+				lastActionDate.value = timer.lastActionDate
+				syncedAt.value = Temporal.Now.instant()
+
+				toggleState.status.value = LoadingStatus.LOADED
 			})
 			.catch((error: HttpErrorResponse) => {
 				if (error.body?.code === 'CURRENT_TIMER_NOT_FOUND') {
-					toggleState.status.value = LoadingStatus.LOADED
 					state.value = null
 					lastActionDate.value = null
+
+					toggleState.status.value = LoadingStatus.LOADED
 					return
 				}
 
 				toggleState.status.value = LoadingStatus.ERROR
-				state.value = prevState
-				lastActionDate.value = prevLastActionDate
-
 				throw error
 			})
 	}
@@ -119,25 +114,26 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 		await api.timers
 			.postPause()
 			.then((timer) => {
-				toggleState.status.value = LoadingStatus.LOADED
-
-				lastActionDate.value = timer.lastActionDate ?? null
 				durationLeft.value = timer.remainingTime
 				durationTotal.value = timer.duration
+				lastActionDate.value = timer.lastActionDate
+				syncedAt.value = Temporal.Now.instant()
+
+				toggleState.status.value = LoadingStatus.LOADED
 			})
 			.catch((error: HttpErrorResponse) => {
 				if (error.body?.code === 'CURRENT_TIMER_NOT_FOUND') {
-					toggleState.status.value = LoadingStatus.LOADED
 					state.value = null
 					lastActionDate.value = null
 
+					toggleState.status.value = LoadingStatus.LOADED
 					return
 				}
 
-				toggleState.status.value = LoadingStatus.ERROR
 				state.value = prevState
 				lastActionDate.value = prevLastActionDate
 
+				toggleState.status.value = LoadingStatus.ERROR
 				throw error
 			})
 	}
@@ -147,11 +143,19 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 			case TimerState.Created:
 			case TimerState.Paused:
 			case TimerState.Finished:
-			case null:
 				return start()
 			case TimerState.Running:
 				return pause()
 		}
+	}
+
+	const markFinished = () => {
+		state.value = TimerState.Finished
+		getCurrent()
+	}
+
+	const reset = () => {
+		state.value = null
 	}
 
 	return {
@@ -160,6 +164,7 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 		durationLeft,
 
 		lastActionDate,
+		syncedAt,
 
 		canStart,
 		canPause,
@@ -173,5 +178,8 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 
 		toggle,
 		toggleState,
+
+		markFinished,
+		reset,
 	}
 })

@@ -4,6 +4,7 @@ import type {
 	CurrentGame,
 	WishlistedGame,
 } from '../../api-facade/models/games-models'
+import { TimerState } from '../../api-facade/models/timers-models'
 import { StoreName } from '../../enums/storeName'
 import { useApiGameStore } from '../api/apiGameStore'
 import { useApiTimerStore } from '../api/apiTimerStore'
@@ -74,23 +75,16 @@ export const useFeatureGameStore = defineStore(StoreName.FeatureGame, () => {
 			{ immediate: true },
 		)
 
-		// update timer on timer change
+		// refresh game when timer finishes
 		watch(
-			() => timerStore.durationLeft,
-			(newDuration, oldDuration) => {
-				const delta = oldDuration.subtract(newDuration)
-
-				if (delta.sign === -1) return
-
-				current.value =
-					current.value !== null
-						? ({
-								...current.value,
-								timeSpent: current.value.timeSpent.add(delta),
-							} satisfies CurrentGame)
-						: null
+			() => timerStore.state,
+			(state) => {
+				if (state === TimerState.Finished && authStore.login) {
+					gameStore.getCurrent(authStore.login)
+				}
 			},
 		)
+
 	}
 
 	return {

@@ -36,7 +36,10 @@ const makeRequest = async <T extends object | string = object | string>(
 	const fullUrl = API_URL + url
 	const method = opts?.method || 'GET'
 
-	console.log(`[HTTP] ${method} ${fullUrl}`, {
+	const requestTime = Temporal.Now.zonedDateTimeISO()
+	const requestTimestamp = `${requestTime.hour.toString().padStart(2, '0')}:${requestTime.minute.toString().padStart(2, '0')}:${requestTime.second.toString().padStart(2, '0')}.${requestTime.millisecond.toString().padStart(3, '0')}`
+
+	console.log(`[HTTP] ${method} ${fullUrl} | ${requestTimestamp}`, {
 		body: opts?.body,
 		headers: {
 			'Content-Type': 'application/json',
@@ -55,7 +58,7 @@ const makeRequest = async <T extends object | string = object | string>(
 		const responseBody: T = await parseBody(response)
 
 		const time = Temporal.Now.zonedDateTimeISO()
-		const timestamp = `${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}:${time.second.toString().padStart(2, '0')}`
+		const timestamp = `${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}:${time.second.toString().padStart(2, '0')}.${time.millisecond.toString().padStart(3, '0')}`
 
 		console.log(
 			`[HTTP] ${method} ${fullUrl} - ${response.status} | ${timestamp}`,
