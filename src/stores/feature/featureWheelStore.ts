@@ -6,12 +6,14 @@ import { useApiTimerStore } from '../api/apiTimerStore'
 import { useApiUserStore } from '../api/apiUserStore'
 import { useApiWheelStore } from '../api/apiWheelStore'
 import { useAuthStore } from '../authStore'
+import { useFeatureSystemParametersStore } from './featureSystemParametersStore'
 
 export const useFeatureWheelStore = defineStore(StoreName.FeatureWheel, () => {
 	const wheelStore = useApiWheelStore()
 	const userStore = useApiUserStore()
 	const timerStore = useApiTimerStore()
 	const authStore = useAuthStore()
+	const systemParametersStore = useFeatureSystemParametersStore()
 
 	const currentEffects = computed(() => wheelStore.currentEffects)
 	const availableEffects = computed(() => wheelStore.availableEffects)
@@ -26,7 +28,8 @@ export const useFeatureWheelStore = defineStore(StoreName.FeatureWheel, () => {
 
 	const getAvailableEffects = () => wheelStore.getAvailableEffects()
 
-	const roll = () => wheelStore.roll()
+	const roll = () =>
+		wheelStore.roll(systemParametersStore.availableRollChangeByRoll)
 
 	const getLastRoll = () => wheelStore.getLastRoll()
 

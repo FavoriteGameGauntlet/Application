@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '../../api-facade/api'
-import { PointChangeWithLogin } from '../../api-facade/models/points-models'
+import type { PointChangeWithLogin } from '../../api-facade/models/points-models'
 import type {
 	RolledWheelEffectHistory,
 	WheelEffect,
@@ -57,7 +57,7 @@ export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
 		},
 	)
 
-	const [roll, rollState] = withLoading(async (status) => {
+	const [roll, rollState] = withLoading(async (status, change: number) => {
 		if (availableRollCount.value <= 0) {
 			return Promise.reject('No pending rolls')
 		}
@@ -69,7 +69,7 @@ export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
 			.postRoll()
 			.then((effects) => {
 				currentEffects.value = effects
-				availableRollCount.value--
+				availableRollCount.value += change
 				status.value = LoadingStatus.LOADED
 			})
 			.catch((e) => {
