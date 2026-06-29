@@ -6,4 +6,10 @@ export enum SystemParameterName {
 	AvailableRollChangeByRoll = 'AvailableRollChangeByRoll',
 	MaximumAvailableRollCountForTimer = 'MaximumAvailableRollCountForTimer',
 	MinimumAvailableRollCountForRoll = 'MinimumAvailableRollCountForRoll',
+	SeizePenaltyPoints = 'SeizePenaltyPoints',
+	AvailableRollChangeByTimer = 'AvailableRollChangeByTimer',
+	TerritoryHourChangeByTimer = 'TerritoryHourChangeByTimer',
+	ExperiencePointChangeByTimer = 'ExperiencePointChangeByTimer',
+	ExperiencePointChangeByLevelUp = 'ExperiencePointChangeByLevelUp',
+	TerritoryHourChangeBySeizeSlice = 'TerritoryHourChangeBySeizeSlice',
 }

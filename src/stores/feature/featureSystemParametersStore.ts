@@ -33,6 +33,22 @@ export const useFeatureSystemParametersStore = defineStore(
 		const minimumAvailableRollCountForRoll = getByName(
 			SystemParameterName.MinimumAvailableRollCountForRoll,
 		)
+		const seizePenaltyPoints = getByName(SystemParameterName.SeizePenaltyPoints)
+		const availableRollChangeByTimer = getByName(
+			SystemParameterName.AvailableRollChangeByTimer,
+		)
+		const territoryHourChangeByTimer = getByName(
+			SystemParameterName.TerritoryHourChangeByTimer,
+		)
+		const experiencePointChangeByTimer = getByName(
+			SystemParameterName.ExperiencePointChangeByTimer,
+		)
+		const experiencePointChangeByLevelUp = getByName(
+			SystemParameterName.ExperiencePointChangeByLevelUp,
+		)
+		const territoryHourChangeBySeizeSlice = getByName(
+			SystemParameterName.TerritoryHourChangeBySeizeSlice,
+		)
 
 		const init = () => {
 			systemParametersStore.getAllSystemParameters()
@@ -46,6 +62,12 @@ export const useFeatureSystemParametersStore = defineStore(
 			availableRollChangeByRoll,
 			maximumAvailableRollCountForTimer,
 			minimumAvailableRollCountForRoll,
+			seizePenaltyPoints,
+			availableRollChangeByTimer,
+			territoryHourChangeByTimer,
+			experiencePointChangeByTimer,
+			experiencePointChangeByLevelUp,
+			territoryHourChangeBySeizeSlice,
 
 			init,
 		}
