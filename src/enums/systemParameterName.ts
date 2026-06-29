@@ -1,4 +1,4 @@
-export const enum SystemParameterName {
+export enum SystemParameterName {
 	TimerDurationInS = 'TimerDurationInS',
 	ShouldLimitFreePoints = 'ShouldLimitFreePoints',
 	FreePointsMinimum = 'FreePointsMinimum',

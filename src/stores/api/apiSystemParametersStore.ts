@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { api } from '../../api-facade/api'
 import type { SystemParameter } from '../../api-facade/models/system-parameters-models'
 import { StoreName } from '../../enums/storeName'
+import { SystemParameterName } from '../../enums/systemParameterName'
 import { LoadingStatus, withLoading } from '../../utils/loadingState'
 
 export const useApiSystemParametersStore = defineStore(
@@ -19,6 +20,15 @@ export const useApiSystemParametersStore = defineStore(
 				await api.systemParameters
 					.getAllSystemParameters()
 					.then((params) => {
+						const missingParams = Object.values(SystemParameterName).filter(
+							(name) => !params.some((p) => p.name === name),
+						)
+
+						if (missingParams.length > 0)
+							throw new Error(
+								`Missing system parameters: ${missingParams.join(', ')}`,
+							)
+
 						systemParameters.value = params
 						status.value = LoadingStatus.LOADED
 					})
@@ -30,14 +40,8 @@ export const useApiSystemParametersStore = defineStore(
 			},
 		)
 
-		const init = () => {
-			getAllSystemParameters()
-		}
-
 		return {
 			systemParameters,
-
-			init,
 
 			getAllSystemParameters,
 			getAllSystemParametersState,
