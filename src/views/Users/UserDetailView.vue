@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Temporal } from '@js-temporal/polyfill'
 import UiView from '../../components/ui/UiView.vue'
@@ -8,7 +8,6 @@ import { GameState } from '../../api-facade/models/games-models'
 import { useAuthStore } from '../../stores/authStore'
 import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
 import { RouteName } from '../../router/routeNames'
-import { ref } from 'vue'
 
 const route = useRoute()
 const userStore = useFeatureUserStore()
@@ -32,18 +31,18 @@ const tabs: { key: Tab; label: string }[] = [
 	{ key: 'effects', label: 'Эффекты' },
 ]
 
-const currentGame = computed(() => userStore.playerCurrentGame[login.value] ?? null)
-const gameHistory = computed(() => userStore.playerHistory[login.value] ?? [])
-const wishlist = computed(() => userStore.playerWishlist[login.value] ?? [])
-const pointsInfo = computed(() => userStore.playerPoints[login.value] ?? null)
-const wheelEffects = computed(() => userStore.playerEffects[login.value] ?? [])
+const currentGame = computed(() => userStore.userCurrentGame[login.value] ?? null)
+const gameHistory = computed(() => userStore.userHistory[login.value] ?? [])
+const wishlist = computed(() => userStore.userWishlist[login.value] ?? [])
+const pointsInfo = computed(() => userStore.userPoints[login.value] ?? null)
+const wheelEffects = computed(() => userStore.userEffects[login.value] ?? [])
 
 const loadAll = () => {
-	userStore.getPlayerCurrentGame(login.value)
-	userStore.getPlayerHistory(login.value)
-	userStore.getPlayerWishlist(login.value)
-	userStore.getPlayerPoints(login.value)
-	userStore.getPlayerEffects(login.value)
+	userStore.getUserCurrentGame(login.value)
+	userStore.getUserHistory(login.value)
+	userStore.getUserWishlist(login.value)
+	userStore.getUserPoints(login.value)
+	userStore.getUserEffects(login.value)
 }
 
 onMounted(loadAll)
@@ -65,11 +64,11 @@ const gameStateLabel: Record<GameState, string> = {
 
 <template>
 	<UiView>
-		<div class="player-detail">
-			<RouterLink :to="{ name: RouteName.Players }" class="back-link">← Игроки</RouterLink>
+		<div class="user-detail">
+			<RouterLink :to="{ name: RouteName.Users }" class="back-link">← Игроки</RouterLink>
 
-			<div class="player-header">
-				<h1 class="player-name">{{ displayName }}</h1>
+			<div class="user-header">
+				<h1 class="user-name">{{ displayName }}</h1>
 				<span v-if="isCurrentUser" class="current-badge">Вы</span>
 			</div>
 
@@ -86,9 +85,9 @@ const gameStateLabel: Record<GameState, string> = {
 			</div>
 
 			<div v-if="activeTab === 'game'" class="tab-content">
-				<p v-if="userStore.getPlayerCurrentGameState.isLoading">Загрузка...</p>
-				<p v-else-if="userStore.getPlayerCurrentGameState.isError">Ошибка загрузки</p>
-				<template v-else-if="userStore.getPlayerCurrentGameState.isLoaded">
+				<p v-if="userStore.getUserCurrentGameState.isLoading">Загрузка...</p>
+				<p v-else-if="userStore.getUserCurrentGameState.isError">Ошибка загрузки</p>
+				<template v-else-if="userStore.getUserCurrentGameState.isLoaded">
 					<p v-if="!currentGame" class="empty-message">Игра не выбрана</p>
 					<div v-else class="info-card">
 						<span class="item-title">{{ currentGame.name }}</span>
@@ -101,9 +100,9 @@ const gameStateLabel: Record<GameState, string> = {
 			</div>
 
 			<div v-if="activeTab === 'history'" class="tab-content">
-				<p v-if="userStore.getPlayerHistoryState.isLoading">Загрузка...</p>
-				<p v-else-if="userStore.getPlayerHistoryState.isError">Ошибка загрузки</p>
-				<template v-else-if="userStore.getPlayerHistoryState.isLoaded">
+				<p v-if="userStore.getUserHistoryState.isLoading">Загрузка...</p>
+				<p v-else-if="userStore.getUserHistoryState.isError">Ошибка загрузки</p>
+				<template v-else-if="userStore.getUserHistoryState.isLoaded">
 					<p v-if="!gameHistory.length" class="empty-message">Нет истории игр</p>
 					<ul v-else class="item-list">
 						<li v-for="(game, i) in gameHistory" :key="i" class="info-card">
@@ -118,9 +117,9 @@ const gameStateLabel: Record<GameState, string> = {
 			</div>
 
 			<div v-if="activeTab === 'wishlist'" class="tab-content">
-				<p v-if="userStore.getPlayerWishlistState.isLoading">Загрузка...</p>
-				<p v-else-if="userStore.getPlayerWishlistState.isError">Ошибка загрузки</p>
-				<template v-else-if="userStore.getPlayerWishlistState.isLoaded">
+				<p v-if="userStore.getUserWishlistState.isLoading">Загрузка...</p>
+				<p v-else-if="userStore.getUserWishlistState.isError">Ошибка загрузки</p>
+				<template v-else-if="userStore.getUserWishlistState.isLoaded">
 					<p v-if="!wishlist.length" class="empty-message">Вишлист пуст</p>
 					<ol v-else class="wishlist">
 						<li v-for="game in wishlist" :key="game.name">{{ game.name }}</li>
@@ -129,9 +128,9 @@ const gameStateLabel: Record<GameState, string> = {
 			</div>
 
 			<div v-if="activeTab === 'points'" class="tab-content">
-				<p v-if="userStore.getPlayerPointsState.isLoading">Загрузка...</p>
-				<p v-else-if="userStore.getPlayerPointsState.isError">Ошибка загрузки</p>
-				<template v-else-if="userStore.getPlayerPointsState.isLoaded">
+				<p v-if="userStore.getUserPointsState.isLoading">Загрузка...</p>
+				<p v-else-if="userStore.getUserPointsState.isError">Ошибка загрузки</p>
+				<template v-else-if="userStore.getUserPointsState.isLoaded">
 					<p v-if="!pointsInfo" class="empty-message">Нет данных</p>
 					<dl v-else class="points-info">
 						<div class="points-row">
@@ -159,9 +158,9 @@ const gameStateLabel: Record<GameState, string> = {
 			</div>
 
 			<div v-if="activeTab === 'effects'" class="tab-content">
-				<p v-if="userStore.getPlayerEffectsState.isLoading">Загрузка...</p>
-				<p v-else-if="userStore.getPlayerEffectsState.isError">Ошибка загрузки</p>
-				<template v-else-if="userStore.getPlayerEffectsState.isLoaded">
+				<p v-if="userStore.getUserEffectsState.isLoading">Загрузка...</p>
+				<p v-else-if="userStore.getUserEffectsState.isError">Ошибка загрузки</p>
+				<template v-else-if="userStore.getUserEffectsState.isLoaded">
 					<p v-if="!wheelEffects.length" class="empty-message">Нет истории эффектов</p>
 					<ul v-else class="item-list">
 						<li v-for="(effect, i) in wheelEffects" :key="i" class="info-card info-card--row">
@@ -176,7 +175,7 @@ const gameStateLabel: Record<GameState, string> = {
 </template>
 
 <style scoped>
-.player-detail {
+.user-detail {
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
@@ -194,13 +193,13 @@ const gameStateLabel: Record<GameState, string> = {
 	text-decoration: underline;
 }
 
-.player-header {
+.user-header {
 	display: flex;
 	align-items: center;
 	gap: 12px;
 }
 
-.player-name {
+.user-name {
 	font-size: 1.5rem;
 	font-weight: 600;
 }

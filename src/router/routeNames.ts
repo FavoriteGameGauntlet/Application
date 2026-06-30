@@ -1,8 +1,8 @@
 export const enum RouteName {
 	Root = 'root',
 	Timer = 'timer',
-	Players = 'players',
-	PlayerDetail = 'player-detail',
+	Users = 'users',
+	UserDetail = 'user-detail',
 	Games = 'games',
 	Effects = 'wheel-rolls',
 	Dev = 'dev',

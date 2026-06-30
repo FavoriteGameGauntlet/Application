@@ -7,7 +7,7 @@ export const useTabs = () => {
 		RouteName.Timer,
 		RouteName.Effects,
 		RouteName.Games,
-		[RouteName.Players, RouteName.PlayerDetail],
+		[RouteName.Users, RouteName.UserDetail],
 		RouteName.Dev,
 	] as const
 

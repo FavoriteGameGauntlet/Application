@@ -18,23 +18,23 @@ onMounted(() => userStore.getAllUsers())
 		<p v-if="userStore.getAllNamesState.isLoading">Загрузка...</p>
 		<p v-else-if="userStore.getAllNamesState.isError">Ошибка загрузки</p>
 		<template v-else>
-			<ul v-if="userStore.users?.length" class="players-list">
+			<ul v-if="userStore.users?.length" class="users-list">
 				<li
 					v-for="user in userStore.users"
 					:key="user.login"
-					class="player-item"
+					class="user-item"
 				>
 					<RouterLink
 						:to="{
-							name: RouteName.PlayerDetail,
+							name: RouteName.UserDetail,
 							params: { login: user.login },
 						}"
-						class="player-link"
+						class="user-link"
 					>
-						<span class="player-name">{{
+						<span class="user-name">{{
 							user.displayName ?? user.login
 						}}</span>
-						<span v-if="user.login === authStore.login" class="player-you"
+						<span v-if="user.login === authStore.login" class="user-you"
 							>Вы</span
 						>
 					</RouterLink>
@@ -51,7 +51,7 @@ h1 {
 	align-self: flex-start;
 }
 
-.players-list {
+.users-list {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
@@ -60,11 +60,11 @@ h1 {
 	width: 100%;
 }
 
-.player-item {
+.user-item {
 	width: 100%;
 }
 
-.player-link {
+.user-link {
 	display: flex;
 	align-items: center;
 	gap: 8px;
@@ -75,15 +75,15 @@ h1 {
 	color: inherit;
 }
 
-.player-link:hover {
+.user-link:hover {
 	background-color: #f8fafc;
 }
 
-.player-name {
+.user-name {
 	flex: 1;
 }
 
-.player-you {
+.user-you {
 	font-size: 0.75rem;
 	background-color: #e2e8f0;
 	color: #475569;

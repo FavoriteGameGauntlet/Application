@@ -26,11 +26,11 @@ export const useFeatureUserStore = defineStore(StoreName.FeatureUser, () => {
 		await apiStore.getDisplayName()
 	}
 
-	const getPlayerCurrentGame = (login: string) => gameStore.getCurrent(login)
-	const getPlayerHistory = (login: string) => gameStore.getHistory(login)
-	const getPlayerWishlist = (login: string) => gameStore.getWishlist(login)
-	const getPlayerPoints = (login: string) => pointsStore.getPointsInfo(login)
-	const getPlayerEffects = (login: string) => wheelStore.getHistory(login)
+	const getUserCurrentGame = (login: string) => gameStore.getCurrent(login)
+	const getUserHistory = (login: string) => gameStore.getHistory(login)
+	const getUserWishlist = (login: string) => gameStore.getWishlist(login)
+	const getUserPoints = (login: string) => pointsStore.getPointsInfo(login)
+	const getUserEffects = (login: string) => wheelStore.getHistory(login)
 
 	return {
 		currentUser,
@@ -45,25 +45,25 @@ export const useFeatureUserStore = defineStore(StoreName.FeatureUser, () => {
 
 		init,
 
-		playerCurrentGame: gameStore.current,
-		playerHistory: gameStore.history,
-		playerWishlist: gameStore.wishlist,
-		playerPoints: pointsStore.pointsInfo,
-		playerEffects: wheelStore.effectsHistory,
+		userCurrentGame: gameStore.current,
+		userHistory: gameStore.history,
+		userWishlist: gameStore.wishlist,
+		userPoints: pointsStore.pointsInfo,
+		userEffects: wheelStore.effectsHistory,
 
-		getPlayerCurrentGame,
-		getPlayerCurrentGameState: gameStore.getCurrentState,
+		getUserCurrentGame,
+		getUserCurrentGameState: gameStore.getCurrentState,
 
-		getPlayerHistory,
-		getPlayerHistoryState: gameStore.getHistoryState,
+		getUserHistory,
+		getUserHistoryState: gameStore.getHistoryState,
 
-		getPlayerWishlist,
-		getPlayerWishlistState: gameStore.getWishlistState,
+		getUserWishlist,
+		getUserWishlistState: gameStore.getWishlistState,
 
-		getPlayerPoints,
-		getPlayerPointsState: pointsStore.getPointsInfoState,
+		getUserPoints,
+		getUserPointsState: pointsStore.getPointsInfoState,
 
-		getPlayerEffects,
-		getPlayerEffectsState: wheelStore.getHistoryState,
+		getUserEffects,
+		getUserEffectsState: wheelStore.getHistoryState,
 	}
 })

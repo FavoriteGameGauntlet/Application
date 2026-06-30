@@ -2,8 +2,8 @@ import type { RouteRecordRaw } from 'vue-router'
 import DevView from '../views/Dev/DevView.vue'
 import GamesView from '../views/Games/GamesView.vue'
 import LoginView from '../views/Login/LoginView.vue'
-import PlayerDetailView from '../views/Players/PlayerDetailView.vue'
-import PlayersView from '../views/Players/PlayersView.vue'
+import UserDetailView from '../views/Users/UserDetailView.vue'
+import UsersView from '../views/Users/UsersView.vue'
 import RootView from '../views/Root/RootView.vue'
 import SignUpView from '../views/SignUp/SignUpView.vue'
 import TimerView from '../views/Timer/TimerView.vue'
@@ -25,15 +25,15 @@ export const routes: RouteRecordRaw[] = [
 			},
 
 			{
-				path: 'players',
-				component: PlayersView,
-				name: RouteName.Players,
+				path: 'users',
+				component: UsersView,
+				name: RouteName.Users,
 			},
 
 			{
-				path: 'players/:login',
-				component: PlayerDetailView,
-				name: RouteName.PlayerDetail,
+				path: 'users/:login',
+				component: UserDetailView,
+				name: RouteName.UserDetail,
 			},
 
 			{
