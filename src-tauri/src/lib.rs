@@ -23,7 +23,7 @@ pub fn run() {
         .plugin(
             tauri_plugin_stronghold::Builder::new(|password| {
                 use argon2::Argon2;
-                let salt = b"fgg-snail-vault-salt-v1";
+                let salt = b"fgg-vault-salt-v1";
                 let mut key = [0u8; 32];
                 Argon2::default()
                     .hash_password_into(password.as_bytes(), salt, &mut key)

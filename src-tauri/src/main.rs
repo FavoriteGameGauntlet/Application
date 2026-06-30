@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    fgg_snail_lib::run()
+    fgg_lib::run()
 }
