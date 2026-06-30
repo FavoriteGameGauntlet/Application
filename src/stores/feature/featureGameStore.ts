@@ -4,15 +4,18 @@ import type {
 	CurrentGame,
 	WishlistedGame,
 } from '../../api-facade/models/games-models'
+import { TimerState } from '../../api-facade/models/timers-models'
 import { StoreName } from '../../enums/storeName'
 import { useApiGameStore } from '../api/apiGameStore'
 import { useApiTimerStore } from '../api/apiTimerStore'
 import { useAuthStore } from '../authStore'
+import { useFeatureSystemParametersStore } from './featureSystemParametersStore'
 
 export const useFeatureGameStore = defineStore(StoreName.FeatureGame, () => {
 	const authStore = useAuthStore()
 	const gameStore = useApiGameStore()
 	const timerStore = useApiTimerStore()
+	const systemParametersStore = useFeatureSystemParametersStore()
 
 	const current = computed<CurrentGame | null>({
 		get: () =>
@@ -24,7 +27,11 @@ export const useFeatureGameStore = defineStore(StoreName.FeatureGame, () => {
 		authStore.login ? (gameStore.wishlist[authStore.login] ?? []) : [],
 	)
 
-	const enoughGamesInWishlist = computed(() => wishlist.value.length >= 6)
+	const enoughGamesInWishlist = computed(
+		() =>
+			wishlist.value.length >=
+			systemParametersStore.minimumNumberOfWishlistGames.value,
+	)
 	const currentGameIsFinished = computed(() => current.value === null)
 
 	const canRoll = computed(
@@ -74,23 +81,16 @@ export const useFeatureGameStore = defineStore(StoreName.FeatureGame, () => {
 			{ immediate: true },
 		)
 
-		// update timer on timer change
+		// refresh game when timer finishes
 		watch(
-			() => timerStore.durationLeft,
-			(newDuration, oldDuration) => {
-				const delta = oldDuration.subtract(newDuration)
-
-				if (delta.sign === -1) return
-
-				current.value =
-					current.value !== null
-						? ({
-								...current.value,
-								timeSpent: current.value.timeSpent.add(delta),
-							} satisfies CurrentGame)
-						: null
+			() => timerStore.state,
+			(state) => {
+				if (state === TimerState.Finished && authStore.login) {
+					gameStore.getCurrent(authStore.login)
+				}
 			},
 		)
+
 	}
 
 	return {
