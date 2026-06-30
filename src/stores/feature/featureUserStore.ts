@@ -30,6 +30,8 @@ export const useFeatureUserStore = defineStore(StoreName.FeatureUser, () => {
 	const getUserHistory = (login: string) => gameStore.getHistory(login)
 	const getUserWishlist = (login: string) => gameStore.getWishlist(login)
 	const getUserPoints = (login: string) => pointsStore.getPointsInfo(login)
+	const getUserFreePointsHistory = (login: string) => pointsStore.getFreePointsHistory(login)
+	const getUserTerritoryPointsHistory = (login: string) => pointsStore.getTerritoryPointsHistory(login)
 	const getUserEffects = (login: string) => wheelStore.getHistory(login)
 
 	return {
@@ -49,6 +51,8 @@ export const useFeatureUserStore = defineStore(StoreName.FeatureUser, () => {
 		userHistory: gameStore.history,
 		userWishlist: gameStore.wishlist,
 		userPoints: pointsStore.pointsInfo,
+		userFreePointsHistory: pointsStore.freePointsHistory,
+		userTerritoryPointsHistory: pointsStore.territoryPointsHistory,
 		userEffects: wheelStore.effectsHistory,
 
 		getUserCurrentGame,
@@ -62,6 +66,12 @@ export const useFeatureUserStore = defineStore(StoreName.FeatureUser, () => {
 
 		getUserPoints,
 		getUserPointsState: pointsStore.getPointsInfoState,
+
+		getUserFreePointsHistory,
+		getUserFreePointsHistoryState: pointsStore.getFreePointsHistoryState,
+
+		getUserTerritoryPointsHistory,
+		getUserTerritoryPointsHistoryState: pointsStore.getTerritoryPointsHistoryState,
 
 		getUserEffects,
 		getUserEffectsState: wheelStore.getHistoryState,

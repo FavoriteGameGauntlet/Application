@@ -4,6 +4,10 @@ import { useRoute } from 'vue-router'
 import UiView from '../../components/ui/UiView.vue'
 import UiTimestamp from '../../components/ui/UiTimestamp.vue'
 import { gameStateLabel } from '../../api-facade/models/games-models'
+import {
+	freePointChangeSourceLabel,
+	territoryChangeSourceLabel,
+} from '../../api-facade/models/points-models'
 import { formatInstant } from '../../utils/temporal'
 import { useAuthStore } from '../../stores/authStore'
 import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
@@ -20,13 +24,15 @@ const displayName = computed(() => {
 	return user?.displayName ?? login.value
 })
 
-type Tab = 'game-history' | 'game-wishlist' | 'points' | 'wheel-effect-history'
+type Tab = 'game-history' | 'game-wishlist' | 'points' | 'free-points-history' | 'territory-points-history' | 'wheel-effect-history'
 const activeTab = ref<Tab>('game-history')
 
 const tabs: { key: Tab; label: string }[] = [
 	{ key: 'game-history', label: 'История игр' },
 	{ key: 'game-wishlist', label: 'Вишлист игр' },
-	{ key: 'points', label: 'Очки' },
+	{ key: 'points', label: 'Текущие очки' },
+	{ key: 'free-points-history', label: 'История свободных очков' },
+	{ key: 'territory-points-history', label: 'История очков территории' },
 	{ key: 'wheel-effect-history', label: 'История эффектов колеса' },
 ]
 
@@ -36,6 +42,8 @@ const currentGame = computed(
 const gameHistory = computed(() => userStore.userHistory[login.value] ?? [])
 const gameWishlist = computed(() => userStore.userWishlist[login.value] ?? [])
 const pointsInfo = computed(() => userStore.userPoints[login.value] ?? null)
+const freePointsHistory = computed(() => userStore.userFreePointsHistory[login.value] ?? [])
+const territoryPointsHistory = computed(() => userStore.userTerritoryPointsHistory[login.value] ?? [])
 const wheelEffectHistory = computed(
 	() => userStore.userEffects[login.value] ?? [],
 )
@@ -45,6 +53,8 @@ const loadAll = () => {
 	userStore.getUserHistory(login.value)
 	userStore.getUserWishlist(login.value)
 	userStore.getUserPoints(login.value)
+	userStore.getUserFreePointsHistory(login.value)
+	userStore.getUserTerritoryPointsHistory(login.value)
 	userStore.getUserEffects(login.value)
 }
 
@@ -106,11 +116,22 @@ watch(login, loadAll)
 					</p>
 					<ul v-else class="item-list">
 						<li v-for="(game, i) in gameHistory" :key="i" class="info-card">
-							<span class="item-title">{{ game.name }}</span>
-							<span class="item-meta">{{ gameStateLabel[game.state] }}</span>
-							<span v-if="game.finishDate" class="item-meta">
-								{{ formatInstant(game.finishDate) }}
-							</span>
+							<div class="info-card__row">
+								<span class="item-meta">Игра</span>
+								<span class="item-title">{{ game.name }}</span>
+							</div>
+							<div class="info-card__row">
+								<span class="item-meta">Статус</span>
+								<span class="item-meta">{{ gameStateLabel[game.state] }}</span>
+							</div>
+							<div class="info-card__row">
+								<span class="item-meta">Время</span>
+								<span class="item-meta"><UiTimestamp :time="game.timeSpent" /></span>
+							</div>
+							<div v-if="game.finishDate" class="info-card__row">
+								<span class="item-meta">Завершена</span>
+								<span class="item-meta">{{ formatInstant(game.finishDate) }}</span>
+							</div>
 						</li>
 					</ul>
 				</template>
@@ -158,6 +179,66 @@ watch(login, loadAll)
 							<dd>{{ pointsInfo.availableRolls }}</dd>
 						</div>
 					</dl>
+				</template>
+			</div>
+
+			<div v-if="activeTab === 'free-points-history'" class="tab-content">
+				<p v-if="userStore.getUserFreePointsHistoryState.isLoading">Загрузка...</p>
+				<p v-else-if="userStore.getUserFreePointsHistoryState.isError">Ошибка загрузки</p>
+				<template v-else-if="userStore.getUserFreePointsHistoryState.isLoaded">
+					<p v-if="!freePointsHistory.length" class="empty-message">Нет истории</p>
+					<ul v-else class="item-list">
+						<li v-for="(entry, i) in freePointsHistory" :key="i" class="info-card">
+							<div class="info-card__row">
+								<span class="item-title">{{ freePointChangeSourceLabel[entry.changeSource] }}</span>
+								<span class="item-meta">{{ formatInstant(entry.changeDate) }}</span>
+							</div>
+							<div v-if="entry.wheelEffectName" class="info-card__row">
+								<span class="item-meta">Эффект</span>
+								<span class="item-meta">{{ entry.wheelEffectName }}</span>
+							</div>
+							<div v-if="entry.sourceLogin" class="info-card__row">
+								<span class="item-meta">От</span>
+								<span class="item-meta">{{ entry.sourceLogin }}</span>
+							</div>
+							<div class="info-card__row">
+								<span class="item-meta">Изменение</span>
+								<span class="item-meta">{{ entry.actualChangeValue > 0 ? '+' : '' }}{{ entry.actualChangeValue }}</span>
+							</div>
+							<div class="info-card__row">
+								<span class="item-meta">Итог</span>
+								<span class="item-meta">{{ entry.finalValue }}</span>
+							</div>
+						</li>
+					</ul>
+				</template>
+			</div>
+
+			<div v-if="activeTab === 'territory-points-history'" class="tab-content">
+				<p v-if="userStore.getUserTerritoryPointsHistoryState.isLoading">Загрузка...</p>
+				<p v-else-if="userStore.getUserTerritoryPointsHistoryState.isError">Ошибка загрузки</p>
+				<template v-else-if="userStore.getUserTerritoryPointsHistoryState.isLoaded">
+					<p v-if="!territoryPointsHistory.length" class="empty-message">Нет истории</p>
+					<ul v-else class="item-list">
+						<li v-for="(entry, i) in territoryPointsHistory" :key="i" class="info-card">
+							<div class="info-card__row">
+								<span class="item-title">{{ territoryChangeSourceLabel[entry.changeSource] }}</span>
+								<span class="item-meta">{{ formatInstant(entry.changeDate) }}</span>
+							</div>
+							<div v-if="entry.sourceLogin" class="info-card__row">
+								<span class="item-meta">От</span>
+								<span class="item-meta">{{ entry.sourceLogin }}</span>
+							</div>
+							<div class="info-card__row">
+								<span class="item-meta">Изменение</span>
+								<span class="item-meta">{{ entry.actualChangeValue > 0 ? '+' : '' }}{{ entry.actualChangeValue }}</span>
+							</div>
+							<div class="info-card__row">
+								<span class="item-meta">Итог</span>
+								<span class="item-meta">{{ entry.finalValue }}</span>
+							</div>
+						</li>
+					</ul>
 				</template>
 			</div>
 
@@ -253,7 +334,8 @@ watch(login, loadAll)
 }
 
 .tab-button {
-	padding: 8px 16px;
+	flex: 1;
+	padding: 8px 4px;
 	background: none;
 	border: none;
 	border-bottom: 2px solid transparent;
@@ -303,6 +385,12 @@ watch(login, loadAll)
 	flex-direction: row;
 	align-items: center;
 	justify-content: space-between;
+}
+
+.info-card__row {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
 }
 
 .item-title {
