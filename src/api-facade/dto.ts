@@ -12,20 +12,6 @@ import type {
 	TerritoryPointChangeHistoryDto,
 } from './models/points-models'
 
-export type DtoStringToDate<
-	Dto extends object,
-	DateFields extends keyof Dto,
-> = {
-	[K in keyof Dto]: K extends DateFields ? Temporal.Instant : Dto[K]
-}
-
-export type DtoStringToDuration<
-	Dto extends object,
-	DurationFields extends keyof Dto,
-> = {
-	[K in keyof Dto]: K extends DurationFields ? Temporal.Duration : Dto[K]
-}
-
 export const convertGameDto = (game: CurrentGameDto): CurrentGame => ({
 	...game,
 	finishDate:
@@ -39,10 +25,7 @@ export const convertTimerDto = (timer: TimerDto): Timer => ({
 	...timer,
 	duration: Temporal.Duration.from(timer.duration),
 	remainingTime: Temporal.Duration.from(timer.remainingTime),
-	lastActionDate:
-		timer.lastActionDate !== undefined
-			? Temporal.Instant.from(timer.lastActionDate)
-			: undefined,
+	lastActionDate: Temporal.Instant.from(timer.lastActionDate),
 })
 
 export const convertTerritoryPointChangeHistoryDto = (

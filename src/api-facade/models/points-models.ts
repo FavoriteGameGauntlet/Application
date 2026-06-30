@@ -1,4 +1,4 @@
-import type { DtoStringToDate } from '../dto.ts'
+import type { DtoStringToDate } from '../dto-types'
 
 export type PointInfo = {
 	availableRolls: number

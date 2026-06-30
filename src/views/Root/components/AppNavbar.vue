@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { RouteName } from '../../../router/routeNames'
-import { useApiWheelStore } from '../../../stores/api/apiWheelStore'
 import UserProfile from './UserProfile.vue'
 import NavbarLink from './NavbarLink.vue'
+import { useFeatureWheelStore } from '../../../stores/feature/featureWheelStore.ts'
 
-const wheelStore = useApiWheelStore()
+const wheelStore = useFeatureWheelStore()
 </script>
 
 <template>
