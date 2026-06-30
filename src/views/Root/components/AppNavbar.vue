@@ -21,8 +21,6 @@ const wheelStore = useApiWheelStore()
 			<NavbarLink :to="RouteName.Games"> Игры </NavbarLink>
 
 			<NavbarLink :to="RouteName.Users"> Игроки </NavbarLink>
-
-			<NavbarLink :to="RouteName.Dev"> Dev </NavbarLink>
 		</div>
 	</div>
 </template>

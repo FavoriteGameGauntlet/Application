@@ -8,7 +8,6 @@ export const useTabs = () => {
 		RouteName.Effects,
 		RouteName.Games,
 		[RouteName.Users, RouteName.UserDetail],
-		RouteName.Dev,
 	] as const
 
 	const currentTabIndex = computed((prevIndex: number | undefined) => {

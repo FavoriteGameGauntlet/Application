@@ -5,7 +5,6 @@ export const enum RouteName {
 	UserDetail = 'user-detail',
 	Games = 'games',
 	Effects = 'wheel-rolls',
-	Dev = 'dev',
 	Login = 'login',
 	Signup = 'signup',
 }

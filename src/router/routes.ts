@@ -1,5 +1,4 @@
 import type { RouteRecordRaw } from 'vue-router'
-import DevView from '../views/Dev/DevView.vue'
 import GamesView from '../views/Games/GamesView.vue'
 import LoginView from '../views/Login/LoginView.vue'
 import UserDetailView from '../views/Users/UserDetailView.vue'
@@ -46,12 +45,6 @@ export const routes: RouteRecordRaw[] = [
 				path: 'wheel',
 				name: RouteName.Effects,
 				component: WheelRollsView,
-			},
-
-			{
-				path: 'dev',
-				component: DevView,
-				name: RouteName.Dev,
 			},
 		],
 	},
