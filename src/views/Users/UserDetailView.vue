@@ -24,16 +24,22 @@ const displayName = computed(() => {
 	return user?.displayName ?? login.value
 })
 
-type Tab = 'game-history' | 'game-wishlist' | 'points' | 'free-points-history' | 'territory-points-history' | 'wheel-effect-history'
-const activeTab = ref<Tab>('game-history')
+type Tab =
+	| 'points'
+	| 'game-wishlist'
+	| 'game-history'
+	| 'free-points-history'
+	| 'territory-points-history'
+	| 'wheel-effect-history'
+const activeTab = ref<Tab>('points')
 
-const tabs: { key: Tab; label: string }[] = [
-	{ key: 'game-history', label: 'История игр' },
-	{ key: 'game-wishlist', label: 'Вишлист игр' },
+const tabs: { key: Tab; label: string; history?: true }[] = [
 	{ key: 'points', label: 'Текущие очки' },
-	{ key: 'free-points-history', label: 'История свободных очков' },
-	{ key: 'territory-points-history', label: 'История очков территории' },
-	{ key: 'wheel-effect-history', label: 'История эффектов колеса' },
+	{ key: 'game-wishlist', label: 'Вишлист' },
+	{ key: 'game-history', label: 'Игры', history: true },
+	{ key: 'free-points-history', label: 'Свободные очки', history: true },
+	{ key: 'territory-points-history', label: 'Очки территории', history: true },
+	{ key: 'wheel-effect-history', label: 'Эффекты колеса', history: true },
 ]
 
 const currentGame = computed(
@@ -42,8 +48,12 @@ const currentGame = computed(
 const gameHistory = computed(() => userStore.userHistory[login.value] ?? [])
 const gameWishlist = computed(() => userStore.userWishlist[login.value] ?? [])
 const pointsInfo = computed(() => userStore.userPoints[login.value] ?? null)
-const freePointsHistory = computed(() => userStore.userFreePointsHistory[login.value] ?? [])
-const territoryPointsHistory = computed(() => userStore.userTerritoryPointsHistory[login.value] ?? [])
+const freePointsHistory = computed(
+	() => userStore.userFreePointsHistory[login.value] ?? [],
+)
+const territoryPointsHistory = computed(
+	() => userStore.userTerritoryPointsHistory[login.value] ?? [],
+)
 const wheelEffectHistory = computed(
 	() => userStore.userEffects[login.value] ?? [],
 )
@@ -60,7 +70,6 @@ const loadAll = () => {
 
 onMounted(loadAll)
 watch(login, loadAll)
-
 </script>
 
 <template>
@@ -103,6 +112,7 @@ watch(login, loadAll)
 					:class="{ 'tab-button--active': activeTab === t.key }"
 					@click="activeTab = t.key"
 				>
+					<span v-if="t.history" class="tab-history-badge">История</span>
 					{{ t.label }}
 				</button>
 			</div>
@@ -126,11 +136,15 @@ watch(login, loadAll)
 							</div>
 							<div class="info-card__row">
 								<span class="item-meta">Время</span>
-								<span class="item-meta"><UiTimestamp :time="game.timeSpent" /></span>
+								<span class="item-meta"
+									><UiTimestamp :time="game.timeSpent"
+								/></span>
 							</div>
 							<div v-if="game.finishDate" class="info-card__row">
 								<span class="item-meta">Завершена</span>
-								<span class="item-meta">{{ formatInstant(game.finishDate) }}</span>
+								<span class="item-meta">{{
+									formatInstant(game.finishDate)
+								}}</span>
 							</div>
 						</li>
 					</ul>
@@ -144,11 +158,12 @@ watch(login, loadAll)
 				</p>
 				<template v-else-if="userStore.getUserWishlistState.isLoaded">
 					<p v-if="!gameWishlist.length" class="empty-message">Вишлист пуст</p>
-					<ol v-else class="game-wishlist">
-						<li v-for="game in gameWishlist" :key="game.name">
-							{{ game.name }}
+					<p class="item-count">{{ gameWishlist.length }} игр</p>
+					<ul class="item-list">
+						<li v-for="game in gameWishlist" :key="game.name" class="info-card">
+							<span class="item-title">{{ game.name }}</span>
 						</li>
-					</ol>
+					</ul>
 				</template>
 			</div>
 
@@ -183,15 +198,29 @@ watch(login, loadAll)
 			</div>
 
 			<div v-if="activeTab === 'free-points-history'" class="tab-content">
-				<p v-if="userStore.getUserFreePointsHistoryState.isLoading">Загрузка...</p>
-				<p v-else-if="userStore.getUserFreePointsHistoryState.isError">Ошибка загрузки</p>
+				<p v-if="userStore.getUserFreePointsHistoryState.isLoading">
+					Загрузка...
+				</p>
+				<p v-else-if="userStore.getUserFreePointsHistoryState.isError">
+					Ошибка загрузки
+				</p>
 				<template v-else-if="userStore.getUserFreePointsHistoryState.isLoaded">
-					<p v-if="!freePointsHistory.length" class="empty-message">Нет истории</p>
+					<p v-if="!freePointsHistory.length" class="empty-message">
+						Нет истории
+					</p>
 					<ul v-else class="item-list">
-						<li v-for="(entry, i) in freePointsHistory" :key="i" class="info-card">
+						<li
+							v-for="(entry, i) in freePointsHistory"
+							:key="i"
+							class="info-card"
+						>
 							<div class="info-card__row">
-								<span class="item-title">{{ freePointChangeSourceLabel[entry.changeSource] }}</span>
-								<span class="item-meta">{{ formatInstant(entry.changeDate) }}</span>
+								<span class="item-title">{{
+									freePointChangeSourceLabel[entry.changeSource]
+								}}</span>
+								<span class="item-meta">{{
+									formatInstant(entry.changeDate)
+								}}</span>
 							</div>
 							<div v-if="entry.wheelEffectName" class="info-card__row">
 								<span class="item-meta">Эффект</span>
@@ -203,7 +232,10 @@ watch(login, loadAll)
 							</div>
 							<div class="info-card__row">
 								<span class="item-meta">Изменение</span>
-								<span class="item-meta">{{ entry.actualChangeValue > 0 ? '+' : '' }}{{ entry.actualChangeValue }}</span>
+								<span class="item-meta"
+									>{{ entry.actualChangeValue > 0 ? '+' : ''
+									}}{{ entry.actualChangeValue }}</span
+								>
 							</div>
 							<div class="info-card__row">
 								<span class="item-meta">Итог</span>
@@ -215,15 +247,31 @@ watch(login, loadAll)
 			</div>
 
 			<div v-if="activeTab === 'territory-points-history'" class="tab-content">
-				<p v-if="userStore.getUserTerritoryPointsHistoryState.isLoading">Загрузка...</p>
-				<p v-else-if="userStore.getUserTerritoryPointsHistoryState.isError">Ошибка загрузки</p>
-				<template v-else-if="userStore.getUserTerritoryPointsHistoryState.isLoaded">
-					<p v-if="!territoryPointsHistory.length" class="empty-message">Нет истории</p>
+				<p v-if="userStore.getUserTerritoryPointsHistoryState.isLoading">
+					Загрузка...
+				</p>
+				<p v-else-if="userStore.getUserTerritoryPointsHistoryState.isError">
+					Ошибка загрузки
+				</p>
+				<template
+					v-else-if="userStore.getUserTerritoryPointsHistoryState.isLoaded"
+				>
+					<p v-if="!territoryPointsHistory.length" class="empty-message">
+						Нет истории
+					</p>
 					<ul v-else class="item-list">
-						<li v-for="(entry, i) in territoryPointsHistory" :key="i" class="info-card">
+						<li
+							v-for="(entry, i) in territoryPointsHistory"
+							:key="i"
+							class="info-card"
+						>
 							<div class="info-card__row">
-								<span class="item-title">{{ territoryChangeSourceLabel[entry.changeSource] }}</span>
-								<span class="item-meta">{{ formatInstant(entry.changeDate) }}</span>
+								<span class="item-title">{{
+									territoryChangeSourceLabel[entry.changeSource]
+								}}</span>
+								<span class="item-meta">{{
+									formatInstant(entry.changeDate)
+								}}</span>
 							</div>
 							<div v-if="entry.sourceLogin" class="info-card__row">
 								<span class="item-meta">От</span>
@@ -231,7 +279,10 @@ watch(login, loadAll)
 							</div>
 							<div class="info-card__row">
 								<span class="item-meta">Изменение</span>
-								<span class="item-meta">{{ entry.actualChangeValue > 0 ? '+' : '' }}{{ entry.actualChangeValue }}</span>
+								<span class="item-meta"
+									>{{ entry.actualChangeValue > 0 ? '+' : ''
+									}}{{ entry.actualChangeValue }}</span
+								>
 							</div>
 							<div class="info-card__row">
 								<span class="item-meta">Итог</span>
@@ -331,6 +382,7 @@ watch(login, loadAll)
 .tabs {
 	display: flex;
 	border-bottom: 1px solid #e2e8f0;
+	padding-top: 10px;
 }
 
 .tab-button {
@@ -354,6 +406,19 @@ watch(login, loadAll)
 	color: #0f172a;
 	border-bottom-color: #0f172a;
 	font-weight: 500;
+}
+
+.tab-history-badge {
+	position: absolute;
+	top: -8px;
+	left: 50%;
+	transform: translateX(-50%);
+	font-size: 0.6rem;
+	background-color: #e2e8f0;
+	color: #475569;
+	padding: 1px 4px;
+	border-radius: 4px;
+	white-space: nowrap;
 }
 
 .tab-content {
@@ -402,11 +467,9 @@ watch(login, loadAll)
 	color: #64748b;
 }
 
-.game-wishlist {
-	padding-left: 24px;
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
+.item-count {
+	font-size: 0.875rem;
+	color: #94a3b8;
 }
 
 .points-info {
