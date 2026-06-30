@@ -10,6 +10,8 @@ export const enum StoreName {
 	ApiUser = 'api-user',
 	FeatureUser = 'feature-user',
 
+	ApiPoints = 'api-points',
+
 	ApiWheel = 'api-wheel',
 	FeatureWheel = 'feature-wheel',
 

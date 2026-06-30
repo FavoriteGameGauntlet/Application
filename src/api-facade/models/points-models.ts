@@ -29,6 +29,12 @@ export enum TerritoryChangeSource {
 	Other = 'other',
 }
 
+export const territoryChangeSourceLabel: Record<TerritoryChangeSource, string> = {
+	[TerritoryChangeSource.ObtainingTerritory]: 'Получение территории',
+	[TerritoryChangeSource.LosingTerritory]: 'Потеря территории',
+	[TerritoryChangeSource.Other]: 'Другое',
+}
+
 export type TerritoryPointChangeResult = PointChangeResult & {
 	changeSource: TerritoryChangeSource
 }
@@ -49,6 +55,14 @@ export enum FreePointChangeSource {
 	BaseTeleport = 'base-teleport',
 	Sandstorm = 'sandstorm',
 	Other = 'other',
+}
+
+export const freePointChangeSourceLabel: Record<FreePointChangeSource, string> = {
+	[FreePointChangeSource.WheelEffect]: 'Эффект колеса',
+	[FreePointChangeSource.Quest]: 'Квест',
+	[FreePointChangeSource.BaseTeleport]: 'Телепорт базы',
+	[FreePointChangeSource.Sandstorm]: 'Песчаная буря',
+	[FreePointChangeSource.Other]: 'Другое',
 }
 
 export type FreePointChange = PointChange & {

@@ -10,6 +10,12 @@ export enum GameState {
 	Cancelled = 'cancelled',
 }
 
+export const gameStateLabel: Record<GameState, string> = {
+	[GameState.Started]: 'В процессе',
+	[GameState.Finished]: 'Завершена',
+	[GameState.Cancelled]: 'Брошена',
+}
+
 export type CurrentGameDto = {
 	name: string
 	state: GameState
