@@ -11,9 +11,9 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 24.13.1
 
@@ -32,7 +32,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'Release ${{ github.ref_name }}'
+          releaseName: '${{ github.ref_name }}'
           releaseBody: 'Для установки скачайте только файл `_x64-setup.exe`. Остальные не трогайте, они используются для автообновления.'
           releaseDraft: false
-          prerelease: false
+          prerelease: true
