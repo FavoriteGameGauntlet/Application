@@ -4,9 +4,11 @@ import { RouterLink, useRouter } from 'vue-router'
 import { type HttpErrorResponse } from '../../api-facade/http'
 import UiButton from '../../components/ui/UiButton.vue'
 import { useAuthStore } from '../../stores/authStore'
+import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const userStore = useFeatureUserStore()
 
 const login = ref('')
 const password = ref('')
@@ -123,7 +125,10 @@ const onFormSubmit = () => {
 			password: password.value,
 			email: email.value,
 		})
-		.then(() => router.push('/'))
+		.then(() => {
+			userStore.init()
+			router.push('/')
+		})
 		.catch((e: HttpErrorResponse) => {
 			serverError.value = e.body?.message
 		})

@@ -5,11 +5,13 @@ import { type HttpErrorResponse } from '../../api-facade/http'
 import { usePersistentRef } from '../../composables/usePersistentRef'
 import { StoreKey } from '../../services/persistentStorage'
 import { useAuthStore } from '../../stores/authStore'
+import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
 import { RouteName } from '../../router/routeNames'
 import UiButton from '../../components/ui/UiButton.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const userStore = useFeatureUserStore()
 
 const login = ref('')
 const password = ref('')
@@ -89,7 +91,10 @@ watch(
 const tryLogIn = async () =>
 	authStore
 		.logIn({ login: login.value, password: password.value })
-		.then(() => router.push({ name: RouteName.Timer }))
+		.then(() => {
+			userStore.init()
+			router.push({ name: RouteName.Timer })
+		})
 		.catch((e) => {
 			if (e.body?.code === 'WRONG_AUTH_DATA') {
 				isAuthError.value = true
