@@ -1,7 +1,7 @@
 {
 	"name": "fgg",
 	"private": true,
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"type": "module",
 	"engines": {
 		"node": "24.13.1",
@@ -14,7 +14,8 @@
 		"tauri": "tauri",
 		"format": "prettier src/**/*{.vue,.ts} -w",
 		"lint": "eslint ./src",
-		"lint:fix": "eslint ./src --fix"
+		"lint:fix": "eslint ./src --fix",
+		"version": "node scripts/bump-version.mjs"
 	},
 	"dependencies": {
 		"@js-temporal/polyfill": "^0.5.1",
