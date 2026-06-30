@@ -1,0 +1,15 @@
+export const systemParameters = {
+	timerDurationInS: { name: 'TimerDurationInS', convert: (v: string): number => Number(v) },
+	shouldLimitFreePoints: { name: 'ShouldLimitFreePoints', convert: (v: string): boolean => v === '1' },
+	freePointsMinimum: { name: 'FreePointsMinimum', convert: (v: string): number => Number(v) },
+	minimumNumberOfWishlistGames: { name: 'MinimumNumberOfWishlistGames', convert: (v: string): number => Number(v) },
+	availableRollChangeByRoll: { name: 'AvailableRollChangeByRoll', convert: (v: string): number => Number(v) },
+	maximumAvailableRollCountForTimer: { name: 'MaximumAvailableRollCountForTimer', convert: (v: string): number => Number(v) },
+	minimumAvailableRollCountForRoll: { name: 'MinimumAvailableRollCountForRoll', convert: (v: string): number => Number(v) },
+	seizePenaltyPoints: { name: 'SeizePenaltyPoints', convert: (v: string): number => Number(v) },
+	availableRollChangeByTimer: { name: 'AvailableRollChangeByTimer', convert: (v: string): number => Number(v) },
+	territoryHourChangeByTimer: { name: 'TerritoryHourChangeByTimer', convert: (v: string): number => Number(v) },
+	experiencePointChangeByTimer: { name: 'ExperiencePointChangeByTimer', convert: (v: string): number => Number(v) },
+	experiencePointChangeByLevelUp: { name: 'ExperiencePointChangeByLevelUp', convert: (v: string): number => Number(v) },
+	territoryHourChangeBySeizeSlice: { name: 'TerritoryHourChangeBySeizeSlice', convert: (v: string): number[] => JSON.parse(v) },
+}

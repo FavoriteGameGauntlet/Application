@@ -6,11 +6,14 @@ import UiView from '../../components/ui/UiView.vue'
 import { LoadingStatus } from '../../utils/loadingState'
 import { useAuthStore } from '../../stores/authStore'
 import { useFeatureGameStore } from '../../stores/feature/featureGameStore'
+import { useFeatureSystemParametersStore } from '../../stores/feature/featureSystemParametersStore'
 import AddGameForm from './components/AddGameForm.vue'
 
 const gameStore = useFeatureGameStore()
+const systemParametersStore = useFeatureSystemParametersStore()
 
 const { current, canRoll, wishlist, enoughGamesInWishlist } = storeToRefs(gameStore)
+const { minimumNumberOfWishlistGames } = storeToRefs(systemParametersStore)
 
 const rollText = ref('Загрузка...')
 
@@ -99,8 +102,8 @@ onMounted(() => {
 				<AddGameForm />
 
 				<p class="hint" v-if="!enoughGamesInWishlist">
-					Чтобы крутить следующую игру, надо 6 игр, нужно ещё
-					{{ 6 - wishlist.length }}.
+					Чтобы крутить следующую игру, надо {{ minimumNumberOfWishlistGames }} игр, нужно ещё
+					{{ minimumNumberOfWishlistGames - wishlist.length }}.
 				</p>
 
 				<ol class="game-list" v-if="wishlist.length">

@@ -8,3 +8,7 @@ export type GetSystemParameter = {
 	}
 	response: SystemParameter
 }
+
+export type GetAllSystemParameters = {
+	response: SystemParameter[]
+}
