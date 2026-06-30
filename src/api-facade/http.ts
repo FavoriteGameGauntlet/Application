@@ -84,7 +84,10 @@ const makeRequest = async <T extends object | string = object | string>(
 			body: responseBody,
 		}
 	} catch (error) {
-		unauthorizedInterceptor(error as HttpErrorResponse)
+		await unauthorizedInterceptor(
+			error as HttpErrorResponse,
+			() => makeRequest(url, opts),
+		)
 
 		console.error(`[HTTP] ${method} ${fullUrl} - ERROR`, error)
 		throw error

@@ -20,6 +20,18 @@ pub fn run() {
     }
 
     builder
+        .plugin(
+            tauri_plugin_stronghold::Builder::new(|password| {
+                use argon2::Argon2;
+                let salt = b"fgg-snail-vault-salt-v1";
+                let mut key = [0u8; 32];
+                Argon2::default()
+                    .hash_password_into(password.as_bytes(), salt, &mut key)
+                    .expect("Failed to hash vault password");
+                key.to_vec()
+            })
+            .build(),
+        )
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_opener::init())

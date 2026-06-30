@@ -7,6 +7,7 @@
 		"core:default",
 		"opener:default",
 		"store:default",
+		"stronghold:default",
 		{
 			"identifier": "http:default",
 			"allow": [{ "url": "https://api.fgg-challenge.com" }]
