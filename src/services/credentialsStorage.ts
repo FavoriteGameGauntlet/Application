@@ -2,8 +2,8 @@ import type { Client} from '@tauri-apps/plugin-stronghold';
 import { Stronghold } from '@tauri-apps/plugin-stronghold'
 import { appLocalDataDir } from '@tauri-apps/api/path'
 
-const VAULT_PASSWORD = 'fgg-snail-credentials-vault-v1'
-const CLIENT_NAME = 'fgg-snail'
+const VAULT_PASSWORD = 'fgg-credentials-vault-v1'
+const CLIENT_NAME = 'fgg'
 const USERNAME_KEY = 'username'
 const PASSWORD_KEY = 'password'
 
