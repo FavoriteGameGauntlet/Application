@@ -24,7 +24,7 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	margin: auto;
+	margin-inline: auto;
 
 	max-inline-size: 700px;
 	min-inline-size: 320px;

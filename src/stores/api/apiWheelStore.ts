@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '../../api-facade/api'
-import { PointChangeWithLogin } from '../../api-facade/models/points-models'
+import type { PointChangeWithLogin } from '../../api-facade/models/points-models'
 import type {
 	RolledWheelEffectHistory,
 	WheelEffect,

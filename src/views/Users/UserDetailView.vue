@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { Temporal } from '@js-temporal/polyfill'
 import UiView from '../../components/ui/UiView.vue'
 import UiTimestamp from '../../components/ui/UiTimestamp.vue'
-import { GameState } from '../../api-facade/models/games-models'
+import { gameStateLabel } from '../../api-facade/models/games-models'
+import { formatInstant } from '../../utils/temporal'
 import { useAuthStore } from '../../stores/authStore'
 import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
 import { RouteName } from '../../router/routeNames'
@@ -20,22 +20,25 @@ const displayName = computed(() => {
 	return user?.displayName ?? login.value
 })
 
-type Tab = 'game' | 'history' | 'wishlist' | 'points' | 'effects'
-const activeTab = ref<Tab>('game')
+type Tab = 'game-history' | 'game-wishlist' | 'points' | 'wheel-effect-history'
+const activeTab = ref<Tab>('game-history')
 
 const tabs: { key: Tab; label: string }[] = [
-	{ key: 'game', label: 'Текущая игра' },
-	{ key: 'history', label: 'История' },
-	{ key: 'wishlist', label: 'Вишлист' },
+	{ key: 'game-history', label: 'История игр' },
+	{ key: 'game-wishlist', label: 'Вишлист игр' },
 	{ key: 'points', label: 'Очки' },
-	{ key: 'effects', label: 'Эффекты' },
+	{ key: 'wheel-effect-history', label: 'История эффектов колеса' },
 ]
 
-const currentGame = computed(() => userStore.userCurrentGame[login.value] ?? null)
+const currentGame = computed(
+	() => userStore.userCurrentGame[login.value] ?? null,
+)
 const gameHistory = computed(() => userStore.userHistory[login.value] ?? [])
-const wishlist = computed(() => userStore.userWishlist[login.value] ?? [])
+const gameWishlist = computed(() => userStore.userWishlist[login.value] ?? [])
 const pointsInfo = computed(() => userStore.userPoints[login.value] ?? null)
-const wheelEffects = computed(() => userStore.userEffects[login.value] ?? [])
+const wheelEffectHistory = computed(
+	() => userStore.userEffects[login.value] ?? [],
+)
 
 const loadAll = () => {
 	userStore.getUserCurrentGame(login.value)
@@ -48,28 +51,38 @@ const loadAll = () => {
 onMounted(loadAll)
 watch(login, loadAll)
 
-const formatInstant = (instant: Temporal.Instant): string => {
-	const tz = Temporal.Now.timeZoneId()
-	const dt = instant.toZonedDateTimeISO(tz)
-	const pad = (n: number) => n.toString().padStart(2, '0')
-	return `${dt.year}-${pad(dt.month)}-${pad(dt.day)} ${pad(dt.hour)}:${pad(dt.minute)}`
-}
-
-const gameStateLabel: Record<GameState, string> = {
-	[GameState.Started]: 'В процессе',
-	[GameState.Finished]: 'Завершена',
-	[GameState.Cancelled]: 'Брошена',
-}
 </script>
 
 <template>
 	<UiView>
 		<div class="user-detail">
-			<RouterLink :to="{ name: RouteName.Users }" class="back-link">← Игроки</RouterLink>
+			<RouterLink :to="{ name: RouteName.Users }" class="back-link"
+				>← Игроки</RouterLink
+			>
 
 			<div class="user-header">
 				<h1 class="user-name">{{ displayName }}</h1>
 				<span v-if="isCurrentUser" class="current-badge">Вы</span>
+			</div>
+
+			<div class="current-game">
+				<template v-if="userStore.getUserCurrentGameState.isLoaded">
+					<p v-if="!currentGame" class="empty-message">Игра не выбрана</p>
+					<dl v-else class="current-game__table">
+						<div class="current-game__row">
+							<dt>Игра</dt>
+							<dd>{{ currentGame.name }}</dd>
+						</div>
+						<div class="current-game__row">
+							<dt>Статус</dt>
+							<dd>{{ gameStateLabel[currentGame.state] }}</dd>
+						</div>
+						<div class="current-game__row">
+							<dt>Время</dt>
+							<dd><UiTimestamp :time="currentGame.timeSpent" /></dd>
+						</div>
+					</dl>
+				</template>
 			</div>
 
 			<div class="tabs">
@@ -84,26 +97,13 @@ const gameStateLabel: Record<GameState, string> = {
 				</button>
 			</div>
 
-			<div v-if="activeTab === 'game'" class="tab-content">
-				<p v-if="userStore.getUserCurrentGameState.isLoading">Загрузка...</p>
-				<p v-else-if="userStore.getUserCurrentGameState.isError">Ошибка загрузки</p>
-				<template v-else-if="userStore.getUserCurrentGameState.isLoaded">
-					<p v-if="!currentGame" class="empty-message">Игра не выбрана</p>
-					<div v-else class="info-card">
-						<span class="item-title">{{ currentGame.name }}</span>
-						<span class="item-meta">{{ gameStateLabel[currentGame.state] }}</span>
-						<span class="item-meta">
-							Время: <UiTimestamp :time="currentGame.timeSpent" />
-						</span>
-					</div>
-				</template>
-			</div>
-
-			<div v-if="activeTab === 'history'" class="tab-content">
+			<div v-if="activeTab === 'game-history'" class="tab-content">
 				<p v-if="userStore.getUserHistoryState.isLoading">Загрузка...</p>
 				<p v-else-if="userStore.getUserHistoryState.isError">Ошибка загрузки</p>
 				<template v-else-if="userStore.getUserHistoryState.isLoaded">
-					<p v-if="!gameHistory.length" class="empty-message">Нет истории игр</p>
+					<p v-if="!gameHistory.length" class="empty-message">
+						Нет истории игр
+					</p>
 					<ul v-else class="item-list">
 						<li v-for="(game, i) in gameHistory" :key="i" class="info-card">
 							<span class="item-title">{{ game.name }}</span>
@@ -116,13 +116,17 @@ const gameStateLabel: Record<GameState, string> = {
 				</template>
 			</div>
 
-			<div v-if="activeTab === 'wishlist'" class="tab-content">
+			<div v-if="activeTab === 'game-wishlist'" class="tab-content">
 				<p v-if="userStore.getUserWishlistState.isLoading">Загрузка...</p>
-				<p v-else-if="userStore.getUserWishlistState.isError">Ошибка загрузки</p>
+				<p v-else-if="userStore.getUserWishlistState.isError">
+					Ошибка загрузки
+				</p>
 				<template v-else-if="userStore.getUserWishlistState.isLoaded">
-					<p v-if="!wishlist.length" class="empty-message">Вишлист пуст</p>
-					<ol v-else class="wishlist">
-						<li v-for="game in wishlist" :key="game.name">{{ game.name }}</li>
+					<p v-if="!gameWishlist.length" class="empty-message">Вишлист пуст</p>
+					<ol v-else class="game-wishlist">
+						<li v-for="game in gameWishlist" :key="game.name">
+							{{ game.name }}
+						</li>
 					</ol>
 				</template>
 			</div>
@@ -157,15 +161,23 @@ const gameStateLabel: Record<GameState, string> = {
 				</template>
 			</div>
 
-			<div v-if="activeTab === 'effects'" class="tab-content">
+			<div v-if="activeTab === 'wheel-effect-history'" class="tab-content">
 				<p v-if="userStore.getUserEffectsState.isLoading">Загрузка...</p>
 				<p v-else-if="userStore.getUserEffectsState.isError">Ошибка загрузки</p>
 				<template v-else-if="userStore.getUserEffectsState.isLoaded">
-					<p v-if="!wheelEffects.length" class="empty-message">Нет истории эффектов</p>
+					<p v-if="!wheelEffectHistory.length" class="empty-message">
+						Нет истории эффектов
+					</p>
 					<ul v-else class="item-list">
-						<li v-for="(effect, i) in wheelEffects" :key="i" class="info-card info-card--row">
+						<li
+							v-for="(effect, i) in wheelEffectHistory"
+							:key="i"
+							class="info-card info-card--row"
+						>
 							<span class="item-title">{{ effect.name }}</span>
-							<span class="item-meta">{{ formatInstant(effect.rollDate) }}</span>
+							<span class="item-meta">{{
+								formatInstant(effect.rollDate)
+							}}</span>
 						</li>
 					</ul>
 				</template>
@@ -210,6 +222,29 @@ const gameStateLabel: Record<GameState, string> = {
 	color: #475569;
 	padding: 2px 8px;
 	border-radius: 9999px;
+}
+
+.current-game__table {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.current-game__row {
+	display: flex;
+	justify-content: space-between;
+	padding: 10px 16px;
+	border: 1px solid #e2e8f0;
+	border-radius: 4px;
+}
+
+.current-game__row dt {
+	color: #475569;
+}
+
+.current-game__row dd {
+	font-weight: 500;
+	margin: 0;
 }
 
 .tabs {
@@ -279,7 +314,7 @@ const gameStateLabel: Record<GameState, string> = {
 	color: #64748b;
 }
 
-.wishlist {
+.game-wishlist {
 	padding-left: 24px;
 	display: flex;
 	flex-direction: column;
