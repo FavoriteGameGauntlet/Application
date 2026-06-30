@@ -11,6 +11,8 @@
 		{
 			"identifier": "http:default",
 			"allow": [{ "url": "https://api.fgg-challenge.com" }]
-		}
+		},
+		"updater:default",
+		"process:default"
 	]
 }
