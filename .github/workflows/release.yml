@@ -33,5 +33,6 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'Release ${{ github.ref_name }}'
+          releaseBody: 'Для установки скачайте только файл `_x64-setup.exe`. Остальные не трогайте, они используются для автообновления.'
           releaseDraft: false
           prerelease: false
