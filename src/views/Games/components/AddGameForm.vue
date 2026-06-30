@@ -9,7 +9,7 @@ const { wishlist, getWishlistState } = storeToRefs(gameStore)
 const gameName = ref('')
 const addGameInput = useTemplateRef('add-game-input')
 
-const isLoading = computed(() => getWishlistState.value.isLoading.value)
+const isLoading = computed(() => getWishlistState.value.isLoading)
 
 const validator = computed(() => {
 	const result: { ok: boolean; message?: string } = { ok: true }
