@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '../../api-facade/api'
 import type { SystemParameter } from '../../api-facade/models/system-parameters-models'
+import { systemParameterDefs } from '../../constants/systemParameters'
 import { StoreName } from '../../enums/storeName'
 import { LoadingStatus, withLoading } from '../../utils/loadingState'
 
@@ -19,7 +20,7 @@ export const useApiSystemParametersStore = defineStore(
 				await api.systemParameters
 					.getAllSystemParameters()
 					.then((params) => {
-						const missingParams = Object.values(systemParameters)
+						const missingParams = Object.values(systemParameterDefs)
 							.map((p) => p.name)
 							.filter((name) => !params.some((p) => p.name === name))
 
