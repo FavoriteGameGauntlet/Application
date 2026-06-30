@@ -1,18 +1,14 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Temporal } from '@js-temporal/polyfill'
 import UiView from '../../components/ui/UiView.vue'
 import UiTimestamp from '../../components/ui/UiTimestamp.vue'
-import { api } from '../../api-facade/api'
-import type { CurrentGame, WishlistedGame } from '../../api-facade/models/games-models'
 import { GameState } from '../../api-facade/models/games-models'
-import type { RolledWheelEffectHistory } from '../../api-facade/models/wheel-effects-models'
-import type { PointInfo } from '../../api-facade/models/points-models'
-import type { HttpErrorResponse } from '../../api-facade/http'
 import { useAuthStore } from '../../stores/authStore'
 import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
 import { RouteName } from '../../router/routeNames'
+import { ref } from 'vue'
 
 const route = useRoute()
 const userStore = useFeatureUserStore()
@@ -36,84 +32,18 @@ const tabs: { key: Tab; label: string }[] = [
 	{ key: 'effects', label: 'Эффекты' },
 ]
 
-type Phase = 'init' | 'loading' | 'loaded' | 'error'
-
-const currentGame = ref<CurrentGame | null>(null)
-const gamePhase = ref<Phase>('init')
-
-const fetchCurrentGame = async () => {
-	gamePhase.value = 'loading'
-	try {
-		currentGame.value = await api.games.getCurrent({ path: { login: login.value } })
-		gamePhase.value = 'loaded'
-	} catch (e) {
-		if ((e as HttpErrorResponse).status === 404) {
-			currentGame.value = null
-			gamePhase.value = 'loaded'
-		} else {
-			gamePhase.value = 'error'
-		}
-	}
-}
-
-const gameHistory = ref<CurrentGame[]>([])
-const historyPhase = ref<Phase>('init')
-
-const fetchHistory = async () => {
-	historyPhase.value = 'loading'
-	try {
-		gameHistory.value = await api.games.getHistory({ path: { login: login.value } })
-		historyPhase.value = 'loaded'
-	} catch {
-		historyPhase.value = 'error'
-	}
-}
-
-const wishlist = ref<WishlistedGame[]>([])
-const wishlistPhase = ref<Phase>('init')
-
-const fetchWishlist = async () => {
-	wishlistPhase.value = 'loading'
-	try {
-		wishlist.value = await api.games.getWishlist({ path: { login: login.value } })
-		wishlistPhase.value = 'loaded'
-	} catch {
-		wishlistPhase.value = 'error'
-	}
-}
-
-const pointsInfo = ref<PointInfo | null>(null)
-const pointsPhase = ref<Phase>('init')
-
-const fetchPoints = async () => {
-	pointsPhase.value = 'loading'
-	try {
-		pointsInfo.value = await api.points.getPointsInfo({ path: { login: login.value } })
-		pointsPhase.value = 'loaded'
-	} catch {
-		pointsPhase.value = 'error'
-	}
-}
-
-const wheelEffects = ref<RolledWheelEffectHistory[]>([])
-const effectsPhase = ref<Phase>('init')
-
-const fetchEffects = async () => {
-	effectsPhase.value = 'loading'
-	try {
-		wheelEffects.value = await api.wheelEffects.getHistory({ path: { login: login.value } })
-		effectsPhase.value = 'loaded'
-	} catch {
-		effectsPhase.value = 'error'
-	}
-}
+const currentGame = computed(() => userStore.playerCurrentGame[login.value] ?? null)
+const gameHistory = computed(() => userStore.playerHistory[login.value] ?? [])
+const wishlist = computed(() => userStore.playerWishlist[login.value] ?? [])
+const pointsInfo = computed(() => userStore.playerPoints[login.value] ?? null)
+const wheelEffects = computed(() => userStore.playerEffects[login.value] ?? [])
 
 const loadAll = () => {
-	fetchCurrentGame()
-	fetchHistory()
-	fetchWishlist()
-	fetchPoints()
-	fetchEffects()
+	userStore.getPlayerCurrentGame(login.value)
+	userStore.getPlayerHistory(login.value)
+	userStore.getPlayerWishlist(login.value)
+	userStore.getPlayerPoints(login.value)
+	userStore.getPlayerEffects(login.value)
 }
 
 onMounted(loadAll)
@@ -156,9 +86,9 @@ const gameStateLabel: Record<GameState, string> = {
 			</div>
 
 			<div v-if="activeTab === 'game'" class="tab-content">
-				<p v-if="gamePhase === 'loading'">Загрузка...</p>
-				<p v-else-if="gamePhase === 'error'">Ошибка загрузки</p>
-				<template v-else-if="gamePhase === 'loaded'">
+				<p v-if="userStore.getPlayerCurrentGameState.isLoading">Загрузка...</p>
+				<p v-else-if="userStore.getPlayerCurrentGameState.isError">Ошибка загрузки</p>
+				<template v-else-if="userStore.getPlayerCurrentGameState.isLoaded">
 					<p v-if="!currentGame" class="empty-message">Игра не выбрана</p>
 					<div v-else class="info-card">
 						<span class="item-title">{{ currentGame.name }}</span>
@@ -171,9 +101,9 @@ const gameStateLabel: Record<GameState, string> = {
 			</div>
 
 			<div v-if="activeTab === 'history'" class="tab-content">
-				<p v-if="historyPhase === 'loading'">Загрузка...</p>
-				<p v-else-if="historyPhase === 'error'">Ошибка загрузки</p>
-				<template v-else-if="historyPhase === 'loaded'">
+				<p v-if="userStore.getPlayerHistoryState.isLoading">Загрузка...</p>
+				<p v-else-if="userStore.getPlayerHistoryState.isError">Ошибка загрузки</p>
+				<template v-else-if="userStore.getPlayerHistoryState.isLoaded">
 					<p v-if="!gameHistory.length" class="empty-message">Нет истории игр</p>
 					<ul v-else class="item-list">
 						<li v-for="(game, i) in gameHistory" :key="i" class="info-card">
@@ -188,9 +118,9 @@ const gameStateLabel: Record<GameState, string> = {
 			</div>
 
 			<div v-if="activeTab === 'wishlist'" class="tab-content">
-				<p v-if="wishlistPhase === 'loading'">Загрузка...</p>
-				<p v-else-if="wishlistPhase === 'error'">Ошибка загрузки</p>
-				<template v-else-if="wishlistPhase === 'loaded'">
+				<p v-if="userStore.getPlayerWishlistState.isLoading">Загрузка...</p>
+				<p v-else-if="userStore.getPlayerWishlistState.isError">Ошибка загрузки</p>
+				<template v-else-if="userStore.getPlayerWishlistState.isLoaded">
 					<p v-if="!wishlist.length" class="empty-message">Вишлист пуст</p>
 					<ol v-else class="wishlist">
 						<li v-for="game in wishlist" :key="game.name">{{ game.name }}</li>
@@ -199,9 +129,9 @@ const gameStateLabel: Record<GameState, string> = {
 			</div>
 
 			<div v-if="activeTab === 'points'" class="tab-content">
-				<p v-if="pointsPhase === 'loading'">Загрузка...</p>
-				<p v-else-if="pointsPhase === 'error'">Ошибка загрузки</p>
-				<template v-else-if="pointsPhase === 'loaded'">
+				<p v-if="userStore.getPlayerPointsState.isLoading">Загрузка...</p>
+				<p v-else-if="userStore.getPlayerPointsState.isError">Ошибка загрузки</p>
+				<template v-else-if="userStore.getPlayerPointsState.isLoaded">
 					<p v-if="!pointsInfo" class="empty-message">Нет данных</p>
 					<dl v-else class="points-info">
 						<div class="points-row">
@@ -229,9 +159,9 @@ const gameStateLabel: Record<GameState, string> = {
 			</div>
 
 			<div v-if="activeTab === 'effects'" class="tab-content">
-				<p v-if="effectsPhase === 'loading'">Загрузка...</p>
-				<p v-else-if="effectsPhase === 'error'">Ошибка загрузки</p>
-				<template v-else-if="effectsPhase === 'loaded'">
+				<p v-if="userStore.getPlayerEffectsState.isLoading">Загрузка...</p>
+				<p v-else-if="userStore.getPlayerEffectsState.isError">Ошибка загрузки</p>
+				<template v-else-if="userStore.getPlayerEffectsState.isLoaded">
 					<p v-if="!wheelEffects.length" class="empty-message">Нет истории эффектов</p>
 					<ul v-else class="item-list">
 						<li v-for="(effect, i) in wheelEffects" :key="i" class="info-card info-card--row">

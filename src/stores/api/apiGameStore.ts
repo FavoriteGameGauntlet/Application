@@ -11,8 +11,8 @@ import { LoadingStatus, withLoading } from '../../utils/loadingState'
 
 export const useApiGameStore = defineStore(StoreName.ApiGame, () => {
 	const wishlist = ref<Record<string, WishlistedGame[]>>({})
-
 	const current = ref<Record<string, CurrentGame | null>>({})
+	const history = ref<Record<string, CurrentGame[]>>({})
 
 	const [addToWishlist, addToWishlistState] = withLoading(
 		async (status, login: string, game: WishlistedGame) => {
@@ -84,6 +84,27 @@ export const useApiGameStore = defineStore(StoreName.ApiGame, () => {
 		},
 	)
 
+	const [getHistory, getHistoryState] = withLoading(
+		async (status, login: string) => {
+			if (status.value === LoadingStatus.LOADING) return
+
+			status.value = LoadingStatus.LOADING
+
+			return api.games
+				.getHistory({ path: { login } })
+				.then((games) => {
+					history.value[login] = games
+					status.value = LoadingStatus.LOADED
+
+					return games
+				})
+				.catch((e) => {
+					status.value = LoadingStatus.ERROR
+					throw e
+				})
+		},
+	)
+
 	const [roll, rollState] = withLoading(async (status, login: string) => {
 		if (status.value === LoadingStatus.LOADING) return
 
@@ -143,9 +164,13 @@ export const useApiGameStore = defineStore(StoreName.ApiGame, () => {
 	return {
 		current,
 		wishlist,
+		history,
 
 		getCurrent,
 		getCurrentState,
+
+		getHistory,
+		getHistoryState,
 
 		addToWishlist,
 		addToWishlistState,
