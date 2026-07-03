@@ -2,6 +2,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { authGuard } from './authGuard'
 import { initialPathGuard } from './initialPathGuard'
 import { routes } from './routes'
+import { timerAccessGuard } from './timerAccessGuard'
 
 export const router = createRouter({
 	history: createMemoryHistory(),
@@ -10,3 +11,4 @@ export const router = createRouter({
 
 router.beforeEach(initialPathGuard)
 router.beforeEach(authGuard)
+router.beforeEach(timerAccessGuard)

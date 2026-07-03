@@ -3,8 +3,10 @@ import { RouteName } from '../../../router/routeNames'
 import UserProfile from './UserProfile.vue'
 import NavbarLink from './NavbarLink.vue'
 import { useFeatureWheelStore } from '../../../stores/feature/featureWheelStore.ts'
+import { useFeatureTimerStore } from '../../../stores/feature/featureTimerStore.ts'
 
 const wheelStore = useFeatureWheelStore()
+const timerStore = useFeatureTimerStore()
 </script>
 
 <template>
@@ -12,7 +14,9 @@ const wheelStore = useFeatureWheelStore()
 		<UserProfile />
 
 		<div class="navbar__links">
-			<NavbarLink :to="RouteName.Timer"> Таймер </NavbarLink>
+			<NavbarLink :to="RouteName.Timer" :disabled="timerStore.timerUnavailable">
+				Таймер
+			</NavbarLink>
 
 			<NavbarLink :to="RouteName.Effects">
 				Роллы {{ wheelStore.pendingRoll ? '🔵' : '' }}
