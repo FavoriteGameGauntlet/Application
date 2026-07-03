@@ -17,7 +17,7 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 	const gameStore = useFeatureGameStore()
 	const wheelStore = useFeatureWheelStore()
 
-	const { state, durationLeft, durationTotal, syncedAt } =
+	const { state, durationLeft, durationTotal, lastActionDate } =
 		storeToRefs(timerStore)
 	const { isLoggedIn } = storeToRefs(authStore)
 
@@ -37,12 +37,12 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 	}
 
 	const calcRemaining = (): Temporal.Duration => {
-		if (!syncedAt.value || state.value !== TimerState.Running)
+		if (!lastActionDate.value || state.value !== TimerState.Running)
 			return durationLeft.value
 
-		const sinceSync = Temporal.Now.instant().since(syncedAt.value)
+		const sinceLastAction = Temporal.Now.instant().since(lastActionDate.value)
 
-		const left = durationLeft.value.subtract(sinceSync)
+		const left = durationLeft.value.subtract(sinceLastAction)
 		if (left.sign <= 0) return ZERO
 
 		const floored = left.round({
@@ -99,7 +99,6 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 	})
 
 	const init = () => {
-		// Get current timer on login
 		watch(
 			isLoggedIn,
 			(loggedIn) => {

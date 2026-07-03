@@ -22,7 +22,6 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 	const durationTotal = ref(Temporal.Duration.from(DEFAULT_DURATION))
 
 	const lastActionDate = ref<Temporal.Instant | null>(null)
-	const syncedAt = ref<Temporal.Instant | null>(null)
 	const durationLeft = ref(Temporal.Duration.from({ hours: 0 }))
 
 	const toggleState = makeLoadingState()
@@ -49,7 +48,6 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 				durationLeft.value = timer.remainingTime
 				state.value = timer.state
 				lastActionDate.value = timer.lastActionDate
-				syncedAt.value = Temporal.Now.instant()
 
 				status.value = LoadingStatus.LOADED
 			})
@@ -81,7 +79,6 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 				durationLeft.value = timer.remainingTime
 				durationTotal.value = timer.duration
 				lastActionDate.value = timer.lastActionDate
-				syncedAt.value = Temporal.Now.instant()
 
 				toggleState.status.value = LoadingStatus.LOADED
 			})
@@ -112,7 +109,6 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 				durationLeft.value = timer.remainingTime
 				durationTotal.value = timer.duration
 				lastActionDate.value = timer.lastActionDate
-				syncedAt.value = Temporal.Now.instant()
 
 				toggleState.status.value = LoadingStatus.LOADED
 			})
@@ -157,7 +153,6 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 		durationLeft,
 
 		lastActionDate,
-		syncedAt,
 
 		canStart,
 		canPause,
