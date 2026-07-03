@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 import { api } from '../../api-facade/api'
 import type { HttpErrorResponse } from '../../api-facade/http'
 import { TimerState } from '../../api-facade/models/timers-models'
+import { ZERO } from '../../constants/durations'
 import { StoreName } from '../../enums/storeName'
 import {
 	LoadingStatus,
@@ -22,7 +23,7 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 	const durationTotal = ref(Temporal.Duration.from(DEFAULT_DURATION))
 
 	const lastActionDate = ref<Temporal.Instant | null>(null)
-	const durationLeft = ref(Temporal.Duration.from({ hours: 0 }))
+	const durationLeft = ref(ZERO)
 
 	const toggleState = makeLoadingState()
 
@@ -53,7 +54,7 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 			})
 			.catch((error: HttpErrorResponse) => {
 				if (error.body?.code === 'AVAILABLE_ROLLS_EXIST') {
-					durationLeft.value = Temporal.Duration.from({ hours: 0 })
+					durationLeft.value = ZERO
 					state.value = null
 					lastActionDate.value = null
 
@@ -139,7 +140,7 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 
 	const markFinished = () => {
 		state.value = TimerState.Finished
-		durationLeft.value = Temporal.Duration.from({ hours: 0 })
+		durationLeft.value = ZERO
 		getCurrent()
 	}
 

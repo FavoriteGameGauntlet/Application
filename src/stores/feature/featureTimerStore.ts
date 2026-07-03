@@ -2,14 +2,12 @@ import { Temporal } from '@js-temporal/polyfill'
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { TimerState } from '../../api-facade/models/timers-models'
+import { ZERO, ONE_SECOND } from '../../constants/durations'
 import { StoreName } from '../../enums/storeName'
 import { useApiTimerStore } from '../api/apiTimerStore'
 import { useAuthStore } from '../authStore'
 import { useFeatureGameStore } from './featureGameStore'
 import { useFeatureWheelStore } from './featureWheelStore'
-
-const ZERO = Temporal.Duration.from({ seconds: 0 })
-const ONE_SECOND = Temporal.Duration.from({ seconds: 1 })
 
 export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 	const timerStore = useApiTimerStore()
