@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed } from 'vue'
 import { StoreName } from '../../enums/storeName'
-import { systemParameters } from '../../constants/systemParameters'
+import { systemParameterDefs } from '../../constants/systemParameters'
 import type {
 	SystemParameterName,
 	SystemParameterType,
@@ -15,7 +15,7 @@ export const useFeatureSystemParametersStore = defineStore(
 
 		const getByName = <K extends SystemParameterName>(key: K) =>
 			computed(() => {
-				const { name, convert } = systemParameters[key]
+				const { name, convert } = systemParameterDefs[key]
 				return convert(
 					systemParametersStore.systemParameters?.find((p) => p.name === name)
 						?.value as string,

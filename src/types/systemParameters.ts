@@ -1,7 +1,7 @@
-import type { systemParameters } from '../constants/systemParameters'
+import type { systemParameterDefs } from '../constants/systemParameters'
 
-export type SystemParameterName = keyof typeof systemParameters
+export type SystemParameterName = keyof typeof systemParameterDefs
 
 export type SystemParameterType<K extends SystemParameterName> = ReturnType<
-	(typeof systemParameters)[K]['convert']
+	(typeof systemParameterDefs)[K]['convert']
 >

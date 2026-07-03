@@ -1390,7 +1390,7 @@ dependencies = [
 
 [[package]]
 name = "fgg"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "argon2",
  "serde",

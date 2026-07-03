@@ -1,4 +1,4 @@
-export const systemParameters = {
+export const systemParameterDefs = {
 	timerDurationInS: { name: 'TimerDurationInS', convert: (v: string): number => Number(v) },
 	shouldLimitFreePoints: { name: 'ShouldLimitFreePoints', convert: (v: string): boolean => v === '1' },
 	freePointsMinimum: { name: 'FreePointsMinimum', convert: (v: string): number => Number(v) },
