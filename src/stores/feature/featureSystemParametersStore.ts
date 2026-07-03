@@ -22,7 +22,6 @@ export const useFeatureSystemParametersStore = defineStore(
 				) as SystemParameterType<K>
 			})
 
-		const timerDurationInS = getByName('timerDurationInS')
 		const shouldLimitFreePoints = getByName('shouldLimitFreePoints')
 		const freePointsMinimum = getByName('freePointsMinimum')
 		const minimumNumberOfWishlistGames = getByName(
@@ -53,7 +52,6 @@ export const useFeatureSystemParametersStore = defineStore(
 		}
 
 		return {
-			timerDurationInS,
 			shouldLimitFreePoints,
 			freePointsMinimum,
 			minimumNumberOfWishlistGames,

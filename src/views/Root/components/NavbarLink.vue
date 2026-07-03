@@ -6,7 +6,7 @@ import { storeToRefs } from 'pinia'
 import { useSettingsStore } from '../../../stores/settingsStore'
 import { useResizeObserver } from '../../../composables/useResizeObserver'
 
-defineProps<{ to: RouteName }>()
+defineProps<{ to: RouteName; disabled?: boolean }>()
 
 const seed = Math.floor(Math.random() * Math.pow(2, 31)) + 1
 
@@ -63,6 +63,7 @@ watch(roughnessModifier, drawShapes)
 <template>
 	<RouterLink
 		class="navbar-link"
+		:class="{ 'navbar-link--disabled': disabled }"
 		activeClass="navbar-link--active"
 		:to="{ name: to }"
 	>
@@ -93,6 +94,13 @@ watch(roughnessModifier, drawShapes)
 
 .navbar-link--active {
 	color: black;
+}
+
+.navbar-link--disabled {
+	pointer-events: none;
+	user-select: none;
+	cursor: default;
+	opacity: 0.4;
 }
 
 .navbar-link__svg {

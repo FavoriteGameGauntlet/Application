@@ -12,15 +12,9 @@ import {
 	withLoading,
 } from '../../utils/loadingState'
 
-const DEFAULT_DURATION = Temporal.Duration.from({
-	hours: 2,
-	minutes: 0,
-	seconds: 0,
-})
-
 export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 	const state = ref<TimerState | null>(null)
-	const durationTotal = ref(Temporal.Duration.from(DEFAULT_DURATION))
+	const durationTotal = ref(ZERO)
 
 	const lastActionDate = ref<Temporal.Instant | null>(null)
 	const durationLeft = ref(ZERO)
