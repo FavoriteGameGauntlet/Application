@@ -5,7 +5,6 @@ import { usePersistentRef } from '../composables/usePersistentRef'
 import { StoreName } from '../enums/storeName'
 import { router } from '../router/router'
 import { persistentStorage, StoreKey } from '../services/persistentStorage'
-import { credentialsStorage } from '../services/credentialsStorage'
 import { LoadingStatus, makeLoadingState, withLoading } from '../utils/loadingState'
 
 export const useAuthStore = defineStore(StoreName.Auth, () => {
@@ -14,8 +13,9 @@ export const useAuthStore = defineStore(StoreName.Auth, () => {
 	)
 
 	const getIsLoggedIn = async () => {
-		const login = await persistentStorage.get(StoreKey.Login)
-		return login !== undefined
+		if (isLoginReady.value) return login.value !== undefined
+		const stored = await persistentStorage.get(StoreKey.Login)
+		return stored !== undefined
 	}
 
 	const isLoggedIn = computed(() => login.value !== undefined)
@@ -43,7 +43,6 @@ export const useAuthStore = defineStore(StoreName.Auth, () => {
 			})
 			.then(() => {
 				loginState.status.value = LoadingStatus.LOADED
-				credentialsStorage.save(data.login, data.password)
 			})
 			.catch((e) => {
 				loginState.status.value = LoadingStatus.ERROR
@@ -63,7 +62,6 @@ export const useAuthStore = defineStore(StoreName.Auth, () => {
 			.then(() => {
 				login.value = data.login
 				loginState.status.value = LoadingStatus.LOADED
-				credentialsStorage.save(data.login, data.password)
 			})
 			.catch((e) => {
 				loginState.status.value = LoadingStatus.ERROR
@@ -89,7 +87,6 @@ export const useAuthStore = defineStore(StoreName.Auth, () => {
 			})
 			.finally(() => {
 				login.value = undefined
-				credentialsStorage.clear()
 				router.push('/login')
 			})
 	})
