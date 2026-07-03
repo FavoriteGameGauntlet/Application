@@ -105,15 +105,10 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 
 		toggleState.status.value = LoadingStatus.LOADING
 
-		const prevLastActionDate = lastActionDate.value
-		const prevState = state.value
-
-		lastActionDate.value = Temporal.Now.instant()
-		state.value = TimerState.Paused
-
 		await api.timers
 			.postPause()
 			.then((timer) => {
+				state.value = timer.state
 				durationLeft.value = timer.remainingTime
 				durationTotal.value = timer.duration
 				lastActionDate.value = timer.lastActionDate
@@ -129,9 +124,6 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 					toggleState.status.value = LoadingStatus.LOADED
 					return
 				}
-
-				state.value = prevState
-				lastActionDate.value = prevLastActionDate
 
 				toggleState.status.value = LoadingStatus.ERROR
 				throw error
@@ -151,6 +143,7 @@ export const useApiTimerStore = defineStore(StoreName.ApiTimer, () => {
 
 	const markFinished = () => {
 		state.value = TimerState.Finished
+		durationLeft.value = Temporal.Duration.from({ hours: 0 })
 		getCurrent()
 	}
 

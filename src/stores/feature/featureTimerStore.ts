@@ -1,5 +1,5 @@
 import { Temporal } from '@js-temporal/polyfill'
-import { defineStore } from 'pinia'
+import { defineStore, storeToRefs } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { TimerState } from '../../api-facade/models/timers-models'
 import { StoreName } from '../../enums/storeName'
@@ -8,28 +8,42 @@ import { useAuthStore } from '../authStore'
 import { useFeatureGameStore } from './featureGameStore'
 import { useFeatureWheelStore } from './featureWheelStore'
 
+const ZERO = Temporal.Duration.from({ seconds: 0 })
+const ONE_SECOND = Temporal.Duration.from({ seconds: 1 })
+
 export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 	const timerStore = useApiTimerStore()
 	const authStore = useAuthStore()
 	const gameStore = useFeatureGameStore()
 	const wheelStore = useFeatureWheelStore()
 
+	const { state, durationLeft, durationTotal, syncedAt } =
+		storeToRefs(timerStore)
+	const { isLoggedIn } = storeToRefs(authStore)
+
 	const loading = computed(
 		() =>
 			timerStore.toggleState.isLoading || timerStore.getCurrentState.isLoading,
 	)
 
-	const remaining = ref(Temporal.Duration.from({ seconds: 0 }))
+	const remaining = ref(ZERO)
 	let interval: ReturnType<typeof setInterval> | null = null
 
+	const stopInterval = () => {
+		if (interval) {
+			clearInterval(interval)
+			interval = null
+		}
+	}
+
 	const calcRemaining = (): Temporal.Duration => {
-		if (!timerStore.syncedAt || timerStore.state !== TimerState.Running)
-			return timerStore.durationLeft
+		if (!syncedAt.value || state.value !== TimerState.Running)
+			return durationLeft.value
 
-		const sinceSync = Temporal.Now.instant().since(timerStore.syncedAt)
+		const sinceSync = Temporal.Now.instant().since(syncedAt.value)
 
-		const left = timerStore.durationLeft.subtract(sinceSync)
-		if (left.sign <= 0) return Temporal.Duration.from({ seconds: 0 })
+		const left = durationLeft.value.subtract(sinceSync)
+		if (left.sign <= 0) return ZERO
 
 		const floored = left.round({
 			largestUnit: 'hour',
@@ -37,31 +51,21 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 			roundingMode: 'floor',
 		})
 
-		return floored.total({ unit: 'seconds' }) > 0
-			? floored
-			: Temporal.Duration.from({ seconds: 1 })
+		return floored.sign > 0 ? floored : ONE_SECOND
 	}
 
 	watch(
-		() => timerStore.state,
-		(newState, oldState) => {
-			if (interval) {
-				clearInterval(interval)
-				interval = null
-			}
-
-			if (oldState !== TimerState.Running) {
-				remaining.value = calcRemaining()
-			}
+		[state, durationLeft],
+		([newState]) => {
+			stopInterval()
+			remaining.value = calcRemaining()
 
 			if (newState === TimerState.Running) {
 				interval = setInterval(() => {
 					remaining.value = calcRemaining()
 
-					if (remaining.value.total({ unit: 'seconds' }) <= 0) {
-						clearInterval(interval!)
-						interval = null
-						remaining.value = Temporal.Duration.from({ seconds: 0 })
+					if (remaining.value.sign <= 0) {
+						stopInterval()
 						timerStore.markFinished()
 					}
 				}, 1000)
@@ -70,21 +74,14 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 		{ immediate: true },
 	)
 
-	watch(
-		() => timerStore.durationLeft,
-		() => {
-			remaining.value = calcRemaining()
-		},
-	)
-
-	const remainingAtLastGameUpdate = ref(Temporal.Duration.from({ seconds: 0 }))
+	const remainingAtLastGameUpdate = ref(ZERO)
 
 	watch(
 		[() => gameStore.current?.timeSpent, remaining],
 		([newTimeSpent], [prevTimeSpent]) => {
 			if (
 				newTimeSpent !== prevTimeSpent ||
-				remainingAtLastGameUpdate.value.total({ unit: 'seconds' }) === 0
+				remainingAtLastGameUpdate.value.sign === 0
 			) {
 				remainingAtLastGameUpdate.value = remaining.value
 			}
@@ -93,8 +90,7 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 	)
 
 	const elapsed = computed(() => {
-		const timeSpent =
-			gameStore.current?.timeSpent ?? Temporal.Duration.from({ seconds: 0 })
+		const timeSpent = gameStore.current?.timeSpent ?? ZERO
 		const sinceLastUpdate = remainingAtLastGameUpdate.value.subtract(
 			remaining.value,
 		)
@@ -105,9 +101,9 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 	const init = () => {
 		// Get current timer on login
 		watch(
-			() => authStore.isLoggedIn,
-			(isLoggedIn) => {
-				if (isLoggedIn) {
+			isLoggedIn,
+			(loggedIn) => {
+				if (loggedIn) {
 					timerStore.getCurrent()
 				} else {
 					timerStore.reset()
@@ -118,9 +114,9 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 	}
 
 	return {
-		state: computed(() => timerStore.state),
+		state,
 
-		durationTotal: computed(() => timerStore.durationTotal),
+		durationTotal,
 		remaining,
 		elapsed,
 
