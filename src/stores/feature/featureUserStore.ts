@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed } from 'vue'
+import type { PointChange } from '../../api-facade/models/points-models'
 import type { Login } from '../../api-facade/models/users-models'
 import { StoreName } from '../../enums/storeName'
 import { useApiGameStore } from '../api/apiGameStore'
@@ -33,6 +34,8 @@ export const useFeatureUserStore = defineStore(StoreName.FeatureUser, () => {
 	const getUserFreePointsHistory = (login: string) => pointsStore.getFreePointsHistory(login)
 	const getUserTerritoryPointsHistory = (login: string) => pointsStore.getTerritoryPointsHistory(login)
 	const getUserEffects = (login: string) => wheelStore.getHistory(login)
+	const changeExperiencePoints = (change: PointChange) =>
+		pointsStore.postExperiencePoints(change)
 
 	return {
 		currentUser,
@@ -75,5 +78,8 @@ export const useFeatureUserStore = defineStore(StoreName.FeatureUser, () => {
 
 		getUserEffects,
 		getUserEffectsState: wheelStore.getHistoryState,
+
+		changeExperiencePoints,
+		changeExperiencePointsState: pointsStore.postExperiencePointsState,
 	}
 })

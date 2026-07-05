@@ -3,6 +3,7 @@ import GamesView from '../views/Games/GamesView.vue'
 import LoginView from '../views/Login/LoginView.vue'
 import UserDetailView from '../views/Users/UserDetailView.vue'
 import UsersView from '../views/Users/UsersView.vue'
+import PointsView from '../views/Points/PointsView.vue'
 import RootView from '../views/Root/RootView.vue'
 import SignUpView from '../views/SignUp/SignUpView.vue'
 import TimerView from '../views/Timer/TimerView.vue'
@@ -33,6 +34,12 @@ export const routes: RouteRecordRaw[] = [
 				path: 'users/:login',
 				component: UserDetailView,
 				name: RouteName.UserDetail,
+			},
+
+			{
+				path: 'points',
+				component: PointsView,
+				name: RouteName.Points,
 			},
 
 			{

@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { api } from '../../api-facade/api'
 import type {
 	FreePointChangeHistory,
+	PointChange,
 	PointInfo,
 	TerritoryPointChangeHistory,
 } from '../../api-facade/models/points-models'
@@ -77,6 +78,26 @@ export const useApiPointsStore = defineStore(StoreName.ApiPoints, () => {
 		},
 	)
 
+	const [postExperiencePoints, postExperiencePointsState] = withLoading(
+		async (status, change: PointChange) => {
+			if (status.value === LoadingStatus.LOADING) return
+
+			status.value = LoadingStatus.LOADING
+
+			return api.points
+				.postExperiencePoints({ body: change })
+				.then((result) => {
+					status.value = LoadingStatus.LOADED
+
+					return result
+				})
+				.catch((e) => {
+					status.value = LoadingStatus.ERROR
+					throw e
+				})
+		},
+	)
+
 	return {
 		pointsInfo,
 		freePointsHistory,
@@ -90,5 +111,8 @@ export const useApiPointsStore = defineStore(StoreName.ApiPoints, () => {
 
 		getTerritoryPointsHistory,
 		getTerritoryPointsHistoryState,
+
+		postExperiencePoints,
+		postExperiencePointsState,
 	}
 })

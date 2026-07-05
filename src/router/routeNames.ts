@@ -3,6 +3,7 @@ export const enum RouteName {
 	Timer = 'timer',
 	Users = 'users',
 	UserDetail = 'user-detail',
+	Points = 'points',
 	Games = 'games',
 	Effects = 'wheel-rolls',
 	Login = 'login',

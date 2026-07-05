@@ -65,6 +65,16 @@ export const freePointChangeSourceLabel: Record<FreePointChangeSource, string> =
 	[FreePointChangeSource.Other]: 'Другое',
 }
 
+export enum ExperienceChangeSource {
+	LevelUp = 'level-up',
+	Other = 'other',
+}
+
+export const experienceChangeSourceLabel: Record<ExperienceChangeSource, string> = {
+	[ExperienceChangeSource.LevelUp]: 'Повышение уровня',
+	[ExperienceChangeSource.Other]: 'Другое',
+}
+
 export type FreePointChange = PointChange & {
 	wheelEffectName?: string
 }
