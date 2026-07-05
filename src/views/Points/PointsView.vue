@@ -4,6 +4,7 @@ import UiView from '../../components/ui/UiView.vue'
 import { useAuthStore } from '../../stores/authStore'
 import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
 import ExperiencePointsForm from './components/ExperiencePointsForm.vue'
+import TerritoryHoursForm from './components/TerritoryHoursForm.vue'
 
 const authStore = useAuthStore()
 const userStore = useFeatureUserStore()
@@ -35,7 +36,7 @@ watch(login, loadPoints)
 						<dt>Очки опыта</dt>
 						<dd class="points-row__value">
 							{{ pointsInfo.experiencePoints }}
-							<ExperiencePointsForm v-if="login" :login="login" />
+							<ExperiencePointsForm />
 						</dd>
 					</div>
 					<div class="points-row">
@@ -48,7 +49,10 @@ watch(login, loadPoints)
 					</div>
 					<div class="points-row">
 						<dt>Часы территорий</dt>
-						<dd>{{ pointsInfo.territoryHours }}</dd>
+						<dd class="points-row__value">
+							{{ pointsInfo.territoryHours }}
+							<TerritoryHoursForm />
+						</dd>
 					</div>
 					<div class="points-row">
 						<dt>Доступных бросков</dt>

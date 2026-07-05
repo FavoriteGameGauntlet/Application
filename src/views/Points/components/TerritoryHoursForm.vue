@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import {
-	ExperienceChangeSource,
-	experienceChangeSourceLabel,
+	TerritoryHourChangeSource,
+	territoryHourChangeSourceLabel,
 } from '../../../api-facade/models/points-models'
 import { useFeatureSystemParametersStore } from '../../../stores/feature/featureSystemParametersStore'
 import { useFeatureUserStore } from '../../../stores/feature/featureUserStore'
@@ -11,38 +11,70 @@ const userStore = useFeatureUserStore()
 const systemParametersStore = useFeatureSystemParametersStore()
 
 const showModal = ref(false)
-const reason = ref<ExperienceChangeSource>(ExperienceChangeSource.LevelUp)
+const reason = ref<TerritoryHourChangeSource>(TerritoryHourChangeSource.Seize)
+const seizeSliceIndex = ref<number | null>(null)
+const applyPenalty = ref(false)
 const amount = ref<number | null>(null)
 
-const isLevelUp = computed(
-	() => reason.value === ExperienceChangeSource.LevelUp,
+const isSeize = computed(
+	() => reason.value === TerritoryHourChangeSource.Seize,
 )
 
 const isLoading = computed(
-	() => userStore.changeExperiencePointsState.isLoading,
+	() => userStore.changeTerritoryHoursState.isLoading,
 )
+
+const seizeSliceDisplayValues = computed(() =>
+	systemParametersStore.territoryHourChangeBySeizeSlice.map((value) =>
+		applyPenalty.value
+			? value + systemParametersStore.seizePenaltyPoints
+			: value,
+	),
+)
+
+watch(reason, (value) => {
+	if (value === TerritoryHourChangeSource.Seize) {
+		seizeSliceIndex.value = systemParametersStore.territoryHourChangeBySeizeSlice
+			.length
+			? 0
+			: null
+	} else {
+		amount.value = null
+		applyPenalty.value = false
+	}
+})
 
 const closeModal = () => {
 	showModal.value = false
-	reason.value = ExperienceChangeSource.LevelUp
+	reason.value = TerritoryHourChangeSource.Seize
+	seizeSliceIndex.value = null
+	applyPenalty.value = false
 	amount.value = null
 }
 
 const onEditButtonClick = () => {
+	seizeSliceIndex.value = systemParametersStore.territoryHourChangeBySeizeSlice
+		.length
+		? 0
+		: null
 	showModal.value = true
 }
 
 const onFormSubmit = () => {
 	if (isLoading.value) return
 
-	const desiredChangeValue = isLevelUp.value
-		? systemParametersStore.experiencePointChangeByLevelUp
+	const desiredChangeValue = isSeize.value
+		? seizeSliceIndex.value !== null
+			? (systemParametersStore.territoryHourChangeBySeizeSlice[
+					seizeSliceIndex.value
+				] ?? null)
+			: null
 		: amount.value
 
 	if (!desiredChangeValue) return
 
 	userStore
-		.changeExperiencePoints({ changeSource: reason.value, desiredChangeValue })
+		.changeTerritoryHours({ changeSource: reason.value, desiredChangeValue })
 		.then(() => {
 			closeModal()
 		})
@@ -50,17 +82,17 @@ const onFormSubmit = () => {
 </script>
 
 <template>
-	<div class="experience-points-form">
+	<div class="territory-hours-form">
 		<button class="edit-button" @click="onEditButtonClick">✏️</button>
 
 		<Teleport to="body">
 			<div v-if="showModal" class="modal-overlay" @click.self="closeModal">
 				<form class="modal" @submit.prevent="onFormSubmit">
-					<h2 class="modal-title">Изменить очки опыта</h2>
+					<h2 class="modal-title">Изменить часы территории</h2>
 
 					<select class="reason-select" :disabled="isLoading" v-model="reason">
 						<option
-							v-for="(label, key) in experienceChangeSourceLabel"
+							v-for="(label, key) in territoryHourChangeSourceLabel"
 							:key="key"
 							:value="key"
 						>
@@ -68,16 +100,35 @@ const onFormSubmit = () => {
 						</option>
 					</select>
 
-					<p v-if="isLevelUp" class="level-up-cost">
-						Будет списано
-						{{ systemParametersStore.experiencePointChangeByLevelUp }} очков
-					</p>
+					<template v-if="isSeize">
+						<select
+							class="amount-input"
+							:disabled="isLoading"
+							v-model.number="seizeSliceIndex"
+						>
+							<option
+								v-for="(value, index) in seizeSliceDisplayValues"
+								:key="index"
+								:value="index"
+							>
+								{{ value }}
+							</option>
+						</select>
+
+						<label class="penalty-checkbox">
+							<input
+								type="checkbox"
+								:disabled="isLoading"
+								v-model="applyPenalty"
+							/>
+							Чужая территория
+						</label>
+					</template>
 
 					<input
 						v-else
 						class="amount-input"
 						type="number"
-						min="1"
 						placeholder="Количество"
 						:disabled="isLoading"
 						v-model.number="amount"
@@ -144,9 +195,11 @@ const onFormSubmit = () => {
 	padding: 4px 8px;
 }
 
-.level-up-cost {
-	color: #64748b;
-	font-size: 0.875rem;
+.penalty-checkbox {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
 }
 
 .modal-actions {

@@ -75,6 +75,16 @@ export const experienceChangeSourceLabel: Record<ExperienceChangeSource, string>
 	[ExperienceChangeSource.Other]: 'Другое',
 }
 
+export enum TerritoryHourChangeSource {
+	Seize = 'seize',
+	Other = 'other',
+}
+
+export const territoryHourChangeSourceLabel: Record<TerritoryHourChangeSource, string> = {
+	[TerritoryHourChangeSource.Seize]: 'Захват',
+	[TerritoryHourChangeSource.Other]: 'Другое',
+}
+
 export type FreePointChange = PointChange & {
 	wheelEffectName?: string
 }
