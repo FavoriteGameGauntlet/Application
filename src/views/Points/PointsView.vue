@@ -4,7 +4,6 @@ import UiView from '../../components/ui/UiView.vue'
 import { useAuthStore } from '../../stores/authStore'
 import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
 import ExperiencePointsForm from './components/ExperiencePointsForm.vue'
-import TerritoryHoursForm from './components/TerritoryHoursForm.vue'
 
 const authStore = useAuthStore()
 const userStore = useFeatureUserStore()
@@ -12,7 +11,6 @@ const userStore = useFeatureUserStore()
 const login = computed(() => authStore.login)
 
 const experiencePoints = computed(() => userStore.userExperiencePoints)
-const territoryHours = computed(() => userStore.userTerritoryHours)
 const freePoints = computed(() =>
 	login.value ? (userStore.userFreePoints[login.value] ?? null) : null,
 )
@@ -23,21 +21,18 @@ const territoryPoints = computed(() =>
 const isLoading = computed(
 	() =>
 		userStore.getUserExperiencePointsState.isLoading ||
-		userStore.getUserTerritoryHoursState.isLoading ||
 		userStore.getUserFreePointsState.isLoading ||
 		userStore.getUserTerritoryPointsState.isLoading,
 )
 const isError = computed(
 	() =>
 		userStore.getUserExperiencePointsState.isError ||
-		userStore.getUserTerritoryHoursState.isError ||
 		userStore.getUserFreePointsState.isError ||
 		userStore.getUserTerritoryPointsState.isError,
 )
 const isLoaded = computed(
 	() =>
 		userStore.getUserExperiencePointsState.isLoaded &&
-		userStore.getUserTerritoryHoursState.isLoaded &&
 		userStore.getUserFreePointsState.isLoaded &&
 		userStore.getUserTerritoryPointsState.isLoaded,
 )
@@ -46,7 +41,6 @@ const loadPoints = () => {
 	if (!login.value) return
 
 	userStore.getUserExperiencePoints()
-	userStore.getUserTerritoryHours()
 	userStore.getUserFreePoints(login.value)
 	userStore.getUserTerritoryPoints(login.value)
 }
@@ -77,13 +71,6 @@ watch(login, loadPoints)
 				<div class="points-row">
 					<dt>Очки территорий</dt>
 					<dd>{{ territoryPoints }}</dd>
-				</div>
-				<div class="points-row">
-					<dt>Часы территорий</dt>
-					<dd class="points-row__value">
-						{{ territoryHours }}
-						<TerritoryHoursForm />
-					</dd>
 				</div>
 			</dl>
 		</div>
