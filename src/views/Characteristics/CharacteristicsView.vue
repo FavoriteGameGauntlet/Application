@@ -3,40 +3,27 @@ import { computed, onMounted, watch } from 'vue'
 import UiView from '../../components/ui/UiView.vue'
 import { useAuthStore } from '../../stores/authStore'
 import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
+import ExperiencePointsForm from './components/ExperiencePointsForm.vue'
 
 const authStore = useAuthStore()
 const userStore = useFeatureUserStore()
 
 const login = computed(() => authStore.login)
 
-const freePoints = computed(() =>
-	login.value ? (userStore.userFreePoints[login.value] ?? null) : null,
-)
-const territoryPoints = computed(() =>
-	login.value ? (userStore.userTerritoryPoints[login.value] ?? null) : null,
-)
+const experiencePoints = computed(() => userStore.userExperiencePoints)
 
 const isLoading = computed(
-	() =>
-		userStore.getUserFreePointsState.isLoading ||
-		userStore.getUserTerritoryPointsState.isLoading,
+	() => userStore.getUserExperiencePointsState.isLoading,
 )
-const isError = computed(
-	() =>
-		userStore.getUserFreePointsState.isError ||
-		userStore.getUserTerritoryPointsState.isError,
-)
+const isError = computed(() => userStore.getUserExperiencePointsState.isError)
 const isLoaded = computed(
-	() =>
-		userStore.getUserFreePointsState.isLoaded &&
-		userStore.getUserTerritoryPointsState.isLoaded,
+	() => userStore.getUserExperiencePointsState.isLoaded,
 )
 
 const loadPoints = () => {
 	if (!login.value) return
 
-	userStore.getUserFreePoints(login.value)
-	userStore.getUserTerritoryPoints(login.value)
+	userStore.getUserExperiencePoints()
 }
 
 onMounted(loadPoints)
@@ -45,19 +32,18 @@ watch(login, loadPoints)
 
 <template>
 	<UiView>
-		<div class="points">
-			<h1>Очки</h1>
+		<div class="characteristics">
+			<h1>Характеристики</h1>
 
 			<p v-if="isLoading">Загрузка...</p>
 			<p v-else-if="isError">Ошибка загрузки</p>
 			<dl v-else-if="isLoaded" class="points-info">
 				<div class="points-row">
-					<dt>Свободные очки</dt>
-					<dd>{{ freePoints }}</dd>
-				</div>
-				<div class="points-row">
-					<dt>Очки территорий</dt>
-					<dd>{{ territoryPoints }}</dd>
+					<dt>Очки опыта</dt>
+					<dd class="points-row__value">
+						{{ experiencePoints }}
+						<ExperiencePointsForm />
+					</dd>
 				</div>
 			</dl>
 		</div>
@@ -65,7 +51,7 @@ watch(login, loadPoints)
 </template>
 
 <style scoped>
-.points {
+.characteristics {
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
@@ -94,5 +80,11 @@ watch(login, loadPoints)
 .points-row dd {
 	font-weight: 500;
 	margin: 0;
+}
+
+.points-row__value {
+	display: flex;
+	align-items: center;
+	gap: 8px;
 }
 </style>
