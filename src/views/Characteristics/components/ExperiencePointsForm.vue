@@ -22,6 +22,10 @@ const isLoading = computed(
 	() => userStore.changeExperiencePointsState.isLoading,
 )
 
+const fixedValue = computed<number | null>(() =>
+	isLevelUp.value ? systemParametersStore.experiencePointChangeByLevelUp : null,
+)
+
 const closeModal = () => {
 	showModal.value = false
 	reason.value = ExperienceChangeSource.LevelUp
@@ -32,12 +36,14 @@ const onEditButtonClick = () => {
 	showModal.value = true
 }
 
+const onAmountInput = (event: Event) => {
+	amount.value = (event.target as HTMLInputElement).valueAsNumber || null
+}
+
 const onFormSubmit = () => {
 	if (isLoading.value) return
 
-	const desiredChangeValue = isLevelUp.value
-		? systemParametersStore.experiencePointChangeByLevelUp
-		: amount.value
+	const desiredChangeValue = fixedValue.value ?? amount.value
 
 	if (!desiredChangeValue) return
 
@@ -68,19 +74,13 @@ const onFormSubmit = () => {
 						</option>
 					</select>
 
-					<p v-if="isLevelUp" class="level-up-cost">
-						Будет списано
-						{{ systemParametersStore.experiencePointChangeByLevelUp }} очков
-					</p>
-
 					<input
-						v-else
 						class="amount-input"
 						type="number"
-						min="1"
 						placeholder="Количество"
-						:disabled="isLoading"
-						v-model.number="amount"
+						:disabled="isLoading || fixedValue !== null"
+						:value="fixedValue ?? amount"
+						@input="onAmountInput"
 					/>
 
 					<div class="modal-actions">
@@ -142,11 +142,6 @@ const onFormSubmit = () => {
 	border: 1px solid #cbd5e1;
 	background-color: #f1f5f9;
 	padding: 4px 8px;
-}
-
-.level-up-cost {
-	color: #64748b;
-	font-size: 0.875rem;
 }
 
 .modal-actions {

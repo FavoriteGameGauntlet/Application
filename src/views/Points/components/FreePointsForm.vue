@@ -42,6 +42,10 @@ const onEditButtonClick = () => {
 	showModal.value = true
 }
 
+const onAmountInput = (event: Event) => {
+	amount.value = (event.target as HTMLInputElement).valueAsNumber || null
+}
+
 const onFormSubmit = () => {
 	if (isLoading.value) return
 
@@ -79,17 +83,13 @@ const onFormSubmit = () => {
 						</option>
 					</select>
 
-					<p v-if="fixedValue !== null" class="fixed-value">
-						Изменение: {{ fixedValue }} очков
-					</p>
-
 					<input
-						v-else
 						class="amount-input"
 						type="number"
 						placeholder="Количество"
-						:disabled="isLoading"
-						v-model.number="amount"
+						:disabled="isLoading || fixedValue !== null"
+						:value="fixedValue ?? amount"
+						@input="onAmountInput"
 					/>
 
 					<div class="modal-actions">
@@ -151,11 +151,6 @@ const onFormSubmit = () => {
 	border: 1px solid #cbd5e1;
 	background-color: #f1f5f9;
 	padding: 4px 8px;
-}
-
-.fixed-value {
-	color: #64748b;
-	font-size: 0.875rem;
 }
 
 .modal-actions {
