@@ -3,6 +3,7 @@ import { computed, onMounted, watch } from 'vue'
 import UiView from '../../components/ui/UiView.vue'
 import { useAuthStore } from '../../stores/authStore'
 import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
+import FreePointsForm from './components/FreePointsForm.vue'
 
 const authStore = useAuthStore()
 const userStore = useFeatureUserStore()
@@ -53,7 +54,10 @@ watch(login, loadPoints)
 			<dl v-else-if="isLoaded" class="points-info">
 				<div class="points-row">
 					<dt>Свободные очки</dt>
-					<dd>{{ freePoints }}</dd>
+					<dd class="points-row__value">
+						{{ freePoints }}
+						<FreePointsForm v-if="login" :login="login" />
+					</dd>
 				</div>
 				<div class="points-row">
 					<dt>Очки территорий</dt>
@@ -94,5 +98,11 @@ watch(login, loadPoints)
 .points-row dd {
 	font-weight: 500;
 	margin: 0;
+}
+
+.points-row__value {
+	display: flex;
+	align-items: center;
+	gap: 8px;
 }
 </style>

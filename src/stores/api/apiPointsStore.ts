@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '../../api-facade/api'
 import type {
+	FreePointChange,
 	FreePointChangeHistory,
 	PointChange,
 	PointInfo,
@@ -209,6 +210,27 @@ export const useApiPointsStore = defineStore(StoreName.ApiPoints, () => {
 		},
 	)
 
+	const [postFreePoints, postFreePointsState] = withLoading(
+		async (status, login: string, change: FreePointChange) => {
+			if (status.value === LoadingStatus.LOADING) return
+
+			status.value = LoadingStatus.LOADING
+
+			return api.points
+				.postFreePoints({ body: change, path: { login } })
+				.then((result) => {
+					freePoints.value[login] = result.finalValue
+					status.value = LoadingStatus.LOADED
+
+					return result
+				})
+				.catch((e) => {
+					status.value = LoadingStatus.ERROR
+					throw e
+				})
+		},
+	)
+
 	return {
 		pointsInfo,
 		freePointsHistory,
@@ -245,5 +267,8 @@ export const useApiPointsStore = defineStore(StoreName.ApiPoints, () => {
 
 		postTerritoryHours,
 		postTerritoryHoursState,
+
+		postFreePoints,
+		postFreePointsState,
 	}
 })

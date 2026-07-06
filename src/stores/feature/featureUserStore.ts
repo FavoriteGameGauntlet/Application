@@ -1,6 +1,9 @@
 import { defineStore } from 'pinia'
 import { computed } from 'vue'
-import type { PointChange } from '../../api-facade/models/points-models'
+import type {
+	FreePointChange,
+	PointChange,
+} from '../../api-facade/models/points-models'
 import type { Login } from '../../api-facade/models/users-models'
 import { StoreName } from '../../enums/storeName'
 import { useApiGameStore } from '../api/apiGameStore'
@@ -47,6 +50,8 @@ export const useFeatureUserStore = defineStore(StoreName.FeatureUser, () => {
 		pointsStore.postExperiencePoints(change)
 	const changeTerritoryHours = (change: PointChange) =>
 		pointsStore.postTerritoryHours(change)
+	const changeFreePoints = (login: string, change: FreePointChange) =>
+		pointsStore.postFreePoints(login, change)
 
 	return {
 		currentUser,
@@ -113,5 +118,8 @@ export const useFeatureUserStore = defineStore(StoreName.FeatureUser, () => {
 
 		changeTerritoryHours,
 		changeTerritoryHoursState: pointsStore.postTerritoryHoursState,
+
+		changeFreePoints,
+		changeFreePointsState: pointsStore.postFreePointsState,
 	}
 })
