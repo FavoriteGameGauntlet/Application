@@ -19,33 +19,27 @@ const freePoints = computed(() =>
 const territoryPoints = computed(() =>
 	login.value ? (userStore.userTerritoryPoints[login.value] ?? null) : null,
 )
-const availableRolls = computed(() =>
-	login.value ? (userStore.userPoints[login.value]?.availableRolls ?? null) : null,
-)
 
 const isLoading = computed(
 	() =>
 		userStore.getUserExperiencePointsState.isLoading ||
 		userStore.getUserTerritoryHoursState.isLoading ||
 		userStore.getUserFreePointsState.isLoading ||
-		userStore.getUserTerritoryPointsState.isLoading ||
-		userStore.getUserPointsState.isLoading,
+		userStore.getUserTerritoryPointsState.isLoading,
 )
 const isError = computed(
 	() =>
 		userStore.getUserExperiencePointsState.isError ||
 		userStore.getUserTerritoryHoursState.isError ||
 		userStore.getUserFreePointsState.isError ||
-		userStore.getUserTerritoryPointsState.isError ||
-		userStore.getUserPointsState.isError,
+		userStore.getUserTerritoryPointsState.isError,
 )
 const isLoaded = computed(
 	() =>
 		userStore.getUserExperiencePointsState.isLoaded &&
 		userStore.getUserTerritoryHoursState.isLoaded &&
 		userStore.getUserFreePointsState.isLoaded &&
-		userStore.getUserTerritoryPointsState.isLoaded &&
-		userStore.getUserPointsState.isLoaded,
+		userStore.getUserTerritoryPointsState.isLoaded,
 )
 
 const loadPoints = () => {
@@ -55,7 +49,6 @@ const loadPoints = () => {
 	userStore.getUserTerritoryHours()
 	userStore.getUserFreePoints(login.value)
 	userStore.getUserTerritoryPoints(login.value)
-	userStore.getUserPoints(login.value)
 }
 
 onMounted(loadPoints)
@@ -91,10 +84,6 @@ watch(login, loadPoints)
 						{{ territoryHours }}
 						<TerritoryHoursForm />
 					</dd>
-				</div>
-				<div class="points-row">
-					<dt>Доступных бросков</dt>
-					<dd>{{ availableRolls }}</dd>
 				</div>
 			</dl>
 		</div>

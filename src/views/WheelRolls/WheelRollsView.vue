@@ -90,6 +90,10 @@ onMounted(() => {
 		<div class="wheel-rolls-view">
 			<h1 class="title">Роллы</h1>
 
+			<p class="available-rolls">
+				Доступно прокруток: {{ wheelStore.availableRollCount }}
+			</p>
+
 			<div class="effects-grid">
 				<div
 					class="effect-card"
@@ -200,6 +204,11 @@ onMounted(() => {
 	text-align: center;
 	font-size: 2.25rem;
 	font-weight: 600;
+}
+
+.available-rolls {
+	text-align: center;
+	color: #64748b;
 }
 
 .effects-grid {
