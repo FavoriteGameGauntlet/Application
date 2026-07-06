@@ -174,20 +174,12 @@ watch(login, loadAll)
 					<p v-if="!pointsInfo" class="empty-message">Нет данных</p>
 					<dl v-else class="points-info">
 						<div class="points-row">
-							<dt>Опыт</dt>
-							<dd>{{ pointsInfo.experiencePoints }}</dd>
-						</div>
-						<div class="points-row">
 							<dt>Свободные очки</dt>
 							<dd>{{ pointsInfo.freePoints }}</dd>
 						</div>
 						<div class="points-row">
 							<dt>Очки территории</dt>
 							<dd>{{ pointsInfo.territoryPoints }}</dd>
-						</div>
-						<div class="points-row">
-							<dt>Часы территории</dt>
-							<dd>{{ pointsInfo.territoryHours }}</dd>
 						</div>
 					</dl>
 				</template>

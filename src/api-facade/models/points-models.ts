@@ -1,10 +1,7 @@
 import type { DtoStringToDate } from '../dto-types'
 
 export type PointInfo = {
-	availableRolls: number
-	experiencePoints: number
 	freePoints: number
-	territoryHours: number
 	territoryPoints: number
 }
 
