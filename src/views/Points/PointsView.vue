@@ -10,12 +10,52 @@ const authStore = useAuthStore()
 const userStore = useFeatureUserStore()
 
 const login = computed(() => authStore.login)
-const pointsInfo = computed(() =>
-	login.value ? (userStore.userPoints[login.value] ?? null) : null,
+
+const experiencePoints = computed(() => userStore.userExperiencePoints)
+const territoryHours = computed(() => userStore.userTerritoryHours)
+const freePoints = computed(() =>
+	login.value ? (userStore.userFreePoints[login.value] ?? null) : null,
+)
+const territoryPoints = computed(() =>
+	login.value ? (userStore.userTerritoryPoints[login.value] ?? null) : null,
+)
+const availableRolls = computed(() =>
+	login.value ? (userStore.userPoints[login.value]?.availableRolls ?? null) : null,
+)
+
+const isLoading = computed(
+	() =>
+		userStore.getUserExperiencePointsState.isLoading ||
+		userStore.getUserTerritoryHoursState.isLoading ||
+		userStore.getUserFreePointsState.isLoading ||
+		userStore.getUserTerritoryPointsState.isLoading ||
+		userStore.getUserPointsState.isLoading,
+)
+const isError = computed(
+	() =>
+		userStore.getUserExperiencePointsState.isError ||
+		userStore.getUserTerritoryHoursState.isError ||
+		userStore.getUserFreePointsState.isError ||
+		userStore.getUserTerritoryPointsState.isError ||
+		userStore.getUserPointsState.isError,
+)
+const isLoaded = computed(
+	() =>
+		userStore.getUserExperiencePointsState.isLoaded &&
+		userStore.getUserTerritoryHoursState.isLoaded &&
+		userStore.getUserFreePointsState.isLoaded &&
+		userStore.getUserTerritoryPointsState.isLoaded &&
+		userStore.getUserPointsState.isLoaded,
 )
 
 const loadPoints = () => {
-	if (login.value) userStore.getUserPoints(login.value)
+	if (!login.value) return
+
+	userStore.getUserExperiencePoints()
+	userStore.getUserTerritoryHours()
+	userStore.getUserFreePoints(login.value)
+	userStore.getUserTerritoryPoints(login.value)
+	userStore.getUserPoints(login.value)
 }
 
 onMounted(loadPoints)
@@ -27,39 +67,36 @@ watch(login, loadPoints)
 		<div class="points">
 			<h1>Очки</h1>
 
-			<p v-if="userStore.getUserPointsState.isLoading">Загрузка...</p>
-			<p v-else-if="userStore.getUserPointsState.isError">Ошибка загрузки</p>
-			<template v-else-if="userStore.getUserPointsState.isLoaded">
-				<p v-if="!pointsInfo" class="empty-message">Нет данных</p>
-				<dl v-else class="points-info">
-					<div class="points-row">
-						<dt>Очки опыта</dt>
-						<dd class="points-row__value">
-							{{ pointsInfo.experiencePoints }}
-							<ExperiencePointsForm />
-						</dd>
-					</div>
-					<div class="points-row">
-						<dt>Свободные очки</dt>
-						<dd>{{ pointsInfo.freePoints }}</dd>
-					</div>
-					<div class="points-row">
-						<dt>Очки территорий</dt>
-						<dd>{{ pointsInfo.territoryPoints }}</dd>
-					</div>
-					<div class="points-row">
-						<dt>Часы территорий</dt>
-						<dd class="points-row__value">
-							{{ pointsInfo.territoryHours }}
-							<TerritoryHoursForm />
-						</dd>
-					</div>
-					<div class="points-row">
-						<dt>Доступных бросков</dt>
-						<dd>{{ pointsInfo.availableRolls }}</dd>
-					</div>
-				</dl>
-			</template>
+			<p v-if="isLoading">Загрузка...</p>
+			<p v-else-if="isError">Ошибка загрузки</p>
+			<dl v-else-if="isLoaded" class="points-info">
+				<div class="points-row">
+					<dt>Очки опыта</dt>
+					<dd class="points-row__value">
+						{{ experiencePoints }}
+						<ExperiencePointsForm />
+					</dd>
+				</div>
+				<div class="points-row">
+					<dt>Свободные очки</dt>
+					<dd>{{ freePoints }}</dd>
+				</div>
+				<div class="points-row">
+					<dt>Очки территорий</dt>
+					<dd>{{ territoryPoints }}</dd>
+				</div>
+				<div class="points-row">
+					<dt>Часы территорий</dt>
+					<dd class="points-row__value">
+						{{ territoryHours }}
+						<TerritoryHoursForm />
+					</dd>
+				</div>
+				<div class="points-row">
+					<dt>Доступных бросков</dt>
+					<dd>{{ availableRolls }}</dd>
+				</div>
+			</dl>
 		</div>
 	</UiView>
 </template>
@@ -70,10 +107,6 @@ watch(login, loadPoints)
 	flex-direction: column;
 	gap: 20px;
 	width: 100%;
-}
-
-.empty-message {
-	color: #64748b;
 }
 
 .points-info {

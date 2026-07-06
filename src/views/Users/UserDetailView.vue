@@ -189,10 +189,6 @@ watch(login, loadAll)
 							<dt>Часы территории</dt>
 							<dd>{{ pointsInfo.territoryHours }}</dd>
 						</div>
-						<div class="points-row">
-							<dt>Доступных бросков</dt>
-							<dd>{{ pointsInfo.availableRolls }}</dd>
-						</div>
 					</dl>
 				</template>
 			</div>
