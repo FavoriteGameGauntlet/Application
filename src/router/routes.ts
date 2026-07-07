@@ -1,15 +1,13 @@
 import type { RouteRecordRaw } from 'vue-router'
 import GamesView from '../views/Games/GamesView.vue'
-import LoginView from '../views/Login/LoginView.vue'
-import UserDetailView from '../views/Users/UserDetailView.vue'
+import AuthView from '../views/Auth/AuthView.vue'
+import OtherUserProfileView from '../views/Users/OtherUserProfileView.vue'
 import UsersView from '../views/Users/UsersView.vue'
-import PointsView from '../views/Points/PointsView.vue'
-import MapView from '../views/Map/MapView.vue'
-import CharacteristicsView from '../views/Characteristics/CharacteristicsView.vue'
+import ProfileView from '../views/Profile/ProfileView.vue'
 import RootView from '../views/Root/RootView.vue'
-import SignUpView from '../views/SignUp/SignUpView.vue'
 import TimerView from '../views/Timer/TimerView.vue'
-import WheelRollsView from '../views/WheelRolls/WheelRollsView.vue'
+import WheelView from '../views/Wheel/WheelView.vue'
+import { useAuthStore } from '../stores/authStore'
 import { RouteName } from './routeNames'
 
 export const routes: RouteRecordRaw[] = [
@@ -34,26 +32,23 @@ export const routes: RouteRecordRaw[] = [
 
 			{
 				path: 'users/:login',
-				component: UserDetailView,
+				component: OtherUserProfileView,
 				name: RouteName.UserDetail,
+				beforeEnter: (to) => {
+					const authStore = useAuthStore()
+
+					if (to.params.login === authStore.login) {
+						return { name: RouteName.Profile }
+					}
+
+					return true
+				},
 			},
 
 			{
-				path: 'points',
-				component: PointsView,
-				name: RouteName.Points,
-			},
-
-			{
-				path: 'map',
-				component: MapView,
-				name: RouteName.Map,
-			},
-
-			{
-				path: 'characteristics',
-				component: CharacteristicsView,
-				name: RouteName.Characteristics,
+				path: 'profile',
+				component: ProfileView,
+				name: RouteName.Profile,
 			},
 
 			{
@@ -64,20 +59,20 @@ export const routes: RouteRecordRaw[] = [
 
 			{
 				path: 'wheel',
-				name: RouteName.Effects,
-				component: WheelRollsView,
+				name: RouteName.Wheel,
+				component: WheelView,
 			},
 		],
 	},
 	{
 		path: '/login',
-		component: LoginView,
+		component: AuthView,
 		name: RouteName.Login,
 	},
 
 	{
 		path: '/signup',
-		component: SignUpView,
+		component: AuthView,
 		name: RouteName.Signup,
 	},
 

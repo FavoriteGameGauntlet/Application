@@ -7,6 +7,13 @@ export enum TimerState {
 	Finished = 'finished',
 }
 
+export const timerStateLabel: Record<TimerState, string> = {
+	[TimerState.Created]: 'создан',
+	[TimerState.Running]: 'идёт',
+	[TimerState.Paused]: 'пауза',
+	[TimerState.Finished]: 'завершён',
+}
+
 export type TimerDto = {
 	/** format: Duration */
 	duration: string

@@ -2,12 +2,21 @@
 import UiButton from '../../components/ui/UiButton.vue'
 import { useFeatureWheelStore } from '../../stores/feature/featureWheelStore'
 import { computed, onMounted, ref } from 'vue'
-import { funnyEffects } from './constants/funnyEffects'
+import { funnyEffects } from './constants/funnyEffects.ts'
 import UiView from '../../components/ui/UiView.vue'
 import type { RolledWheelEffectDto } from '../../api-facade/models/wheel-effects-models'
 import { FreePointChangeSource } from '../../api-facade/models/points-models'
+import { formatInstant } from '../../utils/temporal'
+import { useAuthStore } from '../../stores/authStore'
+import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
 
 const wheelStore = useFeatureWheelStore()
+const authStore = useAuthStore()
+const userStore = useFeatureUserStore()
+
+const effectsHistory = computed(() =>
+	authStore.login ? (userStore.userEffects[authStore.login] ?? []) : [],
+)
 
 const getRandomNumber = (min: number, max: number) => {
 	return Math.floor(Math.random() * (max - min) + min)
@@ -33,6 +42,10 @@ const visibleEffects = computed(() => {
 
 	return getRandomItems(funnyEffects, 5)
 })
+
+const centerIndex = computed(() =>
+	Math.floor((visibleEffects.value.length - 1) / 2),
+)
 
 const onRollButtonClick = () => {
 	wheelStore.roll()
@@ -76,42 +89,74 @@ const submitApply = async () => {
 
 	await wheelStore.applyRoll(selectedEffect.value.name, changes)
 	showApplyForm.value = false
+
+	if (authStore.login) await userStore.getUserEffects(authStore.login)
 }
 
 onMounted(() => {
 	wheelStore.getLastRoll()
 	wheelStore.getAvailableEffects()
 	wheelStore.getAllUsers()
+
+	if (authStore.login) userStore.getUserEffects(authStore.login)
 })
 </script>
 
 <template>
 	<UiView>
-		<div class="wheel-rolls-view">
-			<h1 class="title">Роллы</h1>
-
-			<p class="available-rolls">
-				Доступно прокруток: {{ wheelStore.availableRollCount }}
-			</p>
-
-			<div class="effects-grid">
-				<div
-					class="effect-card"
-					:key="effect.name"
-					v-for="effect in visibleEffects"
-					@click="selectedEffect = effect"
+		<div class="wheel">
+			<div class="wheel-header">
+				<h1>Колесо</h1>
+				<span class="attempts-pill"
+					>попыток: {{ wheelStore.availableRollCount }}</span
 				>
-					<span class="effect-name">{{ effect.name }}</span>
-					<label class="effect-applied" @click.stop>
-						<input type="checkbox" :checked="effect.isApplied" disabled />
-						Применён
-					</label>
-				</div>
 			</div>
 
-			<UiButton class="roll-button" :disabled="!wheelStore.availableRollCount" @click="onRollButtonClick">
+			<div class="reel">
+				<div class="effects-grid">
+					<div
+						class="effect-card"
+						:class="{ 'effect-card--center': i === centerIndex }"
+						:key="effect.name"
+						v-for="(effect, i) in visibleEffects"
+						@click="selectedEffect = effect"
+					>
+						<span class="effect-name">{{ effect.name }}</span>
+						<label class="effect-applied" @click.stop>
+							<input type="checkbox" :checked="effect.isApplied" disabled />
+							Применён
+						</label>
+					</div>
+				</div>
+				<div class="reel-pointer"></div>
+			</div>
+
+			<UiButton
+				class="roll-button"
+				:disabled="!wheelStore.availableRollCount"
+				@click="onRollButtonClick"
+			>
 				Прокрутить
 			</UiButton>
+
+			<h2 class="history-title">История применённых эффектов</h2>
+			<p v-if="userStore.getUserEffectsState.isLoading">Загрузка...</p>
+			<p v-else-if="userStore.getUserEffectsState.isError">Ошибка загрузки</p>
+			<template v-else-if="userStore.getUserEffectsState.isLoaded">
+				<p v-if="!effectsHistory.length" class="empty-message">
+					Нет истории эффектов
+				</p>
+				<ul v-else class="item-list">
+					<li
+						v-for="(effect, i) in effectsHistory"
+						:key="i"
+						class="info-card info-card--row"
+					>
+						<span class="item-title">{{ effect.name }}</span>
+						<span class="item-meta">{{ formatInstant(effect.rollDate) }}</span>
+					</li>
+				</ul>
+			</template>
 		</div>
 
 		<Teleport to="body">
@@ -184,53 +229,58 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.wheel-rolls-view {
-	display: grid;
-	height: 100%;
-	place-content: center;
-	gap: 48px;
+.wheel {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	width: 100%;
 }
 
-.nav-link {
-	place-self: center;
-	color: #3b82f6;
+.wheel-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
 }
 
-.nav-link:hover {
-	text-decoration: underline;
-}
-
-.title {
-	text-align: center;
-	font-size: 2.25rem;
-	font-weight: 600;
-}
-
-.available-rolls {
-	text-align: center;
+.attempts-pill {
+	border: 1px solid #e2e8f0;
+	border-radius: 20px;
+	padding: 5px 14px;
+	font-size: 0.8125rem;
 	color: #64748b;
+}
+
+.reel {
+	position: relative;
+	display: flex;
+	padding: 16px 28px 16px 16px;
+	border: 1px solid #e2e8f0;
 }
 
 .effects-grid {
 	display: flex;
-	gap: 16px;
-	border: 1px solid #e2e8f0;
+	flex-direction: column;
+	gap: 8px;
+	width: 100%;
 }
 
 .effect-card {
 	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	padding: 8px;
-	height: 160px;
-	width: 120px;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 10px 16px;
 	border: 1px solid #64748b;
-	overflow: hidden;
 	cursor: pointer;
 }
 
 .effect-card:hover {
 	background-color: #f8fafc;
+}
+
+.effect-card--center {
+	border-width: 2px;
+	border-color: #0f172a;
 }
 
 .effect-name {
@@ -243,14 +293,68 @@ onMounted(() => {
 	gap: 4px;
 	font-size: 0.75rem;
 	color: #64748b;
-	margin-top: auto;
 	cursor: default;
+}
+
+.reel-pointer {
+	position: absolute;
+	right: 8px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 0;
+	height: 0;
+	border-top: 8px solid transparent;
+	border-bottom: 8px solid transparent;
+	border-right: 12px solid #64748b;
 }
 
 .roll-button {
 	height: 56px;
 	width: 224px;
-	justify-self: center;
+	align-self: center;
+}
+
+.history-title {
+	font-size: 0.875rem;
+	color: #64748b;
+	font-weight: 500;
+}
+
+.empty-message {
+	color: #64748b;
+}
+
+.item-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	list-style: none;
+	padding: 0;
+	width: 100%;
+}
+
+.info-card {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 12px 16px;
+	border: 1px solid #e2e8f0;
+	border-radius: 4px;
+}
+
+.info-card--row {
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.item-title {
+	font-weight: 500;
+}
+
+.item-meta {
+	font-size: 0.875rem;
+	color: #64748b;
 }
 
 .modal-overlay {

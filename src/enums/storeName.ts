@@ -17,6 +17,4 @@ export const enum StoreName {
 
 	ApiSystemParameters = 'api-system-parameters',
 	FeatureSystemParameters = 'feature-system-parameters',
-
-	Settings = 'settings',
 }

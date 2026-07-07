@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import AppNavbar from './components/AppNavbar.vue'
+import AppSidebar from './components/AppSidebar.vue'
 </script>
 
 <template>
 	<div class="layout">
-		<AppNavbar class="navbar" />
+		<AppSidebar class="sidebar" />
 
 		<div class="content">
 			<router-view />
@@ -14,13 +14,12 @@ import AppNavbar from './components/AppNavbar.vue'
 
 <style scoped>
 .layout {
-	display: grid;
-	grid-template-rows: auto 1fr;
+	display: flex;
 	height: 100%;
 }
 
-.navbar {
-	height: 64px;
+.sidebar {
+	height: 100%;
 }
 
 .content {
