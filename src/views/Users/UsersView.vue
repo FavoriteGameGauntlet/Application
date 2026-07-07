@@ -4,7 +4,6 @@ import UiView from '../../components/ui/UiView.vue'
 import { useAuthStore } from '../../stores/authStore'
 import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
 import { RouteName } from '../../router/routeNames'
-import DisplayNameForm from './components/DisplayNameForm.vue'
 
 const userStore = useFeatureUserStore()
 const authStore = useAuthStore()
@@ -25,14 +24,6 @@ onMounted(() => userStore.getAllUsers())
 		<template v-else>
 			<div class="users-grid">
 				<RouterLink
-					:to="{ name: RouteName.Profile }"
-					class="user-tile"
-				>
-					<span class="user-login">{{ authStore.login }}</span>
-					<span class="user-meta">{{ userStore.currentUser.displayName }} · я</span>
-				</RouterLink>
-
-				<RouterLink
 					v-for="user in otherUsers"
 					:key="user.login"
 					:to="{ name: RouteName.UserDetail, params: { login: user.login } }"
@@ -41,11 +32,6 @@ onMounted(() => userStore.getAllUsers())
 					<span class="user-login">{{ user.login }}</span>
 					<span class="user-meta">{{ user.displayName }}</span>
 				</RouterLink>
-			</div>
-
-			<div class="change-name">
-				<span class="change-name-label">✎ изменить своё имя:</span>
-				<DisplayNameForm />
 			</div>
 		</template>
 	</UiView>
@@ -85,16 +71,6 @@ h1 {
 
 .user-meta {
 	font-size: 0.8125rem;
-	color: #64748b;
-}
-
-.change-name {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	margin-top: 20px;
-	align-self: flex-start;
-	font-size: 0.875rem;
 	color: #64748b;
 }
 </style>
