@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref, watch } from 'vue'
-import type { Temporal } from '@js-temporal/polyfill'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiView from '../../components/ui/UiView.vue'
 import UiTimestamp from '../../components/ui/UiTimestamp.vue'
@@ -23,14 +22,6 @@ const activeTab = ref<Tab>('current')
 
 const { current, canRoll, wishlist, enoughGamesInWishlist } = storeToRefs(gameStore)
 const { minimumNumberOfWishlistGames } = storeToRefs(systemParametersStore)
-
-const formatElapsed = (duration: Temporal.Duration) => {
-	const rounded = duration.round({
-		largestUnit: 'hours',
-		smallestUnit: 'minutes',
-	})
-	return `${rounded.hours}ч${rounded.minutes}м`
-}
 
 onMounted(() => {
 	if (
@@ -113,7 +104,7 @@ onMounted(() => {
 					<span class="game-status-badge">{{ gameStateLabel[current.state] }}</span>
 				</div>
 				<div class="current-game-elapsed">
-					затрачено {{ formatElapsed(current.timeSpent) }}
+					затрачено <UiTimestamp :time="current.timeSpent" />
 				</div>
 				<div class="current-game-actions">
 					<UiButton class="status-button" @click="gameStore.cancel()">

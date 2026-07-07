@@ -1,15 +1,6 @@
 <script setup lang="ts">
-import type { Temporal } from '@js-temporal/polyfill'
+import type { HistoryEntry } from '../../../types/pointsHistory'
 import { formatInstant } from '../../../utils/temporal'
-
-export type HistoryEntry = {
-	changeSource: string
-	actualChangeValue: number
-	finalValue: number
-	changeDate: Temporal.Instant
-	sourceLogin?: string
-	wheelEffectName?: string
-}
 
 defineProps<{
 	entries: HistoryEntry[]
@@ -26,7 +17,10 @@ defineProps<{
 				<span class="item-title">{{ labelFor(entry.changeSource) }}</span>
 				<span class="item-meta">{{ formatInstant(entry.changeDate) }}</span>
 			</div>
-			<div v-if="entry.wheelEffectName" class="info-card__row">
+			<div
+				v-if="'wheelEffectName' in entry && entry.wheelEffectName"
+				class="info-card__row"
+			>
 				<span class="item-meta">Эффект</span>
 				<span class="item-meta">{{ entry.wheelEffectName }}</span>
 			</div>

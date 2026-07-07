@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import PointsHistoryList, { type HistoryEntry } from './PointsHistoryList.vue'
+import type { HistoryEntry } from '../../../types/pointsHistory'
+import PointsHistoryList from './PointsHistoryList.vue'
 
 defineProps<{
 	territoryEntries: HistoryEntry[]
