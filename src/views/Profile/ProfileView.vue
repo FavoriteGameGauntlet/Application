@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
 import UiView from '../../components/ui/UiView.vue'
-import { gameStateLabel } from '../../api-facade/models/games-models'
 import {
 	type FreePointChangeSource,
 	freePointChangeSourceLabel,
@@ -14,6 +13,7 @@ import { useFeatureGameStore } from '../../stores/feature/featureGameStore'
 import FreePointsForm from './components/FreePointsForm.vue'
 import ExperiencePointsForm from './components/ExperiencePointsForm.vue'
 import TerritoryHoursForm from './components/TerritoryHoursForm.vue'
+import DisplayNameForm from './components/DisplayNameForm.vue'
 import PointsHistoryTabs from './components/PointsHistoryTabs.vue'
 
 const authStore = useAuthStore()
@@ -80,7 +80,10 @@ watch(login, loadAll)
 			<div class="profile-header">
 				<div class="avatar"></div>
 				<div>
-					<h1 class="profile-name">{{ login }} — {{ displayName }}</h1>
+					<h1 class="profile-name">
+						{{ login }} — {{ displayName }}
+						<DisplayNameForm />
+					</h1>
 					<div class="profile-label">мой профиль</div>
 				</div>
 			</div>
@@ -91,9 +94,6 @@ watch(login, loadAll)
 					<span class="current-game-label">текущая игра</span>
 					<span class="current-game-value">
 						<span class="current-game-name">{{ gameStore.current.name }}</span>
-						<span class="game-status-badge">{{
-							gameStateLabel[gameStore.current.state]
-						}}</span>
 					</span>
 				</div>
 			</div>
@@ -119,7 +119,7 @@ watch(login, loadAll)
 
 					<div class="metric-card">
 						<div class="metric-card__header">
-							<span class="metric-label">Опыт</span>
+							<span class="metric-label">Очки опыта</span>
 							<ExperiencePointsForm />
 						</div>
 						<div class="metric-value">{{ experiencePoints }}</div>

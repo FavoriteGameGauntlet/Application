@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import type { RouteName } from '../../../router/routeNames'
 
-defineProps<{ to: RouteName; disabled?: boolean }>()
+defineProps<{ to?: RouteName; disabled?: boolean }>()
 </script>
 
 <template>
 	<RouterLink
+		v-if="to"
 		class="navbar-link"
 		:class="{ 'navbar-link--disabled': disabled }"
 		activeClass="navbar-link--active"
@@ -13,6 +14,10 @@ defineProps<{ to: RouteName; disabled?: boolean }>()
 	>
 		<slot />
 	</RouterLink>
+
+	<div v-else class="navbar-link navbar-link--disabled">
+		<slot />
+	</div>
 </template>
 
 <style scoped>

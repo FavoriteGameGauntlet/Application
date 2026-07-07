@@ -101,7 +101,6 @@ onMounted(() => {
 			<div class="current-game-card" v-if="current">
 				<div class="current-game-card__header">
 					<span class="current-game-name">{{ current.name }}</span>
-					<span class="game-status-badge">{{ gameStateLabel[current.state] }}</span>
 				</div>
 				<div class="current-game-elapsed">
 					затрачено <UiTimestamp :time="current.timeSpent" />

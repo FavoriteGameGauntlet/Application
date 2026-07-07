@@ -31,9 +31,9 @@ const onLogOutButtonClick = () => {
 		<NavbarLink :to="RouteName.Games"> 🎮 Игры </NavbarLink>
 
 		<div class="coming-soon-divider">СКОРО</div>
-		<div class="coming-soon-item" v-for="item in comingSoon" :key="item">
+		<NavbarLink v-for="item in comingSoon" :key="item">
 			{{ item }}
-		</div>
+		</NavbarLink>
 
 		<div class="spacer"></div>
 
@@ -66,12 +66,6 @@ const onLogOutButtonClick = () => {
 	font-size: 0.625rem;
 	letter-spacing: 0.08em;
 	color: #94a3b8;
-}
-
-.coming-soon-item {
-	font-size: 0.75rem;
-	color: #94a3b8;
-	padding: 2px 10px;
 }
 
 .spacer {
