@@ -5,7 +5,7 @@ import { router } from '../router/router'
 export const useTabs = () => {
 	const tabTargets = [
 		RouteName.Timer,
-		RouteName.Effects,
+		RouteName.Wheel,
 		RouteName.Games,
 		[RouteName.Users, RouteName.UserDetail],
 	] as const

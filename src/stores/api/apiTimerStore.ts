@@ -1,4 +1,4 @@
-import { Temporal } from '@js-temporal/polyfill'
+import type { Temporal } from '@js-temporal/polyfill'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { api } from '../../api-facade/api'

@@ -9,9 +9,8 @@ import { RouteName } from '../../router/routeNames'
 import { useApiWheelStore } from '../../stores/api/apiWheelStore'
 import { useFeatureGameStore } from '../../stores/feature/featureGameStore'
 import { useFeatureTimerStore } from '../../stores/feature/featureTimerStore'
-import GameTimer from './components/GameTimer.vue'
-import WheelTimer from './components/WheelTimer.vue'
 import UiView from '../../components/ui/UiView.vue'
+import { timerStateLabel } from './constants/timerStateLabel'
 
 const timerStore = useFeatureTimerStore()
 const gameStore = useFeatureGameStore()
@@ -19,6 +18,7 @@ const wheelStore = useApiWheelStore()
 
 const {
 	durationTotal,
+	remaining,
 	state,
 	loading: isTimerLoading,
 } = storeToRefs(timerStore)
@@ -30,10 +30,16 @@ const gameNameText = computed(() =>
 		: (currentGame.value?.name ?? 'Крути новую игру'),
 )
 
-const timerButtonSvg = computed(() =>
-	state.value === TimerState.Running
-		? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
-		: '<path d="M8 5v14l11-7z"/>',
+const progressPercent = computed(() => {
+	const totalSeconds = durationTotal.value.total({ unit: 'seconds' })
+	if (!totalSeconds) return 0
+
+	const remainingSeconds = remaining.value.total({ unit: 'seconds' })
+	return Math.max(0, Math.min(100, (remainingSeconds / totalSeconds) * 100))
+})
+
+const timerButtonLabel = computed(() =>
+	state.value === TimerState.Running ? '⏸ пауза' : '▶ старт',
 )
 
 const onStartButtonClick = () => {
@@ -48,31 +54,29 @@ const onStartButtonClick = () => {
 				{{ gameNameText }}
 			</RouterLink>
 
-			<WheelTimer class="wheel-timer" />
+			<div class="timer">
+				<div class="timer-badge">{{ state ? timerStateLabel[state] : '' }}</div>
 
-			<div class="controls-grid">
+				<UiTimestamp class="timer-time" :time="remaining" />
+
+				<div class="timer-duration">
+					длительность <UiTimestamp class="inline" :time="durationTotal" />
+				</div>
+
+				<div class="progress-bar">
+					<div
+						class="progress-bar__fill"
+						:style="{ width: progressPercent + '%' }"
+					></div>
+				</div>
+
 				<button
-					class="play-button"
+					class="timer-toggle"
 					:disabled="isTimerLoading || !timerStore.canToggle"
 					@click="onStartButtonClick"
 				>
-					<svg
-						width="24"
-						height="24"
-						viewBox="0 0 24 24"
-						fill="currentColor"
-						v-html="timerButtonSvg"
-					></svg>
+					{{ timerButtonLabel }}
 				</button>
-
-				<div class="total-time">
-					/ <UiTimestamp class="inline" :time="durationTotal" />
-				</div>
-
-				<div class="game-time">
-					В игре:
-					<GameTimer class="inline" />
-				</div>
 			</div>
 
 			<div
@@ -81,7 +85,7 @@ const onStartButtonClick = () => {
 					'wheel-action_disabled': wheelStore.availableRollCount === 0,
 				}"
 			>
-				<RouterLink class="wheel-action-link" :to="{ name: RouteName.Effects }">
+				<RouterLink class="wheel-action-link" :to="{ name: RouteName.Wheel }">
 					<UiButton class="wheel-action-button">{{
 						wheelStore.availableRollCount > 0
 							? 'Крути колесо!'
@@ -98,6 +102,7 @@ const onStartButtonClick = () => {
 	display: flex;
 	width: min-content;
 	flex-direction: column;
+	align-items: center;
 	gap: 16px;
 	margin-bottom: 68px;
 }
@@ -111,53 +116,70 @@ const onStartButtonClick = () => {
 	line-height: 1.5;
 }
 
-.wheel-timer {
-	width: fit-content;
-	min-width: fit-content;
-	flex-shrink: 0;
-	font-size: 6rem;
+.timer {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 14px;
+}
+
+.timer-badge {
+	border: 1px solid #64748b;
+	border-radius: 20px;
+	padding: 4px 14px;
+	font-size: 0.8125rem;
+	color: #64748b;
+}
+
+.timer-time {
+	font-size: 5rem;
 	font-weight: 700;
+	line-height: 1;
 }
 
-.controls-grid {
-	display: grid;
-	grid-template-columns: repeat(2, 1fr);
-	grid-template-rows: repeat(2, 1fr);
+.timer-duration {
+	color: #64748b;
+	font-size: 0.9375rem;
 }
 
-.play-button {
-	grid-row: span 2;
-	width: fit-content;
-	border: 2px solid black;
-	padding: 12px 20px;
-	font-size: 0.1rem;
+.progress-bar {
+	width: 340px;
+	height: 10px;
+	background-color: #e2e8f0;
+	border-radius: 6px;
+	overflow: hidden;
+	margin-top: 6px;
 }
 
-.play-button:not(:disabled) {
+.progress-bar__fill {
+	height: 100%;
+	background-color: #64748b;
+}
+
+.timer-toggle {
+	margin-top: 20px;
+	padding: 12px 32px;
+	border: 1px solid #64748b;
+	border-radius: 8px;
+	background: transparent;
 	cursor: pointer;
+	font-size: 1.0625rem;
 }
 
-.play-button:disabled {
+.timer-toggle:hover:not(:disabled) {
+	background-color: #f1f5f9;
+}
+
+.timer-toggle:disabled {
 	opacity: 0.5;
-}
-
-.total-time {
-	width: fit-content;
-	place-self: end start;
-	justify-self: end;
-	font-size: 1.25rem;
-	font-family: monospace;
-}
-
-.game-time {
-	width: fit-content;
-	place-self: end;
-	font-size: 1.25rem;
+	cursor: not-allowed;
 }
 
 .wheel-action {
+	width: 100%;
 	height: 80px;
 	font-size: 1.5rem;
+	margin-top: 32px;
 }
 
 .wheel-action_disabled {

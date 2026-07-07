@@ -6,13 +6,13 @@ let initialized = false
 /** on load, redirects to the last opened route */
 export const initialPathGuard: NavigationGuard = async (to) => {
 	if (initialized) {
-		persistentStorage.set(StoreKey.InitialRoute, to.path)
+		await persistentStorage.set(StoreKey.InitialRoute, to.path)
 		return true
 	}
 
 	initialized = true
 	const initialPath = await persistentStorage.get(StoreKey.InitialRoute)
-	persistentStorage.set(StoreKey.InitialRoute, to.path)
+	await persistentStorage.set(StoreKey.InitialRoute, to.path)
 
 	return initialPath ?? true
 }

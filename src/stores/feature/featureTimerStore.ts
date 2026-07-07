@@ -79,30 +79,6 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 		{ immediate: true },
 	)
 
-	const remainingAtLastGameUpdate = ref(ZERO)
-
-	watch(
-		[() => gameStore.current?.timeSpent, remaining],
-		([newTimeSpent], [prevTimeSpent]) => {
-			if (
-				newTimeSpent !== prevTimeSpent ||
-				remainingAtLastGameUpdate.value.sign === 0
-			) {
-				remainingAtLastGameUpdate.value = remaining.value
-			}
-		},
-		{ immediate: true },
-	)
-
-	const elapsed = computed(() => {
-		const timeSpent = gameStore.current?.timeSpent ?? ZERO
-		const sinceLastUpdate = remainingAtLastGameUpdate.value.subtract(
-			remaining.value,
-		)
-		if (sinceLastUpdate.sign < 0) return timeSpent
-		return timeSpent.add(sinceLastUpdate)
-	})
-
 	const init = () => {
 		watch(
 			isLoggedIn,
@@ -135,7 +111,6 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 
 		durationTotal,
 		remaining,
-		elapsed,
 
 		loading,
 		timerUnavailable,
