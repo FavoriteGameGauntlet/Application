@@ -21,10 +21,11 @@ export type CurrentGameDto = {
 	state: GameState
 	/** format: Duration */
 	timeSpent: string
+	startDate: string
 	finishDate?: string
 }
 
 export type CurrentGame = DtoStringToDuration<
-	DtoStringToDate<CurrentGameDto, 'finishDate'>,
+	DtoStringToDate<CurrentGameDto, 'startDate' | 'finishDate'>,
 	'timeSpent'
 >

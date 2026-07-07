@@ -14,6 +14,7 @@ import type {
 
 export const convertGameDto = (game: CurrentGameDto): CurrentGame => ({
 	...game,
+	startDate: Temporal.Instant.from(game.startDate),
 	finishDate:
 		game.finishDate !== undefined
 			? Temporal.Instant.from(game.finishDate)
