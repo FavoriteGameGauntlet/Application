@@ -1,10 +1,7 @@
 import type { DtoStringToDate } from '../dto-types'
 
 export type PointInfo = {
-	availableRolls: number
-	experiencePoints: number
 	freePoints: number
-	territoryHours: number
 	territoryPoints: number
 }
 
@@ -63,6 +60,26 @@ export const freePointChangeSourceLabel: Record<FreePointChangeSource, string> =
 	[FreePointChangeSource.BaseTeleport]: 'Телепорт базы',
 	[FreePointChangeSource.Sandstorm]: 'Песчаная буря',
 	[FreePointChangeSource.Other]: 'Другое',
+}
+
+export enum ExperienceChangeSource {
+	LevelUp = 'level-up',
+	Other = 'other',
+}
+
+export const experienceChangeSourceLabel: Record<ExperienceChangeSource, string> = {
+	[ExperienceChangeSource.LevelUp]: 'Повышение уровня',
+	[ExperienceChangeSource.Other]: 'Другое',
+}
+
+export enum TerritoryHourChangeSource {
+	Seize = 'seize',
+	Other = 'other',
+}
+
+export const territoryHourChangeSourceLabel: Record<TerritoryHourChangeSource, string> = {
+	[TerritoryHourChangeSource.Seize]: 'Захват',
+	[TerritoryHourChangeSource.Other]: 'Другое',
 }
 
 export type FreePointChange = PointChange & {

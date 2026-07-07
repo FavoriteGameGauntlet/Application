@@ -22,6 +22,12 @@ const timerStore = useFeatureTimerStore()
 				Роллы {{ wheelStore.pendingRoll ? '🔵' : '' }}
 			</NavbarLink>
 
+			<NavbarLink :to="RouteName.Points"> Очки </NavbarLink>
+
+			<NavbarLink :to="RouteName.Map"> Карта </NavbarLink>
+
+			<NavbarLink :to="RouteName.Characteristics"> Характеристики </NavbarLink>
+
 			<NavbarLink :to="RouteName.Games"> Игры </NavbarLink>
 
 			<NavbarLink :to="RouteName.Users"> Игроки </NavbarLink>

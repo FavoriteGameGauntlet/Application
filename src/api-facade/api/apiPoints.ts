@@ -49,7 +49,7 @@ export const apiPoints = {
 
 	postFreePoints: ({ body, path: { login } }: PostFreePoints['request']) =>
 		http
-			.post<PostTerritoryPoints>(`/points/${login}/free-points`, { body })
+			.post<PostFreePoints>(`/points/${login}/free-points`, { body })
 			.then(({ body }) => body),
 
 	getFreePoints: ({ path: { login } }: GetFreePoints['request']) =>
