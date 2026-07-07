@@ -81,6 +81,7 @@ watch(login, loadAll)
 						<span class="game-status-badge">{{
 							gameStateLabel[currentGame.state]
 						}}</span>
+						<span class="item-meta">{{ formatInstant(currentGame.startDate) }}</span>
 					</span>
 				</div>
 			</div>
@@ -166,6 +167,16 @@ watch(login, loadAll)
 								<span class="item-meta"
 									><UiTimestamp :time="game.timeSpent"
 								/></span>
+							</div>
+							<div class="info-card__row">
+								<span class="item-meta">Начало</span>
+								<span class="item-meta">{{ formatInstant(game.startDate) }}</span>
+							</div>
+							<div class="info-card__row">
+								<span class="item-meta">Конец</span>
+								<span class="item-meta">{{
+									game.finishDate ? formatInstant(game.finishDate) : '—'
+								}}</span>
 							</div>
 						</li>
 					</ul>

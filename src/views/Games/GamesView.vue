@@ -105,6 +105,9 @@ onMounted(() => {
 				<div class="current-game-elapsed">
 					затрачено <UiTimestamp :time="current.timeSpent" />
 				</div>
+				<div class="current-game-started">
+					начато {{ formatInstant(current.startDate) }}
+				</div>
 				<div class="current-game-actions">
 					<UiButton class="status-button" @click="gameStore.cancel()">
 						отменить
@@ -164,6 +167,9 @@ onMounted(() => {
 						<span class="history-card__meta"
 							><UiTimestamp :time="game.timeSpent"
 						/></span>
+						<span class="history-card__meta">{{
+							formatInstant(game.startDate)
+						}}</span>
 						<span v-if="game.finishDate" class="history-card__meta">{{
 							formatInstant(game.finishDate)
 						}}</span>
