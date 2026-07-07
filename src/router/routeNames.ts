@@ -7,5 +7,4 @@ export const enum RouteName {
 	Games = 'games',
 	Wheel = 'wheel',
 	Login = 'login',
-	Signup = 'signup',
 }

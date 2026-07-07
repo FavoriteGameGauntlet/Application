@@ -2,7 +2,7 @@
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import { TimerState, timerStateLabel } from '../../api-facade/models/timers-models.ts'
+import { TimerState } from '../../api-facade/models/timers-models.ts'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiTimestamp from '../../components/ui/UiTimestamp.vue'
 import { RouteName } from '../../router/routeNames'
@@ -10,6 +10,7 @@ import { useApiWheelStore } from '../../stores/api/apiWheelStore'
 import { useFeatureGameStore } from '../../stores/feature/featureGameStore'
 import { useFeatureTimerStore } from '../../stores/feature/featureTimerStore'
 import UiView from '../../components/ui/UiView.vue'
+import { timerStateLabel } from './constants/timerStateLabel'
 
 const timerStore = useFeatureTimerStore()
 const gameStore = useFeatureGameStore()

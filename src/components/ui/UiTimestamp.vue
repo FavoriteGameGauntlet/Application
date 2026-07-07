@@ -9,10 +9,8 @@ type Props = {
 const { time } = defineProps<Props>()
 
 const formatDuration = (duration: Temporal.Duration) => {
-	const ad = duration
-		.abs()
-		.round({ largestUnit: 'hours', smallestUnit: 'seconds' })
-	return `${duration.sign === -1 ? '-' : ''}${ad.hours}:${ad.minutes.toString().padStart(2, '0')}:${ad.seconds.toString().padStart(2, '0')}`
+	const ad = duration.round({ largestUnit: 'hours', smallestUnit: 'seconds' })
+	return `${ad.hours}:${ad.minutes.toString().padStart(2, '0')}:${ad.seconds.toString().padStart(2, '0')}`
 }
 
 const formatTime = (time: Temporal.PlainTime | Temporal.PlainDateTime) =>

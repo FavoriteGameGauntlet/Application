@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { type HttpErrorResponse } from '../../api-facade/http'
 import { usePersistentRef } from '../../composables/usePersistentRef'
 import { StoreKey } from '../../services/persistentStorage'
@@ -9,25 +9,15 @@ import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
 import { RouteName } from '../../router/routeNames'
 import UiButton from '../../components/ui/UiButton.vue'
 
-const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const userStore = useFeatureUserStore()
 
-const authMode = ref<'login' | 'register'>(
-	route.name === RouteName.Signup ? 'register' : 'login',
-)
+const authMode = ref<'login' | 'register'>('login')
 const isRegisterMode = computed(() => authMode.value === 'register')
 
-watch(
-	() => route.name,
-	(name) => {
-		authMode.value = name === RouteName.Signup ? 'register' : 'login'
-	},
-)
-
 const setMode = (mode: 'login' | 'register') => {
-	router.push({ name: mode === 'login' ? RouteName.Login : RouteName.Signup })
+	authMode.value = mode
 }
 
 const login = ref('')

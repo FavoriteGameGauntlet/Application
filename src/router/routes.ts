@@ -71,12 +71,6 @@ export const routes: RouteRecordRaw[] = [
 	},
 
 	{
-		path: '/signup',
-		component: AuthView,
-		name: RouteName.Signup,
-	},
-
-	{
 		path: '/:pathMatch(.*)*',
 		redirect: { name: RouteName.Timer },
 	},
