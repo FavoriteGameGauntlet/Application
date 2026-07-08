@@ -10,7 +10,7 @@ export type PointChange = {
 	desiredChangeValue: number
 }
 
-export type PointChangeResult = PointChange & {
+export type PointChangeResult = {
 	actualChangeValue: number
 	finalValue: number
 }
@@ -18,6 +18,16 @@ export type PointChangeResult = PointChange & {
 export type PointChangeWithLogin = {
 	login: string
 	pointChange: PointChange
+}
+
+export type TerritoryHourChange = PointChange & {
+	isSomeones: boolean
+	login?: string
+}
+
+export type TerritoryHourChangeResult = {
+	territoryHours?: PointChangeResult
+	territoryPoints?: PointChangeResult
 }
 
 export enum TerritoryChangeSource {
@@ -32,11 +42,11 @@ export const territoryChangeSourceLabel: Record<TerritoryChangeSource, string> =
 	[TerritoryChangeSource.Other]: 'Другое',
 }
 
-export type TerritoryPointChangeResult = PointChangeResult & {
-	changeSource: TerritoryChangeSource
-}
+export type TerritoryPointChangeResult = PointChangeResult
 
-export type TerritoryPointChangeHistoryDto = TerritoryPointChangeResult & {
+export type TerritoryPointChangeHistoryDto = PointChangeResult & {
+	changeSource: TerritoryChangeSource
+	desiredChangeValue: number
 	changeDate: string
 	sourceLogin?: string
 }
@@ -86,11 +96,11 @@ export type FreePointChange = PointChange & {
 	wheelEffectName?: string
 }
 
-export type FreePointChangeResult = PointChangeResult & {
-	changeSource: FreePointChangeSource
-}
+export type FreePointChangeResult = PointChangeResult
 
-export type FreePointChangeHistoryDto = FreePointChangeResult & {
+export type FreePointChangeHistoryDto = PointChangeResult & {
+	changeSource: FreePointChangeSource
+	desiredChangeValue: number
 	changeDate: string
 	sourceLogin?: string
 	wheelEffectName?: string

@@ -33,6 +33,9 @@ const currentGame = computed(
 	() => userStore.userCurrentGame[login.value] ?? null,
 )
 const pointsInfo = computed(() => userStore.userPoints[login.value] ?? null)
+const territoryPoints = computed(
+	() => userStore.userTerritoryPoints[login.value] ?? null,
+)
 const gamesHistory = computed(() => userStore.userHistory[login.value] ?? [])
 const effectsHistory = computed(() => userStore.userEffects[login.value] ?? [])
 const freeHistory = computed(
@@ -50,6 +53,7 @@ const freeLabelFor = (source: string) =>
 const loadAll = () => {
 	userStore.getUserCurrentGame(login.value)
 	userStore.getUserPoints(login.value)
+	userStore.getUserTerritoryPoints(login.value)
 	userStore.getUserHistory(login.value)
 	userStore.getUserEffects(login.value)
 	userStore.getUserFreePointsHistory(login.value)
@@ -86,10 +90,16 @@ watch(login, loadAll)
 				</div>
 			</div>
 
-			<div class="metrics-row" v-if="userStore.getUserPointsState.isLoaded">
+			<div
+				class="metrics-row"
+				v-if="
+					userStore.getUserPointsState.isLoaded &&
+					userStore.getUserTerritoryPointsState.isLoaded
+				"
+			>
 				<div class="metric-card">
 					<span class="metric-label">Очки территорий</span>
-					<div class="metric-value">{{ pointsInfo?.territoryPoints }}</div>
+					<div class="metric-value">{{ territoryPoints }}</div>
 				</div>
 				<div class="metric-card">
 					<span class="metric-label">Свободные очки</span>

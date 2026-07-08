@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { type HttpErrorResponse } from '../../../api-facade/http'
 import {
 	TerritoryHourChangeSource,
 	territoryHourChangeSourceLabel,
@@ -14,7 +15,9 @@ const showModal = ref(false)
 const reason = ref<TerritoryHourChangeSource>(TerritoryHourChangeSource.Seize)
 const seizeSliceIndex = ref<number | null>(null)
 const applyPenalty = ref(false)
+const targetLogin = ref<string | null>(null)
 const amount = ref<number | null>(null)
+const errorMessage = ref<string>()
 
 const isSeize = computed(
 	() => reason.value === TerritoryHourChangeSource.Seize,
@@ -44,12 +47,26 @@ watch(reason, (value) => {
 	}
 })
 
+watch(applyPenalty, (value) => {
+	if (value) {
+		if (!userStore.users) userStore.getAllUsers()
+	} else {
+		targetLogin.value = null
+	}
+})
+
+watch(targetLogin, () => {
+	errorMessage.value = undefined
+})
+
 const closeModal = () => {
 	showModal.value = false
 	reason.value = TerritoryHourChangeSource.Seize
 	seizeSliceIndex.value = null
 	applyPenalty.value = false
+	targetLogin.value = null
 	amount.value = null
+	errorMessage.value = undefined
 }
 
 const onEditButtonClick = () => {
@@ -63,20 +80,36 @@ const onEditButtonClick = () => {
 const onFormSubmit = () => {
 	if (isLoading.value) return
 
+	errorMessage.value = undefined
+
 	const desiredChangeValue = isSeize.value
 		? seizeSliceIndex.value !== null
-			? (systemParametersStore.territoryHourChangeBySeizeSlice[
-					seizeSliceIndex.value
-				] ?? null)
+			? (seizeSliceDisplayValues.value[seizeSliceIndex.value] ?? null)
 			: null
 		: amount.value
 
 	if (!desiredChangeValue) return
+	if (applyPenalty.value && !targetLogin.value) return
 
 	userStore
-		.changeTerritoryHours({ changeSource: reason.value, desiredChangeValue })
+		.changeTerritoryHours({
+			changeSource: reason.value,
+			desiredChangeValue,
+			isSomeones: applyPenalty.value,
+			...(applyPenalty.value && targetLogin.value
+				? { login: targetLogin.value }
+				: {}),
+		})
 		.then(() => {
 			closeModal()
+		})
+		.catch((error: HttpErrorResponse) => {
+			if (error.body?.code === 'NOT_ENOUGH_CURRENT_POINTS') {
+				errorMessage.value =
+					'У выбранного игрока недостаточно очков территорий. Выберите другого игрока.'
+				return
+			}
+			throw error
 		})
 }
 </script>
@@ -123,6 +156,22 @@ const onFormSubmit = () => {
 							/>
 							Чужая территория
 						</label>
+
+						<select
+							v-if="applyPenalty"
+							class="reason-select"
+							:disabled="isLoading"
+							v-model="targetLogin"
+						>
+							<option :value="null" disabled>Выберите игрока</option>
+							<option
+								v-for="user in userStore.otherUsers"
+								:key="user.login"
+								:value="user.login"
+							>
+								{{ user.displayName ?? user.login }}
+							</option>
+						</select>
 					</template>
 
 					<input
@@ -133,6 +182,8 @@ const onFormSubmit = () => {
 						:disabled="isLoading"
 						v-model.number="amount"
 					/>
+
+					<div class="error" v-if="errorMessage">{{ errorMessage }}</div>
 
 					<div class="modal-actions">
 						<button
@@ -200,6 +251,14 @@ const onFormSubmit = () => {
 	align-items: center;
 	gap: 6px;
 	cursor: pointer;
+}
+
+.error {
+	padding: 4px 8px;
+	border-radius: 6px;
+	background-color: #fef2f2;
+	font-size: 0.8125rem;
+	color: #291e1c;
 }
 
 .modal-actions {
