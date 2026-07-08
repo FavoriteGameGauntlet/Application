@@ -46,6 +46,9 @@ export const useFeatureSystemParametersStore = defineStore(
 		const territoryHourChangeBySeizeSlice = getByName(
 			'territoryHourChangeBySeizeSlice',
 		)
+		const territoryPointChangeBySeizeSlice = getByName(
+			'territoryPointChangeBySeizeSlice',
+		)
 		const freePointChangeByBaseTeleport = getByName(
 			'freePointChangeByBaseTeleport',
 		)
@@ -68,6 +71,7 @@ export const useFeatureSystemParametersStore = defineStore(
 			experiencePointChangeByTimer,
 			experiencePointChangeByLevelUp,
 			territoryHourChangeBySeizeSlice,
+			territoryPointChangeBySeizeSlice,
 			freePointChangeByBaseTeleport,
 			freePointChangeBySandstorm,
 

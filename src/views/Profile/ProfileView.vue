@@ -11,6 +11,7 @@ import { useAuthStore } from '../../stores/authStore'
 import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
 import { useFeatureGameStore } from '../../stores/feature/featureGameStore'
 import FreePointsForm from './components/FreePointsForm.vue'
+import TerritoryPointsForm from './components/TerritoryPointsForm.vue'
 import ExperiencePointsForm from './components/ExperiencePointsForm.vue'
 import TerritoryHoursForm from './components/TerritoryHoursForm.vue'
 import DisplayNameForm from './components/DisplayNameForm.vue'
@@ -112,6 +113,7 @@ watch(login, loadAll)
 					<div class="metric-card">
 						<div class="metric-card__header">
 							<span class="metric-label">Очки территорий</span>
+							<TerritoryPointsForm v-if="login" :login="login" />
 						</div>
 						<div class="metric-value">{{ territoryPoints }}</div>
 					</div>
