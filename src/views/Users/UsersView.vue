@@ -1,16 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import UiView from '../../components/ui/UiView.vue'
-import { useAuthStore } from '../../stores/authStore'
 import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
 import { RouteName } from '../../router/routeNames'
 
 const userStore = useFeatureUserStore()
-const authStore = useAuthStore()
-
-const otherUsers = computed(
-	() => userStore.users?.filter((u) => u.login !== authStore.login) ?? [],
-)
 
 onMounted(() => userStore.getAllUsers())
 </script>
@@ -24,7 +18,7 @@ onMounted(() => userStore.getAllUsers())
 		<template v-else>
 			<div class="users-grid">
 				<RouterLink
-					v-for="user in otherUsers"
+					v-for="user in userStore.otherUsers"
 					:key="user.login"
 					:to="{ name: RouteName.UserDetail, params: { login: user.login } }"
 					class="user-tile"

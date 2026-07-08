@@ -14,6 +14,7 @@ const showModal = ref(false)
 const reason = ref<TerritoryHourChangeSource>(TerritoryHourChangeSource.Seize)
 const seizeSliceIndex = ref<number | null>(null)
 const applyPenalty = ref(false)
+const targetLogin = ref<string | null>(null)
 const amount = ref<number | null>(null)
 
 const isSeize = computed(
@@ -44,11 +45,20 @@ watch(reason, (value) => {
 	}
 })
 
+watch(applyPenalty, (value) => {
+	if (value) {
+		if (!userStore.users) userStore.getAllUsers()
+	} else {
+		targetLogin.value = null
+	}
+})
+
 const closeModal = () => {
 	showModal.value = false
 	reason.value = TerritoryHourChangeSource.Seize
 	seizeSliceIndex.value = null
 	applyPenalty.value = false
+	targetLogin.value = null
 	amount.value = null
 }
 
@@ -72,9 +82,17 @@ const onFormSubmit = () => {
 		: amount.value
 
 	if (!desiredChangeValue) return
+	if (applyPenalty.value && !targetLogin.value) return
 
 	userStore
-		.changeTerritoryHours({ changeSource: reason.value, desiredChangeValue })
+		.changeTerritoryHours({
+			changeSource: reason.value,
+			desiredChangeValue,
+			isSomeones: applyPenalty.value,
+			...(applyPenalty.value && targetLogin.value
+				? { login: targetLogin.value }
+				: {}),
+		})
 		.then(() => {
 			closeModal()
 		})
@@ -123,6 +141,22 @@ const onFormSubmit = () => {
 							/>
 							Чужая территория
 						</label>
+
+						<select
+							v-if="applyPenalty"
+							class="reason-select"
+							:disabled="isLoading"
+							v-model="targetLogin"
+						>
+							<option :value="null" disabled>Выберите игрока</option>
+							<option
+								v-for="user in userStore.otherUsers"
+								:key="user.login"
+								:value="user.login"
+							>
+								{{ user.displayName ?? user.login }}
+							</option>
+						</select>
 					</template>
 
 					<input

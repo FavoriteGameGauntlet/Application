@@ -5,6 +5,7 @@ import type {
 	PointChange,
 	PointChangeResult,
 	PointInfo,
+	TerritoryHourChange,
 	TerritoryPointChangeHistoryDto,
 	TerritoryPointChangeResult,
 } from '../models/points-models'
@@ -94,7 +95,7 @@ export type GetExperiencePoints = {
 
 export type PostTerritoryHours = {
 	request: {
-		body: PointChange
+		body: TerritoryHourChange
 	}
 	response: PointChangeResult
 }

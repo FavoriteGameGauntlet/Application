@@ -6,6 +6,7 @@ import type {
 	FreePointChangeHistory,
 	PointChange,
 	PointInfo,
+	TerritoryHourChange,
 	TerritoryPointChangeHistory,
 } from '../../api-facade/models/points-models'
 import { StoreName } from '../../enums/storeName'
@@ -190,7 +191,7 @@ export const useApiPointsStore = defineStore(StoreName.ApiPoints, () => {
 	)
 
 	const [postTerritoryHours, postTerritoryHoursState] = withLoading(
-		async (status, change: PointChange) => {
+		async (status, change: TerritoryHourChange) => {
 			if (status.value === LoadingStatus.LOADING) return
 
 			status.value = LoadingStatus.LOADING

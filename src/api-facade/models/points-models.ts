@@ -20,6 +20,11 @@ export type PointChangeWithLogin = {
 	pointChange: PointChange
 }
 
+export type TerritoryHourChange = PointChange & {
+	isSomeones: boolean
+	login?: string
+}
+
 export enum TerritoryChangeSource {
 	ObtainingTerritory = 'territory-obtaining',
 	LosingTerritory = 'territory-loss',

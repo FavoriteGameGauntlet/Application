@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import type {
 	FreePointChange,
 	PointChange,
+	TerritoryHourChange,
 } from '../../api-facade/models/points-models'
 import type { Login } from '../../api-facade/models/users-models'
 import { StoreName } from '../../enums/storeName'
@@ -25,6 +26,9 @@ export const useFeatureUserStore = defineStore(StoreName.FeatureUser, () => {
 	}))
 
 	const users = computed(() => apiStore.users)
+	const otherUsers = computed(
+		() => apiStore.users?.filter((u) => u.login !== authStore.login) ?? [],
+	)
 
 	const init = async () => {
 		await apiStore.getDisplayName()
@@ -48,7 +52,7 @@ export const useFeatureUserStore = defineStore(StoreName.FeatureUser, () => {
 	const userTerritoryHours = computed(() => pointsStore.territoryHours)
 	const changeExperiencePoints = (change: PointChange) =>
 		pointsStore.postExperiencePoints(change)
-	const changeTerritoryHours = (change: PointChange) =>
+	const changeTerritoryHours = (change: TerritoryHourChange) =>
 		pointsStore.postTerritoryHours(change)
 	const changeFreePoints = (login: string, change: FreePointChange) =>
 		pointsStore.postFreePoints(login, change)
@@ -56,6 +60,7 @@ export const useFeatureUserStore = defineStore(StoreName.FeatureUser, () => {
 	return {
 		currentUser,
 		users,
+		otherUsers,
 
 		setDisplayState: apiStore.setDisplayNameState,
 		getDisplayNameState: apiStore.getDisplayNameState,
