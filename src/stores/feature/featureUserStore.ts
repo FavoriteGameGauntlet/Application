@@ -56,6 +56,8 @@ export const useFeatureUserStore = defineStore(StoreName.FeatureUser, () => {
 		pointsStore.postTerritoryHours(change)
 	const changeFreePoints = (login: string, change: FreePointChange) =>
 		pointsStore.postFreePoints(login, change)
+	const changeTerritoryPoints = (login: string, change: PointChange) =>
+		pointsStore.postTerritoryPoints(login, change)
 
 	return {
 		currentUser,
@@ -126,5 +128,8 @@ export const useFeatureUserStore = defineStore(StoreName.FeatureUser, () => {
 
 		changeFreePoints,
 		changeFreePointsState: pointsStore.postFreePointsState,
+
+		changeTerritoryPoints,
+		changeTerritoryPointsState: pointsStore.postTerritoryPointsState,
 	}
 })

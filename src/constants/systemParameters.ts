@@ -47,6 +47,10 @@ export const systemParameterDefs = {
 		name: 'TerritoryHourChangeBySeizeSlice',
 		convert: (v: string): number[] => JSON.parse(v),
 	},
+	territoryPointChangeBySeizeSlice: {
+		name: 'TerritoryPointChangeBySeizeSlice',
+		convert: (v: string): number[] => JSON.parse(v),
+	},
 	freePointChangeByBaseTeleport: {
 		name: 'FreePointChangeByBaseTeleport',
 		convert: (v: string): number => Number(v),

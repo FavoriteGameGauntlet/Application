@@ -236,6 +236,34 @@ export const useApiPointsStore = defineStore(StoreName.ApiPoints, () => {
 		},
 	)
 
+	const [postTerritoryPoints, postTerritoryPointsState] = withLoading(
+		async (status, login: string, change: PointChange) => {
+			if (status.value === LoadingStatus.LOADING) return
+
+			status.value = LoadingStatus.LOADING
+
+			return api.points
+				.postTerritoryPoints({ body: change, path: { login } })
+				.then((result) => {
+					territoryPoints.value[login] = result.finalValue
+
+					api.points
+						.getTerritoryPointsHistory({ path: { login } })
+						.then((history) => {
+							territoryPointsHistory.value[login] = history
+						})
+
+					status.value = LoadingStatus.LOADED
+
+					return result
+				})
+				.catch((e) => {
+					status.value = LoadingStatus.ERROR
+					throw e
+				})
+		},
+	)
+
 	const [postFreePoints, postFreePointsState] = withLoading(
 		async (status, login: string, change: FreePointChange) => {
 			if (status.value === LoadingStatus.LOADING) return
@@ -246,6 +274,13 @@ export const useApiPointsStore = defineStore(StoreName.ApiPoints, () => {
 				.postFreePoints({ body: change, path: { login } })
 				.then((result) => {
 					freePoints.value[login] = result.finalValue
+
+					api.points
+						.getFreePointsHistory({ path: { login } })
+						.then((history) => {
+							freePointsHistory.value[login] = history
+						})
+
 					status.value = LoadingStatus.LOADED
 
 					return result
@@ -293,6 +328,9 @@ export const useApiPointsStore = defineStore(StoreName.ApiPoints, () => {
 
 		postTerritoryHours,
 		postTerritoryHoursState,
+
+		postTerritoryPoints,
+		postTerritoryPointsState,
 
 		postFreePoints,
 		postFreePointsState,
