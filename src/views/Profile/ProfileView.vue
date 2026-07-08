@@ -26,6 +26,9 @@ const displayName = computed(() => userStore.currentUser.displayName)
 const pointsInfo = computed(() =>
 	login.value ? (userStore.userPoints[login.value] ?? null) : null,
 )
+const territoryPoints = computed(() =>
+	login.value ? (userStore.userTerritoryPoints[login.value] ?? null) : null,
+)
 const experiencePoints = computed(() => userStore.userExperiencePoints)
 const territoryHours = computed(() => userStore.userTerritoryHours)
 
@@ -39,18 +42,21 @@ const territoryHistory = computed(() =>
 const isLoading = computed(
 	() =>
 		userStore.getUserPointsState.isLoading ||
+		userStore.getUserTerritoryPointsState.isLoading ||
 		userStore.getUserExperiencePointsState.isLoading ||
 		userStore.getUserTerritoryHoursState.isLoading,
 )
 const isError = computed(
 	() =>
 		userStore.getUserPointsState.isError ||
+		userStore.getUserTerritoryPointsState.isError ||
 		userStore.getUserExperiencePointsState.isError ||
 		userStore.getUserTerritoryHoursState.isError,
 )
 const isLoaded = computed(
 	() =>
 		userStore.getUserPointsState.isLoaded &&
+		userStore.getUserTerritoryPointsState.isLoaded &&
 		userStore.getUserExperiencePointsState.isLoaded &&
 		userStore.getUserTerritoryHoursState.isLoaded,
 )
@@ -64,6 +70,7 @@ const loadAll = () => {
 	if (!login.value) return
 
 	userStore.getUserPoints(login.value)
+	userStore.getUserTerritoryPoints(login.value)
 	userStore.getUserExperiencePoints()
 	userStore.getUserTerritoryHours()
 	userStore.getUserFreePointsHistory(login.value)
@@ -106,7 +113,7 @@ watch(login, loadAll)
 						<div class="metric-card__header">
 							<span class="metric-label">Очки территорий</span>
 						</div>
-						<div class="metric-value">{{ pointsInfo?.territoryPoints }}</div>
+						<div class="metric-value">{{ territoryPoints }}</div>
 					</div>
 
 					<div class="metric-card">

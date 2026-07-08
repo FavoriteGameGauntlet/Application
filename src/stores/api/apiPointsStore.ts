@@ -11,8 +11,11 @@ import type {
 } from '../../api-facade/models/points-models'
 import { StoreName } from '../../enums/storeName'
 import { LoadingStatus, withLoading } from '../../utils/loadingState'
+import { useAuthStore } from '../authStore'
 
 export const useApiPointsStore = defineStore(StoreName.ApiPoints, () => {
+	const authStore = useAuthStore()
+
 	const pointsInfo = ref<Record<string, PointInfo>>({})
 	const freePointsHistory = ref<Record<string, FreePointChangeHistory[]>>({})
 	const territoryPointsHistory = ref<Record<string, TerritoryPointChangeHistory[]>>({})
@@ -199,7 +202,29 @@ export const useApiPointsStore = defineStore(StoreName.ApiPoints, () => {
 			return api.points
 				.postTerritoryHours({ body: change })
 				.then((result) => {
-					territoryHours.value = result.finalValue
+					if (result.territoryHours) {
+						territoryHours.value = result.territoryHours.finalValue
+					}
+
+					if (result.territoryPoints) {
+						const affectedLogins = [authStore.login, change.login].filter(
+							(login): login is string => !!login,
+						)
+
+						for (const affectedLogin of affectedLogins) {
+							api.points
+								.getTerritoryPoints({ path: { login: affectedLogin } })
+								.then((value) => {
+									territoryPoints.value[affectedLogin] = value
+								})
+							api.points
+								.getTerritoryPointsHistory({ path: { login: affectedLogin } })
+								.then((history) => {
+									territoryPointsHistory.value[affectedLogin] = history
+								})
+						}
+					}
+
 					status.value = LoadingStatus.LOADED
 
 					return result
