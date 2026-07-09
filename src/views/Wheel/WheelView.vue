@@ -4,8 +4,12 @@ import { useFeatureWheelStore } from '../../stores/feature/featureWheelStore'
 import { computed, onMounted, ref } from 'vue'
 import { funnyEffects } from './constants/funnyEffects.ts'
 import UiView from '../../components/ui/UiView.vue'
-import type { RolledWheelEffectDto } from '../../api-facade/models/wheel-effects-models'
+import type {
+	RolledWheelEffectDto,
+	WheelEffectPointChange,
+} from '../../api-facade/models/wheel-effects-models'
 import { FreePointChangeSource } from '../../api-facade/models/points-models'
+import { type HttpErrorResponse } from '../../api-facade/http'
 import { formatInstant } from '../../utils/temporal'
 import { useAuthStore } from '../../stores/authStore'
 import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
@@ -54,6 +58,8 @@ const onRollButtonClick = () => {
 const selectedEffect = ref<RolledWheelEffectDto | null>(null)
 const showApplyForm = ref(false)
 const pointChanges = ref<Record<string, number>>({})
+const rollChanges = ref<Record<string, number>>({})
+const errorMessage = ref<string>()
 
 const closeModal = () => {
 	selectedEffect.value = null
@@ -61,36 +67,77 @@ const closeModal = () => {
 }
 
 const openApplyForm = () => {
-	pointChanges.value = Object.fromEntries(
-		(wheelStore.users ?? []).map((user) => [user.login, 0]),
-	)
+	const logins = (wheelStore.users ?? []).map((user) => user.login)
+	pointChanges.value = Object.fromEntries(logins.map((login) => [login, 0]))
+	rollChanges.value = Object.fromEntries(logins.map((login) => [login, 0]))
+	errorMessage.value = undefined
 	showApplyForm.value = true
 }
 
 const clamp = (value: number) => Math.min(100, Math.max(-100, value))
+const clampRoll = (value: number) => Math.min(100, Math.max(0, value))
 
 const onPointInput = (login: string, event: Event) => {
 	const raw = Number((event.target as HTMLInputElement).value)
 	pointChanges.value[login] = clamp(isNaN(raw) ? 0 : raw)
 }
 
+const onRollInput = (login: string, event: Event) => {
+	const raw = Number((event.target as HTMLInputElement).value)
+	rollChanges.value[login] = clampRoll(isNaN(raw) ? 0 : raw)
+}
+
 const submitApply = async () => {
 	if (!selectedEffect.value) return
 
-	const changes = Object.entries(pointChanges.value)
-		.filter(([, value]) => value !== 0)
-		.map(([login, desiredChangeValue]) => ({
-			login,
-			pointChange: {
+	errorMessage.value = undefined
+
+	const logins = new Set([
+		...Object.keys(pointChanges.value),
+		...Object.keys(rollChanges.value),
+	])
+
+	const changes: WheelEffectPointChange[] = []
+
+	for (const login of logins) {
+		const desiredPointChangeValue = pointChanges.value[login]
+		const desiredRollChangeValue = rollChanges.value[login]
+
+		if (!desiredPointChangeValue && !desiredRollChangeValue) continue
+
+		const change: WheelEffectPointChange = { login }
+
+		if (desiredPointChangeValue) {
+			change.freePointChange = {
 				changeSource: FreePointChangeSource.WheelEffect,
-				desiredChangeValue,
-			},
-		}))
+				desiredChangeValue: desiredPointChangeValue,
+			}
+		}
 
-	await wheelStore.applyRoll(selectedEffect.value.name, changes)
-	showApplyForm.value = false
+		if (desiredRollChangeValue) {
+			change.availableRollChange = {
+				changeSource: FreePointChangeSource.WheelEffect,
+				desiredChangeValue: desiredRollChangeValue,
+			}
+		}
 
-	if (authStore.login) await userStore.getUserEffects(authStore.login)
+		changes.push(change)
+	}
+
+	await wheelStore
+		.applyRoll(selectedEffect.value.name, changes)
+		.then(async () => {
+			showApplyForm.value = false
+
+			if (authStore.login) await userStore.getUserEffects(authStore.login)
+		})
+		.catch((error: HttpErrorResponse) => {
+			if (error.body?.code === 'INCORRECT_CHANGE_SOURCE_VALUE') {
+				errorMessage.value = 'Нельзя отдавать отрицательное число попыток.'
+				return
+			}
+			throw error
+		})
 }
 
 onMounted(() => {
@@ -191,6 +238,11 @@ onMounted(() => {
 					<template v-else>
 						<h2 class="modal-title">Применить: {{ selectedEffect.name }}</h2>
 						<div class="users-list">
+							<div class="user-row user-row--header">
+								<span class="user-name"></span>
+								<span class="point-input">Очки</span>
+								<span class="point-input">Прокруты</span>
+							</div>
 							<div
 								v-for="user in wheelStore.users"
 								:key="user.login"
@@ -204,11 +256,22 @@ onMounted(() => {
 									type="number"
 									min="-100"
 									max="100"
+									title="Очки"
 									:value="pointChanges[user.login]"
 									@input="onPointInput(user.login, $event)"
 								/>
+								<input
+									class="point-input"
+									type="number"
+									min="0"
+									max="100"
+									title="Прокруты"
+									:value="rollChanges[user.login]"
+									@input="onRollInput(user.login, $event)"
+								/>
 							</div>
 						</div>
+						<div class="error" v-if="errorMessage">{{ errorMessage }}</div>
 						<div class="modal-actions">
 							<button
 								class="modal-button modal-button--primary"
@@ -434,11 +497,27 @@ onMounted(() => {
 	overflow-y: auto;
 }
 
+.error {
+	padding: 4px 8px;
+	border-radius: 6px;
+	background-color: #fef2f2;
+	font-size: 0.8125rem;
+	color: #291e1c;
+}
+
 .user-row {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
+}
+
+.user-row--header .point-input {
+	border: none;
+	padding: 0;
+	text-align: center;
+	font-size: 0.75rem;
+	color: #64748b;
 }
 
 .user-name {

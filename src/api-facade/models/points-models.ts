@@ -15,19 +15,24 @@ export type PointChangeResult = {
 	finalValue: number
 }
 
-export type PointChangeWithLogin = {
-	login: string
-	pointChange: PointChange
+export enum PointType {
+	FreePoints = 'freePoints',
+	TerritoryPoints = 'territoryPoints',
+	ExperiencePoints = 'experiencePoints',
+	AvailableRolls = 'availableRolls',
+	TerritoryHours = 'territoryHours',
 }
+
+export type PointChangeResults = Partial<Record<PointType, PointChangeResult>>
+
+export const getPointChangeResult = (
+	results: PointChangeResults,
+	type: PointType,
+) => results[type]
 
 export type TerritoryHourChange = PointChange & {
 	isSomeones: boolean
 	login?: string
-}
-
-export type TerritoryHourChangeResult = {
-	territoryHours?: PointChangeResult
-	territoryPoints?: PointChangeResult
 }
 
 export enum TerritoryChangeSource {
