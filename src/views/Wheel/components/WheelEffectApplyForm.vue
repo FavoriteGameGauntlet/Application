@@ -43,40 +43,35 @@ const onRollInput = (login: string, event: Event) => {
 	rollChanges.value[login] = clampRoll(isNaN(raw) ? 0 : raw)
 }
 
+const buildChange = (login: string): WheelEffectPointChange | null => {
+	const desiredPointChangeValue = pointChanges.value[login]
+	const desiredRollChangeValue = rollChanges.value[login]
+
+	if (!desiredPointChangeValue && !desiredRollChangeValue) return null
+
+	return {
+		login,
+		...(desiredPointChangeValue && {
+			freePointChange: {
+				changeSource: FreePointChangeSource.WheelEffect,
+				desiredChangeValue: desiredPointChangeValue,
+			},
+		}),
+		...(desiredRollChangeValue && {
+			availableRollChange: {
+				changeSource: FreePointChangeSource.WheelEffect,
+				desiredChangeValue: desiredRollChangeValue,
+			},
+		}),
+	}
+}
+
 const submitApply = async () => {
 	errorMessage.value = undefined
 
-	const logins = new Set([
-		...Object.keys(pointChanges.value),
-		...Object.keys(rollChanges.value),
-	])
-
-	const changes: WheelEffectPointChange[] = []
-
-	for (const login of logins) {
-		const desiredPointChangeValue = pointChanges.value[login]
-		const desiredRollChangeValue = rollChanges.value[login]
-
-		if (!desiredPointChangeValue && !desiredRollChangeValue) continue
-
-		const change: WheelEffectPointChange = { login }
-
-		if (desiredPointChangeValue) {
-			change.freePointChange = {
-				changeSource: FreePointChangeSource.WheelEffect,
-				desiredChangeValue: desiredPointChangeValue,
-			}
-		}
-
-		if (desiredRollChangeValue) {
-			change.availableRollChange = {
-				changeSource: FreePointChangeSource.WheelEffect,
-				desiredChangeValue: desiredRollChangeValue,
-			}
-		}
-
-		changes.push(change)
-	}
+	const changes = Object.keys(pointChanges.value)
+		.map(buildChange)
+		.filter((change): change is WheelEffectPointChange => change !== null)
 
 	await wheelStore
 		.applyRoll(props.effect.name, changes)
