@@ -1,12 +1,10 @@
 import type { WheelResult } from '../../types/wheelResult.ts'
 import type {
-	FreePointChangeResult,
-	PointChangeWithLogin,
-} from '../models/points-models'
-import type {
 	RolledWheelEffectDto,
 	RolledWheelEffectHistoryDto,
 	WheelEffect,
+	WheelEffectPointChange,
+	WheelEffectPointChangeResult,
 } from '../models/wheel-effects-models'
 
 export type GetWheelEffectsHistory = {
@@ -37,12 +35,9 @@ export type GetLastRolledWheelEffects = {
 export type PostApplyWheelEffectRoll = {
 	request: {
 		body: {
-			pointChanges: PointChangeWithLogin[]
+			pointChanges: WheelEffectPointChange[]
 			wheelEffectName: string
 		}
 	}
-	response: {
-		login: string
-		changeResult: FreePointChangeResult
-	}[]
+	response: WheelEffectPointChangeResult[]
 }

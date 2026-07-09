@@ -31,5 +31,6 @@
 	inline-size: 100%;
 
 	padding-block: 2rem;
+	padding-inline: 1rem;
 }
 </style>

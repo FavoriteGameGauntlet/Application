@@ -1,13 +1,15 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '../../api-facade/api'
-import type {
-	FreePointChange,
-	FreePointChangeHistory,
-	PointChange,
-	PointInfo,
-	TerritoryHourChange,
-	TerritoryPointChangeHistory,
+import {
+	getPointChangeResult,
+	PointType,
+	type FreePointChange,
+	type FreePointChangeHistory,
+	type PointChange,
+	type PointInfo,
+	type TerritoryHourChange,
+	type TerritoryPointChangeHistory,
 } from '../../api-facade/models/points-models'
 import { StoreName } from '../../enums/storeName'
 import { LoadingStatus, withLoading } from '../../utils/loadingState'
@@ -202,11 +204,19 @@ export const useApiPointsStore = defineStore(StoreName.ApiPoints, () => {
 			return api.points
 				.postTerritoryHours({ body: change })
 				.then((result) => {
-					if (result.territoryHours) {
-						territoryHours.value = result.territoryHours.finalValue
+					const territoryHoursResult = getPointChangeResult(
+						result,
+						PointType.TerritoryHours,
+					)
+					if (territoryHoursResult) {
+						territoryHours.value = territoryHoursResult.finalValue
 					}
 
-					if (result.territoryPoints) {
+					const territoryPointsResult = getPointChangeResult(
+						result,
+						PointType.TerritoryPoints,
+					)
+					if (territoryPointsResult) {
 						const affectedLogins = [authStore.login, change.login].filter(
 							(login): login is string => !!login,
 						)

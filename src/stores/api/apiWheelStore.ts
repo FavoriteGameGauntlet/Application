@@ -1,16 +1,22 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '../../api-facade/api'
-import type { PointChangeWithLogin } from '../../api-facade/models/points-models'
+import { PointType, getPointChangeResult } from '../../api-facade/models/points-models'
 import type {
 	RolledWheelEffectHistory,
 	WheelEffect,
+	WheelEffectPointChange,
 } from '../../api-facade/models/wheel-effects-models'
 import { StoreName } from '../../enums/storeName'
 import type { WheelResult } from '../../types/wheelResult.ts'
 import { LoadingStatus, withLoading } from '../../utils/loadingState'
+import { useAuthStore } from '../authStore'
+import { useApiPointsStore } from './apiPointsStore'
 
 export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
+	const authStore = useAuthStore()
+	const pointsStore = useApiPointsStore()
+
 	const availableRollCount = ref(0)
 	const effectsHistory = ref<
 		Record<string, RolledWheelEffectHistory[] | undefined>
@@ -123,7 +129,7 @@ export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
 		async (
 			status,
 			effectName: string,
-			pointChanges: PointChangeWithLogin[],
+			pointChanges: WheelEffectPointChange[],
 		) => {
 			if (status.value === LoadingStatus.LOADING) return
 
@@ -136,7 +142,27 @@ export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
 						pointChanges: pointChanges,
 					},
 				})
-				.then(() => {
+				.then((results) => {
+					for (const result of results) {
+						const availableRollsResult = getPointChangeResult(
+							result.changeResults,
+							PointType.AvailableRolls,
+						)
+						if (availableRollsResult && result.login === authStore.login) {
+							availableRollCount.value = availableRollsResult.finalValue
+						}
+
+						const freePointsResult = getPointChangeResult(
+							result.changeResults,
+							PointType.FreePoints,
+						)
+						if (freePointsResult) {
+							pointsStore.freePoints[result.login] =
+								freePointsResult.finalValue
+							pointsStore.getFreePointsHistory(result.login)
+						}
+					}
+
 					const effect = currentEffects.value?.find(
 						(e) => e.name === effectName,
 					)

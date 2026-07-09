@@ -4,8 +4,8 @@ import { useFeatureWheelStore } from '../../stores/feature/featureWheelStore'
 import { computed, onMounted, ref } from 'vue'
 import { funnyEffects } from './constants/funnyEffects.ts'
 import UiView from '../../components/ui/UiView.vue'
+import WheelEffectApplyForm from './components/WheelEffectApplyForm.vue'
 import type { RolledWheelEffectDto } from '../../api-facade/models/wheel-effects-models'
-import { FreePointChangeSource } from '../../api-facade/models/points-models'
 import { formatInstant } from '../../utils/temporal'
 import { useAuthStore } from '../../stores/authStore'
 import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
@@ -53,44 +53,10 @@ const onRollButtonClick = () => {
 
 const selectedEffect = ref<RolledWheelEffectDto | null>(null)
 const showApplyForm = ref(false)
-const pointChanges = ref<Record<string, number>>({})
 
 const closeModal = () => {
 	selectedEffect.value = null
 	showApplyForm.value = false
-}
-
-const openApplyForm = () => {
-	pointChanges.value = Object.fromEntries(
-		(wheelStore.users ?? []).map((user) => [user.login, 0]),
-	)
-	showApplyForm.value = true
-}
-
-const clamp = (value: number) => Math.min(100, Math.max(-100, value))
-
-const onPointInput = (login: string, event: Event) => {
-	const raw = Number((event.target as HTMLInputElement).value)
-	pointChanges.value[login] = clamp(isNaN(raw) ? 0 : raw)
-}
-
-const submitApply = async () => {
-	if (!selectedEffect.value) return
-
-	const changes = Object.entries(pointChanges.value)
-		.filter(([, value]) => value !== 0)
-		.map(([login, desiredChangeValue]) => ({
-			login,
-			pointChange: {
-				changeSource: FreePointChangeSource.WheelEffect,
-				desiredChangeValue,
-			},
-		}))
-
-	await wheelStore.applyRoll(selectedEffect.value.name, changes)
-	showApplyForm.value = false
-
-	if (authStore.login) await userStore.getUserEffects(authStore.login)
 }
 
 onMounted(() => {
@@ -161,7 +127,7 @@ onMounted(() => {
 
 		<Teleport to="body">
 			<div v-if="selectedEffect" class="modal-overlay" @click.self="closeModal">
-				<div class="modal">
+				<div class="modal" :class="{ 'modal--wide': showApplyForm }">
 					<template v-if="!showApplyForm">
 						<h2 class="modal-title">{{ selectedEffect.name }}</h2>
 						<p v-if="selectedEffect.description" class="modal-description">
@@ -180,7 +146,7 @@ onMounted(() => {
 							<button
 								v-if="!selectedEffect.isApplied"
 								class="modal-button modal-button--primary"
-								@click="openApplyForm"
+								@click="showApplyForm = true"
 							>
 								Применить
 							</button>
@@ -188,40 +154,11 @@ onMounted(() => {
 						</div>
 					</template>
 
-					<template v-else>
-						<h2 class="modal-title">Применить: {{ selectedEffect.name }}</h2>
-						<div class="users-list">
-							<div
-								v-for="user in wheelStore.users"
-								:key="user.login"
-								class="user-row"
-							>
-								<span class="user-name">{{
-									user.displayName ?? user.login
-								}}</span>
-								<input
-									class="point-input"
-									type="number"
-									min="-100"
-									max="100"
-									:value="pointChanges[user.login]"
-									@input="onPointInput(user.login, $event)"
-								/>
-							</div>
-						</div>
-						<div class="modal-actions">
-							<button
-								class="modal-button modal-button--primary"
-								:disabled="wheelStore.applyRollState.isLoading"
-								@click="submitApply"
-							>
-								Подтвердить
-							</button>
-							<button class="modal-button" @click="showApplyForm = false">
-								Назад
-							</button>
-						</div>
-					</template>
+					<WheelEffectApplyForm
+						v-else
+						:effect="selectedEffect"
+						@close="showApplyForm = false"
+					/>
 				</div>
 			</div>
 		</Teleport>
@@ -373,9 +310,15 @@ onMounted(() => {
 	padding: 24px;
 	max-width: 400px;
 	width: 90%;
+	max-height: 85vh;
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
+	overflow-y: auto;
+}
+
+.modal--wide {
+	max-width: 720px;
 }
 
 .modal-title {
@@ -424,35 +367,5 @@ onMounted(() => {
 
 .modal-button--primary:hover:not(:disabled) {
 	background-color: #2563eb;
-}
-
-.users-list {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	max-height: 300px;
-	overflow-y: auto;
-}
-
-.user-row {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-}
-
-.user-name {
-	flex: 1;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.point-input {
-	width: 72px;
-	padding: 4px 8px;
-	border: 1px solid #cbd5e1;
-	border-radius: 4px;
-	text-align: right;
 }
 </style>
