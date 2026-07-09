@@ -36,3 +36,4 @@ jobs:
           releaseBody: 'Для установки скачайте только файл `_x64-setup.exe`. Остальные не трогайте, они используются для автообновления.'
           releaseDraft: false
           prerelease: true
+          assetNamePattern: '[name]_[arch][setup][ext]'
