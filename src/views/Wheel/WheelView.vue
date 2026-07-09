@@ -127,7 +127,7 @@ onMounted(() => {
 
 		<Teleport to="body">
 			<div v-if="selectedEffect" class="modal-overlay" @click.self="closeModal">
-				<div class="modal">
+				<div class="modal" :class="{ 'modal--wide': showApplyForm }">
 					<template v-if="!showApplyForm">
 						<h2 class="modal-title">{{ selectedEffect.name }}</h2>
 						<p v-if="selectedEffect.description" class="modal-description">
@@ -310,9 +310,15 @@ onMounted(() => {
 	padding: 24px;
 	max-width: 400px;
 	width: 90%;
+	max-height: 85vh;
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
+	overflow-y: auto;
+}
+
+.modal--wide {
+	max-width: 720px;
 }
 
 .modal-title {

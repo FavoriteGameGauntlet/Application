@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { HttpErrorResponse } from '../../../api-facade/http'
 import { FreePointChangeSource } from '../../../api-facade/models/points-models'
 import type {
@@ -22,45 +22,89 @@ const wheelStore = useFeatureWheelStore()
 const authStore = useAuthStore()
 const userStore = useFeatureUserStore()
 
-const pointChanges = ref<Record<string, number>>(
-	Object.fromEntries((wheelStore.users ?? []).map((user) => [user.login, 0])),
-)
-const rollChanges = ref<Record<string, number>>(
-	Object.fromEntries((wheelStore.users ?? []).map((user) => [user.login, 0])),
-)
+type OtherPlayerRow = {
+	id: number
+	login: string | null
+	pointChange: number
+	rollChange: number
+}
+
+const currentPointChange = ref(0)
+const currentRollChange = ref(0)
+const otherRows = ref<OtherPlayerRow[]>([])
 const errorMessage = ref<string>()
+
+let nextRowId = 0
+
+const otherUsers = computed(() =>
+	(wheelStore.users ?? []).filter((user) => user.login !== authStore.login),
+)
+
+const availableLoginsForRow = (row: OtherPlayerRow) =>
+	otherUsers.value.filter(
+		(user) =>
+			user.login === row.login ||
+			!otherRows.value.some(
+				(other) => other !== row && other.login === user.login,
+			),
+	)
+
+const addOtherRow = () => {
+	otherRows.value.push({
+		id: nextRowId++,
+		login: null,
+		pointChange: 0,
+		rollChange: 0,
+	})
+}
+
+const removeOtherRow = (id: number) => {
+	otherRows.value = otherRows.value.filter((row) => row.id !== id)
+}
 
 const clamp = (value: number) => Math.min(100, Math.max(-100, value))
 const clampRoll = (value: number) => Math.min(100, Math.max(0, value))
 
-const onPointInput = (login: string, event: Event) => {
+const parseInputValue = (event: Event) => {
 	const raw = Number((event.target as HTMLInputElement).value)
-	pointChanges.value[login] = clamp(isNaN(raw) ? 0 : raw)
+	return isNaN(raw) ? 0 : raw
 }
 
-const onRollInput = (login: string, event: Event) => {
-	const raw = Number((event.target as HTMLInputElement).value)
-	rollChanges.value[login] = clampRoll(isNaN(raw) ? 0 : raw)
+const onCurrentPointInput = (event: Event) => {
+	currentPointChange.value = clamp(parseInputValue(event))
 }
 
-const buildChange = (login: string): WheelEffectPointChange | null => {
-	const desiredPointChangeValue = pointChanges.value[login]
-	const desiredRollChangeValue = rollChanges.value[login]
+const onCurrentRollInput = (event: Event) => {
+	currentRollChange.value = clampRoll(parseInputValue(event))
+}
 
-	if (!desiredPointChangeValue && !desiredRollChangeValue) return null
+const onOtherPointInput = (row: OtherPlayerRow, event: Event) => {
+	row.pointChange = clamp(parseInputValue(event))
+}
+
+const onOtherRollInput = (row: OtherPlayerRow, event: Event) => {
+	row.rollChange = clampRoll(parseInputValue(event))
+}
+
+const buildChange = (
+	login: string,
+	pointChange: number,
+	rollChange: number,
+): WheelEffectPointChange | null => {
+	if (!pointChange && !rollChange) return null
 
 	return {
 		login,
-		...(desiredPointChangeValue && {
+		...(pointChange && {
 			freePointChange: {
 				changeSource: FreePointChangeSource.WheelEffect,
-				desiredChangeValue: desiredPointChangeValue,
+				desiredChangeValue: pointChange,
 			},
 		}),
-		...(desiredRollChangeValue && {
+		...(rollChange && {
 			availableRollChange: {
 				changeSource: FreePointChangeSource.WheelEffect,
-				desiredChangeValue: desiredRollChangeValue,
+				desiredChangeValue: rollChange,
 			},
 		}),
 	}
@@ -69,9 +113,23 @@ const buildChange = (login: string): WheelEffectPointChange | null => {
 const submitApply = async () => {
 	errorMessage.value = undefined
 
-	const changes = Object.keys(pointChanges.value)
-		.map(buildChange)
-		.filter((change): change is WheelEffectPointChange => change !== null)
+	const changes: WheelEffectPointChange[] = []
+
+	if (authStore.login) {
+		const change = buildChange(
+			authStore.login,
+			currentPointChange.value,
+			currentRollChange.value,
+		)
+		if (change) changes.push(change)
+	}
+
+	for (const row of otherRows.value) {
+		if (!row.login) continue
+
+		const change = buildChange(row.login, row.pointChange, row.rollChange)
+		if (change) changes.push(change)
+	}
 
 	await wheelStore
 		.applyRoll(props.effect.name, changes)
@@ -96,17 +154,21 @@ const submitApply = async () => {
 			<span class="user-name"></span>
 			<span class="point-input">Очки</span>
 			<span class="point-input">Прокруты</span>
+			<span class="row-action"></span>
 		</div>
-		<div v-for="user in wheelStore.users" :key="user.login" class="user-row">
-			<span class="user-name">{{ user.displayName ?? user.login }}</span>
+
+		<div class="user-row">
+			<span class="user-name">{{
+				userStore.currentUser.displayName ?? userStore.currentUser.login
+			}}</span>
 			<input
 				class="point-input"
 				type="number"
 				min="-100"
 				max="100"
 				title="Очки"
-				:value="pointChanges[user.login]"
-				@input="onPointInput(user.login, $event)"
+				:value="currentPointChange"
+				@input="onCurrentPointInput"
 			/>
 			<input
 				class="point-input"
@@ -114,11 +176,60 @@ const submitApply = async () => {
 				min="0"
 				max="100"
 				title="Прокруты"
-				:value="rollChanges[user.login]"
-				@input="onRollInput(user.login, $event)"
+				:value="currentRollChange"
+				@input="onCurrentRollInput"
 			/>
+			<span class="row-action"></span>
+		</div>
+
+		<div v-for="row in otherRows" :key="row.id" class="user-row">
+			<select class="user-select" v-model="row.login">
+				<option :value="null" disabled>Выберите игрока</option>
+				<option
+					v-for="user in availableLoginsForRow(row)"
+					:key="user.login"
+					:value="user.login"
+				>
+					{{ user.displayName ?? user.login }}
+				</option>
+			</select>
+			<input
+				class="point-input"
+				type="number"
+				min="-100"
+				max="100"
+				title="Очки"
+				:value="row.pointChange"
+				@input="onOtherPointInput(row, $event)"
+			/>
+			<input
+				class="point-input"
+				type="number"
+				min="0"
+				max="100"
+				title="Прокруты"
+				:value="row.rollChange"
+				@input="onOtherRollInput(row, $event)"
+			/>
+			<button
+				class="row-action remove-row-button"
+				type="button"
+				@click="removeOtherRow(row.id)"
+			>
+				✕
+			</button>
 		</div>
 	</div>
+
+	<button
+		class="modal-button add-row-button"
+		type="button"
+		:disabled="otherRows.length >= otherUsers.length"
+		@click="addOtherRow"
+	>
+		+ Добавить игрока
+	</button>
+
 	<div class="error" v-if="errorMessage">{{ errorMessage }}</div>
 	<div class="modal-actions">
 		<button
@@ -171,6 +282,10 @@ const submitApply = async () => {
 	background-color: #2563eb;
 }
 
+.add-row-button {
+	align-self: flex-start;
+}
+
 .users-list {
 	display: flex;
 	flex-direction: column;
@@ -204,9 +319,19 @@ const submitApply = async () => {
 
 .user-name {
 	flex: 1;
+	min-width: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+}
+
+.user-select {
+	flex: 1;
+	min-width: 0;
+	border-radius: 4px;
+	border: 1px solid #cbd5e1;
+	background-color: #fff;
+	padding: 4px 8px;
 }
 
 .point-input {
@@ -215,5 +340,23 @@ const submitApply = async () => {
 	border: 1px solid #cbd5e1;
 	border-radius: 4px;
 	text-align: right;
+}
+
+.row-action {
+	width: 20px;
+	text-align: center;
+}
+
+.remove-row-button {
+	border: none;
+	background: transparent;
+	cursor: pointer;
+	color: #64748b;
+	font-size: 0.875rem;
+	padding: 0;
+}
+
+.remove-row-button:hover {
+	color: #ef4444;
 }
 </style>
