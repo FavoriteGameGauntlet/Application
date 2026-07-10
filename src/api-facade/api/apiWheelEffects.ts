@@ -7,6 +7,7 @@ import type {
 	GetWheelEffectsAvailable,
 	GetWheelEffectsHistory,
 	PostApplyWheelEffectRoll,
+	PostClearLastRolledWheelEffects,
 	PostRollWheelEffect,
 } from '../requests/wheel-effects-requests'
 
@@ -39,6 +40,13 @@ export const apiWheelEffects = {
 		http
 			.get<GetLastRolledWheelEffects>('/wheel-effects/available/roll/last')
 			.then(({ body }) => body as WheelResult),
+
+	clearLastRolled: () =>
+		http
+			.post<PostClearLastRolledWheelEffects>(
+				'/wheel-effects/available/roll/last/clear',
+			)
+			.then(() => undefined),
 
 	postApplyRoll: ({ body }: PostApplyWheelEffectRoll['request']) =>
 		http

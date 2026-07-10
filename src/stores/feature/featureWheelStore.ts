@@ -42,6 +42,8 @@ export const useFeatureWheelStore = defineStore(StoreName.FeatureWheel, () => {
 
 	const getLastRoll = () => wheelStore.getLastRoll()
 
+	const clearLastRoll = () => wheelStore.clearLastRoll()
+
 	const init = () => {
 		// Get available roll count on timer end
 		/** @todo maybe always +1 regardless of API response? */
@@ -82,6 +84,9 @@ export const useFeatureWheelStore = defineStore(StoreName.FeatureWheel, () => {
 
 		getLastRoll,
 		getLastRollState: wheelStore.getLastRollState,
+
+		clearLastRoll,
+		clearLastRollState: wheelStore.clearLastRollState,
 
 		users: computed(() => userStore.users),
 		getAllUsers: userStore.getAllUsers,

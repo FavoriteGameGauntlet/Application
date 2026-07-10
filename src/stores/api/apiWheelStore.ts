@@ -130,6 +130,23 @@ export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
 			})
 	})
 
+	const [clearLastRoll, clearLastRollState] = withLoading(async (status) => {
+		if (status.value === LoadingStatus.LOADING) return
+
+		status.value = LoadingStatus.LOADING
+
+		await api.wheelEffects
+			.clearLastRolled()
+			.then(() => {
+				currentEffects.value = null
+				status.value = LoadingStatus.LOADED
+			})
+			.catch((e) => {
+				status.value = LoadingStatus.ERROR
+				throw e
+			})
+	})
+
 	const [applyRoll, applyRollState] = withLoading(
 		async (
 			status,
@@ -201,6 +218,9 @@ export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
 
 		getLastRoll,
 		getLastRollState,
+
+		clearLastRoll,
+		clearLastRollState,
 
 		applyRoll,
 		applyRollState,
