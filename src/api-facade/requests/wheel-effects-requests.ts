@@ -21,6 +21,11 @@ export type GetWheelEffectsAvailable = {
 }
 
 export type PostRollWheelEffect = {
+	request: {
+		body: {
+			isReroll: boolean
+		}
+	}
 	response: RolledWheelEffectDto[]
 }
 
