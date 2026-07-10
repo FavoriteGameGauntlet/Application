@@ -72,7 +72,7 @@ export enum FreePointChangeSource {
 export const freePointChangeSourceLabel: Record<FreePointChangeSource, string> = {
 	[FreePointChangeSource.WheelEffect]: 'Эффект колеса',
 	[FreePointChangeSource.Quest]: 'Квест',
-	[FreePointChangeSource.BaseTeleport]: 'Телепорт базы',
+	[FreePointChangeSource.BaseTeleport]: 'Телепорт на базу',
 	[FreePointChangeSource.Sandstorm]: 'Песчаная буря',
 	[FreePointChangeSource.Other]: 'Другое',
 }

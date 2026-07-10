@@ -10,16 +10,15 @@ import {
 import { useAuthStore } from '../../stores/authStore'
 import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
 import { useFeatureGameStore } from '../../stores/feature/featureGameStore'
-import FreePointsForm from './components/FreePointsForm.vue'
-import TerritoryPointsForm from './components/TerritoryPointsForm.vue'
-import ExperiencePointsForm from './components/ExperiencePointsForm.vue'
-import TerritoryHoursForm from './components/TerritoryHoursForm.vue'
+import PointsChangeForm from './components/PointsChangeForm.vue'
+import { usePointsChangeConfigs } from './components/pointsChangeConfigs'
 import DisplayNameForm from './components/DisplayNameForm.vue'
 import PointsHistoryTabs from './components/PointsHistoryTabs.vue'
 
 const authStore = useAuthStore()
 const userStore = useFeatureUserStore()
 const gameStore = useFeatureGameStore()
+const pointsChangeConfigs = usePointsChangeConfigs()
 
 const login = computed(() => authStore.login)
 const displayName = computed(() => userStore.currentUser.displayName)
@@ -113,7 +112,7 @@ watch(login, loadAll)
 					<div class="metric-card">
 						<div class="metric-card__header">
 							<span class="metric-label">Очки территорий</span>
-							<TerritoryPointsForm v-if="login" :login="login" />
+							<PointsChangeForm :config="pointsChangeConfigs.territoryPoints" />
 						</div>
 						<div class="metric-value">{{ territoryPoints }}</div>
 					</div>
@@ -121,7 +120,7 @@ watch(login, loadAll)
 					<div class="metric-card">
 						<div class="metric-card__header">
 							<span class="metric-label">Свободные очки</span>
-							<FreePointsForm v-if="login" :login="login" />
+							<PointsChangeForm :config="pointsChangeConfigs.freePoints" />
 						</div>
 						<div class="metric-value">{{ pointsInfo?.freePoints }}</div>
 					</div>
@@ -129,7 +128,7 @@ watch(login, loadAll)
 					<div class="metric-card">
 						<div class="metric-card__header">
 							<span class="metric-label">Очки опыта</span>
-							<ExperiencePointsForm />
+							<PointsChangeForm :config="pointsChangeConfigs.experiencePoints" />
 						</div>
 						<div class="metric-value">{{ experiencePoints }}</div>
 					</div>
@@ -137,7 +136,7 @@ watch(login, loadAll)
 					<div class="metric-card">
 						<div class="metric-card__header">
 							<span class="metric-label">Часы территорий</span>
-							<TerritoryHoursForm />
+							<PointsChangeForm :config="pointsChangeConfigs.territoryHours" />
 						</div>
 						<div class="metric-value">{{ territoryHours }}</div>
 					</div>
