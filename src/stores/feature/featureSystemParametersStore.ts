@@ -1,17 +1,24 @@
 import { defineStore } from 'pinia'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { StoreName } from '../../enums/storeName'
 import { systemParameterDefs } from '../../constants/systemParameters'
 import type {
 	SystemParameterName,
 	SystemParameterType,
 } from '../../types/systemParameters'
+import { LoadingStatus } from '../../utils/loadingState'
 import { useApiSystemParametersStore } from '../api/apiSystemParametersStore'
+
+const RETRY_DELAYS_MS = [200, 400, 800, 1600]
+const LONG_RETRY_DELAY_MS = 60_000
 
 export const useFeatureSystemParametersStore = defineStore(
 	StoreName.FeatureSystemParameters,
 	() => {
 		const systemParametersStore = useApiSystemParametersStore()
+
+		const retriesExhausted = ref(false)
+		const nextRetryAt = ref<number | null>(null)
 
 		const getByName = <K extends SystemParameterName>(key: K) =>
 			computed(() => {
@@ -55,6 +62,31 @@ export const useFeatureSystemParametersStore = defineStore(
 		const freePointChangeBySandstorm = getByName('freePointChangeBySandstorm')
 
 		const init = () => {
+			let retryAttempt = 0
+
+			watch(
+				() => systemParametersStore.getAllSystemParametersState.status,
+				(status) => {
+					if (status === LoadingStatus.LOADED) {
+						retryAttempt = 0
+						retriesExhausted.value = false
+						nextRetryAt.value = null
+						return
+					}
+
+					if (retryAttempt >= RETRY_DELAYS_MS.length) retriesExhausted.value = true
+
+					const delay =
+						retryAttempt < RETRY_DELAYS_MS.length
+							? RETRY_DELAYS_MS[retryAttempt]
+							: LONG_RETRY_DELAY_MS
+					retryAttempt += 1
+
+					nextRetryAt.value = Date.now() + delay
+					setTimeout(() => systemParametersStore.getAllSystemParameters(), delay)
+				},
+			)
+
 			systemParametersStore.getAllSystemParameters()
 		}
 
@@ -76,6 +108,11 @@ export const useFeatureSystemParametersStore = defineStore(
 			freePointChangeBySandstorm,
 
 			init,
+			getAllSystemParametersState: computed(
+				() => systemParametersStore.getAllSystemParametersState,
+			),
+			retriesExhausted,
+			nextRetryAt,
 		}
 	},
 )
