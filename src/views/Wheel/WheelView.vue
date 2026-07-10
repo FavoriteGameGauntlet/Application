@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import UiButton from '../../components/ui/UiButton.vue'
+import trashIcon from '../../assets/icons/trash.svg'
 import { useFeatureWheelStore } from '../../stores/feature/featureWheelStore'
 import { computed, onMounted, ref } from 'vue'
-import { funnyEffects } from './constants/funnyEffects.ts'
 import UiView from '../../components/ui/UiView.vue'
 import WheelEffectApplyForm from './components/WheelEffectApplyForm.vue'
+import WheelEffectCard from './components/WheelEffectCard.vue'
 import type { RolledWheelEffectDto } from '../../api-facade/models/wheel-effects-models'
 import { formatInstant } from '../../utils/temporal'
 import { useAuthStore } from '../../stores/authStore'
@@ -18,20 +19,12 @@ const effectsHistory = computed(() =>
 	authStore.login ? (userStore.userEffects[authStore.login] ?? []) : [],
 )
 
-const getRandomNumber = (min: number, max: number) => {
-	return Math.floor(Math.random() * (max - min) + min)
-}
+const emptyEffects: RolledWheelEffectDto[] = Array.from(
+	{ length: 5 },
+	(_, i) => ({ name: '', isApplied: false, position: i }),
+)
 
-const getRandomItems = <T,>(collection: T[], count: number = 1): T[] => {
-	const randomizedCollection: T[] = []
-
-	for (let i = 0; i < count && i < collection.length; i++) {
-		const index = getRandomNumber(0, collection.length)
-		randomizedCollection.push(collection.at(index)!)
-	}
-
-	return randomizedCollection
-}
+const hasRoll = computed(() => !!wheelStore.currentEffects)
 
 const visibleEffects = computed(() => {
 	if (wheelStore.currentEffects) {
@@ -40,7 +33,7 @@ const visibleEffects = computed(() => {
 		)
 	}
 
-	return getRandomItems(funnyEffects, 5)
+	return emptyEffects
 })
 
 const centerIndex = computed(() =>
@@ -51,6 +44,14 @@ const isReroll = ref(false)
 
 const onRollButtonClick = () => {
 	wheelStore.roll(isReroll.value)
+}
+
+const hasAppliedEffect = computed(
+	() => wheelStore.currentEffects?.some((effect) => effect.isApplied) ?? false,
+)
+
+const onClearButtonClick = () => {
+	wheelStore.clearLastRoll()
 }
 
 const selectedEffect = ref<RolledWheelEffectDto | null>(null)
@@ -82,34 +83,19 @@ onMounted(() => {
 
 			<div class="reel">
 				<div class="effects-grid">
-					<div
-						class="effect-card"
-						:class="{ 'effect-card--center': i === centerIndex }"
-						:key="effect.name"
+					<WheelEffectCard
 						v-for="(effect, i) in visibleEffects"
-						@click="selectedEffect = effect"
-					>
-						<span class="effect-name">{{ effect.name }}</span>
-						<label class="effect-applied" @click.stop>
-							<input type="checkbox" :checked="effect.isApplied" disabled />
-							Применён
-						</label>
-					</div>
+						:key="i"
+						:effect="effect"
+						:is-center="i === centerIndex"
+						:is-placeholder="!hasRoll"
+						@select="selectedEffect = $event"
+					/>
 				</div>
 				<div class="reel-pointer"></div>
 			</div>
 
 			<div class="roll-controls">
-				<div class="roll-spacer"></div>
-
-				<UiButton
-					class="roll-button"
-					:disabled="!wheelStore.availableRollCount"
-					@click="onRollButtonClick"
-				>
-					{{ isReroll ? 'Перекрутить' : 'Прокрутить' }}
-				</UiButton>
-
 				<div class="roll-extra">
 					<label class="reroll-checkbox">
 						<input type="checkbox" v-model="isReroll" />
@@ -120,6 +106,27 @@ onMounted(() => {
 						Прокруты не будут потрачены
 					</p>
 				</div>
+
+				<UiButton
+					class="roll-button"
+					:disabled="
+						!wheelStore.availableRollCount ||
+						(!!wheelStore.currentEffects && !hasAppliedEffect && !isReroll)
+					"
+					@click="onRollButtonClick"
+				>
+					{{ isReroll ? 'Перекрутить' : 'Прокрутить' }}
+				</UiButton>
+
+				<UiButton
+					class="clear-button"
+					:disabled="!hasAppliedEffect"
+					title="Очистить"
+					aria-label="Очистить"
+					@click="onClearButtonClick"
+				>
+					<img class="clear-icon" :src="trashIcon" alt="" />
+				</UiButton>
 			</div>
 
 			<h2 class="history-title">История применённых эффектов</h2>
@@ -218,29 +225,6 @@ onMounted(() => {
 	width: 100%;
 }
 
-.effect-card {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-	padding: 10px 16px;
-	border: 1px solid #64748b;
-	cursor: pointer;
-}
-
-.effect-card:hover {
-	background-color: #f8fafc;
-}
-
-.effect-card--center {
-	border-width: 2px;
-	border-color: #0f172a;
-}
-
-.effect-name {
-	font-weight: 600;
-}
-
 .effect-applied {
 	display: flex;
 	align-items: center;
@@ -269,8 +253,10 @@ onMounted(() => {
 	column-gap: 16px;
 }
 
-.roll-spacer {
+.roll-extra {
 	grid-column: 1;
+	position: relative;
+	justify-self: start;
 }
 
 .roll-button {
@@ -279,10 +265,19 @@ onMounted(() => {
 	width: 224px;
 }
 
-.roll-extra {
+.clear-button {
 	grid-column: 3;
-	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 56px;
+	width: 56px;
 	justify-self: start;
+}
+
+.clear-icon {
+	width: 20px;
+	height: 20px;
 }
 
 .reroll-checkbox {

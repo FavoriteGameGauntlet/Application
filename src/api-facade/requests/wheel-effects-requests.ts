@@ -37,6 +37,10 @@ export type GetLastRolledWheelEffects = {
 	response: WheelResult
 }
 
+export type PostClearLastRolledWheelEffects = {
+	response: void
+}
+
 export type PostApplyWheelEffectRoll = {
 	request: {
 		body: {
