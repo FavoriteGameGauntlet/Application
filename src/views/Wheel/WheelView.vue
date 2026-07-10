@@ -47,8 +47,10 @@ const centerIndex = computed(() =>
 	Math.floor((visibleEffects.value.length - 1) / 2),
 )
 
+const isReroll = ref(false)
+
 const onRollButtonClick = () => {
-	wheelStore.roll()
+	wheelStore.roll(isReroll.value)
 }
 
 const selectedEffect = ref<RolledWheelEffectDto | null>(null)
@@ -97,13 +99,28 @@ onMounted(() => {
 				<div class="reel-pointer"></div>
 			</div>
 
-			<UiButton
-				class="roll-button"
-				:disabled="!wheelStore.availableRollCount"
-				@click="onRollButtonClick"
-			>
-				Прокрутить
-			</UiButton>
+			<div class="roll-controls">
+				<div class="roll-spacer"></div>
+
+				<UiButton
+					class="roll-button"
+					:disabled="!wheelStore.availableRollCount"
+					@click="onRollButtonClick"
+				>
+					{{ isReroll ? 'Перекрутить' : 'Прокрутить' }}
+				</UiButton>
+
+				<div class="roll-extra">
+					<label class="reroll-checkbox">
+						<input type="checkbox" v-model="isReroll" />
+						Перекрутить
+					</label>
+
+					<p v-if="isReroll" class="reroll-message">
+						Прокруты не будут потрачены
+					</p>
+				</div>
+			</div>
 
 			<h2 class="history-title">История применённых эффектов</h2>
 			<p v-if="userStore.getUserEffectsState.isLoading">Загрузка...</p>
@@ -245,10 +262,46 @@ onMounted(() => {
 	border-right: 12px solid #64748b;
 }
 
+.roll-controls {
+	display: grid;
+	grid-template-columns: 1fr auto 1fr;
+	align-items: center;
+	column-gap: 16px;
+}
+
+.roll-spacer {
+	grid-column: 1;
+}
+
 .roll-button {
+	grid-column: 2;
 	height: 56px;
 	width: 224px;
-	align-self: center;
+}
+
+.roll-extra {
+	grid-column: 3;
+	position: relative;
+	justify-self: start;
+}
+
+.reroll-checkbox {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.875rem;
+	color: #334155;
+	cursor: pointer;
+}
+
+.reroll-message {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	margin-top: 4px;
+	font-size: 0.8125rem;
+	color: #64748b;
+	white-space: nowrap;
 }
 
 .history-title {

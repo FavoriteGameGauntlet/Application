@@ -33,10 +33,11 @@ export const useFeatureWheelStore = defineStore(StoreName.FeatureWheel, () => {
 
 	const getAvailableEffects = () => wheelStore.getAvailableEffects()
 
-	const roll = () =>
+	const roll = (isReroll: boolean = false) =>
 		wheelStore.roll(
 			systemParametersStore.minimumAvailableRollCountForRoll,
 			systemParametersStore.availableRollChangeByRoll,
+			isReroll,
 		)
 
 	const getLastRoll = () => wheelStore.getLastRoll()

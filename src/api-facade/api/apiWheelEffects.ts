@@ -23,9 +23,11 @@ export const apiWheelEffects = {
 			.get<GetWheelEffectsAvailable>('/wheel-effects/available')
 			.then(({ body }) => body),
 
-	postRoll: (): Promise<WheelResult> =>
+	postRoll: (isReroll: boolean): Promise<WheelResult> =>
 		http
-			.post<PostRollWheelEffect>('/wheel-effects/available/roll')
+			.post<PostRollWheelEffect>('/wheel-effects/available/roll', {
+				body: { isReroll },
+			})
 			.then(({ body }) => body as WheelResult),
 
 	getAvailableCount: () =>
