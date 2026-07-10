@@ -13,12 +13,15 @@ import {
 import { formatInstant } from '../../utils/temporal'
 import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
 import { RouteName } from '../../router/routeNames'
+import PointsChangeForm from '../Profile/components/PointsChangeForm.vue'
+import { usePointsChangeConfigs } from '../Profile/components/pointsChangeConfigs'
 import PointsHistoryTabs from '../Profile/components/PointsHistoryTabs.vue'
 
 const route = useRoute()
 const userStore = useFeatureUserStore()
 
 const login = computed(() => route.params.login as string)
+const pointsChangeConfigs = usePointsChangeConfigs(login)
 const displayName = computed(() => {
 	const user = userStore.users?.find((u) => u.login === login.value)
 	return user?.displayName ?? login.value
@@ -98,11 +101,17 @@ watch(login, loadAll)
 				"
 			>
 				<div class="metric-card">
-					<span class="metric-label">Очки территорий</span>
+					<div class="metric-card__header">
+						<span class="metric-label">Очки территорий</span>
+						<PointsChangeForm :config="pointsChangeConfigs.territoryPoints" />
+					</div>
 					<div class="metric-value">{{ territoryPoints }}</div>
 				</div>
 				<div class="metric-card">
-					<span class="metric-label">Свободные очки</span>
+					<div class="metric-card__header">
+						<span class="metric-label">Свободные очки</span>
+						<PointsChangeForm :config="pointsChangeConfigs.freePoints" />
+					</div>
 					<div class="metric-value">{{ pointsInfo?.freePoints }}</div>
 				</div>
 			</div>
@@ -292,6 +301,12 @@ watch(login, loadAll)
 	padding: 14px;
 	border: 1px solid #e2e8f0;
 	border-radius: 4px;
+}
+
+.metric-card__header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
 }
 
 .metric-label {
