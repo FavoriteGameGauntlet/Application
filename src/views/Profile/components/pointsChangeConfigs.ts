@@ -48,7 +48,10 @@ export type PointsChangeConfig = {
 	reasons: PointsChangeReasonOption[]
 	isLoading: () => boolean
 	submit: (payload: PointsChangeSubmitPayload) => Promise<unknown> | null
-	mapError?: (error: HttpErrorResponse) => string | undefined
+	mapError?: (
+		error: HttpErrorResponse,
+		payload: PointsChangeSubmitPayload,
+	) => string | undefined
 }
 
 // When set (e.g. on another player's profile page), points are changed for
@@ -180,9 +183,11 @@ export const usePointsChangeConfigs = (targetLogin?: Ref<string | undefined>) =>
 				isSomeones,
 				...(isSomeones && targetLogin ? { login: targetLogin } : {}),
 			}),
-		mapError: (error) =>
+		mapError: (error, payload) =>
 			error.body?.code === 'NOT_ENOUGH_CURRENT_POINTS'
-				? 'У выбранного игрока недостаточно очков территорий. Выберите другого игрока.'
+				? payload.isSomeones
+					? 'У выбранного игрока недостаточно очков территорий.'
+					: 'У вас Недостаточно очков территорий.'
 				: undefined,
 	}
 
