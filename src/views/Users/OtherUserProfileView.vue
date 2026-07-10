@@ -85,9 +85,6 @@ watch(login, loadAll)
 					<span class="current-game-label">текущая игра</span>
 					<span class="current-game-value">
 						<span class="current-game-name">{{ currentGame.name }}</span>
-						<span class="game-status-badge">{{
-							gameStateLabel[currentGame.state]
-						}}</span>
 						<span class="item-meta">{{ formatInstant(currentGame.startDate) }}</span>
 					</span>
 				</div>
@@ -278,14 +275,6 @@ watch(login, loadAll)
 
 .current-game-name {
 	font-weight: 500;
-}
-
-.game-status-badge {
-	font-size: 0.75rem;
-	padding: 2px 10px;
-	border: 1px solid #e2e8f0;
-	border-radius: 20px;
-	color: #64748b;
 }
 
 .metrics-row {

@@ -3,10 +3,21 @@ import { onMounted } from 'vue'
 import UiView from '../../components/ui/UiView.vue'
 import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
 import { RouteName } from '../../router/routeNames'
+import UserListItem from './components/UserListItem.vue'
 
 const userStore = useFeatureUserStore()
 
-onMounted(() => userStore.getAllUsers())
+onMounted(async () => {
+	await userStore.getAllUsers()
+
+	for (const user of userStore.otherUsers) {
+		await Promise.all([
+			userStore.getUserCurrentGame(user.login),
+			userStore.getUserPoints(user.login),
+			userStore.getUserTerritoryPoints(user.login),
+		])
+	}
+})
 </script>
 
 <template>
@@ -16,15 +27,14 @@ onMounted(() => userStore.getAllUsers())
 		<p v-if="userStore.getAllNamesState.isLoading">Загрузка...</p>
 		<p v-else-if="userStore.getAllNamesState.isError">Ошибка загрузки</p>
 		<template v-else>
-			<div class="users-grid">
+			<div class="users-list">
 				<RouterLink
 					v-for="user in userStore.otherUsers"
 					:key="user.login"
 					:to="{ name: RouteName.UserDetail, params: { login: user.login } }"
-					class="user-tile"
+					class="user-row"
 				>
-					<span class="user-login">{{ user.login }}</span>
-					<span class="user-meta">{{ user.displayName }}</span>
+					<UserListItem :login="user.login" :display-name="user.displayName" />
 				</RouterLink>
 			</div>
 		</template>
@@ -37,17 +47,16 @@ h1 {
 	align-self: flex-start;
 }
 
-.users-grid {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 12px;
+.users-list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
 	width: 100%;
 }
 
-.user-tile {
+.user-row {
 	display: flex;
-	flex-direction: column;
-	gap: 2px;
+	align-items: flex-start;
 	padding: 14px;
 	border: 1px solid #e2e8f0;
 	border-radius: 4px;
@@ -55,16 +64,7 @@ h1 {
 	color: inherit;
 }
 
-.user-tile:hover {
+.user-row:hover {
 	background-color: #f8fafc;
-}
-
-.user-login {
-	font-weight: 600;
-}
-
-.user-meta {
-	font-size: 0.8125rem;
-	color: #64748b;
 }
 </style>
