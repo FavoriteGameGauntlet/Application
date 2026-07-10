@@ -1,3 +1,4 @@
+import type { Ref } from 'vue'
 import type { HttpErrorResponse } from '../../../api-facade/http'
 import {
 	ExperienceChangeSource,
@@ -50,10 +51,14 @@ export type PointsChangeConfig = {
 	mapError?: (error: HttpErrorResponse) => string | undefined
 }
 
-export const usePointsChangeConfigs = () => {
+// When set (e.g. on another player's profile page), points are changed for
+// that player instead of the current user, and no "someone else's" picker is shown.
+export const usePointsChangeConfigs = (targetLogin?: Ref<string | undefined>) => {
 	const authStore = useAuthStore()
 	const userStore = useFeatureUserStore()
 	const systemParametersStore = useFeatureSystemParametersStore()
+
+	const resolveLogin = () => targetLogin?.value ?? authStore.login
 
 	const territoryPoints: PointsChangeConfig = {
 		title: 'Изменить очки территорий',
@@ -77,8 +82,9 @@ export const usePointsChangeConfigs = () => {
 		],
 		isLoading: () => userStore.changeTerritoryPointsState.isLoading,
 		submit: ({ reason, desiredChangeValue }) => {
-			if (!authStore.login) return null
-			return userStore.changeTerritoryPoints(authStore.login, {
+			const login = resolveLogin()
+			if (!login) return null
+			return userStore.changeTerritoryPoints(login, {
 				changeSource: reason,
 				desiredChangeValue,
 			})
@@ -110,8 +116,9 @@ export const usePointsChangeConfigs = () => {
 		],
 		isLoading: () => userStore.changeFreePointsState.isLoading,
 		submit: ({ reason, desiredChangeValue }) => {
-			if (!authStore.login) return null
-			return userStore.changeFreePoints(authStore.login, {
+			const login = resolveLogin()
+			if (!login) return null
+			return userStore.changeFreePoints(login, {
 				changeSource: reason,
 				desiredChangeValue,
 			})
