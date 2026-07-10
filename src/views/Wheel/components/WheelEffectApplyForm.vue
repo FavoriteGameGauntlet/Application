@@ -138,11 +138,11 @@ const submitApply = async () => {
 			emit('close')
 		})
 		.catch((error: HttpErrorResponse) => {
-			if (error.body?.code === 'INCORRECT_CHANGE_SOURCE_VALUE') {
+			if (error.body?.code === 'WRONG_DESIRED_CHANGE_VALUE') {
 				errorMessage.value = 'Значение перекрутов должно быть 0 или больше.'
 				return
 			}
-			throw error
+			errorMessage.value = 'Ошибка'
 		})
 }
 </script>

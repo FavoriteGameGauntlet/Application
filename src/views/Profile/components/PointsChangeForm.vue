@@ -82,12 +82,14 @@ const onFormSubmit = () => {
 	if (!desiredChangeValue) return
 	if (target.value && applyTarget.value && !targetLogin.value) return
 
-	const request = props.config.submit({
+	const payload = {
 		reason: reason.value,
 		desiredChangeValue,
 		isSomeones: applyTarget.value,
 		targetLogin: targetLogin.value,
-	})
+	}
+
+	const request = props.config.submit(payload)
 
 	if (!request) return
 
@@ -96,7 +98,7 @@ const onFormSubmit = () => {
 			closeModal()
 		})
 		.catch((error: HttpErrorResponse) => {
-			const message = props.config.mapError?.(error)
+			const message = props.config.mapError?.(error, payload)
 			if (message) {
 				errorMessage.value = message
 				return
