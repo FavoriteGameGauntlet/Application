@@ -20,7 +20,9 @@ export const useApiPointsStore = defineStore(StoreName.ApiPoints, () => {
 
 	const pointsInfo = ref<Record<string, PointInfo>>({})
 	const freePointsHistory = ref<Record<string, FreePointChangeHistory[]>>({})
-	const territoryPointsHistory = ref<Record<string, TerritoryPointChangeHistory[]>>({})
+	const territoryPointsHistory = ref<
+		Record<string, TerritoryPointChangeHistory[]>
+	>({})
 
 	const experiencePoints = ref<number | null>(null)
 	const territoryHours = ref<number | null>(null)
@@ -69,8 +71,8 @@ export const useApiPointsStore = defineStore(StoreName.ApiPoints, () => {
 		},
 	)
 
-	const [getTerritoryPointsHistory, getTerritoryPointsHistoryState] = withLoading(
-		async (status, login: string) => {
+	const [getTerritoryPointsHistory, getTerritoryPointsHistoryState] =
+		withLoading(async (status, login: string) => {
 			if (status.value === LoadingStatus.LOADING) return
 
 			status.value = LoadingStatus.LOADING
@@ -87,8 +89,7 @@ export const useApiPointsStore = defineStore(StoreName.ApiPoints, () => {
 					status.value = LoadingStatus.ERROR
 					throw e
 				})
-		},
-	)
+		})
 
 	const [getExperiencePoints, getExperiencePointsState] = withLoading(
 		async (status) => {
@@ -226,6 +227,9 @@ export const useApiPointsStore = defineStore(StoreName.ApiPoints, () => {
 								.getTerritoryPoints({ path: { login: affectedLogin } })
 								.then((value) => {
 									territoryPoints.value[affectedLogin] = value
+									if (pointsInfo.value[affectedLogin]) {
+										pointsInfo.value[affectedLogin].territoryPoints = value
+									}
 								})
 							api.points
 								.getTerritoryPointsHistory({ path: { login: affectedLogin } })
@@ -233,6 +237,40 @@ export const useApiPointsStore = defineStore(StoreName.ApiPoints, () => {
 									territoryPointsHistory.value[affectedLogin] = history
 								})
 						}
+					}
+
+					const freePointsResult = getPointChangeResult(
+						result,
+						PointType.FreePoints,
+					)
+					if (freePointsResult) {
+						const affectedLogins = [authStore.login, change.login].filter(
+							(login): login is string => !!login,
+						)
+
+						for (const affectedLogin of affectedLogins) {
+							api.points
+								.getFreePoints({ path: { login: affectedLogin } })
+								.then((value) => {
+									freePoints.value[affectedLogin] = value
+									if (pointsInfo.value[affectedLogin]) {
+										pointsInfo.value[affectedLogin].freePoints = value
+									}
+								})
+							api.points
+								.getFreePointsHistory({ path: { login: affectedLogin } })
+								.then((history) => {
+									freePointsHistory.value[affectedLogin] = history
+								})
+						}
+					}
+
+					const experiencePointsResult = getPointChangeResult(
+						result,
+						PointType.ExperiencePoints,
+					)
+					if (experiencePointsResult) {
+						experiencePoints.value = experiencePointsResult.finalValue
 					}
 
 					status.value = LoadingStatus.LOADED
@@ -256,6 +294,9 @@ export const useApiPointsStore = defineStore(StoreName.ApiPoints, () => {
 				.postTerritoryPoints({ body: change, path: { login } })
 				.then((result) => {
 					territoryPoints.value[login] = result.finalValue
+					if (pointsInfo.value[login]) {
+						pointsInfo.value[login].territoryPoints = result.finalValue
+					}
 
 					api.points
 						.getTerritoryPointsHistory({ path: { login } })
@@ -284,6 +325,9 @@ export const useApiPointsStore = defineStore(StoreName.ApiPoints, () => {
 				.postFreePoints({ body: change, path: { login } })
 				.then((result) => {
 					freePoints.value[login] = result.finalValue
+					if (pointsInfo.value[login]) {
+						pointsInfo.value[login].freePoints = result.finalValue
+					}
 
 					api.points
 						.getFreePointsHistory({ path: { login } })

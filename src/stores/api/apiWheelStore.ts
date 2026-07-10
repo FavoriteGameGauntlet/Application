@@ -1,7 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '../../api-facade/api'
-import { PointType, getPointChangeResult } from '../../api-facade/models/points-models'
+import {
+	PointType,
+	getPointChangeResult,
+} from '../../api-facade/models/points-models'
 import type {
 	RolledWheelEffectHistory,
 	WheelEffect,
@@ -179,9 +182,42 @@ export const useApiWheelStore = defineStore(StoreName.ApiWheel, () => {
 							PointType.FreePoints,
 						)
 						if (freePointsResult) {
-							pointsStore.freePoints[result.login] =
-								freePointsResult.finalValue
+							pointsStore.freePoints[result.login] = freePointsResult.finalValue
+							if (pointsStore.pointsInfo[result.login]) {
+								pointsStore.pointsInfo[result.login].freePoints =
+									freePointsResult.finalValue
+							}
 							pointsStore.getFreePointsHistory(result.login)
+						}
+
+						const territoryPointsResult = getPointChangeResult(
+							result.changeResults,
+							PointType.TerritoryPoints,
+						)
+						if (territoryPointsResult) {
+							pointsStore.territoryPoints[result.login] =
+								territoryPointsResult.finalValue
+							if (pointsStore.pointsInfo[result.login]) {
+								pointsStore.pointsInfo[result.login].territoryPoints =
+									territoryPointsResult.finalValue
+							}
+							pointsStore.getTerritoryPointsHistory(result.login)
+						}
+
+						const experiencePointsResult = getPointChangeResult(
+							result.changeResults,
+							PointType.ExperiencePoints,
+						)
+						if (experiencePointsResult && result.login === authStore.login) {
+							pointsStore.experiencePoints = experiencePointsResult.finalValue
+						}
+
+						const territoryHoursResult = getPointChangeResult(
+							result.changeResults,
+							PointType.TerritoryHours,
+						)
+						if (territoryHoursResult && result.login === authStore.login) {
+							pointsStore.territoryHours = territoryHoursResult.finalValue
 						}
 					}
 
