@@ -47,7 +47,9 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 
 		const sinceLastAction = Temporal.Now.instant().since(lastActionDate.value)
 
-		const left = durationLeft.value.subtract(sinceLastAction)
+		const left = durationLeft.value.subtract(
+			sinceLastAction.sign < 0 ? ZERO : sinceLastAction,
+		)
 		if (left.sign <= 0) return ZERO
 
 		const floored = left.round({
