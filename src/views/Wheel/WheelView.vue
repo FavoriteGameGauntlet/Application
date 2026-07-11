@@ -2,18 +2,21 @@
 import UiButton from '../../components/ui/UiButton.vue'
 import trashIcon from '../../assets/icons/trash.svg'
 import { useFeatureWheelStore } from '../../stores/feature/featureWheelStore'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import UiView from '../../components/ui/UiView.vue'
 import WheelEffectApplyForm from './components/WheelEffectApplyForm.vue'
 import WheelEffectCard from './components/WheelEffectCard.vue'
+import { TimerState } from '../../api-facade/models/timers-models'
 import type { RolledWheelEffectDto } from '../../api-facade/models/wheel-effects-models'
 import { formatInstant } from '../../utils/temporal'
 import { useAuthStore } from '../../stores/authStore'
+import { useFeatureTimerStore } from '../../stores/feature/featureTimerStore'
 import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
 
 const wheelStore = useFeatureWheelStore()
 const authStore = useAuthStore()
 const userStore = useFeatureUserStore()
+const timerStore = useFeatureTimerStore()
 
 const effectsHistory = computed(() =>
 	authStore.login ? (userStore.userEffects[authStore.login] ?? []) : [],
@@ -43,6 +46,7 @@ const centerIndex = computed(() =>
 const isReroll = ref(false)
 
 const onRollButtonClick = () => {
+	wheelStore.getAvailableEffects()
 	wheelStore.roll(isReroll.value)
 }
 
@@ -64,11 +68,19 @@ const closeModal = () => {
 
 onMounted(() => {
 	wheelStore.getLastRoll()
-	wheelStore.getAvailableEffects()
-	wheelStore.getAllUsers()
 
 	if (authStore.login) userStore.getUserEffects(authStore.login)
+	if (authStore.isLoggedIn) wheelStore.getAvailableCount()
 })
+
+watch(
+	() => timerStore.state,
+	(state) => {
+		if (state === TimerState.Finished && authStore.isLoggedIn) {
+			wheelStore.getAvailableCount()
+		}
+	},
+)
 </script>
 
 <template>

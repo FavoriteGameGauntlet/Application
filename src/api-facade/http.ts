@@ -39,7 +39,7 @@ const makeRequest = async <T extends object | string = object | string>(
 	const requestTime = Temporal.Now.zonedDateTimeISO()
 	const requestTimestamp = `${requestTime.hour.toString().padStart(2, '0')}:${requestTime.minute.toString().padStart(2, '0')}:${requestTime.second.toString().padStart(2, '0')}.${requestTime.millisecond.toString().padStart(3, '0')}`
 
-	console.log(`[HTTP] ${method} ${fullUrl} | ${requestTimestamp}`, {
+	console.log(`[Request] ${method} ${fullUrl} | ${requestTimestamp}`, {
 		body: opts?.body,
 		headers: {
 			'Content-Type': 'application/json',
@@ -61,7 +61,7 @@ const makeRequest = async <T extends object | string = object | string>(
 		const timestamp = `${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}:${time.second.toString().padStart(2, '0')}.${time.millisecond.toString().padStart(3, '0')}`
 
 		console.log(
-			`[HTTP] ${method} ${fullUrl} - ${response.status} | ${timestamp}`,
+			`[Response] ${method} ${fullUrl} - ${response.status} | ${timestamp}`,
 			{
 				body: responseBody,
 			},
@@ -86,7 +86,6 @@ const makeRequest = async <T extends object | string = object | string>(
 	} catch (error) {
 		await unauthorizedInterceptor(error as HttpErrorResponse)
 
-		console.error(`[HTTP] ${method} ${fullUrl} - ERROR`, error)
 		throw error
 	}
 }

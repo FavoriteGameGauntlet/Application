@@ -1,17 +1,23 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { computed } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { TimerState } from '../../api-facade/models/timers-models.ts'
 import UiTimestamp from '../../components/ui/UiTimestamp.vue'
 import { RouteName } from '../../router/routeNames'
+import { useAuthStore } from '../../stores/authStore'
 import { useFeatureGameStore } from '../../stores/feature/featureGameStore'
 import { useFeatureTimerStore } from '../../stores/feature/featureTimerStore'
+import { useFeatureWheelStore } from '../../stores/feature/featureWheelStore'
 import UiView from '../../components/ui/UiView.vue'
 import { timerStateLabel } from './constants/timerStateLabel'
 
+const authStore = useAuthStore()
 const timerStore = useFeatureTimerStore()
 const gameStore = useFeatureGameStore()
+const wheelStore = useFeatureWheelStore()
+
+gameStore.watchCurrentGame()
 
 const {
 	durationTotal,
@@ -42,6 +48,16 @@ const timerButtonLabel = computed(() =>
 const onStartButtonClick = () => {
 	timerStore.toggle()
 }
+
+onMounted(() => {
+	if (authStore.isLoggedIn) wheelStore.getAvailableCount()
+})
+
+watch(state, (newState) => {
+	if (newState === TimerState.Finished && authStore.isLoggedIn) {
+		wheelStore.getAvailableCount()
+	}
+})
 </script>
 
 <template>

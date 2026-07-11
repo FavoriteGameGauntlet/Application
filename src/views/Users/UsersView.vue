@@ -10,13 +10,10 @@ const userStore = useFeatureUserStore()
 onMounted(async () => {
 	await userStore.getAllUsers()
 
-	for (const user of userStore.otherUsers) {
-		await Promise.all([
-			userStore.getUserCurrentGame(user.login),
-			userStore.getUserPoints(user.login),
-			userStore.getUserTerritoryPoints(user.login),
-		])
-	}
+	await Promise.all([
+		userStore.getAllUsersCurrentGames(),
+		userStore.getAllUsersPoints(),
+	])
 })
 </script>
 

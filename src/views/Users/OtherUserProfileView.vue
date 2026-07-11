@@ -28,7 +28,7 @@ const displayName = computed(() => {
 })
 
 type Tab = 'effects' | 'games' | 'points'
-const activeTab = ref<Tab>('effects')
+const activeTab = ref<Tab | null>(null)
 
 const comingSoonTabs = ['перки', 'характеристики', 'предметы', 'квесты']
 
@@ -37,7 +37,7 @@ const currentGame = computed(
 )
 const pointsInfo = computed(() => userStore.userPoints[login.value] ?? null)
 const territoryPoints = computed(
-	() => userStore.userTerritoryPoints[login.value] ?? null,
+	() => userStore.userPoints[login.value]?.territoryPoints ?? null,
 )
 const gamesHistory = computed(() => userStore.userHistory[login.value] ?? [])
 const effectsHistory = computed(() => userStore.userEffects[login.value] ?? [])
@@ -53,18 +53,30 @@ const territoryLabelFor = (source: string) =>
 const freeLabelFor = (source: string) =>
 	freePointChangeSourceLabel[source as FreePointChangeSource]
 
-const loadAll = () => {
+const loadEager = () => {
 	userStore.getUserCurrentGame(login.value)
 	userStore.getUserPoints(login.value)
-	userStore.getUserTerritoryPoints(login.value)
-	userStore.getUserHistory(login.value)
-	userStore.getUserEffects(login.value)
-	userStore.getUserFreePointsHistory(login.value)
-	userStore.getUserTerritoryPointsHistory(login.value)
 }
 
-onMounted(loadAll)
-watch(login, loadAll)
+const loadForTab = (tab: Tab) => {
+	if (tab === 'effects') userStore.getUserEffects(login.value)
+	else if (tab === 'games') userStore.getUserHistory(login.value)
+	else if (tab === 'points') {
+		userStore.getUserFreePointsHistory(login.value)
+		userStore.getUserTerritoryPointsHistory(login.value)
+	}
+}
+
+onMounted(loadEager)
+
+watch(login, () => {
+	activeTab.value = null
+	loadEager()
+})
+
+watch(activeTab, (tab) => {
+	if (tab) loadForTab(tab)
+})
 </script>
 
 <template>
@@ -90,13 +102,7 @@ watch(login, loadAll)
 				</div>
 			</div>
 
-			<div
-				class="metrics-row"
-				v-if="
-					userStore.getUserPointsState.isLoaded &&
-					userStore.getUserTerritoryPointsState.isLoaded
-				"
-			>
+			<div class="metrics-row" v-if="userStore.getUserPointsState.isLoaded">
 				<div class="metric-card">
 					<div class="metric-card__header">
 						<span class="metric-label">Очки территорий</span>

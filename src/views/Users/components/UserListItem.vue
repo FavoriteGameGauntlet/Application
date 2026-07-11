@@ -13,7 +13,7 @@ const { login, displayName } = defineProps<Props>()
 const userStore = useFeatureUserStore()
 
 const currentGame = computed(() => userStore.userCurrentGame[login])
-const territoryPoints = computed(() => userStore.userTerritoryPoints[login])
+const territoryPoints = computed(() => userStore.userPoints[login]?.territoryPoints)
 const freePoints = computed(() => userStore.userPoints[login]?.freePoints)
 </script>
 

@@ -94,14 +94,12 @@ export const useFeatureTimerStore = defineStore(StoreName.FeatureTimer, () => {
 			{ immediate: true },
 		)
 
-		// A new game means a new timer to fetch; finishing/cancelling a
-		// game always leaves no timer, so reset locally without a request
 		watch(
 			() => gameStore.current,
-			(current) => {
-				if (current) {
+			(current, previous) => {
+				if (current && !previous) {
 					timerStore.getCurrent()
-				} else {
+				} else if (!current) {
 					timerStore.reset()
 				}
 			},

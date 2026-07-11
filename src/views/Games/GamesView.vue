@@ -23,6 +23,8 @@ const activeTab = ref<Tab>('current')
 const { current, canRoll, wishlist, enoughGamesInWishlist } = storeToRefs(gameStore)
 const { minimumNumberOfWishlistGames } = storeToRefs(systemParametersStore)
 
+gameStore.watchCurrentGame()
+
 onMounted(() => {
 	if (
 		[LoadingStatus.ERROR, LoadingStatus.INIT].includes(

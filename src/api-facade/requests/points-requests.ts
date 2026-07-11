@@ -37,15 +37,6 @@ export type PostTerritoryPoints = {
 	response: TerritoryPointChangeResult
 }
 
-export type GetTerritoryPoints = {
-	request: {
-		path: {
-			login: string
-		}
-	}
-	response: number
-}
-
 export type GetTerritoryPointsHistory = {
 	request: {
 		path: {
