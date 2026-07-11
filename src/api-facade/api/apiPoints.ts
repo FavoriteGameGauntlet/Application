@@ -6,7 +6,6 @@ import type {
 	GetPointsAllInfo,
 	GetPointsInfo,
 	GetTerritoryHours,
-	GetTerritoryPoints,
 	GetTerritoryPointsHistory,
 	PostExperiencePoints,
 	PostFreePoints,
@@ -31,11 +30,6 @@ export const apiPoints = {
 	}: PostTerritoryPoints['request']) =>
 		http
 			.post<PostTerritoryPoints>(`/points/${login}/territory-points`, { body })
-			.then(({ body }) => body),
-
-	getTerritoryPoints: ({ path: { login } }: GetTerritoryPoints['request']) =>
-		http
-			.get<GetTerritoryPoints>(`/points/${login}/territory-points`)
 			.then(({ body }) => body),
 
 	getTerritoryPointsHistory: ({

@@ -84,6 +84,27 @@ export const useApiGameStore = defineStore(StoreName.ApiGame, () => {
 		},
 	)
 
+	const [getAllCurrent, getAllCurrentState] = withLoading(async (status) => {
+		if (status.value === LoadingStatus.LOADING) return
+
+		status.value = LoadingStatus.LOADING
+
+		return api.games
+			.getAllCurrent()
+			.then((entries) => {
+				for (const entry of entries) {
+					current.value[entry.login] = entry.currentGame ?? null
+				}
+				status.value = LoadingStatus.LOADED
+
+				return current.value
+			})
+			.catch((e) => {
+				status.value = LoadingStatus.ERROR
+				throw e
+			})
+	})
+
 	const [getHistory, getHistoryState] = withLoading(
 		async (status, login: string) => {
 			if (status.value === LoadingStatus.LOADING) return
@@ -168,6 +189,9 @@ export const useApiGameStore = defineStore(StoreName.ApiGame, () => {
 
 		getCurrent,
 		getCurrentState,
+
+		getAllCurrent,
+		getAllCurrentState,
 
 		getHistory,
 		getHistoryState,

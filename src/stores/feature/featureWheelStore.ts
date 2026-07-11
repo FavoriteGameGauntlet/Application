@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia'
-import { computed, watch } from 'vue'
-import { TimerState } from '../../api-facade/models/timers-models'
+import { computed } from 'vue'
 import { StoreName } from '../../enums/storeName'
-import { useApiTimerStore } from '../api/apiTimerStore'
 import { useApiUserStore } from '../api/apiUserStore'
 import { useApiWheelStore } from '../api/apiWheelStore'
 import { useAuthStore } from '../authStore'
@@ -11,7 +9,6 @@ import { useFeatureSystemParametersStore } from './featureSystemParametersStore'
 export const useFeatureWheelStore = defineStore(StoreName.FeatureWheel, () => {
 	const wheelStore = useApiWheelStore()
 	const userStore = useApiUserStore()
-	const timerStore = useApiTimerStore()
 	const authStore = useAuthStore()
 	const systemParametersStore = useFeatureSystemParametersStore()
 
@@ -44,25 +41,7 @@ export const useFeatureWheelStore = defineStore(StoreName.FeatureWheel, () => {
 
 	const clearLastRoll = () => wheelStore.clearLastRoll()
 
-	const init = () => {
-		// Get available roll count on timer end
-		/** @todo maybe always +1 regardless of API response? */
-		watch(
-			() => timerStore.state,
-			(state) => {
-				if (!state || state === TimerState.Finished)
-					wheelStore.getAvailableCount()
-			},
-			{ immediate: true },
-		)
-
-		// Get count on login
-		watch(
-			() => authStore.isLoggedIn,
-			(isLoggedIn) => isLoggedIn && wheelStore.getAvailableCount(),
-			{ immediate: true },
-		)
-	}
+	const getAvailableCount = () => wheelStore.getAvailableCount()
 
 	return {
 		currentEffects,
@@ -71,7 +50,8 @@ export const useFeatureWheelStore = defineStore(StoreName.FeatureWheel, () => {
 		availableRollCount,
 		pendingRoll,
 
-		init,
+		getAvailableCount,
+		getAvailableCountState: wheelStore.getAvailableCountState,
 
 		getHistory,
 		getHistoryState: wheelStore.getHistoryState,

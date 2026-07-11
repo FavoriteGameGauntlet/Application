@@ -5,13 +5,11 @@ import { type HttpErrorResponse } from '../../api-facade/http'
 import { usePersistentRef } from '../../composables/usePersistentRef'
 import { StoreKey } from '../../services/persistentStorage'
 import { useAuthStore } from '../../stores/authStore'
-import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
 import { RouteName } from '../../router/routeNames'
 import UiButton from '../../components/ui/UiButton.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
-const userStore = useFeatureUserStore()
 
 const authMode = ref<'login' | 'register'>('login')
 const isRegisterMode = computed(() => authMode.value === 'register')
@@ -133,7 +131,6 @@ const tryLogIn = async () =>
 	authStore
 		.logIn({ login: login.value, password: password.value })
 		.then(() => {
-			userStore.init()
 			router.push({ name: RouteName.Timer })
 		})
 		.catch((e) => {
@@ -177,7 +174,6 @@ const onRegisterSubmit = () => {
 			email: email.value,
 		})
 		.then(() => {
-			userStore.init()
 			router.push({ name: RouteName.Timer })
 		})
 		.catch((e: HttpErrorResponse) => {

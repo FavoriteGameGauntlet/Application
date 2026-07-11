@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import type { HttpErrorResponse } from '../../../api-facade/http'
 import { FreePointChangeSource } from '../../../api-facade/models/points-models'
 import type {
@@ -7,7 +7,6 @@ import type {
 	WheelEffectPointChange,
 } from '../../../api-facade/models/wheel-effects-models'
 import { useAuthStore } from '../../../stores/authStore'
-import { useFeatureUserStore } from '../../../stores/feature/featureUserStore'
 import { useFeatureWheelStore } from '../../../stores/feature/featureWheelStore'
 
 const props = defineProps<{
@@ -20,7 +19,6 @@ const emit = defineEmits<{
 
 const wheelStore = useFeatureWheelStore()
 const authStore = useAuthStore()
-const userStore = useFeatureUserStore()
 
 type OtherPlayerRow = {
 	id: number
@@ -39,6 +37,16 @@ let nextRowId = 0
 const otherUsers = computed(() =>
 	(wheelStore.users ?? []).filter((user) => user.login !== authStore.login),
 )
+
+const currentUserDisplayName = computed(
+	() =>
+		(wheelStore.users ?? []).find((user) => user.login === authStore.login)
+			?.displayName ?? authStore.login,
+)
+
+onMounted(() => {
+	wheelStore.getAllUsers()
+})
 
 const availableLoginsForRow = (row: OtherPlayerRow) =>
 	otherUsers.value.filter(
@@ -133,8 +141,7 @@ const submitApply = async () => {
 
 	await wheelStore
 		.applyRoll(props.effect.name, changes)
-		.then(async () => {
-			if (authStore.login) await userStore.getUserEffects(authStore.login)
+		.then(() => {
 			emit('close')
 		})
 		.catch((error: HttpErrorResponse) => {
@@ -158,9 +165,7 @@ const submitApply = async () => {
 		</div>
 
 		<div class="user-row">
-			<span class="user-name">{{
-				userStore.currentUser.displayName ?? userStore.currentUser.login
-			}}</span>
+			<span class="user-name">{{ currentUserDisplayName }}</span>
 			<input
 				class="point-input"
 				type="number"

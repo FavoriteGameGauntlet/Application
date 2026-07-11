@@ -30,14 +30,14 @@ export const useFeatureUserStore = defineStore(StoreName.FeatureUser, () => {
 		() => apiStore.users?.filter((u) => u.login !== authStore.login) ?? [],
 	)
 
-	const init = async () => {
-		await apiStore.getDisplayName()
-	}
+	const getDisplayName = () => apiStore.getDisplayName()
 
 	const getUserCurrentGame = (login: string) => gameStore.getCurrent(login)
+	const getAllUsersCurrentGames = () => gameStore.getAllCurrent()
 	const getUserHistory = (login: string) => gameStore.getHistory(login)
 	const getUserWishlist = (login: string) => gameStore.getWishlist(login)
 	const getUserPoints = (login: string) => pointsStore.getPointsInfo(login)
+	const getAllUsersPoints = () => pointsStore.getAllPointsInfo()
 	const getUserFreePointsHistory = (login: string) =>
 		pointsStore.getFreePointsHistory(login)
 	const getUserTerritoryPointsHistory = (login: string) =>
@@ -46,8 +46,6 @@ export const useFeatureUserStore = defineStore(StoreName.FeatureUser, () => {
 	const getUserExperiencePoints = () => pointsStore.getExperiencePoints()
 	const getUserTerritoryHours = () => pointsStore.getTerritoryHours()
 	const getUserFreePoints = (login: string) => pointsStore.getFreePoints(login)
-	const getUserTerritoryPoints = (login: string) =>
-		pointsStore.getTerritoryPoints(login)
 	const userExperiencePoints = computed(() => pointsStore.experiencePoints)
 	const userTerritoryHours = computed(() => pointsStore.territoryHours)
 	const changeExperiencePoints = (change: PointChange) =>
@@ -71,7 +69,7 @@ export const useFeatureUserStore = defineStore(StoreName.FeatureUser, () => {
 		getAllUsers: apiStore.getAllUsers,
 		setDisplayName: apiStore.setDisplayName,
 
-		init,
+		getDisplayName,
 
 		userCurrentGame: gameStore.current,
 		userHistory: gameStore.history,
@@ -84,10 +82,12 @@ export const useFeatureUserStore = defineStore(StoreName.FeatureUser, () => {
 		userExperiencePoints,
 		userTerritoryHours,
 		userFreePoints: pointsStore.freePoints,
-		userTerritoryPoints: pointsStore.territoryPoints,
 
 		getUserCurrentGame,
 		getUserCurrentGameState: gameStore.getCurrentState,
+
+		getAllUsersCurrentGames,
+		getAllUsersCurrentGamesState: gameStore.getAllCurrentState,
 
 		getUserHistory,
 		getUserHistoryState: gameStore.getHistoryState,
@@ -97,6 +97,9 @@ export const useFeatureUserStore = defineStore(StoreName.FeatureUser, () => {
 
 		getUserPoints,
 		getUserPointsState: pointsStore.getPointsInfoState,
+
+		getAllUsersPoints,
+		getAllUsersPointsState: pointsStore.getAllPointsInfoState,
 
 		getUserFreePointsHistory,
 		getUserFreePointsHistoryState: pointsStore.getFreePointsHistoryState,
@@ -116,9 +119,6 @@ export const useFeatureUserStore = defineStore(StoreName.FeatureUser, () => {
 
 		getUserFreePoints,
 		getUserFreePointsState: pointsStore.getFreePointsState,
-
-		getUserTerritoryPoints,
-		getUserTerritoryPointsState: pointsStore.getTerritoryPointsState,
 
 		changeExperiencePoints,
 		changeExperiencePointsState: pointsStore.postExperiencePointsState,

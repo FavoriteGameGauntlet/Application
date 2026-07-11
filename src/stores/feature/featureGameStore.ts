@@ -73,15 +73,13 @@ export const useFeatureGameStore = defineStore(StoreName.FeatureGame, () => {
 		return gameStore.finish(login)
 	}
 
-	const init = () => {
-		// get current game on login
+	const watchCurrentGame = () => {
 		watch(
 			() => authStore.login,
 			(login) => login && gameStore.getCurrent(login),
 			{ immediate: true },
 		)
 
-		// refresh game when timer finishes
 		watch(
 			() => timerStore.state,
 			(state) => {
@@ -90,7 +88,6 @@ export const useFeatureGameStore = defineStore(StoreName.FeatureGame, () => {
 				}
 			},
 		)
-
 	}
 
 	return {
@@ -102,7 +99,7 @@ export const useFeatureGameStore = defineStore(StoreName.FeatureGame, () => {
 
 		canRoll,
 
-		init,
+		watchCurrentGame,
 
 		getCurrentState: computed(() => gameStore.getCurrentState),
 
