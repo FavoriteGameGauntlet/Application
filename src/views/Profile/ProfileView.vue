@@ -171,7 +171,7 @@ watch(login, loadAll)
 	width: 38px;
 	height: 38px;
 	border-radius: 50%;
-	background-color: #e2e8f0;
+	background-color: var(--color-border);
 	flex-shrink: 0;
 }
 
@@ -182,11 +182,11 @@ watch(login, loadAll)
 
 .profile-label {
 	font-size: 0.75rem;
-	color: #64748b;
+	color: var(--color-muted);
 }
 
 .empty-message {
-	color: #64748b;
+	color: var(--color-muted);
 }
 
 .current-game-card {
@@ -194,13 +194,13 @@ watch(login, loadAll)
 	justify-content: space-between;
 	align-items: center;
 	padding: 14px;
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--color-border);
 	border-radius: 10px;
 }
 
 .current-game-label {
 	font-size: 0.75rem;
-	color: #64748b;
+	color: var(--color-muted);
 }
 
 .current-game-value {
@@ -216,9 +216,9 @@ watch(login, loadAll)
 .game-status-badge {
 	font-size: 0.75rem;
 	padding: 2px 10px;
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--color-border);
 	border-radius: 20px;
-	color: #64748b;
+	color: var(--color-muted);
 }
 
 .metrics-grid {
@@ -232,7 +232,7 @@ watch(login, loadAll)
 	flex-direction: column;
 	gap: 4px;
 	padding: 14px;
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--color-border);
 	border-radius: 4px;
 }
 
@@ -244,7 +244,7 @@ watch(login, loadAll)
 
 .metric-label {
 	font-size: 0.75rem;
-	color: #64748b;
+	color: var(--color-muted);
 }
 
 .metric-value {
@@ -254,7 +254,7 @@ watch(login, loadAll)
 
 .history-title {
 	font-size: 0.875rem;
-	color: #64748b;
+	color: var(--color-muted);
 	font-weight: 500;
 }
 </style>

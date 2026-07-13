@@ -55,13 +55,13 @@ h1 {
 	display: flex;
 	align-items: flex-start;
 	padding: 14px;
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--color-border);
 	border-radius: 4px;
 	text-decoration: none;
 	color: inherit;
 }
 
 .user-row:hover {
-	background-color: #f8fafc;
+	background-color: var(--color-bg-subtle);
 }
 </style>

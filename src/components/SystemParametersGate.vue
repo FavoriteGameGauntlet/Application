@@ -58,11 +58,11 @@ const secondsUntilRetry = computed(() => {
 .message {
 	font-size: 1.5rem;
 	font-weight: 700;
-	color: #ef4444;
+	color: var(--color-danger);
 }
 
 .retry-timer {
 	font-size: 1rem;
-	color: #64748b;
+	color: var(--color-muted);
 }
 </style>

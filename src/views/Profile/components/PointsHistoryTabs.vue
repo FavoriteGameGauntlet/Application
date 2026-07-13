@@ -63,20 +63,20 @@ const activeTab = ref<'territory' | 'free'>('territory')
 .sub-tab-button {
 	padding: 6px 14px;
 	background: none;
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--color-border);
 	border-radius: 20px;
 	cursor: pointer;
-	color: #64748b;
+	color: var(--color-muted);
 	font-size: 0.8125rem;
 }
 
 .sub-tab-button:hover {
-	color: #0f172a;
+	color: var(--color-text);
 }
 
 .sub-tab-button--active {
-	color: #0f172a;
-	border-color: #0f172a;
+	color: var(--color-text);
+	border-color: var(--color-text);
 	font-weight: 500;
 }
 </style>

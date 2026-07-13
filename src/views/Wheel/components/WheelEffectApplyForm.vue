@@ -262,14 +262,14 @@ const submitApply = async () => {
 
 .modal-button {
 	padding: 6px 16px;
-	border: 1px solid #64748b;
+	border: 1px solid var(--color-muted);
 	border-radius: 4px;
 	cursor: pointer;
 	background: transparent;
 }
 
 .modal-button:hover:not(:disabled) {
-	background-color: #f1f5f9;
+	background-color: var(--color-hover-bg);
 }
 
 .modal-button:disabled {
@@ -278,13 +278,13 @@ const submitApply = async () => {
 }
 
 .modal-button--primary {
-	background-color: #3b82f6;
-	border-color: #3b82f6;
-	color: #fff;
+	background-color: var(--color-accent);
+	border-color: var(--color-accent);
+	color: var(--color-on-accent);
 }
 
 .modal-button--primary:hover:not(:disabled) {
-	background-color: #2563eb;
+	background-color: var(--color-accent-hover);
 }
 
 .add-row-button {
@@ -302,9 +302,9 @@ const submitApply = async () => {
 .error {
 	padding: 4px 8px;
 	border-radius: 6px;
-	background-color: #fef2f2;
+	background-color: var(--color-danger-bg);
 	font-size: 0.8125rem;
-	color: #291e1c;
+	color: var(--color-danger-text);
 }
 
 .user-row {
@@ -319,7 +319,7 @@ const submitApply = async () => {
 	padding: 0;
 	text-align: center;
 	font-size: 0.75rem;
-	color: #64748b;
+	color: var(--color-muted);
 }
 
 .user-name {
@@ -334,15 +334,15 @@ const submitApply = async () => {
 	flex: 1;
 	min-width: 0;
 	border-radius: 4px;
-	border: 1px solid #cbd5e1;
-	background-color: #fff;
+	border: 1px solid var(--color-border-strong);
+	background-color: var(--color-surface);
 	padding: 4px 8px;
 }
 
 .point-input {
 	width: 72px;
 	padding: 4px 8px;
-	border: 1px solid #cbd5e1;
+	border: 1px solid var(--color-border-strong);
 	border-radius: 4px;
 	text-align: right;
 }
@@ -356,12 +356,12 @@ const submitApply = async () => {
 	border: none;
 	background: transparent;
 	cursor: pointer;
-	color: #64748b;
+	color: var(--color-muted);
 	font-size: 0.875rem;
 	padding: 0;
 }
 
 .remove-row-button:hover {
-	color: #ef4444;
+	color: var(--color-danger);
 }
 </style>

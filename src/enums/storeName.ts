@@ -1,5 +1,6 @@
 export const enum StoreName {
 	Auth = 'auth',
+	Theme = 'theme',
 
 	ApiGame = 'api-game',
 	FeatureGame = 'feature-game',

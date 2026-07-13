@@ -226,7 +226,7 @@ watch(activeTab, (tab) => {
 }
 
 .back-link {
-	color: #3b82f6;
+	color: var(--color-accent);
 	text-decoration: none;
 	font-size: 0.875rem;
 	align-self: flex-start;
@@ -246,7 +246,7 @@ watch(activeTab, (tab) => {
 	width: 38px;
 	height: 38px;
 	border-radius: 50%;
-	background-color: #e2e8f0;
+	background-color: var(--color-border);
 	flex-shrink: 0;
 }
 
@@ -256,7 +256,7 @@ watch(activeTab, (tab) => {
 }
 
 .empty-message {
-	color: #64748b;
+	color: var(--color-muted);
 }
 
 .current-game-card {
@@ -264,13 +264,13 @@ watch(activeTab, (tab) => {
 	justify-content: space-between;
 	align-items: center;
 	padding: 14px;
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--color-border);
 	border-radius: 10px;
 }
 
 .current-game-label {
 	font-size: 0.75rem;
-	color: #64748b;
+	color: var(--color-muted);
 }
 
 .current-game-value {
@@ -294,7 +294,7 @@ watch(activeTab, (tab) => {
 	flex-direction: column;
 	gap: 4px;
 	padding: 14px;
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--color-border);
 	border-radius: 4px;
 }
 
@@ -306,7 +306,7 @@ watch(activeTab, (tab) => {
 
 .metric-label {
 	font-size: 0.75rem;
-	color: #64748b;
+	color: var(--color-muted);
 }
 
 .metric-value {
@@ -318,40 +318,40 @@ watch(activeTab, (tab) => {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 8px;
-	border-bottom: 1px solid #e2e8f0;
+	border-bottom: 1px solid var(--color-border);
 	padding-bottom: 10px;
 }
 
 .tab-button {
 	padding: 6px 14px;
 	background: none;
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--color-border);
 	border-radius: 20px;
 	cursor: pointer;
-	color: #64748b;
+	color: var(--color-muted);
 	font-size: 0.8125rem;
 }
 
 .tab-button:hover {
-	color: #0f172a;
+	color: var(--color-text);
 }
 
 .tab-button--active {
-	color: #0f172a;
-	border-color: #0f172a;
+	color: var(--color-text);
+	border-color: var(--color-text);
 	font-weight: 500;
 }
 
 .tab-pill {
 	padding: 6px 14px;
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--color-border);
 	border-radius: 20px;
 	font-size: 0.8125rem;
 }
 
 .tab-pill--disabled {
 	opacity: 0.5;
-	color: #94a3b8;
+	color: var(--color-faint);
 }
 
 .tab-content {
@@ -377,7 +377,7 @@ watch(activeTab, (tab) => {
 	flex-direction: column;
 	gap: 4px;
 	padding: 12px 16px;
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--color-border);
 	border-radius: 4px;
 }
 
@@ -399,6 +399,6 @@ watch(activeTab, (tab) => {
 
 .item-meta {
 	font-size: 0.875rem;
-	color: #64748b;
+	color: var(--color-muted);
 }
 </style>

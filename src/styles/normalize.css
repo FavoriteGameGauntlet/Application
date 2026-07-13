@@ -30,6 +30,8 @@ Sections
 
 body {
 	margin: 0;
+	background-color: var(--color-bg);
+	color: var(--color-text);
 }
 
 /*
@@ -214,10 +216,12 @@ p {
 }
 
 button,
-input {
+input,
+select {
 	border: unset;
 	padding: unset;
 	background: unset;
+	color: inherit;
 }
 
 a {
