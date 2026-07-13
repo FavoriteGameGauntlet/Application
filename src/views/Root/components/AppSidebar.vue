@@ -1,13 +1,18 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RouteName } from '../../../router/routeNames'
 import NavbarLink from './NavbarLink.vue'
 import { useAuthStore } from '../../../stores/authStore'
 import { useFeatureTimerStore } from '../../../stores/feature/featureTimerStore.ts'
+import { Theme, useThemeStore } from '../../../stores/themeStore'
 
 const authStore = useAuthStore()
 const timerStore = useFeatureTimerStore()
+const themeStore = useThemeStore()
 
 const comingSoon = ['Перки', 'Характеристики', 'Предметы', 'Квесты', 'Карта']
+
+const isDarkTheme = computed(() => themeStore.theme === Theme.Dark)
 
 const onLogOutButtonClick = () => {
 	authStore.logOut()
@@ -37,19 +42,32 @@ const onLogOutButtonClick = () => {
 
 		<div class="spacer"></div>
 
+		<button
+			class="theme-toggle"
+			type="button"
+			role="switch"
+			:aria-checked="isDarkTheme"
+			@click="themeStore.toggle()"
+		>
+			<span>{{ isDarkTheme ? '🌙' : '☀️' }} Тёмная тема</span>
+			<span class="theme-toggle__track" :class="{ 'theme-toggle__track--on': isDarkTheme }">
+				<span class="theme-toggle__thumb"></span>
+			</span>
+		</button>
+
 		<button class="logout-button" @click="onLogOutButtonClick">Выйти</button>
 	</div>
 </template>
 
 <style scoped>
 .sidebar {
-	width: 150px;
+	width: 200px;
 	flex: none;
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
 	padding: 20px 14px;
-	border-right: 1px solid #e2e8f0;
+	border-right: 1px solid var(--color-border);
 }
 
 .wordmark {
@@ -62,10 +80,10 @@ const onLogOutButtonClick = () => {
 .coming-soon-divider {
 	margin-top: 10px;
 	padding-top: 10px;
-	border-top: 1px solid #e2e8f0;
+	border-top: 1px solid var(--color-border);
 	font-size: 0.625rem;
 	letter-spacing: 0.08em;
-	color: #94a3b8;
+	color: var(--color-faint);
 }
 
 .spacer {
@@ -77,12 +95,53 @@ const onLogOutButtonClick = () => {
 	border: none;
 	padding: 6px 10px;
 	font-size: 0.8125rem;
-	color: #64748b;
+	color: var(--color-muted);
 	cursor: pointer;
 	text-align: left;
 }
 
 .logout-button:hover {
 	text-decoration: underline;
+}
+
+.theme-toggle {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	background: none;
+	border: none;
+	padding: 6px 10px;
+	font-size: 0.8125rem;
+	color: var(--color-muted);
+	cursor: pointer;
+	text-align: left;
+}
+
+.theme-toggle__track {
+	flex-shrink: 0;
+	width: 28px;
+	height: 16px;
+	border-radius: 999px;
+	background-color: var(--color-border);
+	transition: background-color 0.15s ease;
+}
+
+.theme-toggle__track--on {
+	background-color: var(--color-accent);
+}
+
+.theme-toggle__thumb {
+	display: block;
+	width: 12px;
+	height: 12px;
+	margin: 2px;
+	border-radius: 50%;
+	background-color: var(--color-surface);
+	transition: transform 0.15s ease;
+}
+
+.theme-toggle__track--on .theme-toggle__thumb {
+	transform: translateX(12px);
 }
 </style>

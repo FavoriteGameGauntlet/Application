@@ -309,7 +309,7 @@ onMounted(async () => {
 .brand-tagline {
 	margin-top: 8px;
 	font-size: 0.875rem;
-	color: #64748b;
+	color: var(--color-muted);
 }
 
 .form-panel {
@@ -329,7 +329,7 @@ onMounted(async () => {
 .mode-switch {
 	display: flex;
 	gap: 6px;
-	border: 1px solid #94a3b8;
+	border: 1px solid var(--color-faint);
 	border-radius: 10px;
 	padding: 4px;
 }
@@ -344,8 +344,8 @@ onMounted(async () => {
 }
 
 .mode-tab--active {
-	background-color: #0f172a;
-	color: #fff;
+	background-color: var(--color-emphasis-bg);
+	color: var(--color-on-accent);
 }
 
 .form {
@@ -356,7 +356,7 @@ onMounted(async () => {
 
 .field {
 	border-radius: 6px;
-	border: 1px solid #94a3b8;
+	border: 1px solid var(--color-faint);
 	padding: 2px 8px;
 }
 
@@ -365,11 +365,11 @@ onMounted(async () => {
 	flex-direction: column;
 	gap: 4px;
 	border-radius: 6px;
-	background-color: #fef2f2;
+	background-color: var(--color-danger-bg);
 	padding: 4px 8px;
 	font-size: 14px;
 	line-height: 1.25;
-	color: #291e1c;
+	color: var(--color-danger-text);
 }
 
 .submit-button {

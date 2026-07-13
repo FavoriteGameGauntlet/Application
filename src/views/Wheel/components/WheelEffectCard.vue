@@ -40,17 +40,17 @@ const emit = defineEmits<{
 	justify-content: space-between;
 	gap: 12px;
 	padding: 10px 16px;
-	border: 1px solid #64748b;
+	border: 1px solid var(--color-muted);
 	cursor: pointer;
 }
 
 .effect-card:hover {
-	background-color: #f8fafc;
+	background-color: var(--color-bg-subtle);
 }
 
 .effect-card--center {
 	border-width: 2px;
-	border-color: #0f172a;
+	border-color: var(--color-text);
 }
 
 .effect-card--placeholder {
@@ -73,7 +73,7 @@ const emit = defineEmits<{
 	align-items: center;
 	gap: 4px;
 	font-size: 0.75rem;
-	color: #64748b;
+	color: var(--color-muted);
 	cursor: default;
 }
 

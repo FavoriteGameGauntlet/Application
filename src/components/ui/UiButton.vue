@@ -17,13 +17,13 @@ defineProps<Props>()
 	cursor: pointer;
 	height: 100%;
 	width: 100%;
-	border: 1px solid #64748b;
+	border: 1px solid var(--color-muted);
 	border-radius: 6px;
 	background: transparent;
 }
 
 .ui-button:hover:not(:disabled) {
-	background-color: #f1f5f9;
+	background-color: var(--color-hover-bg);
 }
 
 .ui-button:disabled {

@@ -137,7 +137,7 @@ watch(
 					aria-label="Очистить"
 					@click="onClearButtonClick"
 				>
-					<img class="clear-icon" :src="trashIcon" alt="" />
+					<span class="clear-icon" :style='{ "--icon-url": `url("${trashIcon}")` }'></span>
 				</UiButton>
 			</div>
 
@@ -216,18 +216,18 @@ watch(
 }
 
 .attempts-pill {
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--color-border);
 	border-radius: 20px;
 	padding: 5px 14px;
 	font-size: 0.8125rem;
-	color: #64748b;
+	color: var(--color-muted);
 }
 
 .reel {
 	position: relative;
 	display: flex;
 	padding: 16px 28px 16px 16px;
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--color-border);
 }
 
 .effects-grid {
@@ -242,7 +242,7 @@ watch(
 	align-items: center;
 	gap: 4px;
 	font-size: 0.75rem;
-	color: #64748b;
+	color: var(--color-muted);
 	cursor: default;
 }
 
@@ -255,7 +255,7 @@ watch(
 	height: 0;
 	border-top: 8px solid transparent;
 	border-bottom: 8px solid transparent;
-	border-right: 12px solid #64748b;
+	border-right: 12px solid var(--color-muted);
 }
 
 .roll-controls {
@@ -288,8 +288,18 @@ watch(
 }
 
 .clear-icon {
+	display: inline-block;
 	width: 20px;
 	height: 20px;
+	background-color: currentColor;
+	-webkit-mask-image: var(--icon-url);
+	mask-image: var(--icon-url);
+	-webkit-mask-size: contain;
+	mask-size: contain;
+	-webkit-mask-repeat: no-repeat;
+	mask-repeat: no-repeat;
+	-webkit-mask-position: center;
+	mask-position: center;
 }
 
 .reroll-checkbox {
@@ -297,7 +307,7 @@ watch(
 	align-items: center;
 	gap: 6px;
 	font-size: 0.875rem;
-	color: #334155;
+	color: var(--color-text-secondary);
 	cursor: pointer;
 }
 
@@ -307,18 +317,18 @@ watch(
 	left: 0;
 	margin-top: 4px;
 	font-size: 0.8125rem;
-	color: #64748b;
+	color: var(--color-muted);
 	white-space: nowrap;
 }
 
 .history-title {
 	font-size: 0.875rem;
-	color: #64748b;
+	color: var(--color-muted);
 	font-weight: 500;
 }
 
 .empty-message {
-	color: #64748b;
+	color: var(--color-muted);
 }
 
 .item-list {
@@ -335,7 +345,7 @@ watch(
 	flex-direction: column;
 	gap: 4px;
 	padding: 12px 16px;
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--color-border);
 	border-radius: 4px;
 }
 
@@ -351,7 +361,7 @@ watch(
 
 .item-meta {
 	font-size: 0.875rem;
-	color: #64748b;
+	color: var(--color-muted);
 }
 
 .modal-overlay {
@@ -365,7 +375,7 @@ watch(
 }
 
 .modal {
-	background: #fff;
+	background: var(--color-surface);
 	border-radius: 8px;
 	padding: 24px;
 	max-width: 400px;
@@ -387,12 +397,12 @@ watch(
 }
 
 .modal-description {
-	color: #334155;
+	color: var(--color-text-secondary);
 	line-height: 1.6;
 }
 
 .modal-empty {
-	color: #94a3b8;
+	color: var(--color-faint);
 	font-style: italic;
 }
 
@@ -404,14 +414,14 @@ watch(
 
 .modal-button {
 	padding: 6px 16px;
-	border: 1px solid #64748b;
+	border: 1px solid var(--color-muted);
 	border-radius: 4px;
 	cursor: pointer;
 	background: transparent;
 }
 
 .modal-button:hover:not(:disabled) {
-	background-color: #f1f5f9;
+	background-color: var(--color-hover-bg);
 }
 
 .modal-button:disabled {
@@ -420,12 +430,12 @@ watch(
 }
 
 .modal-button--primary {
-	background-color: #3b82f6;
-	border-color: #3b82f6;
-	color: #fff;
+	background-color: var(--color-accent);
+	border-color: var(--color-accent);
+	color: var(--color-on-accent);
 }
 
 .modal-button--primary:hover:not(:disabled) {
-	background-color: #2563eb;
+	background-color: var(--color-accent-hover);
 }
 </style>

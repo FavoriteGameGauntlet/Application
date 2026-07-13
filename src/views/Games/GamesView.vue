@@ -212,7 +212,7 @@ onMounted(() => {
 	align-items: center;
 	justify-content: center;
 	gap: 16px;
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--color-border);
 }
 
 .current-game-card {
@@ -221,7 +221,7 @@ onMounted(() => {
 	gap: 6px;
 	width: 100%;
 	padding: 16px;
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--color-border);
 	border-radius: 10px;
 }
 
@@ -239,14 +239,14 @@ onMounted(() => {
 .game-status-badge {
 	font-size: 0.75rem;
 	padding: 2px 10px;
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--color-border);
 	border-radius: 20px;
-	color: #64748b;
+	color: var(--color-muted);
 }
 
 .current-game-elapsed {
 	font-size: 0.8125rem;
-	color: #64748b;
+	color: var(--color-muted);
 }
 
 .current-game-actions {
@@ -289,7 +289,7 @@ onMounted(() => {
 .hint {
 	width: fit-content;
 	border-radius: 6px;
-	background-color: #f1f5f9;
+	background-color: var(--color-hover-bg);
 	padding: 8px 20px;
 }
 
@@ -304,7 +304,7 @@ onMounted(() => {
 
 .wishlist-item {
 	padding: 10px 14px;
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--color-border);
 	border-radius: 8px;
 }
 
@@ -323,12 +323,12 @@ onMounted(() => {
 	border: none;
 	padding: 4px 0;
 	cursor: pointer;
-	color: #64748b;
+	color: var(--color-muted);
 	font-size: 1rem;
 }
 
 .tab-button--active {
-	color: #0f172a;
+	color: var(--color-text);
 	font-weight: 600;
 }
 
@@ -352,7 +352,7 @@ onMounted(() => {
 	align-items: center;
 	gap: 12px;
 	padding: 10px 16px;
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--color-border);
 	border-radius: 4px;
 }
 
@@ -365,7 +365,7 @@ onMounted(() => {
 
 .history-card__meta {
 	font-size: 0.875rem;
-	color: #64748b;
+	color: var(--color-muted);
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;

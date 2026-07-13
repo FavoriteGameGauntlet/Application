@@ -81,7 +81,7 @@ const freePoints = computed(() => userStore.userPoints[login]?.freePoints)
 	width: 38px;
 	height: 38px;
 	border-radius: 50%;
-	background-color: #e2e8f0;
+	background-color: var(--color-border);
 	flex-shrink: 0;
 }
 
@@ -123,7 +123,7 @@ const freePoints = computed(() => userStore.userPoints[login]?.freePoints)
 
 .user-meta {
 	font-size: 0.8125rem;
-	color: #64748b;
+	color: var(--color-muted);
 }
 
 .user-points__item {
@@ -135,7 +135,7 @@ const freePoints = computed(() => userStore.userPoints[login]?.freePoints)
 .points-icon {
 	width: 14px;
 	height: 14px;
-	color: #94a3b8;
+	color: var(--color-faint);
 	flex-shrink: 0;
 }
 
@@ -149,6 +149,6 @@ const freePoints = computed(() => userStore.userPoints[login]?.freePoints)
 
 .current-game-name {
 	font-size: 0.8125rem;
-	color: #64748b;
+	color: var(--color-muted);
 }
 </style>

@@ -45,7 +45,7 @@ defineProps<{
 
 <style scoped>
 .empty-message {
-	color: #64748b;
+	color: var(--color-muted);
 }
 
 .item-list {
@@ -62,7 +62,7 @@ defineProps<{
 	flex-direction: column;
 	gap: 4px;
 	padding: 12px 16px;
-	border: 1px solid #e2e8f0;
+	border: 1px solid var(--color-border);
 	border-radius: 4px;
 }
 
@@ -78,6 +78,6 @@ defineProps<{
 
 .item-meta {
 	font-size: 0.875rem;
-	color: #64748b;
+	color: var(--color-muted);
 }
 </style>

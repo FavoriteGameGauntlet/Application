@@ -126,7 +126,7 @@ const onFormSubmit = () => {
 }
 
 .modal {
-	background: #fff;
+	background: var(--color-surface);
 	border-radius: 8px;
 	padding: 24px;
 	max-width: 400px;
@@ -143,17 +143,17 @@ const onFormSubmit = () => {
 
 .name-input {
 	border-radius: 6px;
-	border: 1px solid #cbd5e1;
-	background-color: #f1f5f9;
+	border: 1px solid var(--color-border-strong);
+	background-color: var(--color-hover-bg);
 	padding: 4px 8px;
 }
 
 .error {
 	padding: 4px 8px;
 	border-radius: 6px;
-	background-color: #fef2f2;
+	background-color: var(--color-danger-bg);
 	font-size: 0.8125rem;
-	color: #291e1c;
+	color: var(--color-danger-text);
 }
 
 .modal-actions {
@@ -164,14 +164,14 @@ const onFormSubmit = () => {
 
 .modal-button {
 	padding: 6px 16px;
-	border: 1px solid #64748b;
+	border: 1px solid var(--color-muted);
 	border-radius: 4px;
 	cursor: pointer;
 	background: transparent;
 }
 
 .modal-button:hover:not(:disabled) {
-	background-color: #f1f5f9;
+	background-color: var(--color-hover-bg);
 }
 
 .modal-button:disabled {
@@ -180,12 +180,12 @@ const onFormSubmit = () => {
 }
 
 .modal-button--primary {
-	background-color: #3b82f6;
-	border-color: #3b82f6;
-	color: #fff;
+	background-color: var(--color-accent);
+	border-color: var(--color-accent);
+	color: var(--color-on-accent);
 }
 
 .modal-button--primary:hover:not(:disabled) {
-	background-color: #2563eb;
+	background-color: var(--color-accent-hover);
 }
 </style>

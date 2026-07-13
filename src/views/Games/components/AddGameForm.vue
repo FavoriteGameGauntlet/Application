@@ -62,22 +62,22 @@ const onAddGameFormSubmit = () => {
 .game-input {
 	width: 320px;
 	border-radius: 6px;
-	border: 1px solid #cbd5e1;
-	background-color: #f1f5f9;
+	border: 1px solid var(--color-border-strong);
+	background-color: var(--color-hover-bg);
 	padding: 4px 12px;
 }
 
 .submit-button {
 	cursor: pointer;
-	background-color: #f1f5f9;
+	background-color: var(--color-hover-bg);
 	padding: 4px 16px;
 }
 
 .submit-button:hover {
-	background-color: #e2e8f0;
+	background-color: var(--color-border);
 }
 
 .submit-button:disabled {
-	color: #64748b;
+	color: var(--color-muted);
 }
 </style>

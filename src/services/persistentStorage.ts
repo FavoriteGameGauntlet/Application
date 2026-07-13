@@ -4,18 +4,21 @@ export enum StoreKey {
 	InitialRoute = 'initialRoute',
 	Login = 'login',
 	DisplayName = 'displayName',
+	Theme = 'theme',
 }
 
 export type StoredData = Partial<{
 	[StoreKey.InitialRoute]: string
 	[StoreKey.Login]: string
 	[StoreKey.DisplayName]: string
+	[StoreKey.Theme]: string
 }>
 
 const defaults: StoredData = {
 	[StoreKey.InitialRoute]: undefined,
 	[StoreKey.Login]: undefined,
 	[StoreKey.DisplayName]: undefined,
+	[StoreKey.Theme]: undefined,
 } as const
 
 let store: Store | null = null

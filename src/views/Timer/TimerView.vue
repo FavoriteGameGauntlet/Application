@@ -122,11 +122,11 @@ watch(state, (newState) => {
 }
 
 .timer-badge {
-	border: 1px solid #64748b;
+	border: 1px solid var(--color-muted);
 	border-radius: 20px;
 	padding: 4px 14px;
 	font-size: 0.8125rem;
-	color: #64748b;
+	color: var(--color-muted);
 }
 
 .timer-time {
@@ -136,14 +136,14 @@ watch(state, (newState) => {
 }
 
 .timer-duration {
-	color: #64748b;
+	color: var(--color-muted);
 	font-size: 0.9375rem;
 }
 
 .progress-bar {
 	width: 340px;
 	height: 10px;
-	background-color: #e2e8f0;
+	background-color: var(--color-border);
 	border-radius: 6px;
 	overflow: hidden;
 	margin-top: 6px;
@@ -151,13 +151,13 @@ watch(state, (newState) => {
 
 .progress-bar__fill {
 	height: 100%;
-	background-color: #64748b;
+	background-color: var(--color-muted);
 }
 
 .timer-toggle {
 	margin-top: 20px;
 	padding: 12px 32px;
-	border: 1px solid #64748b;
+	border: 1px solid var(--color-muted);
 	border-radius: 8px;
 	background: transparent;
 	cursor: pointer;
@@ -165,7 +165,7 @@ watch(state, (newState) => {
 }
 
 .timer-toggle:hover:not(:disabled) {
-	background-color: #f1f5f9;
+	background-color: var(--color-hover-bg);
 }
 
 .timer-toggle:disabled {

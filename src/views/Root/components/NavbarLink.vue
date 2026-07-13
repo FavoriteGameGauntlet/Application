@@ -25,17 +25,17 @@ defineProps<{ to?: RouteName; disabled?: boolean }>()
 	display: block;
 	padding: 8px 10px;
 	border-radius: 7px;
-	color: #2b7fff;
+	color: var(--color-accent);
 	text-decoration: none;
 }
 
 .navbar-link:hover {
-	background-color: #eff6ff;
+	background-color: var(--color-accent-subtle);
 }
 
 .navbar-link--active {
-	color: #0f172a;
-	background-color: #eff6ff;
+	color: var(--color-text);
+	background-color: var(--color-accent-subtle);
 	font-weight: 600;
 }
 
