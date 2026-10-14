@@ -17,7 +17,7 @@ import { useToastStore } from './toastStore'
 export const useResourcesStore = defineStore(StoreName.Resources, () => {
 	const pointTypes = ref<PointType[]>([])
 	const byPlayer = ref<Record<Login, PlayerResources>>({})
-	const leaderboards = ref<Record<string, PointsLeaderboard>>({})
+	const leaderboards = ref<Record<number, PointsLeaderboard>>({})
 	const summaries = ref<Partial<Record<ResourceKind, ResourceSummary[]>>>({})
 
 	const loadPointTypes = async () => {
@@ -30,23 +30,23 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 
 	const loadMine = () => loadPlayer(useSessionStore().login)
 
-	const loadLeaderboard = async (type: string) => {
-		leaderboards.value[type] = await api.resources.leaderboard(type)
+	const loadLeaderboard = async (typeId: number) => {
+		leaderboards.value[typeId] = await api.resources.leaderboard(typeId)
 	}
 
 	const loadSummary = async (kind: ResourceKind) => {
 		summaries.value[kind] = await api.resources.summary(kind)
 	}
 
-	const fetchHistory = (login: Login, kind: ResourceKind, name: string) =>
-		api.resources.history(login, kind, name, 4)
+	const fetchHistory = (login: Login, kind: ResourceKind, id: number) =>
+		api.resources.history(login, kind, id, 4)
 
-	const useItem = async (name: string, target?: Login) => {
+	const useItem = async (item: { id: number; name: string }) => {
 		const toast = useToastStore()
 
 		try {
-			await api.resources.useItem(name, target)
-			toast.show('Использован предмет', target ? `${name} → ${target}` : name)
+			await api.resources.useItem(item.id)
+			toast.show('Использован предмет', item.name)
 			await loadMine()
 			useJournalStore().bump()
 		} catch (e) {
@@ -54,11 +54,11 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 		}
 	}
 
-	const usePerk = async (name: string, effectName: string) => {
+	const usePerk = async (perkId: number, effectName: string) => {
 		const toast = useToastStore()
 
 		try {
-			await api.resources.usePerk(name)
+			await api.resources.usePerk(perkId)
 			toast.show('Эффект перка использован', effectName)
 			await loadMine()
 			useJournalStore().bump()

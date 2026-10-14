@@ -16,7 +16,7 @@ const wishlistStore = useWishlistStore()
 
 const query = ref('')
 
-const editingId = ref<string>()
+const editingId = ref<number>()
 const editingName = ref('')
 
 const deleting = ref<WishlistGame>()
@@ -61,7 +61,7 @@ const saveEdit = async () => {
 
 	editingId.value = undefined
 
-	if (id && name) {
+	if (id !== undefined && name) {
 		await wishlistStore.rename(id, name)
 	}
 }

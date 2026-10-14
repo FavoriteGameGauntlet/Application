@@ -40,7 +40,7 @@ export const useWishlistStore = defineStore(StoreName.Wishlist, () => {
 		}
 	}
 
-	const rename = async (id: string, name: string) => {
+	const rename = async (id: number, name: string) => {
 		try {
 			const game = await api.wishlist.rename(id, name)
 
@@ -52,7 +52,7 @@ export const useWishlistStore = defineStore(StoreName.Wishlist, () => {
 		}
 	}
 
-	const remove = async (id: string, name: string) => {
+	const remove = async (id: number, name: string) => {
 		try {
 			await api.wishlist.remove(id)
 

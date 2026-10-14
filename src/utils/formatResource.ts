@@ -5,9 +5,9 @@ import { plural } from './plural'
 export const formatResource = (ref: ResourceRef, pointTypes: PointType[]) => {
 	switch (ref.kind) {
 		case 'points': {
-			const type = pointTypes.find((t) => t.name === ref.type)
+			const type = pointTypes.find((t) => t.id === ref.id)
 
-			return `${ref.amount} ${type ? plural(ref.amount, type.unitForms) : ref.type.toLowerCase()}`
+			return `${ref.amount} ${type ? plural(ref.amount, type.unitForms) : ref.name.toLowerCase()}`
 		}
 		case 'item':
 			return ref.amount > 1 ? `${ref.name} ×${ref.amount}` : ref.name

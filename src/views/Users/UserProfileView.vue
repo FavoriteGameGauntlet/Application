@@ -11,7 +11,7 @@ import { useJournalStore } from '../../stores/journalStore'
 import { useMembersStore } from '../../stores/membersStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { formatHours } from '../../utils/format'
-import { memberTimerText, playerStatusView } from '../../utils/playerStatus'
+import { playerStatusView } from '../../utils/playerStatus'
 
 const PROFILE_EVENTS_COUNT = 5
 
@@ -82,7 +82,6 @@ const stats = computed(() => [
 				<span class="header__now">
 					Сейчас:
 					<span class="header__game">{{ member.currentGame ?? 'нет игры' }}</span>
-					· {{ memberTimerText(member) }}
 				</span>
 			</div>
 

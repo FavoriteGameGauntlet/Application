@@ -119,7 +119,7 @@ const hasUses = (left?: number, max?: number) => max != null && left != null
 			</div>
 
 			<div v-if="kind === 'items'" class="cards">
-				<div v-for="item in resources?.items" :key="item.name" class="card">
+				<div v-for="item in resources?.items" :key="item.id" class="card">
 					<div class="card__head">
 						<span class="card__title">{{ item.name }}</span>
 						<span class="card__held">×{{ item.held }}</span>
@@ -143,7 +143,7 @@ const hasUses = (left?: number, max?: number) => max != null && left != null
 			</div>
 
 			<div v-else-if="kind === 'perks'" class="cards">
-				<div v-for="perk in resources?.perks" :key="perk.name" class="card">
+				<div v-for="perk in resources?.perks" :key="perk.id" class="card">
 					<span class="card__title">{{ perk.name }}</span>
 
 					<div class="effect">
@@ -159,7 +159,7 @@ const hasUses = (left?: number, max?: number) => max != null && left != null
 						<span class="effect__name">{{ perk.effect.name }}</span>
 						<span class="effect__text">{{ perk.effect.text }}</span>
 						<span v-if="perk.kind === 'active'" class="effect__uses">
-							<span>Использований на неделе</span>
+							<span>Использований</span>
 							<span class="card__meta-value">{{ perk.usesLeft }} из {{ perk.usesMax }}</span>
 						</span>
 					</div>
@@ -170,7 +170,7 @@ const hasUses = (left?: number, max?: number) => max != null && left != null
 						variant="outline"
 						size="sm"
 						:disabled="!perk.usesLeft"
-						@click="resourcesStore.usePerk(perk.name, perk.effect.name)"
+						@click="resourcesStore.usePerk(perk.id, perk.effect.name)"
 					>
 						Использовать
 					</UiButton>
@@ -178,7 +178,7 @@ const hasUses = (left?: number, max?: number) => max != null && left != null
 			</div>
 
 			<div v-else class="cards">
-				<div v-for="effect in resources?.effects" :key="effect.name" class="card">
+				<div v-for="effect in resources?.effects" :key="effect.id" class="card">
 					<span class="card__title">{{ effect.name }}</span>
 					<span class="card__desc">{{ effect.description }}</span>
 					<span class="card__source">{{ effect.source }}</span>

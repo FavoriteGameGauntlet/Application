@@ -10,7 +10,11 @@ const resourcesStore = useResourcesStore()
 const sessionStore = useSessionStore()
 
 const query = ref('')
-const selectedType = ref(resourcesStore.pointTypes[0]?.name)
+const selectedType = ref<number | undefined>(resourcesStore.pointTypes[0]?.id)
+
+const selectedName = computed(
+	() => resourcesStore.pointTypes.find((t) => t.id === selectedType.value)?.name,
+)
 
 const myPoints = computed(() => resourcesStore.byPlayer[sessionStore.login]?.points ?? {})
 
@@ -20,12 +24,16 @@ const types = computed(() => {
 	return resourcesStore.pointTypes.filter((t) => !q || t.name.toLowerCase().includes(q))
 })
 
-const rows = computed(() => resourcesStore.leaderboards[selectedType.value ?? '']?.rows ?? [])
+const rows = computed(() =>
+	selectedType.value === undefined
+		? []
+		: (resourcesStore.leaderboards[selectedType.value]?.rows ?? []),
+)
 
 watch(
 	selectedType,
 	(type) => {
-		if (type) resourcesStore.loadLeaderboard(type)
+		if (type !== undefined) resourcesStore.loadLeaderboard(type)
 	},
 	{ immediate: true },
 )
@@ -40,13 +48,13 @@ watch(
 			<div class="types">
 				<div
 					v-for="type in types"
-					:key="type.name"
+					:key="type.id"
 					class="type"
-					:class="{ 'type--on': type.name === selectedType }"
-					@click="selectedType = type.name"
+					:class="{ 'type--on': type.id === selectedType }"
+					@click="selectedType = type.id"
 				>
 					<span>{{ type.name }}</span>
-					<span class="type__value">{{ myPoints[type.name] ?? 0 }}</span>
+					<span class="type__value">{{ myPoints[type.id] ?? 0 }}</span>
 				</div>
 			</div>
 
@@ -56,7 +64,7 @@ watch(
 		<div class="table">
 			<div class="table__row table__row--head">
 				<span>Игрок</span>
-				<span class="table__right">{{ selectedType }} ↓</span>
+				<span class="table__right">{{ selectedName }} ↓</span>
 			</div>
 
 			<div

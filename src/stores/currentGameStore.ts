@@ -2,7 +2,6 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '../api-facade/api'
 import type { CurrentGame } from '../api-facade/contracts'
-import type { HttpErrorResponse } from '../api-facade/http'
 import { StoreName } from '../enums/storeName'
 import { useCompletedStore } from './completedStore'
 import { useJournalStore } from './journalStore'
@@ -61,19 +60,16 @@ export const useCurrentGameStore = defineStore(StoreName.CurrentGame, () => {
 		}
 	}
 
+	/** cancels the game with the status «rerolled», then a new game is spun */
 	const reroll = async () => {
 		const toast = useToastStore()
 
 		try {
-			const spin = await api.currentGame.reroll()
-
-			await Promise.all([reloadDependants(), useWheelStore().playSpin(spin)])
+			await api.currentGame.reroll()
+			await reloadDependants()
+			await useWheelStore().spinGames()
 		} catch (e) {
-			if ((e as HttpErrorResponse).body?.code === 'WISHLIST_EMPTY') {
-				toast.show('Вишлист пуст', 'Перекручивать не из чего.', 'danger')
-			} else {
-				toast.error(e)
-			}
+			toast.error(e)
 		}
 	}
 

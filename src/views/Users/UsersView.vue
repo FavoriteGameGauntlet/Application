@@ -6,7 +6,7 @@ import UiPlayerAvatar from '../../components/ui/UiPlayerAvatar.vue'
 import { RouteName } from '../../router/routeNames'
 import { useMembersStore } from '../../stores/membersStore'
 import { useSessionStore } from '../../stores/sessionStore'
-import { memberTimerText, playerStatusView } from '../../utils/playerStatus'
+import { playerStatusView } from '../../utils/playerStatus'
 import { formatHours } from '../../utils/format'
 import { plural } from '../../utils/plural'
 
@@ -38,7 +38,6 @@ onMounted(() => membersStore.load())
 				<span>Игрок</span>
 				<span>Статус</span>
 				<span class="table__cut">Текущая игра</span>
-				<span>Таймер</span>
 				<span class="table__right">Сыграно ↓</span>
 				<span class="table__right">Пройдено</span>
 				<span class="table__right">Прокруты</span>
@@ -68,7 +67,6 @@ onMounted(() => membersStore.load())
 				<span class="table__game" :class="{ 'table__game--none': !member.currentGame }">
 					{{ member.currentGame ?? 'нет игры' }}
 				</span>
-				<span class="table__timer">{{ memberTimerText(member) }}</span>
 				<span class="table__num">{{ formatHours(member.playedSeconds) }}</span>
 				<span class="table__num">{{ member.completedCount }}</span>
 				<span class="table__num">{{ member.spinsCount }}</span>
@@ -116,7 +114,7 @@ onMounted(() => membersStore.load())
 
 .table__row {
 	display: grid;
-	grid-template-columns: minmax(120px, 1fr) 120px minmax(120px, 1.2fr) 88px 76px 76px 76px;
+	grid-template-columns: minmax(120px, 1fr) 120px minmax(120px, 1.2fr) 76px 76px 76px;
 	gap: 12px;
 	align-items: center;
 }
@@ -181,12 +179,6 @@ onMounted(() => membersStore.load())
 
 .table__game--none {
 	color: var(--text-subtle);
-}
-
-.table__timer {
-	font: var(--type-mono);
-	color: var(--text-muted);
-	white-space: nowrap;
 }
 
 .table__num {

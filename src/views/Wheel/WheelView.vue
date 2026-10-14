@@ -4,14 +4,21 @@ import UiBadge from '../../components/ui/UiBadge.vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiTabs from '../../components/ui/UiTabs.vue'
 import { RouteName } from '../../router/routeNames'
+import { useCurrentGameStore } from '../../stores/currentGameStore'
 import { useWheelStore, type WheelTab } from '../../stores/wheelStore'
 import { useWishlistStore } from '../../stores/wishlistStore'
 
 const REEL_OFFSETS = [-3, -2, -1, 0, 1, 2, 3]
 const PREVIEW_COUNT = 4
 
+const currentGameStore = useCurrentGameStore()
 const wheelStore = useWheelStore()
 const wishlistStore = useWishlistStore()
+
+/** a game can't be spun while another one is being played */
+const gameInProgress = computed(
+	() => wheelStore.tab === 'games' && !!currentGameStore.current?.game,
+)
 
 const tabs = [
 	{ value: 'points', label: 'Пункты' },
@@ -72,7 +79,7 @@ onMounted(() => wheelStore.load())
 
 				<div v-if="wheelStore.tab === 'points'" class="groups">
 					<div
-						v-for="group in wheelStore.groups"
+						v-for="group in wheelStore.changeGroups"
 						:key="group.id"
 						class="group"
 						:class="{ 'group--on': group.id === wheelStore.groupId }"
@@ -115,11 +122,14 @@ onMounted(() => wheelStore.load())
 					<UiButton
 						size="lg"
 						icon="refresh-cw"
-						:disabled="wheelStore.spinning || !wheelStore.pool.length"
+						:disabled="wheelStore.spinning || !wheelStore.pool.length || gameInProgress"
 						@click="wheelStore.spin()"
 					>
 						{{ wheelStore.spinning ? 'Крутится…' : 'Крутить колесо' }}
 					</UiButton>
+					<span v-if="gameInProgress" class="spin__hint">
+						Идёт игра. Колесо игр можно крутить, когда она закончена.
+					</span>
 				</div>
 
 				<div v-if="wheelStore.result && !wheelStore.spinning" class="result">
@@ -138,9 +148,9 @@ onMounted(() => wheelStore.load())
 
 					<div class="result__body">
 						<span class="result__desc">{{ resultDescription }}</span>
-						<div v-if="wheelStore.result.requiresAdmin" class="result__manual">
+						<div v-if="wheelStore.result.result.isManualChange" class="result__manual">
 							<UiBadge tone="info" dot>Вручную</UiBadge>
-							<span>применяет админ после прокрута</span>
+							<span>после применения нужно внести изменение вручную</span>
 						</div>
 					</div>
 				</div>
@@ -340,7 +350,16 @@ onMounted(() => wheelStore.load())
 }
 
 .spin {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	align-items: center;
 	align-self: center;
+}
+
+.spin__hint {
+	font: var(--type-body-sm);
+	color: var(--text-muted);
 }
 
 .result {

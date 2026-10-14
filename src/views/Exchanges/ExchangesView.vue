@@ -39,7 +39,7 @@ const confirming = ref<Exchange>()
 const selectedPlayer = ref(sessionStore.login)
 const category = ref<Category>('items')
 const query = ref('')
-const expanded = ref<string>()
+const expanded = ref<number>()
 const history = ref<ResourceHistoryRow[]>([])
 
 const mine = computed(() => resourcesStore.byPlayer[sessionStore.login])
@@ -56,9 +56,9 @@ const text = (ref: ResourceRef) => formatResource(ref, resourcesStore.pointTypes
 
 /** how many of the resource the current user has */
 const have = (ref: ResourceRef) => {
-	if (ref.kind === 'points') return mine.value?.points[ref.type] ?? 0
+	if (ref.kind === 'points') return mine.value?.points[ref.id] ?? 0
 	if (ref.kind === 'item') {
-		return mine.value?.items.find((i) => i.name === ref.name)?.held ?? 0
+		return mine.value?.items.find((i) => i.id === ref.id)?.held ?? 0
 	}
 
 	return 0
@@ -95,7 +95,7 @@ const confirmRows = computed(() => {
 		const was = have(ref)
 
 		return {
-			name: ref.kind === 'points' ? ref.type : ref.kind === 'item' ? ref.name : '',
+			name: ref.name,
 			was,
 			now: was + sign * amountOf(ref),
 			gain: sign > 0,
@@ -112,20 +112,23 @@ const rows = computed(() => {
 	const all = {
 		items: () =>
 			resources.items.map((item) => ({
+				id: item.id,
 				name: item.name,
 				note: `${item.usesLeft}/${item.usesMax} исп.`,
 				value: `×${item.held}`,
 				expandable: true,
 			})),
 		points: () =>
-			Object.entries(resources.points).map(([name, value]) => ({
-				name,
+			resourcesStore.pointTypes.map((type) => ({
+				id: type.id,
+				name: type.name,
 				note: '',
-				value: String(value),
+				value: String(resources.points[type.id] ?? 0),
 				expandable: false,
 			})),
 		perks: () =>
 			resources.perks.map((perk) => ({
+				id: perk.id,
 				name: perk.name,
 				note: perk.kind === 'active' ? 'активный' : 'пассивный',
 				value: '',
@@ -133,6 +136,7 @@ const rows = computed(() => {
 			})),
 		effects: () =>
 			resources.effects.map((effect) => ({
+				id: effect.id,
 				name: effect.name,
 				note: effect.usesMax != null ? `${effect.usesLeft}/${effect.usesMax} исп.` : '',
 				value: effect.expiresAt ? formatRemaining(effect.expiresAt) : '',
@@ -154,17 +158,17 @@ watch([selectedPlayer, category], () => {
 	query.value = ''
 })
 
-const toggleRow = async (name: string, expandable: boolean) => {
+const toggleRow = async (id: number, expandable: boolean) => {
 	if (!expandable) return
 
-	if (expanded.value === name) {
+	if (expanded.value === id) {
 		expanded.value = undefined
 		return
 	}
 
-	expanded.value = name
+	expanded.value = id
 	history.value = []
-	history.value = await resourcesStore.fetchHistory(selectedPlayer.value, 'items', name)
+	history.value = await resourcesStore.fetchHistory(selectedPlayer.value, 'items', id)
 }
 
 const onConfirm = async () => {
@@ -259,23 +263,23 @@ onMounted(() => exchangesStore.load())
 				<div class="rows">
 					<div
 						v-for="row in rows"
-						:key="row.name"
+						:key="row.id"
 						class="row"
-						:class="{ 'row--open': expanded === row.name }"
+						:class="{ 'row--open': expanded === row.id }"
 					>
 						<div
 							class="row__main"
 							:class="{ 'row__main--expandable': row.expandable }"
-							@click="toggleRow(row.name, row.expandable)"
+							@click="toggleRow(row.id, row.expandable)"
 						>
-							<span class="row__name" :class="{ 'row__name--open': expanded === row.name }">
+							<span class="row__name" :class="{ 'row__name--open': expanded === row.id }">
 								{{ row.name }}
 							</span>
 							<span class="row__note">{{ row.note }}</span>
 							<span class="row__value">{{ row.value }}</span>
 						</div>
 
-						<div v-if="expanded === row.name" class="row__history">
+						<div v-if="expanded === row.id" class="row__history">
 							<div v-for="(h, i) in history" :key="i" class="history">
 								<span class="history__source">{{ formatMoment(h.at) }} · {{ h.source }}</span>
 								<span class="history__delta">{{ h.delta }}</span>

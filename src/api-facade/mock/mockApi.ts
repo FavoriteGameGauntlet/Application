@@ -37,7 +37,21 @@ const reply = async <T>(fn: () => T): Promise<T> => {
 
 const now = () => new Date().toISOString()
 
+let lastId = 1000
+
+/** ids of the records created by the "server" */
+const newId = () => ++lastId
+
 const text = (ref: ResourceRef) => formatResource(ref, db.pointTypes)
+
+/** «+50 золота», «−1 билет», «+перк Коллекционер» */
+const signedText = (ref: ResourceRef) => {
+	if (!('amount' in ref)) return `+${text(ref)}`
+
+	const sign = ref.amount < 0 ? '−' : '+'
+
+	return `${sign}${text({ ...ref, amount: Math.abs(ref.amount) })}`
+}
 
 // ---- resources
 
@@ -46,26 +60,26 @@ const have = (login: Login, ref: ResourceRef) => {
 
 	switch (ref.kind) {
 		case 'points':
-			return res.points[ref.type] ?? 0
+			return res.points[ref.id] ?? 0
 		case 'item':
-			return res.items.find((i) => i.name === ref.name)?.held ?? 0
+			return res.items.find((i) => i.id === ref.id)?.held ?? 0
 		default:
 			return 0
 	}
 }
 
-const ownsPerk = (login: Login, name: string) =>
-	db.resources[login].perks.some((p) => p.name === name)
+const ownsPerk = (login: Login, id: number) =>
+	db.resources[login].perks.some((p) => p.id === id)
 
 const applyRef = (login: Login, ref: ResourceRef, sign: 1 | -1) => {
 	const res = db.resources[login]
 
 	switch (ref.kind) {
 		case 'points':
-			res.points[ref.type] = (res.points[ref.type] ?? 0) + sign * ref.amount
+			res.points[ref.id] = (res.points[ref.id] ?? 0) + sign * ref.amount
 			break
 		case 'item': {
-			const item = res.items.find((i) => i.name === ref.name)
+			const item = res.items.find((i) => i.id === ref.id)
 
 			if (item) {
 				item.held += sign * ref.amount
@@ -76,9 +90,9 @@ const applyRef = (login: Login, ref: ResourceRef, sign: 1 | -1) => {
 		}
 		case 'perk':
 			if (sign > 0) {
-				res.perks.push(db.makePerk(ref.name))
+				if (!ownsPerk(login, ref.id)) res.perks.push(db.makePerk(ref.name))
 			} else {
-				res.perks = res.perks.filter((p) => p.name !== ref.name)
+				res.perks = res.perks.filter((p) => p.id !== ref.id)
 			}
 			break
 	}
@@ -90,7 +104,7 @@ const pushJournal = (
 	changes: JournalEntry['changes'],
 ): JournalEntry => {
 	const entry = {
-		id: crypto.randomUUID(),
+		id: newId(),
 		at: now(),
 		actor: db.ME,
 		source,
@@ -155,7 +169,7 @@ const closeGame = (status: CompletedGame['status']) => {
 	const { game, playedSeconds, startedAt } = requireGame()
 
 	db.completed[db.ME].unshift({
-		id: crypto.randomUUID(),
+		id: newId(),
 		name: game.name,
 		startedAt,
 		endedAt: now(),
@@ -173,6 +187,13 @@ const closeGame = (status: CompletedGame['status']) => {
 
 // ---- wheel
 
+const requireNoGame = () => {
+	if (db.state.currentGame.game) {
+		fail(409, 'CURRENT_GAME_EXISTS', 'Игру нельзя крутить, пока идёт текущая')
+	}
+}
+
+/** the result is stored on the server, a new spin replaces the previous one */
 const makeSpin = (source: WheelSource, entries: WheelEntry[]) => {
 	const resultIndex = Math.floor(Math.random() * entries.length)
 	const spin: WheelSpinResult = {
@@ -180,15 +201,16 @@ const makeSpin = (source: WheelSource, entries: WheelEntry[]) => {
 		entries: entries.map((e) => e.name),
 		resultIndex,
 		result: entries[resultIndex],
-		requiresAdmin: source !== 'wishlist',
-		spinId: crypto.randomUUID(),
+		spinId: newId(),
 	}
 
-	db.state.spins.set(spin.spinId, spin)
+	db.state.spin = spin
 	return spin
 }
 
 const spinWishlist = () => {
+	requireNoGame()
+
 	const wishlist = db.wishlists[db.ME]
 
 	if (!wishlist.length) fail(409, 'WISHLIST_EMPTY', 'Вишлист пуст')
@@ -213,7 +235,6 @@ const getMember = (login: Login): Member => {
 			player,
 			status: seed.status,
 			currentGame: seed.currentGame,
-			timer: seed.timer,
 			playedSeconds: seed.playedHours * 3600,
 			completedCount: seed.completedCount,
 			spinsCount: seed.spinsCount,
@@ -221,13 +242,11 @@ const getMember = (login: Login): Member => {
 	}
 
 	const { game } = db.state.currentGame
-	const timerState = game ? db.state.timer.state : 'idle'
 
 	return {
 		player,
-		status: !game ? 'rolling' : timerState === 'running' ? 'playing' : 'paused',
+		status: game && db.state.timer.state === 'running' ? 'playing' : 'paused',
 		currentGame: game?.name ?? null,
-		timer: { state: timerState, elapsed: currentElapsed() },
 		playedSeconds: db.MY_PLAYED_HOURS * 3600,
 		completedCount:
 			db.MY_COMPLETED_BEFORE_SEASON +
@@ -239,9 +258,7 @@ const getMember = (login: Login): Member => {
 // ---- exchanges
 
 const toExchange = (def: db.ExchangeDef): Exchange => {
-	const owned = def.get.some(
-		(r) => r.kind === 'perk' && ownsPerk(db.ME, r.name),
-	)
+	const owned = def.get.some((r) => r.kind === 'perk' && ownsPerk(db.ME, r.id))
 	const lacks = def.give.some(
 		(r) => (r.kind === 'points' || r.kind === 'item') && have(db.ME, r) < r.amount,
 	)
@@ -266,13 +283,7 @@ export const mockApi: Api = {
 
 	session: {
 		getMe: () => reply(() => ({ ...db.players[0], isAdmin: true })),
-		getSeason: () =>
-			reply(() => ({
-				id: 'autumn',
-				name: 'Осенний сезон',
-				startsAt: '2026-09-01T00:00:00Z',
-				endsAt: '2026-11-30T00:00:00Z',
-			})),
+		getSeason: () => reply(() => ({ id: 1, name: 'Осенний сезон' })),
 	},
 
 	currentGame: {
@@ -281,9 +292,9 @@ export const mockApi: Api = {
 			reply(() => {
 				const game = closeGame('completed')
 				const granted: ResourceRef[] = [
-					{ kind: 'points', type: 'Золото', amount: 200 },
-					{ kind: 'points', type: 'Репутация', amount: 10 },
-					{ kind: 'points', type: 'Билеты', amount: 1 },
+					db.pointRef('Золото', 200),
+					db.pointRef('Репутация', 10),
+					db.pointRef('Билеты', 1),
 				]
 
 				granted.forEach((r) => applyRef(db.ME, r, 1))
@@ -306,12 +317,7 @@ export const mockApi: Api = {
 			}),
 		reroll: () =>
 			reply(() => {
-				requireGame()
-
-				const spin = spinWishlist()
 				closeGame('rerolled')
-
-				return spin
 			}),
 	},
 
@@ -344,7 +350,7 @@ export const mockApi: Api = {
 				}
 
 				const game = {
-					id: crypto.randomUUID(),
+					id: newId(),
 					name,
 					addedAt: now(),
 					addedBy: login === db.ME ? undefined : db.ME,
@@ -394,32 +400,47 @@ export const mockApi: Api = {
 				const group = db.wheelGroups.find((g) => g.id === source.groupId)
 
 				if (!group) fail(404, 'NOT_FOUND', 'Группа не найдена')
+				if (group.kind === 'games') requireNoGame()
 
 				return makeSpin(source, group.entries)
 			}),
 		apply: (spinId) =>
 			reply(() => {
-				const spin = db.state.spins.get(spinId)
+				const spin = db.state.spin
 
-				if (!spin) fail(404, 'NOT_FOUND', 'Прокрут не найден')
-
-				db.state.spins.delete(spinId)
+				if (!spin || spin.spinId !== spinId) {
+					fail(404, 'NOT_FOUND', 'Прокрут не найден')
+				}
 
 				if (spin.source !== 'wishlist') {
+					const entries = spin.result.entries ?? []
+
+					entries.forEach((r) => applyRef(db.ME, r, 1))
+					db.state.spin = null
+
 					return {
 						journalEntry: pushJournal(
 							{ kind: 'wheel', label: `колесо · «${spin.result.name}»` },
-							true,
-							[{ player: db.ME, text: spin.result.name }],
+							!!spin.result.isManualChange,
+							entries.length
+								? entries.map((resource) => ({
+										player: db.ME,
+										text: signedText(resource),
+										resource,
+									}))
+								: [{ player: db.ME, text: spin.result.name }],
 						),
 					}
 				}
+
+				requireNoGame()
 
 				const wishlist = db.wishlists[db.ME]
 				const game = wishlist.find((w) => w.id === spin.result.id)
 
 				if (!game) fail(404, 'NOT_FOUND', 'Игра не найдена')
 
+				db.state.spin = null
 				db.wishlists[db.ME] = wishlist.filter((w) => w.id !== game.id)
 				db.state.currentGame = {
 					game: { id: game.id, name: game.name },
@@ -430,21 +451,17 @@ export const mockApi: Api = {
 
 				return { currentGame: getCurrentGame() }
 			}),
-		discard: (spinId) =>
-			reply(() => {
-				db.state.spins.delete(spinId)
-			}),
 	},
 
 	resources: {
 		pointTypes: () => reply(() => db.pointTypes),
-		leaderboard: (type) =>
+		leaderboard: (typeId) =>
 			reply(() => ({
-				type,
+				typeId,
 				rows: db.players
 					.map((player) => ({
 						player,
-						value: db.resources[player.login].points[type] ?? 0,
+						value: db.resources[player.login].points[typeId] ?? 0,
 					}))
 					.sort((a, b) => b.value - a.value),
 			})),
@@ -463,9 +480,9 @@ export const mockApi: Api = {
 					}
 				}),
 			),
-		useItem: (name, target) =>
+		useItem: (itemId) =>
 			reply(() => {
-				const item = db.resources[db.ME].items.find((i) => i.name === name)
+				const item = db.resources[db.ME].items.find((i) => i.id === itemId)
 
 				if (!item || item.held === 0 || item.usesLeft === 0) {
 					fail(409, 'NO_USES_LEFT', 'Предмет нельзя использовать')
@@ -474,25 +491,17 @@ export const mockApi: Api = {
 				item.held -= 1
 				item.usesLeft -= 1
 
-				const changes: JournalEntry['changes'] = [
-					{ player: db.ME, text: `−1 ${name}` },
-				]
-
-				if (target && target !== db.ME) {
-					changes.push({ player: target, text: item.description })
-				}
-
 				return {
 					journalEntry: pushJournal(
-						{ kind: 'item', label: `предмет «${name}»` },
+						{ kind: 'item', label: `предмет «${item.name}»` },
 						true,
-						changes,
+						[{ player: db.ME, text: `−1 ${item.name}` }],
 					),
 				}
 			}),
-		usePerk: (name) =>
+		usePerk: (perkId) =>
 			reply(() => {
-				const perk = db.resources[db.ME].perks.find((p) => p.name === name)
+				const perk = db.resources[db.ME].perks.find((p) => p.id === perkId)
 
 				if (!perk || perk.kind !== 'active' || !perk.usesLeft) {
 					fail(409, 'NO_USES_LEFT', 'Перк нельзя использовать')
@@ -502,27 +511,37 @@ export const mockApi: Api = {
 
 				return {
 					journalEntry: pushJournal(
-						{ kind: 'perk', label: `перк «${name}» · ${perk.effect.name}` },
+						{
+							kind: 'perk',
+							label: `перк «${perk.name}» · ${perk.effect.name}`,
+						},
 						true,
 						[{ player: db.ME, text: perk.effect.text.replace(/\.$/, '') }],
 					),
 				}
 			}),
-		history: (login, _kind, name, limit = 4) =>
-			reply(() =>
-				[
+		history: (login, kind, id, limit = 4) =>
+			reply(() => {
+				const resourceKind = { items: 'item', perks: 'perk', effects: 'effect' }[kind]
+
+				return [
 					...db.journal.flatMap((j) =>
 						j.changes
-							.filter((c) => c.player === login && c.text.includes(name))
+							.filter(
+								(c) =>
+									c.player === login &&
+									c.resource?.kind === resourceKind &&
+									c.resource.id === id,
+							)
 							.map((c) => ({
 								at: j.at,
 								source: j.source.label,
 								delta: c.text.match(/^[+−-]\d+/)?.[0] ?? c.text,
 							})),
 					),
-					...(db.resourceHistory[`${login}|${name}`] ?? []),
-				].slice(0, limit),
-			),
+					...(db.resourceHistory[`${login}|${resourceKind}|${id}`] ?? []),
+				].slice(0, limit)
+			}),
 	},
 
 	journal: {
@@ -536,7 +555,7 @@ export const mockApi: Api = {
 					since.setDate(since.getDate() - 7)
 				}
 
-				const [resourceKind, resourceType] = query.resource?.split(':') ?? []
+				const wanted = query.resource
 
 				const items = db.journal
 					.filter((j) => Date.parse(j.at) >= since.getTime())
@@ -544,16 +563,12 @@ export const mockApi: Api = {
 					.filter((j) => !query.source || j.source.kind === query.source)
 					.filter(
 						(j) =>
-							!query.resource ||
-							j.changes.some((c) => {
-								const r = c.resource
-
-								return (
-									!!r &&
-									r.kind === resourceKind &&
-									(r.kind !== 'points' || r.type === resourceType)
-								)
-							}),
+							!wanted ||
+							j.changes.some(
+								(c) =>
+									c.resource?.kind === wanted.kind &&
+									(wanted.id === undefined || c.resource.id === wanted.id),
+							),
 					)
 
 				return { items: query.limit ? items.slice(0, query.limit) : items }

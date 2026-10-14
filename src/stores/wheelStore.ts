@@ -5,9 +5,11 @@ import type { WheelGroup, WheelSpinResult } from '../api-facade/contracts'
 import { StoreName } from '../enums/storeName'
 import { RouteName } from '../router/routeNames'
 import { router } from '../router/router'
+import type { HttpErrorResponse } from '../api-facade/http'
 import { useCurrentGameStore } from './currentGameStore'
 import { useJournalStore } from './journalStore'
 import { useMembersStore } from './membersStore'
+import { useResourcesStore } from './resourcesStore'
 import { useToastStore } from './toastStore'
 import { useWishlistStore } from './wishlistStore'
 import { useTimerStore } from './timerStore'
@@ -22,13 +24,16 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 export const useWheelStore = defineStore(StoreName.Wheel, () => {
 	const tab = ref<WheelTab>('points')
 	const groups = ref<WheelGroup[]>([])
-	const groupId = ref<string>()
+	const groupId = ref<number>()
 
 	const pos = ref(0)
 	const spinning = ref(false)
 	const result = ref<WheelSpinResult | null>(null)
 	/** reel of the last spin; falls back to the pool of the selected source */
 	const spunEntries = ref<string[] | null>(null)
+
+	/** the «points» tab; the games are spun from the wishlist */
+	const changeGroups = computed(() => groups.value.filter((g) => g.kind === 'changes'))
 
 	const group = computed(() => groups.value.find((g) => g.id === groupId.value))
 
@@ -52,17 +57,13 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 
 	const load = async () => {
 		groups.value = await api.wheel.groups()
-		groupId.value ??= groups.value[0]?.id
+		groupId.value ??= changeGroups.value[0]?.id
 
 		await useWishlistStore().loadMine()
 	}
 
-	/** drops the shown result; the server spin is discarded on the best-effort basis */
+	/** hides the shown result; the server keeps it until the next spin replaces it */
 	const clearResult = () => {
-		if (result.value) {
-			api.wheel.discard(result.value.spinId).catch(() => {})
-		}
-
 		result.value = null
 		spunEntries.value = null
 	}
@@ -75,7 +76,7 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		clearResult()
 	}
 
-	const setGroup = (id: string) => {
+	const setGroup = (id: number) => {
 		if (spinning.value) return
 
 		groupId.value = id
@@ -114,6 +115,9 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 	const spin = async () => {
 		if (spinning.value || !pool.value.length) return
 
+		/** spinning again while a result is shown drops it: a free reroll */
+		const isReroll = result.value !== null
+
 		spinning.value = true
 		result.value = null
 
@@ -121,25 +125,43 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 			await animate(
 				await api.wheel.spin(
 					tab.value === 'games' ? 'wishlist' : { groupId: groupId.value! },
+					isReroll,
 				),
 			)
 		} catch (e) {
 			spinning.value = false
-			useToastStore().error(e)
+
+			if ((e as HttpErrorResponse).body?.code === 'CURRENT_GAME_EXISTS') {
+				useToastStore().show(
+					'Идёт игра',
+					'Колесо игр можно крутить, когда текущая игра закончена.',
+					'danger',
+				)
+			} else {
+				useToastStore().error(e)
+			}
 		}
 	}
 
-	/** plays a spin that was made on the server elsewhere, e.g. a game reroll */
-	const playSpin = async (spin: WheelSpinResult) => {
+	/** opens the games tab and spins it, used after the current game is rerolled */
+	const spinGames = async () => {
 		tab.value = 'games'
 		spunEntries.value = null
 		result.value = null
 		pos.value = 0
-		spinning.value = true
 
-		await router.push({ name: RouteName.Wheel })
+		await Promise.all([
+			router.push({ name: RouteName.Wheel }),
+			useWishlistStore().loadMine(),
+		])
+
+		if (!pool.value.length) {
+			useToastStore().show('Вишлист пуст', 'Перекручивать не из чего.', 'danger')
+			return
+		}
+
 		await sleep(REROLL_START_DELAY_MS)
-		await animate(spin)
+		await spin()
 	}
 
 	const apply = async () => {
@@ -167,7 +189,17 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 					useMembersStore().load(),
 				])
 			} else {
-				toast.show('Отправлено админу', applied.result.name)
+				if (applied.result.isManualChange) {
+					toast.show(
+						'Нужно ручное изменение',
+						`${applied.result.name}. Формы пока нет в макетах.`,
+						'info',
+					)
+				} else {
+					toast.show('Применено', applied.result.name)
+				}
+
+				await useResourcesStore().loadMine()
 				useJournalStore().bump()
 			}
 		} catch (e) {
@@ -178,6 +210,7 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 	return {
 		tab,
 		groups,
+		changeGroups,
 		groupId,
 		pos,
 		spinning,
@@ -189,7 +222,7 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		setGroup,
 		clearResult,
 		spin,
-		playSpin,
+		spinGames,
 		apply,
 	}
 })

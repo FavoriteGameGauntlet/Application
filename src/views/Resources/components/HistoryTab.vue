@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import { computed, reactive, ref, useTemplateRef, watch } from 'vue'
-import type { JournalEntry, JournalSourceKind } from '../../../api-facade/contracts'
+import type {
+	JournalEntry,
+	JournalQuery,
+	JournalSourceKind,
+	ResourceRef,
+} from '../../../api-facade/contracts'
 import { useClickOutside } from '../../../composables/useClickOutside'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiIcon from '../../../components/ui/UiIcon.vue'
 import UiIconButton from '../../../components/ui/UiIconButton.vue'
 import { useJournalStore } from '../../../stores/journalStore'
 import { useMembersStore } from '../../../stores/membersStore'
+import { useResourcesStore } from '../../../stores/resourcesStore'
 import { useSessionStore } from '../../../stores/sessionStore'
 import { useToastStore } from '../../../stores/toastStore'
 import { formatMoment } from '../../../utils/format'
@@ -22,6 +28,7 @@ const { player } = defineProps<Props>()
 
 const journalStore = useJournalStore()
 const membersStore = useMembersStore()
+const resourcesStore = useResourcesStore()
 const sessionStore = useSessionStore()
 const toastStore = useToastStore()
 
@@ -54,8 +61,10 @@ const specs = computed(() => [
 		title: 'Ресурс',
 		options: [
 			{ value: ALL, label: 'все' },
-			{ value: 'points:Золото', label: 'золото' },
-			{ value: 'points:Репутация', label: 'репутация' },
+			...resourcesStore.pointTypes.map((type) => ({
+				value: `points:${type.id}`,
+				label: type.name.toLowerCase(),
+			})),
 			{ value: 'effect', label: 'эффекты' },
 		],
 	},
@@ -95,6 +104,15 @@ const pills = computed(() =>
 
 const entries = ref<JournalEntry[]>([])
 
+/** 'points:<id>' or 'effect' → the resource filter of the query */
+const toResource = (value: string): JournalQuery['resource'] => {
+	if (!value) return undefined
+
+	const [kind, id] = value.split(':')
+
+	return { kind: kind as ResourceRef['kind'], id: id ? Number(id) : undefined }
+}
+
 watch(
 	() => player,
 	() => {
@@ -107,7 +125,7 @@ watch(
 	async () => {
 		entries.value = await journalStore.fetch({
 			player: filters.player || undefined,
-			resource: filters.resource || undefined,
+			resource: toResource(filters.resource),
 			source: (filters.source || undefined) as JournalSourceKind | undefined,
 			period: filters.period as 'today' | 'week',
 		})

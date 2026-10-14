@@ -37,31 +37,29 @@ export const players: PlayerRef[] = [
 ].map((login, i) => ({ login, colorIndex: i + 1 }))
 
 export const pointTypes: PointType[] = [
-	{ name: 'Золото', unitForms: ['золото', 'золота', 'золота'] },
-	{ name: 'Репутация', unitForms: ['репутация', 'репутации', 'репутации'] },
-	{ name: 'Билеты', unitForms: ['билет', 'билета', 'билетов'] },
-	{ name: 'Осколки', unitForms: ['осколок', 'осколка', 'осколков'] },
-	{ name: 'Опыт', unitForms: ['опыт', 'опыта', 'опыта'] },
-	{ name: 'Карма', unitForms: ['карма', 'кармы', 'кармы'] },
+	{ id: 1, name: 'Золото', unitForms: ['золото', 'золота', 'золота'] },
+	{ id: 2, name: 'Репутация', unitForms: ['репутация', 'репутации', 'репутации'] },
+	{ id: 3, name: 'Билеты', unitForms: ['билет', 'билета', 'билетов'] },
+	{ id: 4, name: 'Осколки', unitForms: ['осколок', 'осколка', 'осколков'] },
+	{ id: 5, name: 'Опыт', unitForms: ['опыт', 'опыта', 'опыта'] },
+	{ id: 6, name: 'Карма', unitForms: ['карма', 'кармы', 'кармы'] },
 ]
 
-type ItemDef = { description: string; usesMax: number; needsTarget?: boolean }
+type ItemDef = { id: number; description: string; usesMax: number }
 
 export const itemCatalog: Record<string, ItemDef> = {
 	Колобок: {
+		id: 1,
 		description: 'монетка: +3 очка или Колобок укатывается к другому игроку',
 		usesMax: 1,
 	},
-	'Свиток удачи': { description: '+50 золота', usesMax: 1 },
-	'Билет на колесо': { description: '+1 прокрут колеса', usesMax: 1 },
-	Щит: { description: 'эффект «Щит» на 1 день', usesMax: 3 },
-	Проклятие: {
-		description: '−30 золота цели',
-		usesMax: 2,
-		needsTarget: true,
-	},
-	'Кубик реролла': { description: '+1 перекрут колеса', usesMax: 1 },
+	'Свиток удачи': { id: 2, description: '+50 золота', usesMax: 1 },
+	'Билет на колесо': { id: 3, description: '+1 прокрут колеса', usesMax: 1 },
+	Щит: { id: 4, description: 'эффект «Щит» на 1 день', usesMax: 3 },
+	Проклятие: { id: 5, description: '−30 золота', usesMax: 2 },
+	'Кубик реролла': { id: 6, description: '+1 перекрут колеса', usesMax: 1 },
 	'Свиток пропуска': {
+		id: 7,
 		description: 'снимает текущую игру без штрафа',
 		usesMax: 1,
 	},
@@ -69,15 +67,17 @@ export const itemCatalog: Record<string, ItemDef> = {
 
 export const perkCatalog: Record<string, Omit<Perk, 'name'>> = {
 	Везунчик: {
+		id: 1,
 		effect: {
 			name: 'Бесплатный перекрут',
-			text: '+1 перекрут колеса в неделю.',
+			text: '+1 перекрут колеса.',
 		},
 		kind: 'active',
 		usesLeft: 1,
 		usesMax: 1,
 	},
 	Марафонец: {
+		id: 2,
 		effect: {
 			name: 'Второе дыхание',
 			text: '+10% золота за таймер дольше 3 ч, а за таймер дольше 5 ч ещё +1 билет на колесо.',
@@ -85,6 +85,7 @@ export const perkCatalog: Record<string, Omit<Perk, 'name'>> = {
 		kind: 'passive',
 	},
 	Коллекционер: {
+		id: 3,
 		effect: {
 			name: 'Трофей',
 			text: '+1 случайный предмет за каждую пройденную игру.',
@@ -101,12 +102,12 @@ export const makeItem = (
 	const def = itemCatalog[name]
 
 	return {
+		id: def.id,
 		name,
 		description: def.description,
 		held,
 		usesLeft: usesLeft ?? def.usesMax,
 		usesMax: def.usesMax,
-		needsTarget: !!def.needsTarget,
 	}
 }
 
@@ -120,6 +121,37 @@ export const makePerk = (name: string, usesLeft?: number): Perk => {
 	}
 }
 
+const effectIds: Record<string, number> = {}
+
+const effectId = (name: string) =>
+	(effectIds[name] ??= Object.keys(effectIds).length + 1)
+
+export const pointRef = (name: string, amount: number): ResourceRef => ({
+	kind: 'points',
+	id: pointTypes.find((t) => t.name === name)!.id,
+	name,
+	amount,
+})
+
+export const itemRef = (name: string, amount: number): ResourceRef => ({
+	kind: 'item',
+	id: itemCatalog[name].id,
+	name,
+	amount,
+})
+
+export const perkRef = (name: string): ResourceRef => ({
+	kind: 'perk',
+	id: perkCatalog[name].id,
+	name,
+})
+
+export const effectRef = (name: string): ResourceRef => ({
+	kind: 'effect',
+	id: effectId(name),
+	name,
+})
+
 const ref = (login: Login) => players.find((p) => p.login === login)!
 
 const points = (
@@ -129,14 +161,7 @@ const points = (
 	shards: number,
 	xp: number,
 	karma: number,
-) => ({
-	Золото: gold,
-	Репутация: rep,
-	Билеты: tickets,
-	Осколки: shards,
-	Опыт: xp,
-	Карма: karma,
-})
+): Record<number, number> => ({ 1: gold, 2: rep, 3: tickets, 4: shards, 5: xp, 6: karma })
 
 const effect = (
 	name: string,
@@ -145,6 +170,7 @@ const effect = (
 	expiresIn: number | null,
 	uses?: [left: number, max: number],
 ): Effect => ({
+	id: effectId(name),
 	name,
 	description,
 	source,
@@ -272,7 +298,7 @@ export const resources: Record<Login, PlayerResources> = {
 	},
 }
 
-const wish = (id: string, name: string, addedAt: ISODate): WishlistGame => ({
+const wish = (id: number, name: string, addedAt: ISODate): WishlistGame => ({
 	id,
 	name,
 	addedAt,
@@ -280,33 +306,33 @@ const wish = (id: string, name: string, addedAt: ISODate): WishlistGame => ({
 
 export const wishlists: Record<Login, WishlistGame[]> = {
 	kirill: [
-		wish('w1', 'Celeste', '2026-09-05T12:00:00Z'),
-		wish('w2', 'Hades', '2026-09-11T12:00:00Z'),
-		wish('w3', 'Outer Wilds', '2026-09-20T12:00:00Z'),
-		wish('w4', 'Inside', '2026-10-01T12:00:00Z'),
-		wish('w5', 'Stardew Valley', '2026-10-04T12:00:00Z'),
+		wish(1, 'Celeste', '2026-09-05T12:00:00Z'),
+		wish(2, 'Hades', '2026-09-11T12:00:00Z'),
+		wish(3, 'Outer Wilds', '2026-09-20T12:00:00Z'),
+		wish(4, 'Inside', '2026-10-01T12:00:00Z'),
+		wish(5, 'Stardew Valley', '2026-10-04T12:00:00Z'),
 	],
 	anna: [
-		wish('w6', 'Celeste', '2026-09-01T12:00:00Z'),
-		wish('w7', 'Hollow Knight: Silksong', '2026-09-03T12:00:00Z'),
-		wish('w8', 'Ori and the Will of the Wisps', '2026-09-12T12:00:00Z'),
-		wish('w9', 'Tunic', '2026-09-30T12:00:00Z'),
+		wish(6, 'Celeste', '2026-09-01T12:00:00Z'),
+		wish(7, 'Hollow Knight: Silksong', '2026-09-03T12:00:00Z'),
+		wish(8, 'Ori and the Will of the Wisps', '2026-09-12T12:00:00Z'),
+		wish(9, 'Tunic', '2026-09-30T12:00:00Z'),
 	],
 	max: [
-		wish('w10', 'Signalis', '2026-09-15T12:00:00Z'),
-		wish('w11', 'Hades II', '2026-09-22T12:00:00Z'),
+		wish(10, 'Signalis', '2026-09-15T12:00:00Z'),
+		wish(11, 'Hades II', '2026-09-22T12:00:00Z'),
 	],
 	lena: [
-		wish('w12', 'Pentiment', '2026-09-02T12:00:00Z'),
-		wish('w13', 'Outer Wilds', '2026-09-19T12:00:00Z'),
-		wish('w14', 'Return of the Obra Dinn', '2026-10-05T12:00:00Z'),
+		wish(12, 'Pentiment', '2026-09-02T12:00:00Z'),
+		wish(13, 'Outer Wilds', '2026-09-19T12:00:00Z'),
+		wish(14, 'Return of the Obra Dinn', '2026-10-05T12:00:00Z'),
 	],
 	sasha: [],
 	oleg: [],
 }
 
 const done = (
-	id: string,
+	id: number,
 	name: string,
 	startedAt: string,
 	endedAt: string,
@@ -329,7 +355,7 @@ const done = (
 export const completed: Record<Login, CompletedGame[]> = {
 	kirill: [
 		done(
-			'c1',
+			1,
 			'Disco Elysium',
 			'2026-09-12',
 			'2026-10-07',
@@ -339,11 +365,11 @@ export const completed: Record<Login, CompletedGame[]> = {
 			9,
 			'Лучшие диалоги, что я читал в играх. Провалил половину проверок и ни о чём не жалею.',
 		),
-		done('c2', 'Inside', '2026-09-24', '2026-09-28', 4, 5, 'completed'),
-		done('c3', 'Dead Cells', '2026-09-15', '2026-09-19', 6, 40, 'cancelled'),
-		done('c4', 'Control', '2026-09-09', '2026-09-10', 1, 15, 'rerolled'),
+		done(2, 'Inside', '2026-09-24', '2026-09-28', 4, 5, 'completed'),
+		done(3, 'Dead Cells', '2026-09-15', '2026-09-19', 6, 40, 'cancelled'),
+		done(4, 'Control', '2026-09-09', '2026-09-10', 1, 15, 'rerolled'),
 		done(
-			'c5',
+			5,
 			'Portal 2',
 			'2026-08-25',
 			'2026-09-02',
@@ -356,7 +382,7 @@ export const completed: Record<Login, CompletedGame[]> = {
 	],
 	anna: [
 		done(
-			'c6',
+			6,
 			'Celeste',
 			'2026-09-20',
 			'2026-10-06',
@@ -367,7 +393,7 @@ export const completed: Record<Login, CompletedGame[]> = {
 			'Сложно, честно и очень тепло. Б-стороны добила на одном упрямстве.',
 		),
 		done(
-			'c7',
+			7,
 			'Hades',
 			'2026-09-01',
 			'2026-09-18',
@@ -377,9 +403,9 @@ export const completed: Record<Login, CompletedGame[]> = {
 			8,
 			'Затягивает с первого забега. Под конец гринд немного утомил.',
 		),
-		done('c8', 'Cuphead', '2026-08-28', '2026-08-31', 3, 20, 'cancelled'),
+		done(8, 'Cuphead', '2026-08-28', '2026-08-31', 3, 20, 'cancelled'),
 		done(
-			'c9',
+			9,
 			'Firewatch',
 			'2026-08-20',
 			'2026-08-23',
@@ -392,7 +418,7 @@ export const completed: Record<Login, CompletedGame[]> = {
 	],
 	max: [
 		done(
-			'c10',
+			10,
 			'Undertale',
 			'2026-09-10',
 			'2026-09-18',
@@ -404,15 +430,15 @@ export const completed: Record<Login, CompletedGame[]> = {
 		),
 	],
 	lena: [
-		done('c11', 'Inscryption', '2026-09-14', '2026-09-29', 12, 40, 'completed'),
-		done('c12', 'Control', '2026-09-05', '2026-09-08', 2, 10, 'rerolled'),
+		done(11, 'Inscryption', '2026-09-14', '2026-09-29', 12, 40, 'completed'),
+		done(12, 'Control', '2026-09-05', '2026-09-08', 2, 10, 'rerolled'),
 	],
 	sasha: [],
 	oleg: [],
 }
 
 const entry = (
-	id: string,
+	id: number,
 	at: ISODate,
 	actor: JournalEntry['actor'],
 	kind: JournalEntry['source']['kind'],
@@ -429,20 +455,20 @@ const entry = (
 })
 
 export const journal: JournalEntry[] = [
-	entry('j1', ago(12 * MIN), 'anna', 'item', 'предмет «Колобок»', true, [
+	entry(1, ago(12 * MIN), 'anna', 'item', 'предмет «Колобок»', true, [
 		{
 			player: 'anna',
 			text: '−1 Колобок',
-			resource: { kind: 'item', name: 'Колобок', amount: -1 },
+			resource: itemRef('Колобок', -1),
 		},
 		{
 			player: 'sasha',
 			text: '+1 Колобок',
-			resource: { kind: 'item', name: 'Колобок', amount: 1 },
+			resource: itemRef('Колобок', 1),
 		},
 	]),
 	entry(
-		'j2',
+		2,
 		ago(30 * MIN),
 		'kirill',
 		'item',
@@ -454,7 +480,7 @@ export const journal: JournalEntry[] = [
 		],
 	),
 	entry(
-		'j3',
+		3,
 		ago(2 * HOUR),
 		'kirill',
 		'exchange',
@@ -464,36 +490,36 @@ export const journal: JournalEntry[] = [
 			{
 				player: 'kirill',
 				text: '−80 золота',
-				resource: { kind: 'points', type: 'Золото', amount: -80 },
+				resource: pointRef('Золото', -80),
 			},
 			{
 				player: 'kirill',
 				text: '−2 репутации',
-				resource: { kind: 'points', type: 'Репутация', amount: -2 },
+				resource: pointRef('Репутация', -2),
 			},
 			{
 				player: 'kirill',
 				text: '+1 Свиток пропуска',
-				resource: { kind: 'item', name: 'Свиток пропуска', amount: 1 },
+				resource: itemRef('Свиток пропуска', 1),
 			},
 		],
 	),
-	entry('j4', ago(3 * HOUR), 'anna', 'item', 'предмет «Проклятие»', false, [
+	entry(4, ago(3 * HOUR), 'anna', 'item', 'предмет «Проклятие»', false, [
 		{
 			player: 'kirill',
 			text: 'эффект Проклятие · 3 ч',
-			resource: { kind: 'effect', name: 'Проклятие' },
+			resource: effectRef('Проклятие'),
 		},
 	]),
-	entry('j5', ago(5 * HOUR), 'max', 'wheel', 'колесо · «×2 золото»', false, [
+	entry(5, ago(5 * HOUR), 'max', 'wheel', 'колесо · «×2 золото»', false, [
 		{
 			player: 'max',
 			text: 'эффект ×2 золото · 2 ч',
-			resource: { kind: 'effect', name: '×2 золото' },
+			resource: effectRef('×2 золото'),
 		},
 	]),
 	entry(
-		'j6',
+		6,
 		ago(DAY + 2 * HOUR),
 		'lena',
 		'timer',
@@ -503,119 +529,151 @@ export const journal: JournalEntry[] = [
 			{
 				player: 'lena',
 				text: '+50 золота',
-				resource: { kind: 'points', type: 'Золото', amount: 50 },
+				resource: pointRef('Золото', 50),
 			},
 		],
 	),
-	entry('j7', ago(DAY + 6 * HOUR), 'admin', 'grant', 'грант', false, [
+	entry(7, ago(DAY + 6 * HOUR), 'admin', 'grant', 'грант', false, [
 		{
 			player: 'all',
 			text: '+100 золота',
-			resource: { kind: 'points', type: 'Золото', amount: 100 },
+			resource: pointRef('Золото', 100),
 		},
 	]),
 ]
 
-/** extra history of resource changes that are older than the journal */
+/** extra history of resource changes that are older than the journal, `login|kind|id` */
 export const resourceHistory: Record<
 	string,
 	{ at: ISODate; source: string; delta: string }[]
 > = {
-	'kirill|Щит': [
+	[`kirill|item|${itemCatalog['Щит'].id}`]: [
 		{ at: ago(6 * DAY), source: 'колесо', delta: '+1' },
 		{ at: ago(9 * DAY), source: 'грант админа', delta: '+3' },
 	],
-	'kirill|Свиток удачи': [
+	[`kirill|item|${itemCatalog['Свиток удачи'].id}`]: [
 		{ at: ago(DAY), source: 'таймер', delta: '+1' },
 		{ at: ago(8 * DAY), source: 'колесо', delta: '+2' },
 	],
-	'anna|Щит': [
+	[`anna|item|${itemCatalog['Щит'].id}`]: [
 		{ at: ago(7 * DAY), source: 'обмен «Разобрать щиты»', delta: '−2' },
 	],
 }
 
+/**
+ * Automatic entries are applied by the wheel itself, `isManualChange` entries
+ * need the manual change form (effects, swaps, anything with a choice).
+ */
 export const wheelGroups: WheelGroup[] = [
 	{
-		id: 'bonuses',
+		id: 1,
 		name: 'Бонусы',
+		kind: 'changes',
 		entries: [
-			{ id: 'b1', name: '+50 золота', description: 'Начисляется 50 золота.' },
 			{
-				id: 'b2',
+				id: 11,
+				name: '+50 золота',
+				description: 'Начисляется 50 золота.',
+				entries: [pointRef('Золото', 50)],
+			},
+			{
+				id: 12,
 				name: '×2 золото',
 				description: 'Два часа таймер даёт двойное золото.',
+				isManualChange: true,
 			},
-			{ id: 'b3', name: 'Бесплатный перекрут' },
-			{ id: 'b4', name: '+1 билет' },
+			{ id: 13, name: 'Бесплатный перекрут', isManualChange: true },
+			{ id: 14, name: '+1 билет', entries: [pointRef('Билеты', 1)] },
 			{
-				id: 'b5',
+				id: 15,
 				name: 'Щит на день',
 				description: 'Сутки на тебя не действуют проклятия.',
+				isManualChange: true,
 			},
-			{ id: 'b6', name: '+5 репутации' },
+			{ id: 16, name: '+5 репутации', entries: [pointRef('Репутация', 5)] },
 		],
 	},
 	{
-		id: 'penalties',
+		id: 2,
 		name: 'Штрафы',
+		kind: 'changes',
 		entries: [
 			{
-				id: 'p1',
+				id: 21,
 				name: 'Пропуск таймера',
 				description: 'Следующий таймер без награды.',
+				isManualChange: true,
 			},
 			{
-				id: 'p2',
+				id: 22,
 				name: 'Проклятие на день',
 				description: 'Сутки все награды на 25% меньше.',
+				isManualChange: true,
 			},
 			{
-				id: 'p3',
+				id: 23,
 				name: '−1 билет',
 				description: 'Списывается один билет на колесо.',
+				entries: [pointRef('Билеты', -1)],
 			},
-			{ id: 'p4', name: '−20 золота', description: 'Списывается 20 золота.' },
-			{ id: 'p5', name: '−50% награды таймера' },
-			{ id: 'p6', name: 'Минус предмет' },
-			{ id: 'p7', name: 'Отдать 30 золота лидеру' },
+			{
+				id: 24,
+				name: '−20 золота',
+				description: 'Списывается 20 золота.',
+				entries: [pointRef('Золото', -20)],
+			},
+			{ id: 25, name: '−50% награды таймера', isManualChange: true },
+			{ id: 26, name: 'Минус предмет', isManualChange: true },
+			{ id: 27, name: 'Отдать 30 золота лидеру', isManualChange: true },
 		],
 	},
 	{
-		id: 'items',
+		id: 3,
 		name: 'Предметы',
+		kind: 'changes',
 		entries: [
-			{ id: 'i1', name: 'Свиток удачи' },
-			{ id: 'i2', name: 'Щит' },
-			{ id: 'i3', name: 'Колобок' },
-			{ id: 'i4', name: 'Кубическая дуэль' },
-			{ id: 'i5', name: 'Свиток пропуска' },
+			{ id: 31, name: 'Свиток удачи', entries: [itemRef('Свиток удачи', 1)] },
+			{ id: 32, name: 'Щит', entries: [itemRef('Щит', 1)] },
+			{ id: 33, name: 'Колобок', entries: [itemRef('Колобок', 1)] },
+			{ id: 34, name: 'Кубическая дуэль', isManualChange: true },
+			{
+				id: 35,
+				name: 'Свиток пропуска',
+				entries: [itemRef('Свиток пропуска', 1)],
+			},
 		],
 	},
 	{
-		id: 'perks',
+		id: 4,
 		name: 'Перки',
+		kind: 'changes',
 		entries: [
-			{ id: 'k1', name: 'Везунчик' },
-			{ id: 'k2', name: 'Марафонец' },
-			{ id: 'k3', name: 'Коллекционер' },
-			{ id: 'k4', name: 'Щедрый' },
+			{ id: 41, name: 'Везунчик', entries: [perkRef('Везунчик')] },
+			{ id: 42, name: 'Марафонец', entries: [perkRef('Марафонец')] },
+			{ id: 43, name: 'Коллекционер', entries: [perkRef('Коллекционер')] },
+			{ id: 44, name: 'Щедрый', isManualChange: true },
 		],
 	},
 	{
-		id: 'chaos',
+		id: 5,
 		name: 'Хаос',
+		kind: 'changes',
 		entries: [
-			{ id: 'x1', name: 'Обмен вишлистами' },
-			{ id: 'x2', name: 'Все меняются местами' },
-			{ id: 'x3', name: 'Случайный игрок получает 50 золота' },
-			{ id: 'x4', name: 'Таймер ×2 на час' },
-			{ id: 'x5', name: 'Отдать предмет соседу' },
+			{ id: 51, name: 'Обмен вишлистами', isManualChange: true },
+			{ id: 52, name: 'Все меняются местами', isManualChange: true },
+			{
+				id: 53,
+				name: 'Случайный игрок получает 50 золота',
+				isManualChange: true,
+			},
+			{ id: 54, name: 'Таймер ×2 на час', isManualChange: true },
+			{ id: 55, name: 'Отдать предмет соседу', isManualChange: true },
 		],
 	},
 ]
 
 export type ExchangeDef = {
-	id: string
+	id: number
 	name: string
 	description: string
 	give: ResourceRef[]
@@ -624,40 +682,34 @@ export type ExchangeDef = {
 
 export const exchangeDefs: ExchangeDef[] = [
 	{
-		id: 'reroll-kit',
+		id: 1,
 		name: 'Набор для рерола',
 		description:
 			'Пригодится, если колесо выдало неудачную игру. Свиток снимает текущую игру без штрафа, кубик даёт перекрут.',
-		give: [
-			{ kind: 'points', type: 'Золото', amount: 80 },
-			{ kind: 'points', type: 'Репутация', amount: 2 },
-		],
-		get: [
-			{ kind: 'item', name: 'Свиток пропуска', amount: 1 },
-			{ kind: 'item', name: 'Кубик реролла', amount: 1 },
-		],
+		give: [pointRef('Золото', 80), pointRef('Репутация', 2)],
+		get: [itemRef('Свиток пропуска', 1), itemRef('Кубик реролла', 1)],
 	},
 	{
-		id: 'perk-collector',
+		id: 2,
 		name: 'Перк «Коллекционер»',
 		description:
 			'Постоянный перк: +1 случайный предмет за каждую пройденную игру. Покупается один раз за сезон.',
 		give: [
-			{ kind: 'points', type: 'Билеты', amount: 3 },
-			{ kind: 'item', name: 'Свиток удачи', amount: 1 },
-			{ kind: 'points', type: 'Осколки', amount: 40 },
+			pointRef('Билеты', 3),
+			itemRef('Свиток удачи', 1),
+			pointRef('Осколки', 40),
 		],
-		get: [{ kind: 'perk', name: 'Коллекционер' }],
+		get: [perkRef('Коллекционер')],
 	},
 	{
-		id: 'shields-to-gold',
+		id: 3,
 		name: 'Разобрать щиты',
 		description: 'Лишние щиты можно превратить в золото и осколки.',
-		give: [{ kind: 'item', name: 'Щит', amount: 2 }],
+		give: [itemRef('Щит', 2)],
 		get: [
-			{ kind: 'points', type: 'Золото', amount: 60 },
-			{ kind: 'points', type: 'Осколки', amount: 10 },
-			{ kind: 'points', type: 'Билеты', amount: 1 },
+			pointRef('Золото', 60),
+			pointRef('Осколки', 10),
+			pointRef('Билеты', 1),
 		],
 	},
 ]
@@ -665,7 +717,6 @@ export const exchangeDefs: ExchangeDef[] = [
 export type MemberSeed = {
 	status: PlayerStatus
 	currentGame: string | null
-	timer: { state: TimerState; elapsed: Seconds }
 	playedHours: number
 	completedCount: number
 	spinsCount: number
@@ -675,7 +726,6 @@ export const memberSeeds: Record<Login, MemberSeed> = {
 	anna: {
 		status: 'playing',
 		currentGame: 'Celeste',
-		timer: { state: 'running', elapsed: 12 * 60 },
 		playedHours: 214,
 		completedCount: 23,
 		spinsCount: 31,
@@ -683,23 +733,20 @@ export const memberSeeds: Record<Login, MemberSeed> = {
 	max: {
 		status: 'paused',
 		currentGame: 'Hades',
-		timer: { state: 'paused', elapsed: 0 },
 		playedHours: 131,
 		completedCount: 14,
 		spinsCount: 19,
 	},
 	lena: {
-		status: 'dropped',
+		status: 'offline',
 		currentGame: 'Disco Elysium',
-		timer: { state: 'idle', elapsed: 0 },
 		playedHours: 97,
 		completedCount: 9,
 		spinsCount: 15,
 	},
 	oleg: {
-		status: 'rolling',
+		status: 'offline',
 		currentGame: null,
-		timer: { state: 'idle', elapsed: 0 },
 		playedHours: 42,
 		completedCount: 4,
 		spinsCount: 8,
@@ -707,7 +754,6 @@ export const memberSeeds: Record<Login, MemberSeed> = {
 	sasha: {
 		status: 'playing',
 		currentGame: 'Outer Wilds',
-		timer: { state: 'running', elapsed: 40 * 60 },
 		playedHours: 76,
 		completedCount: 8,
 		spinsCount: 11,
@@ -722,8 +768,8 @@ export const TIMER_GOAL: Seconds = 7200
 
 export const state = {
 	currentGame: {
-		game: { id: 'g1', name: 'Heroes of Might and Magic: Olden Era' } as {
-			id: string
+		game: { id: 1, name: 'Heroes of Might and Magic: Olden Era' } as {
+			id: number
 			name: string
 		} | null,
 		playedSeconds: 6 * 3600,
@@ -734,5 +780,6 @@ export const state = {
 		elapsed: 5077 as Seconds,
 		stampedAt: Date.now(),
 	},
-	spins: new Map<string, WheelSpinResult>(),
+	/** the spin that waits to be applied; a new spin replaces it */
+	spin: null as WheelSpinResult | null,
 }

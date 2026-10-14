@@ -22,7 +22,7 @@ const MAIN_POINTS_COUNT = 3
 const points = computed(() =>
 	resourcesStore.pointTypes
 		.slice(0, MAIN_POINTS_COUNT)
-		.map((type) => ({ name: type.name, value: resources?.points[type.name] ?? 0 })),
+		.map((type) => ({ id: type.id, name: type.name, value: resources?.points[type.id] ?? 0 })),
 )
 
 const linkTo = (tab: string): RouteLocationRaw => ({
@@ -42,7 +42,7 @@ const effectUses = (effect: Effect) =>
 				<span class="tile__title">{{ mine ? 'Мои очки' : 'Очки' }}</span>
 				<RouterLink class="tile__link" :to="linkTo('points')">Все</RouterLink>
 			</div>
-			<div v-for="point in points" :key="point.name" class="row">
+			<div v-for="point in points" :key="point.id" class="row">
 				<span>{{ point.name }}</span>
 				<span class="row__value">{{ point.value }}</span>
 			</div>
@@ -53,7 +53,7 @@ const effectUses = (effect: Effect) =>
 				<span class="tile__title">Предметы</span>
 				<RouterLink class="tile__link" :to="linkTo('items')">Все</RouterLink>
 			</div>
-			<div v-for="item in resources?.items" :key="item.name" class="row row--items">
+			<div v-for="item in resources?.items" :key="item.id" class="row row--items">
 				<span>{{ item.name }}</span>
 				<span class="row__value row__value--right">{{ item.held }}</span>
 				<span class="row__uses">{{ item.usesLeft }}/{{ item.usesMax }}</span>
@@ -66,7 +66,7 @@ const effectUses = (effect: Effect) =>
 				<span class="tile__title">Перки</span>
 				<RouterLink class="tile__link" :to="linkTo('perks')">Все</RouterLink>
 			</div>
-			<span v-for="perk in resources?.perks" :key="perk.name" class="row__text">
+			<span v-for="perk in resources?.perks" :key="perk.id" class="row__text">
 				{{ perk.name }}
 			</span>
 			<span v-if="!resources?.perks.length" class="tile__empty">Пусто</span>
@@ -77,7 +77,7 @@ const effectUses = (effect: Effect) =>
 				<span class="tile__title">Эффекты</span>
 				<RouterLink class="tile__link" :to="linkTo('effects')">Все</RouterLink>
 			</div>
-			<div v-for="effect in resources?.effects" :key="effect.name" class="row row--effects">
+			<div v-for="effect in resources?.effects" :key="effect.id" class="row row--effects">
 				<span class="row__name">{{ effect.name }}</span>
 				<span v-if="effect.expiresAt" class="row__badge">
 					<UiBadge>{{ formatRemaining(effect.expiresAt) }}</UiBadge>
