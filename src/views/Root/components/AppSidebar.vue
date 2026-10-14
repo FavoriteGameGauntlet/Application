@@ -1,147 +1,109 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import AppLogo from '../../../components/AppLogo.vue'
+import UiIcon from '../../../components/ui/UiIcon.vue'
 import { RouteName } from '../../../router/routeNames'
-import NavbarLink from './NavbarLink.vue'
-import { useAuthStore } from '../../../stores/authStore'
-import { useFeatureTimerStore } from '../../../stores/feature/featureTimerStore.ts'
-import { Theme, useThemeStore } from '../../../stores/themeStore'
+import { useToastStore } from '../../../stores/toastStore'
 
-const authStore = useAuthStore()
-const timerStore = useFeatureTimerStore()
-const themeStore = useThemeStore()
+const route = useRoute()
+const toastStore = useToastStore()
 
-const comingSoon = ['Перки', 'Характеристики', 'Предметы', 'Квесты', 'Карта']
+const items = [
+	{ label: 'Главная', icon: 'house', name: RouteName.Home },
+	{ label: 'Игры', icon: 'gamepad-2', name: RouteName.Games },
+	{ label: 'Колесо', icon: 'refresh-cw', name: RouteName.Wheel },
+	{
+		label: 'Участники',
+		icon: 'users',
+		name: RouteName.Users,
+		alsoActiveOn: [RouteName.UserDetail],
+	},
+	{ label: 'Ресурсы', icon: 'coins', name: RouteName.Resources },
+	{ label: 'Обмены', icon: 'arrow-left-right', name: RouteName.Exchanges },
+]
 
-const isDarkTheme = computed(() => themeStore.theme === Theme.Dark)
+const isActive = (item: (typeof items)[number]) =>
+	route.name === item.name || !!item.alsoActiveOn?.includes(route.name as RouteName)
 
-const onLogOutButtonClick = () => {
-	authStore.logOut()
-}
+const onAdminClick = () =>
+	toastStore.show('Пока не нарисовано', 'Этого экрана ещё нет в макетах.', 'info')
 </script>
 
 <template>
-	<div class="sidebar">
-		<div class="wordmark">FGG3</div>
+	<nav class="sidebar">
+		<AppLogo class="sidebar__logo" :height="32" />
 
-		<NavbarLink :to="RouteName.Timer" :disabled="timerStore.timerUnavailable">
-			⏱ Таймер
-		</NavbarLink>
-
-		<NavbarLink :to="RouteName.Wheel"> 🎡 Колесо </NavbarLink>
-
-		<NavbarLink :to="RouteName.Profile"> 👤 Профиль </NavbarLink>
-
-		<NavbarLink :to="RouteName.Users"> 👥 Игроки </NavbarLink>
-
-		<NavbarLink :to="RouteName.Games"> 🎮 Игры </NavbarLink>
-
-		<div class="coming-soon-divider">СКОРО</div>
-		<NavbarLink v-for="item in comingSoon" :key="item">
-			{{ item }}
-		</NavbarLink>
-
-		<div class="spacer"></div>
-
-		<button
-			class="theme-toggle"
-			type="button"
-			role="switch"
-			:aria-checked="isDarkTheme"
-			@click="themeStore.toggle()"
+		<RouterLink
+			v-for="item in items"
+			:key="item.name"
+			class="nav-item"
+			:class="{ 'nav-item--active': isActive(item) }"
+			:to="{ name: item.name }"
 		>
-			<span>{{ isDarkTheme ? '🌙' : '☀️' }} Тёмная тема</span>
-			<span class="theme-toggle__track" :class="{ 'theme-toggle__track--on': isDarkTheme }">
-				<span class="theme-toggle__thumb"></span>
-			</span>
-		</button>
+			<UiIcon :name="item.icon" :size="18" />
+			{{ item.label }}
+		</RouterLink>
 
-		<button class="logout-button" @click="onLogOutButtonClick">Выйти</button>
-	</div>
+		<button class="nav-item nav-item--bottom" @click="onAdminClick">
+			<UiIcon name="shield" :size="18" />
+			Панель админа
+		</button>
+	</nav>
 </template>
 
 <style scoped>
 .sidebar {
-	width: 200px;
-	flex: none;
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
-	padding: 20px 14px;
-	border-right: 1px solid var(--color-border);
+	gap: 4px;
+	flex: none;
+	width: var(--sidebar-w);
+	padding: 20px 16px 16px;
+	background: var(--surface-card);
+	border-right: 1px solid var(--border-subtle);
 }
 
-.wordmark {
-	font-size: 1.25rem;
-	font-weight: 800;
-	text-align: center;
-	padding-bottom: 16px;
+.sidebar__logo {
+	align-self: flex-start;
+	margin: 0 8px 24px;
 }
 
-.coming-soon-divider {
-	margin-top: 10px;
-	padding-top: 10px;
-	border-top: 1px solid var(--color-border);
-	font-size: 0.625rem;
-	letter-spacing: 0.08em;
-	color: var(--color-faint);
-}
-
-.spacer {
-	flex: 1;
-}
-
-.logout-button {
-	background: none;
-	border: none;
-	padding: 6px 10px;
-	font-size: 0.8125rem;
-	color: var(--color-muted);
-	cursor: pointer;
-	text-align: left;
-}
-
-.logout-button:hover {
-	text-decoration: underline;
-}
-
-.theme-toggle {
+.nav-item {
+	position: relative;
 	display: flex;
+	flex: none;
 	align-items: center;
-	justify-content: space-between;
-	gap: 8px;
-	background: none;
-	border: none;
-	padding: 6px 10px;
-	font-size: 0.8125rem;
-	color: var(--color-muted);
+	gap: 12px;
+	height: 40px;
+	padding: 0 12px;
+	font: 700 13px / 1 var(--font-display);
+	letter-spacing: var(--tracking-label);
+	text-transform: uppercase;
+	text-decoration: none;
+	color: var(--text-muted);
+	border-radius: var(--radius-sm);
 	cursor: pointer;
-	text-align: left;
+	transition: background var(--dur-fast) var(--ease-out);
 }
 
-.theme-toggle__track {
-	flex-shrink: 0;
-	width: 28px;
-	height: 16px;
-	border-radius: 999px;
-	background-color: var(--color-border);
-	transition: background-color 0.15s ease;
+.nav-item:hover,
+.nav-item--active {
+	color: var(--text-strong);
+	background: var(--surface-sunken);
 }
 
-.theme-toggle__track--on {
-	background-color: var(--color-accent);
+.nav-item--active::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 10px;
+	bottom: 10px;
+	width: 3px;
+	border-radius: 2px;
+	background: var(--accent);
 }
 
-.theme-toggle__thumb {
-	display: block;
-	width: 12px;
-	height: 12px;
-	margin: 2px;
-	border-radius: 50%;
-	background-color: var(--color-surface);
-	transition: transform 0.15s ease;
-}
-
-.theme-toggle__track--on .theme-toggle__thumb {
-	transform: translateX(12px);
+.nav-item--bottom {
+	margin-top: auto;
 }
 </style>

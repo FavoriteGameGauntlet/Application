@@ -1,441 +1,415 @@
 <script setup lang="ts">
+import { computed, onMounted } from 'vue'
+import UiBadge from '../../components/ui/UiBadge.vue'
 import UiButton from '../../components/ui/UiButton.vue'
-import trashIcon from '../../assets/icons/trash.svg'
-import { useFeatureWheelStore } from '../../stores/feature/featureWheelStore'
-import { computed, onMounted, ref, watch } from 'vue'
-import UiView from '../../components/ui/UiView.vue'
-import WheelEffectApplyForm from './components/WheelEffectApplyForm.vue'
-import WheelEffectCard from './components/WheelEffectCard.vue'
-import { TimerState } from '../../api-facade/models/timers-models'
-import type { RolledWheelEffectDto } from '../../api-facade/models/wheel-effects-models'
-import { formatInstant } from '../../utils/temporal'
-import { useAuthStore } from '../../stores/authStore'
-import { useFeatureTimerStore } from '../../stores/feature/featureTimerStore'
-import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
+import UiTabs from '../../components/ui/UiTabs.vue'
+import { RouteName } from '../../router/routeNames'
+import { useWheelStore, type WheelTab } from '../../stores/wheelStore'
+import { useWishlistStore } from '../../stores/wishlistStore'
 
-const wheelStore = useFeatureWheelStore()
-const authStore = useAuthStore()
-const userStore = useFeatureUserStore()
-const timerStore = useFeatureTimerStore()
+const REEL_OFFSETS = [-3, -2, -1, 0, 1, 2, 3]
+const PREVIEW_COUNT = 4
 
-const effectsHistory = computed(() =>
-	authStore.login ? (userStore.userEffects[authStore.login] ?? []) : [],
-)
+const wheelStore = useWheelStore()
+const wishlistStore = useWishlistStore()
 
-const emptyEffects: RolledWheelEffectDto[] = Array.from(
-	{ length: 5 },
-	(_, i) => ({ name: '', isApplied: false, position: i }),
-)
+const tabs = [
+	{ value: 'points', label: 'Пункты' },
+	{ value: 'games', label: 'Игры' },
+]
 
-const hasRoll = computed(() => !!wheelStore.currentEffects)
+const reel = computed(() => {
+	const pool = wheelStore.pool
+	const n = pool.length
 
-const visibleEffects = computed(() => {
-	if (wheelStore.currentEffects) {
-		return [...wheelStore.currentEffects].sort(
-			(a, b) => a.position - b.position,
-		)
-	}
-
-	return emptyEffects
+	return REEL_OFFSETS.map((k) => ({
+		key: k,
+		text: n ? pool[(((wheelStore.pos + k) % n) + n) % n] : '',
+		opacity: k === 0 ? 0 : 1 - Math.abs(k) * 0.22,
+	}))
 })
 
-const centerIndex = computed(() =>
-	Math.floor((visibleEffects.value.length - 1) / 2),
-)
+const reelCenter = computed(() => {
+	const n = wheelStore.pool.length
 
-const isReroll = ref(false)
-
-const onRollButtonClick = () => {
-	wheelStore.getAvailableEffects()
-	wheelStore.roll(isReroll.value)
-}
-
-const hasAppliedEffect = computed(
-	() => wheelStore.currentEffects?.some((effect) => effect.isApplied) ?? false,
-)
-
-const onClearButtonClick = () => {
-	wheelStore.clearLastRoll()
-}
-
-const selectedEffect = ref<RolledWheelEffectDto | null>(null)
-const showApplyForm = ref(false)
-
-const closeModal = () => {
-	selectedEffect.value = null
-	showApplyForm.value = false
-}
-
-onMounted(() => {
-	wheelStore.getLastRoll()
-
-	if (authStore.login) userStore.getUserEffects(authStore.login)
-	if (authStore.isLoggedIn) wheelStore.getAvailableCount()
+	return n ? wheelStore.pool[wheelStore.pos % n] : 'Вишлист пуст'
 })
 
-watch(
-	() => timerStore.state,
-	(state) => {
-		if (state === TimerState.Finished && authStore.isLoggedIn) {
-			wheelStore.getAvailableCount()
-		}
-	},
-)
+const groupPreview = (names: string[]) =>
+	names.slice(0, PREVIEW_COUNT).join(' · ') +
+	(names.length > PREVIEW_COUNT ? ` · ещё ${names.length - PREVIEW_COUNT}` : '')
+
+const isWishlistResult = computed(() => wheelStore.result?.source === 'wishlist')
+
+const resultDescription = computed(() => {
+	const result = wheelStore.result
+
+	if (!result) return ''
+	if (isWishlistResult.value) return 'Станет текущей игрой, таймер начнётся с нуля.'
+
+	return result.result.description ?? `Эффект из группы «${wheelStore.resultSource}».`
+})
+
+onMounted(() => wheelStore.load())
 </script>
 
 <template>
-	<UiView>
-		<div class="wheel">
-			<div class="wheel-header">
-				<h1>Колесо</h1>
-				<span class="attempts-pill"
-					>попыток: {{ wheelStore.availableRollCount }}</span
-				>
-			</div>
-
-			<div class="reel">
-				<div class="effects-grid">
-					<WheelEffectCard
-						v-for="(effect, i) in visibleEffects"
-						:key="i"
-						:effect="effect"
-						:is-center="i === centerIndex"
-						:is-placeholder="!hasRoll"
-						@select="selectedEffect = $event"
-					/>
-				</div>
-				<div class="reel-pointer"></div>
-			</div>
-
-			<div class="roll-controls">
-				<div class="roll-extra">
-					<label class="reroll-checkbox">
-						<input type="checkbox" v-model="isReroll" />
-						Перекрутить
-					</label>
-
-					<p v-if="isReroll" class="reroll-message">
-						Прокруты не будут потрачены
-					</p>
-				</div>
-
-				<UiButton
-					class="roll-button"
-					:disabled="
-						!wheelStore.availableRollCount ||
-						(!!wheelStore.currentEffects && !hasAppliedEffect && !isReroll)
-					"
-					@click="onRollButtonClick"
-				>
-					{{ isReroll ? 'Перекрутить' : 'Прокрутить' }}
-				</UiButton>
-
-				<UiButton
-					class="clear-button"
-					:disabled="!hasAppliedEffect"
-					title="Очистить"
-					aria-label="Очистить"
-					@click="onClearButtonClick"
-				>
-					<span class="clear-icon" :style='{ "--icon-url": `url("${trashIcon}")` }'></span>
-				</UiButton>
-			</div>
-
-			<h2 class="history-title">История применённых эффектов</h2>
-			<p v-if="userStore.getUserEffectsState.isLoading">Загрузка...</p>
-			<p v-else-if="userStore.getUserEffectsState.isError">Ошибка загрузки</p>
-			<template v-else-if="userStore.getUserEffectsState.isLoaded">
-				<p v-if="!effectsHistory.length" class="empty-message">
-					Нет истории эффектов
-				</p>
-				<ul v-else class="item-list">
-					<li
-						v-for="(effect, i) in effectsHistory"
-						:key="i"
-						class="info-card info-card--row"
-					>
-						<span class="item-title">{{ effect.name }}</span>
-						<span class="item-meta">{{ formatInstant(effect.rollDate) }}</span>
-					</li>
-				</ul>
-			</template>
+	<div class="wheel">
+		<div class="head">
+			<span class="head__title">Колесо</span>
+			<UiTabs
+				:model-value="wheelStore.tab"
+				:items="tabs"
+				@update:model-value="wheelStore.setTab($event as WheelTab)"
+			/>
 		</div>
 
-		<Teleport to="body">
-			<div v-if="selectedEffect" class="modal-overlay" @click.self="closeModal">
-				<div class="modal" :class="{ 'modal--wide': showApplyForm }">
-					<template v-if="!showApplyForm">
-						<h2 class="modal-title">{{ selectedEffect.name }}</h2>
-						<p v-if="selectedEffect.description" class="modal-description">
-							{{ selectedEffect.description }}
-						</p>
-						<p v-else class="modal-empty">Описание отсутствует</p>
-						<label class="effect-applied">
-							<input
-								type="checkbox"
-								:checked="selectedEffect.isApplied"
-								disabled
-							/>
-							Применён
-						</label>
-						<div class="modal-actions">
-							<button
-								v-if="!selectedEffect.isApplied"
-								class="modal-button modal-button--primary"
-								@click="showApplyForm = true"
-							>
-								Применить
-							</button>
-							<button class="modal-button" @click="closeModal">Закрыть</button>
-						</div>
-					</template>
+		<div class="body">
+			<div class="panel">
+				<div class="panel__title">
+					{{ wheelStore.tab === 'games' ? 'Источник' : 'Группа' }}
+				</div>
 
-					<WheelEffectApplyForm
-						v-else
-						:effect="selectedEffect"
-						@close="showApplyForm = false"
-					/>
+				<div v-if="wheelStore.tab === 'points'" class="groups">
+					<div
+						v-for="group in wheelStore.groups"
+						:key="group.id"
+						class="group"
+						:class="{ 'group--on': group.id === wheelStore.groupId }"
+						@click="wheelStore.setGroup(group.id)"
+					>
+						<div class="group__row">
+							<span class="group__radio">
+								<span class="group__dot"></span>
+							</span>
+							<span class="group__name">{{ group.name }}</span>
+							<span class="group__count">{{ group.entries.length }}</span>
+						</div>
+						<div v-if="group.id === wheelStore.groupId" class="group__preview">
+							{{ groupPreview(group.entries.map((e) => e.name)) }}
+						</div>
+					</div>
+				</div>
+
+				<div v-else class="source">
+					<span class="source__text">
+						Твой вишлист:
+						<span class="source__count">{{ wishlistStore.mine.length }}</span>
+					</span>
+					<span class="source__hint">Выпавшая игра станет текущей.</span>
+					<RouterLink class="source__link" :to="{ name: RouteName.Games }">
+						Открыть вишлист
+					</RouterLink>
 				</div>
 			</div>
-		</Teleport>
-	</UiView>
+
+			<div class="main">
+				<div class="reel">
+					<div v-for="row in reel" :key="row.key" class="reel__row" :style="{ opacity: row.opacity }">
+						{{ row.text }}
+					</div>
+					<div class="reel__center">{{ reelCenter }}</div>
+				</div>
+
+				<div class="spin">
+					<UiButton
+						size="lg"
+						icon="refresh-cw"
+						:disabled="wheelStore.spinning || !wheelStore.pool.length"
+						@click="wheelStore.spin()"
+					>
+						{{ wheelStore.spinning ? 'Крутится…' : 'Крутить колесо' }}
+					</UiButton>
+				</div>
+
+				<div v-if="wheelStore.result && !wheelStore.spinning" class="result">
+					<span class="result__accent"></span>
+
+					<div class="result__head">
+						<div class="result__title">
+							<span class="label">Выпало · {{ wheelStore.resultSource }}</span>
+							<span class="result__name">{{ wheelStore.result.result.name }}</span>
+						</div>
+						<UiButton variant="secondary" @click="wheelStore.apply()">
+							{{ isWishlistResult ? 'Взять игру' : 'Применить' }}
+						</UiButton>
+						<UiButton variant="outline" @click="wheelStore.clearResult()">Сбросить</UiButton>
+					</div>
+
+					<div class="result__body">
+						<span class="result__desc">{{ resultDescription }}</span>
+						<div v-if="wheelStore.result.requiresAdmin" class="result__manual">
+							<UiBadge tone="info" dot>Вручную</UiBadge>
+							<span>применяет админ после прокрута</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 </template>
 
 <style scoped>
 .wheel {
 	display: flex;
 	flex-direction: column;
-	gap: 20px;
-	width: 100%;
+	gap: 24px;
 }
 
-.wheel-header {
+.head {
 	display: flex;
-	justify-content: space-between;
-	align-items: center;
+	align-items: flex-end;
+	gap: 32px;
 }
 
-.attempts-pill {
-	border: 1px solid var(--color-border);
-	border-radius: 20px;
-	padding: 5px 14px;
-	font-size: 0.8125rem;
-	color: var(--color-muted);
+.head__title {
+	font: var(--type-h2);
+	letter-spacing: var(--tracking-display);
+	text-transform: uppercase;
+	color: var(--text-strong);
+}
+
+.body {
+	display: flex;
+	align-items: flex-start;
+	gap: 32px;
+}
+
+.panel {
+	flex: none;
+	width: 320px;
+	overflow: hidden;
+	background: var(--surface-card);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-1);
+}
+
+.panel__title {
+	padding: 14px 16px;
+	font: var(--type-h4);
+	letter-spacing: var(--tracking-display);
+	text-transform: uppercase;
+	color: var(--text-strong);
+	background: var(--surface-sunken);
+}
+
+.groups {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 4px;
+}
+
+.group {
+	padding: 12px;
+	border-radius: var(--radius-sm);
+	cursor: pointer;
+}
+
+.group:hover,
+.group--on {
+	background: var(--surface-sunken);
+}
+
+.group__row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.group__radio {
+	display: flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	border: 2px solid var(--border-default);
+	border-radius: var(--radius-pill);
+}
+
+.group--on .group__radio {
+	border-color: var(--border-strong);
+}
+
+.group__dot {
+	width: 10px;
+	height: 10px;
+	border-radius: var(--radius-pill);
+	background: transparent;
+}
+
+.group--on .group__dot {
+	background: var(--accent);
+}
+
+.group__name {
+	flex: 1;
+	font: var(--type-body-sm);
+	color: var(--text-strong);
+}
+
+.group--on .group__name {
+	font-weight: 600;
+}
+
+.group__count {
+	font: var(--type-mono);
+	color: var(--text-subtle);
+}
+
+.group__preview {
+	padding: 8px 0 0 32px;
+	font: var(--type-caption);
+	color: var(--text-muted);
+}
+
+.source {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 16px;
+}
+
+.source__text {
+	font: var(--type-body-sm);
+	color: var(--text-body);
+}
+
+.source__count {
+	font: 600 14px / 1.45 var(--font-mono);
+	color: var(--text-strong);
+}
+
+.source__hint {
+	font: var(--type-caption);
+	color: var(--text-muted);
+}
+
+.source__link {
+	align-self: flex-start;
+	margin-top: 4px;
+	font: var(--type-label);
+	letter-spacing: var(--tracking-label);
+	text-transform: uppercase;
+}
+
+.main {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 16px;
+	max-width: 520px;
 }
 
 .reel {
 	position: relative;
-	display: flex;
-	padding: 16px 28px 16px 16px;
-	border: 1px solid var(--color-border);
+	padding: 4px 0;
+	overflow: hidden;
+	background: var(--surface-card);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-1);
 }
 
-.effects-grid {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	width: 100%;
-}
-
-.effect-applied {
+.reel__row {
 	display: flex;
 	align-items: center;
-	gap: 4px;
-	font-size: 0.75rem;
-	color: var(--color-muted);
-	cursor: default;
+	justify-content: center;
+	height: 40px;
+	font: var(--type-body-sm);
+	color: var(--text-subtle);
 }
 
-.reel-pointer {
+.reel__center {
 	position: absolute;
-	right: 8px;
-	top: 50%;
-	transform: translateY(-50%);
-	width: 0;
-	height: 0;
-	border-top: 8px solid transparent;
-	border-bottom: 8px solid transparent;
-	border-right: 12px solid var(--color-muted);
-}
-
-.roll-controls {
-	display: grid;
-	grid-template-columns: 1fr auto 1fr;
+	top: 124px;
+	right: 12px;
+	left: 12px;
+	display: flex;
 	align-items: center;
-	column-gap: 16px;
+	justify-content: center;
+	height: 40px;
+	font: var(--type-h4);
+	letter-spacing: var(--tracking-display);
+	text-transform: uppercase;
+	color: var(--text-on-contrast);
+	background: var(--surface-contrast);
+	border-radius: var(--radius-sm);
 }
 
-.roll-extra {
-	grid-column: 1;
+.spin {
+	align-self: center;
+}
+
+.result {
 	position: relative;
-	justify-self: start;
-}
-
-.roll-button {
-	grid-column: 2;
-	height: 56px;
-	width: 224px;
-}
-
-.clear-button {
-	grid-column: 3;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	height: 56px;
-	width: 56px;
-	justify-self: start;
-}
-
-.clear-icon {
-	display: inline-block;
-	width: 20px;
-	height: 20px;
-	background-color: currentColor;
-	-webkit-mask-image: var(--icon-url);
-	mask-image: var(--icon-url);
-	-webkit-mask-size: contain;
-	mask-size: contain;
-	-webkit-mask-repeat: no-repeat;
-	mask-repeat: no-repeat;
-	-webkit-mask-position: center;
-	mask-position: center;
-}
-
-.reroll-checkbox {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	font-size: 0.875rem;
-	color: var(--color-text-secondary);
-	cursor: pointer;
-}
-
-.reroll-message {
-	position: absolute;
-	top: 100%;
-	left: 0;
-	margin-top: 4px;
-	font-size: 0.8125rem;
-	color: var(--color-muted);
-	white-space: nowrap;
-}
-
-.history-title {
-	font-size: 0.875rem;
-	color: var(--color-muted);
-	font-weight: 500;
-}
-
-.empty-message {
-	color: var(--color-muted);
-}
-
-.item-list {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-	list-style: none;
-	padding: 0;
-	width: 100%;
-}
-
-.info-card {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-	padding: 12px 16px;
-	border: 1px solid var(--color-border);
-	border-radius: 4px;
-}
-
-.info-card--row {
-	flex-direction: row;
-	align-items: center;
-	justify-content: space-between;
-}
-
-.item-title {
-	font-weight: 500;
-}
-
-.item-meta {
-	font-size: 0.875rem;
-	color: var(--color-muted);
-}
-
-.modal-overlay {
-	position: fixed;
-	inset: 0;
-	background-color: rgba(0, 0, 0, 0.4);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	z-index: 100;
-}
-
-.modal {
-	background: var(--color-surface);
-	border-radius: 8px;
-	padding: 24px;
-	max-width: 400px;
-	width: 90%;
-	max-height: 85vh;
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
-	overflow-y: auto;
+	padding: 16px;
+	background: var(--surface-card);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-1);
 }
 
-.modal--wide {
-	max-width: 720px;
+.result__accent {
+	position: absolute;
+	top: 0;
+	left: 16px;
+	width: 40px;
+	height: 4px;
+	background: var(--accent);
+	border-radius: 0 0 2px 2px;
 }
 
-.modal-title {
-	font-size: 1.25rem;
-	font-weight: 600;
-}
-
-.modal-description {
-	color: var(--color-text-secondary);
-	line-height: 1.6;
-}
-
-.modal-empty {
-	color: var(--color-faint);
-	font-style: italic;
-}
-
-.modal-actions {
+.result__head {
 	display: flex;
+	align-items: center;
 	gap: 8px;
-	justify-content: flex-end;
 }
 
-.modal-button {
-	padding: 6px 16px;
-	border: 1px solid var(--color-muted);
-	border-radius: 4px;
-	cursor: pointer;
-	background: transparent;
+.result__title {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 6px;
 }
 
-.modal-button:hover:not(:disabled) {
-	background-color: var(--color-hover-bg);
+.label {
+	font: var(--type-label);
+	letter-spacing: var(--tracking-label);
+	text-transform: uppercase;
+	color: var(--text-muted);
 }
 
-.modal-button:disabled {
-	opacity: 0.5;
-	cursor: not-allowed;
+.result__name {
+	font: var(--type-h4);
+	letter-spacing: var(--tracking-display);
+	text-transform: uppercase;
+	color: var(--text-strong);
 }
 
-.modal-button--primary {
-	background-color: var(--color-accent);
-	border-color: var(--color-accent);
-	color: var(--color-on-accent);
+.result__body {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding-top: 12px;
+	border-top: 1px solid var(--border-subtle);
 }
 
-.modal-button--primary:hover:not(:disabled) {
-	background-color: var(--color-accent-hover);
+.result__desc {
+	font: var(--type-body-sm);
+	color: var(--text-body);
+}
+
+.result__manual {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font: var(--type-caption);
+	color: var(--text-muted);
 }
 </style>

@@ -1,21 +1,15 @@
 export const enum StoreName {
 	Auth = 'auth',
 	Theme = 'theme',
-
-	ApiGame = 'api-game',
-	FeatureGame = 'feature-game',
-
-	ApiTimer = 'api-timer',
-	FeatureTimer = 'feature-timer',
-
-	ApiUser = 'api-user',
-	FeatureUser = 'feature-user',
-
-	ApiPoints = 'api-points',
-
-	ApiWheel = 'api-wheel',
-	FeatureWheel = 'feature-wheel',
-
-	ApiSystemParameters = 'api-system-parameters',
-	FeatureSystemParameters = 'feature-system-parameters',
+	Toast = 'toast',
+	Session = 'session',
+	Members = 'members',
+	CurrentGame = 'current-game',
+	Timer = 'timer',
+	Wishlist = 'wishlist',
+	Completed = 'completed',
+	Wheel = 'wheel',
+	Resources = 'resources',
+	Journal = 'journal',
+	Exchanges = 'exchanges',
 }

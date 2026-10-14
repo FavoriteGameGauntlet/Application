@@ -1,9 +1,7 @@
-import { useFeatureSystemParametersStore } from './feature/featureSystemParametersStore'
-import { useFeatureTimerStore } from './feature/featureTimerStore'
 import { useThemeStore } from './themeStore'
+import { useTimerStore } from './timerStore'
 
 export const initStores = () => {
-	useFeatureSystemParametersStore().init()
-	useFeatureTimerStore().init()
+	useTimerStore().init()
 	useThemeStore().init()
 }

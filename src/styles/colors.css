@@ -1,0 +1,36 @@
+:root{
+/* Brand — taken directly from the logo files */
+--fgg-navy:#1B1740;--fgg-amber:#FFB000;--fgg-mist:#F6F4FB;--fgg-black:#000000;--fgg-white:#FFFFFF;
+/* Navy scale (hue ~285) */
+--navy-50:#F6F4FB;--navy-100:#ECE9F6;--navy-200:#D7D2EA;--navy-300:#B3ACD3;--navy-400:#8A81B6;--navy-500:#635A95;--navy-600:#463E78;--navy-700:#322B5E;--navy-800:#252050;--navy-900:#1B1740;--navy-950:#110E2B;
+/* Amber scale */
+--amber-50:#FFF8E5;--amber-100:#FFEDBF;--amber-200:#FFDC80;--amber-300:#FFCB40;--amber-400:#FFBC1A;--amber-500:#FFB000;--amber-600:#E09A00;--amber-700:#B37A00;--amber-800:#7A5300;
+/* Semantic */
+--green-500:#22B07D;--green-100:#DDF5EA;--green-700:#137050;
+--red-500:#E5484D;--red-100:#FCE3E4;--red-700:#A5262B;
+--blue-500:#3D7BFF;--blue-100:#E1EAFF;--blue-700:#2350B8;
+/* Player / territory colours — used for map ownership, avatars, standings */
+--player-1:#FFB000;--player-2:#3D7BFF;--player-3:#E5484D;--player-4:#22B07D;--player-5:#A35CFF;--player-6:#FF7A2F;--player-7:#1FC2D6;--player-8:#FF5CAE;
+--territory-neutral:#D7D2EA;--territory-neutral-dark:#322B5E;
+
+/* Semantic aliases — light (default) */
+--surface-page:var(--navy-50);--surface-card:var(--fgg-white);--surface-sunken:var(--navy-100);--surface-inverse:var(--navy-900);--surface-overlay:rgba(17,14,43,.56);
+--text-strong:var(--navy-900);--text-body:var(--navy-800);--text-muted:var(--navy-500);--text-subtle:var(--navy-400);--text-inverse:var(--navy-50);--text-on-accent:var(--navy-900);
+--border-subtle:var(--navy-100);--border-default:var(--navy-200);--border-strong:var(--navy-900);
+--accent:var(--amber-500);--accent-hover:var(--amber-400);--accent-press:var(--amber-600);--accent-soft:var(--amber-100);
+--focus-ring:var(--amber-500);
+--surface-contrast:var(--navy-900);--surface-contrast-hover:var(--navy-700);--surface-contrast-press:var(--navy-950);--text-on-contrast:var(--fgg-mist);
+--surface-floating:var(--navy-900);--border-floating:transparent;--text-on-floating:var(--fgg-mist);--text-on-floating-muted:var(--navy-200);
+--success:var(--green-500);--success-soft:var(--green-100);--success-text:var(--green-700);
+--danger:var(--red-500);--danger-soft:var(--red-100);--danger-text:var(--red-700);
+--info:var(--blue-500);--info-soft:var(--blue-100);--info-text:var(--blue-700);
+}
+[data-theme="dark"]{
+--surface-page:var(--navy-900);--surface-card:var(--navy-800);--surface-sunken:var(--navy-950);--surface-inverse:var(--navy-50);--surface-overlay:rgba(8,6,22,.7);
+--text-strong:var(--navy-50);--text-body:var(--navy-100);--text-muted:var(--navy-300);--text-subtle:var(--navy-400);--text-inverse:var(--navy-900);--text-on-accent:var(--navy-900);
+--border-subtle:var(--navy-700);--border-default:var(--navy-600);--border-strong:var(--navy-50);
+--accent-soft:rgba(255,176,0,.16);--success-soft:rgba(34,176,125,.18);--success-text:#5FD9AC;--danger-soft:rgba(229,72,77,.18);--danger-text:#FF8F92;--info-soft:rgba(61,123,255,.18);--info-text:#8FB2FF;
+--territory-neutral:var(--territory-neutral-dark);
+--surface-contrast:var(--navy-50);--surface-contrast-hover:var(--navy-200);--surface-contrast-press:var(--navy-300);--text-on-contrast:var(--navy-900);
+--surface-floating:var(--navy-700);--border-floating:var(--navy-600);
+}

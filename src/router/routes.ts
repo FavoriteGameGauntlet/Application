@@ -1,13 +1,13 @@
 import type { RouteRecordRaw } from 'vue-router'
-import GamesView from '../views/Games/GamesView.vue'
 import AuthView from '../views/Auth/AuthView.vue'
-import OtherUserProfileView from '../views/Users/OtherUserProfileView.vue'
-import UsersView from '../views/Users/UsersView.vue'
-import ProfileView from '../views/Profile/ProfileView.vue'
+import ExchangesView from '../views/Exchanges/ExchangesView.vue'
+import GamesView from '../views/Games/GamesView.vue'
+import HomeView from '../views/Home/HomeView.vue'
+import ResourcesView from '../views/Resources/ResourcesView.vue'
 import RootView from '../views/Root/RootView.vue'
-import TimerView from '../views/Timer/TimerView.vue'
+import UserProfileView from '../views/Users/UserProfileView.vue'
+import UsersView from '../views/Users/UsersView.vue'
 import WheelView from '../views/Wheel/WheelView.vue'
-import { useAuthStore } from '../stores/authStore'
 import { RouteName } from './routeNames'
 
 export const routes: RouteRecordRaw[] = [
@@ -15,40 +15,12 @@ export const routes: RouteRecordRaw[] = [
 		path: '/',
 		component: RootView,
 		name: RouteName.Root,
-		redirect: 'timer',
 
 		children: [
 			{
-				path: 'timer',
-				component: TimerView,
-				name: RouteName.Timer,
-			},
-
-			{
-				path: 'users',
-				component: UsersView,
-				name: RouteName.Users,
-			},
-
-			{
-				path: 'users/:login',
-				component: OtherUserProfileView,
-				name: RouteName.UserDetail,
-				beforeEnter: (to) => {
-					const authStore = useAuthStore()
-
-					if (to.params.login === authStore.login) {
-						return { name: RouteName.Profile }
-					}
-
-					return true
-				},
-			},
-
-			{
-				path: 'profile',
-				component: ProfileView,
-				name: RouteName.Profile,
+				path: '',
+				component: HomeView,
+				name: RouteName.Home,
 			},
 
 			{
@@ -59,11 +31,36 @@ export const routes: RouteRecordRaw[] = [
 
 			{
 				path: 'wheel',
-				name: RouteName.Wheel,
 				component: WheelView,
+				name: RouteName.Wheel,
+			},
+
+			{
+				path: 'users',
+				component: UsersView,
+				name: RouteName.Users,
+			},
+
+			{
+				path: 'users/:login',
+				component: UserProfileView,
+				name: RouteName.UserDetail,
+			},
+
+			{
+				path: 'resources/:tab?',
+				component: ResourcesView,
+				name: RouteName.Resources,
+			},
+
+			{
+				path: 'exchanges',
+				component: ExchangesView,
+				name: RouteName.Exchanges,
 			},
 		],
 	},
+
 	{
 		path: '/login',
 		component: AuthView,
@@ -72,6 +69,6 @@ export const routes: RouteRecordRaw[] = [
 
 	{
 		path: '/:pathMatch(.*)*',
-		redirect: { name: RouteName.Timer },
+		redirect: { name: RouteName.Home },
 	},
 ]

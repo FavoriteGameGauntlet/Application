@@ -22,11 +22,7 @@ export const useAuthStore = defineStore(StoreName.Auth, () => {
 
 	const loginState = makeLoadingState()
 
-	const signUp = async (data: {
-		login: string
-		password: string
-		email: string
-	}) => {
+	const signUp = async (data: { login: string; password: string }) => {
 		if (loginState.isLoading.value) return
 		if (!isLoginReady)
 			throw new Error('Persistent storage is not yet initialized')
@@ -34,12 +30,10 @@ export const useAuthStore = defineStore(StoreName.Auth, () => {
 		loginState.status.value = LoadingStatus.LOADING
 
 		return api.auth
-			.signUp({ body: data })
+			.signUp(data)
 			.then(() => {
 				login.value = data.login
-				return api.auth.logIn({
-					body: { login: data.login, password: data.password },
-				})
+				return api.auth.logIn(data)
 			})
 			.then(() => {
 				loginState.status.value = LoadingStatus.LOADED
@@ -58,7 +52,7 @@ export const useAuthStore = defineStore(StoreName.Auth, () => {
 		loginState.status.value = LoadingStatus.LOADING
 
 		return api.auth
-			.logIn({ body: data })
+			.logIn(data)
 			.then(() => {
 				login.value = data.login
 				loginState.status.value = LoadingStatus.LOADED
