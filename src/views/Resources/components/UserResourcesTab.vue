@@ -113,7 +113,7 @@ const hasUses = (left?: number, max?: number) => max != null && left != null
 			<div v-if="kind === 'items'" class="cards">
 				<div v-for="item in resources?.items" :key="item.id" class="card">
 					<div class="card__head">
-						<span class="card__title">{{ item.name }}</span>
+						<span class="card__title" :title="item.name">{{ item.name }}</span>
 					</div>
 					<span class="card__text">{{ item.description }}</span>
 					<span class="card__meta">
@@ -135,7 +135,7 @@ const hasUses = (left?: number, max?: number) => max != null && left != null
 
 			<div v-else-if="kind === 'perks'" class="cards">
 				<div v-for="perk in resources?.perks" :key="perk.id" class="card">
-					<span class="card__title">{{ perk.name }}</span>
+					<span class="card__title" :title="perk.name">{{ perk.name }}</span>
 
 					<div class="effect">
 						<div class="effect__head">
@@ -147,7 +147,7 @@ const hasUses = (left?: number, max?: number) => max != null && left != null
 								{{ perk.kind === 'active' ? 'активный' : 'пассивный' }}
 							</UiBadge>
 						</div>
-						<span class="effect__name">{{ perk.effect.name }}</span>
+						<span class="effect__name" :title="perk.effect.name">{{ perk.effect.name }}</span>
 						<span class="effect__text">{{ perk.effect.text }}</span>
 						<span v-if="perk.kind === 'active'" class="effect__uses">
 							<span>Использований</span>
@@ -170,7 +170,7 @@ const hasUses = (left?: number, max?: number) => max != null && left != null
 
 			<div v-else class="cards">
 				<div v-for="effect in resources?.effects" :key="effect.id" class="card">
-					<span class="card__title">{{ effect.name }}</span>
+					<span class="card__title" :title="effect.name">{{ effect.name }}</span>
 					<span class="card__desc">{{ effect.description }}</span>
 					<span class="card__source">{{ effect.source }}</span>
 
@@ -305,6 +305,10 @@ const hasUses = (left?: number, max?: number) => max != null && left != null
 }
 
 .card__title {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 	font: var(--type-h4);
 	letter-spacing: var(--tracking-display);
 	text-transform: uppercase;
@@ -382,6 +386,10 @@ const hasUses = (left?: number, max?: number) => max != null && left != null
 }
 
 .effect__name {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 	font: 600 15px / 1.4 var(--font-body);
 	color: var(--text-strong);
 }

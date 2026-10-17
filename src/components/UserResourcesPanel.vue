@@ -133,7 +133,11 @@ const toggleRow = async (id: number, expandable: boolean) => {
 					:class="{ 'row__main--expandable': row.expandable }"
 					@click="toggleRow(row.id, row.expandable)"
 				>
-					<span class="row__name" :class="{ 'row__name--open': expanded === row.id }">
+					<span
+						class="row__name"
+						:class="{ 'row__name--open': expanded === row.id }"
+						:title="row.name"
+					>
 						{{ row.name }}
 					</span>
 					<span class="row__note">{{ row.note }}</span>
@@ -229,6 +233,9 @@ const toggleRow = async (id: number, expandable: boolean) => {
 .row__name {
 	flex: 1;
 	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .row__name--open {
@@ -236,11 +243,13 @@ const toggleRow = async (id: number, expandable: boolean) => {
 }
 
 .row__note {
+	flex-shrink: 0;
 	font: var(--type-caption);
 	color: var(--text-subtle);
 }
 
 .row__value {
+	flex-shrink: 0;
 	font: 600 13px / 1 var(--font-mono);
 	color: var(--text-strong);
 }

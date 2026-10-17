@@ -53,7 +53,7 @@ watch(
 					:class="{ 'type--on': type.id === selectedType }"
 					@click="selectedType = type.id"
 				>
-					<span>{{ type.name }}</span>
+					<span class="type__name" :title="type.name">{{ type.name }}</span>
 					<span class="type__value">{{ myPoints[type.id] ?? 0 }}</span>
 				</div>
 			</div>
@@ -62,7 +62,10 @@ watch(
 		<div class="table">
 			<div class="table__row table__row--head">
 				<span>Игрок</span>
-				<span class="table__right">{{ selectedName }} ↓</span>
+				<span class="table__right table__sort">
+					<span class="table__name" :title="selectedName">{{ selectedName }}</span>
+					<span>↓</span>
+				</span>
 			</div>
 
 			<div
@@ -140,7 +143,15 @@ watch(
 	font-weight: 600;
 }
 
+.type__name {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 .type__value {
+	flex-shrink: 0;
 	font: 600 13px / 1 var(--font-mono);
 	color: var(--text-muted);
 }
@@ -171,6 +182,20 @@ watch(
 
 .table__right {
 	text-align: right;
+}
+
+.table__sort {
+	display: flex;
+	justify-content: flex-end;
+	gap: 4px;
+	min-width: 0;
+}
+
+.table__name {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .table__row--body {

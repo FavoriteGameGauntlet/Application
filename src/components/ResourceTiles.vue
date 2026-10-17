@@ -35,7 +35,7 @@ const linkTo = (tab: string): RouteLocationRaw => ({
 })
 
 const effectUses = (effect: Effect) =>
-	effect.usesMax != null ? `${effect.usesLeft}/${effect.usesMax}` : ''
+	effect.usesMax != null ? `${effect.usesLeft}/${effect.usesMax}` : '—'
 </script>
 
 <template>
@@ -46,7 +46,7 @@ const effectUses = (effect: Effect) =>
 				<RouterLink class="tile__link" :to="linkTo('points')">Все</RouterLink>
 			</div>
 			<div v-for="point in points" :key="point.id" class="row">
-				<span>{{ point.name }}</span>
+				<span class="row__name" :title="point.name">{{ point.name }}</span>
 				<span class="row__value">{{ point.value }}</span>
 			</div>
 		</div>
@@ -57,7 +57,7 @@ const effectUses = (effect: Effect) =>
 				<RouterLink class="tile__link" :to="linkTo('items')">Все</RouterLink>
 			</div>
 			<div v-for="item in items" :key="item.itemId" class="row row--items">
-				<span>{{ item.name }}</span>
+				<span class="row__name" :title="item.name">{{ item.name }}</span>
 				<span class="row__value row__value--right">{{ item.count }}</span>
 			</div>
 			<span v-if="!resources?.items.length" class="tile__empty">Пусто</span>
@@ -68,7 +68,7 @@ const effectUses = (effect: Effect) =>
 				<span class="tile__title">Перки</span>
 				<RouterLink class="tile__link" :to="linkTo('perks')">Все</RouterLink>
 			</div>
-			<span v-for="perk in resources?.perks" :key="perk.id" class="row__text">
+			<span v-for="perk in resources?.perks" :key="perk.id" class="row__text" :title="perk.name">
 				{{ perk.name }}
 			</span>
 			<span v-if="!resources?.perks.length" class="tile__empty">Пусто</span>
@@ -80,13 +80,11 @@ const effectUses = (effect: Effect) =>
 				<RouterLink class="tile__link" :to="linkTo('effects')">Все</RouterLink>
 			</div>
 			<div v-for="effect in resources?.effects" :key="effect.id" class="row row--effects">
-				<span class="row__name">{{ effect.name }}</span>
-				<span v-if="effect.expiresAt" class="row__badge">
-					<UiBadge>{{ formatRemaining(effect.expiresAt) }}</UiBadge>
+				<span class="row__name" :title="effect.name">{{ effect.name }}</span>
+				<span class="row__badge">
+					<UiBadge>{{ effect.expiresAt ? formatRemaining(effect.expiresAt) : '∞' }}</UiBadge>
 				</span>
-				<span v-if="effectUses(effect)" class="row__uses row__uses--effect">
-					{{ effectUses(effect) }}
-				</span>
+				<span class="row__uses row__uses--effect">{{ effectUses(effect) }}</span>
 			</div>
 			<span v-if="!resources?.effects.length" class="tile__empty">Пусто</span>
 		</div>
@@ -144,11 +142,16 @@ const effectUses = (effect: Effect) =>
 }
 
 .row__value {
+	flex-shrink: 0;
 	font: 600 14px / 1.45 var(--font-mono);
 	color: var(--text-strong);
 }
 
 .row__text {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 	font: var(--type-body-sm);
 }
 
@@ -160,7 +163,7 @@ const effectUses = (effect: Effect) =>
 
 .row--effects {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) 64px 32px;
+	grid-template-columns: minmax(0, 1fr) 88px 32px;
 	gap: 8px;
 	align-items: center;
 	min-height: 24px;
@@ -191,6 +194,11 @@ const effectUses = (effect: Effect) =>
 	display: flex;
 	justify-content: flex-end;
 	white-space: nowrap;
+}
+
+.row__badge :deep(.ui-badge) {
+	justify-content: center;
+	min-width: 100%;
 }
 
 .row__uses--effect {
