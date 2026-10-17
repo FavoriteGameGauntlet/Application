@@ -5,13 +5,13 @@ import type { JournalEntry, Member } from '../../api-facade/contracts'
 import EventFeed from '../../components/EventFeed.vue'
 import ResourceTiles from '../../components/ResourceTiles.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
-import UiPlayerAvatar from '../../components/ui/UiPlayerAvatar.vue'
+import UiUserAvatar from '../../components/ui/UiUserAvatar.vue'
 import { RouteName } from '../../router/routeNames'
 import { useJournalStore } from '../../stores/journalStore'
 import { useMembersStore } from '../../stores/membersStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { formatHours } from '../../utils/format'
-import { playerStatusView } from '../../utils/playerStatus'
+import { userStatusView } from '../../utils/userStatus'
 
 const PROFILE_EVENTS_COUNT = 5
 
@@ -33,7 +33,7 @@ watch(
 
 		const [loaded] = await Promise.all([
 			membersStore.get(login.value),
-			resourcesStore.loadPlayer(login.value),
+			resourcesStore.loadUser(login.value),
 		])
 
 		member.value = loaded
@@ -45,7 +45,7 @@ watch(
 	[login, () => journalStore.revision],
 	async () => {
 		feed.value = await journalStore.fetch({
-			player: login.value,
+			user: login.value,
 			limit: PROFILE_EVENTS_COUNT,
 		})
 	},
@@ -70,13 +70,13 @@ const stats = computed(() => [
 		<div v-if="member" class="header">
 			<span class="header__accent" :style="{ background: color }"></span>
 
-			<UiPlayerAvatar :name="login" :color="color" :size="48" />
+			<UiUserAvatar :name="login" :color="color" :size="48" />
 
 			<div class="header__info">
 				<span class="header__name-row">
 					<span class="header__name">{{ login }}</span>
-					<UiBadge :tone="playerStatusView[member.status].tone" dot>
-						{{ playerStatusView[member.status].label }}
+					<UiBadge :tone="userStatusView[member.status].tone" dot>
+						{{ userStatusView[member.status].label }}
 					</UiBadge>
 				</span>
 				<span class="header__now">
@@ -94,7 +94,7 @@ const stats = computed(() => [
 		</div>
 
 		<div class="grid">
-			<ResourceTiles :resources="resourcesStore.byPlayer[login]" />
+			<ResourceTiles :resources="resourcesStore.byUser[login]" />
 
 			<EventFeed
 				title="История игрока"
@@ -102,7 +102,7 @@ const stats = computed(() => [
 				:link-to="{
 					name: RouteName.Resources,
 					params: { tab: 'history' },
-					query: { player: login },
+					query: { user: login },
 				}"
 				:entries="feed"
 				:dot-color="color"

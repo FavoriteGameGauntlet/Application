@@ -11,7 +11,7 @@ type Props = {
 
 const {
 	name = '',
-	color = 'var(--player-1)',
+	color = 'var(--user-1)',
 	size = 40,
 	src,
 	ring,
@@ -29,17 +29,17 @@ const initials = computed(() =>
 
 <template>
 	<span
-		class="ui-player-avatar"
+		class="ui-user-avatar"
 		:title="name"
 		:style="{ width: `${size}px`, height: `${size * 1.1}px` }"
 	>
-		<span v-if="ring" class="ui-player-avatar__layer" :style="{ inset: '-3px', background: color }"></span>
+		<span v-if="ring" class="ui-user-avatar__layer" :style="{ inset: '-3px', background: color }"></span>
 		<span
-			class="ui-player-avatar__layer"
+			class="ui-user-avatar__layer"
 			:style="{ background: ring ? 'var(--surface-card)' : color }"
 		></span>
 		<span
-			class="ui-player-avatar__layer ui-player-avatar__face"
+			class="ui-user-avatar__layer ui-user-avatar__face"
 			:style="{
 				inset: ring ? '3px' : '0',
 				background: src ? `center / cover url(${src})` : color,
@@ -52,19 +52,19 @@ const initials = computed(() =>
 </template>
 
 <style scoped>
-.ui-player-avatar {
+.ui-user-avatar {
 	position: relative;
 	display: inline-flex;
 	flex: none;
 }
 
-.ui-player-avatar__layer {
+.ui-user-avatar__layer {
 	position: absolute;
 	inset: 0;
 	clip-path: var(--hex-clip);
 }
 
-.ui-player-avatar__face {
+.ui-user-avatar__face {
 	display: flex;
 	align-items: center;
 	justify-content: center;

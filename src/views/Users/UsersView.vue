@@ -2,11 +2,11 @@
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import UiBadge from '../../components/ui/UiBadge.vue'
-import UiPlayerAvatar from '../../components/ui/UiPlayerAvatar.vue'
+import UiUserAvatar from '../../components/ui/UiUserAvatar.vue'
 import { RouteName } from '../../router/routeNames'
 import { useMembersStore } from '../../stores/membersStore'
 import { useSessionStore } from '../../stores/sessionStore'
-import { playerStatusView } from '../../utils/playerStatus'
+import { userStatusView } from '../../utils/userStatus'
 import { formatHours } from '../../utils/format'
 import { plural } from '../../utils/plural'
 
@@ -45,23 +45,23 @@ onMounted(() => membersStore.load())
 
 			<div
 				v-for="member in members"
-				:key="member.player.login"
+				:key="member.user.login"
 				class="table__row table__row--body"
-				:class="{ 'table__row--me': member.player.login === sessionStore.login }"
-				@click="router.push({ name: RouteName.UserDetail, params: { login: member.player.login } })"
+				:class="{ 'table__row--me': member.user.login === sessionStore.login }"
+				@click="router.push({ name: RouteName.UserDetail, params: { login: member.user.login } })"
 			>
-				<span class="player">
-					<UiPlayerAvatar
-						:name="member.player.login"
-						:color="`var(--player-${member.player.colorIndex})`"
+				<span class="user">
+					<UiUserAvatar
+						:name="member.user.login"
+						:color="`var(--user-${member.user.colorIndex})`"
 						:size="28"
 					/>
-					{{ member.player.login }}
-					<UiBadge v-if="member.player.login === sessionStore.login" tone="accent">ты</UiBadge>
+					{{ member.user.login }}
+					<UiBadge v-if="member.user.login === sessionStore.login" tone="accent">ты</UiBadge>
 				</span>
 				<span class="table__status">
-					<UiBadge :tone="playerStatusView[member.status].tone" dot>
-						{{ playerStatusView[member.status].label }}
+					<UiBadge :tone="userStatusView[member.status].tone" dot>
+						{{ userStatusView[member.status].label }}
 					</UiBadge>
 				</span>
 				<span class="table__game" :class="{ 'table__game--none': !member.currentGame }">
@@ -157,7 +157,7 @@ onMounted(() => membersStore.load())
 	background: var(--surface-sunken);
 }
 
-.player {
+.user {
 	display: flex;
 	align-items: center;
 	gap: 10px;

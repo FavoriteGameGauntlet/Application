@@ -9,12 +9,12 @@ import ReviewDialog from './ReviewDialog.vue'
 
 type Props = {
 	/** whose games are shown */
-	player: string
+	user: string
 	/** the games of the current user, so they can be rated */
 	mine?: boolean
 }
 
-const { player, mine } = defineProps<Props>()
+const { user, mine } = defineProps<Props>()
 
 const completedStore = useCompletedStore()
 
@@ -26,31 +26,31 @@ const statuses = {
 
 const reviewing = ref<{ game: CompletedGame; editing: boolean }>()
 
-const games = computed(() => completedStore.lists[player] ?? [])
+const games = computed(() => completedStore.lists[user] ?? [])
 
 watch(
-	() => player,
-	() => completedStore.load(player),
+	() => user,
+	() => completedStore.load(user),
 	{ immediate: true },
 )
 
 // the dialog shows the actual game even after it is saved
 const reviewedGame = computed(() =>
-	games.value.find((g) => g.id === reviewing.value?.game.id),
+	games.value.find((g) => g.gameId === reviewing.value?.game.gameId),
 )
 </script>
 
 <template>
 	<div class="table">
 		<div class="table__row table__row--head">
-			<span>{{ mine ? 'Игра' : `Игра (${player})` }}</span>
+			<span>{{ mine ? 'Игра' : `Игра (${user})` }}</span>
 			<span>Начало → конец</span>
 			<span>Время</span>
 			<span>Статус</span>
 			<span>Оценка</span>
 		</div>
 
-		<div v-for="game in games" :key="game.id" class="table__row table__row--body">
+		<div v-for="game in games" :key="game.gameId" class="table__row table__row--body">
 			<span class="table__name">{{ game.name }}</span>
 			<span class="table__num">{{ formatPeriod(game.startedAt, game.endedAt) }}</span>
 			<span class="table__num">{{ formatDuration(game.playedSeconds) }}</span>
@@ -69,15 +69,17 @@ const reviewedGame = computed(() =>
 						Отзыв
 					</UiButton>
 				</template>
-				<UiButton
-					v-else-if="mine && game.status === 'completed'"
-					class="table__button"
-					variant="outline"
-					size="sm"
-					@click="reviewing = { game, editing: true }"
-				>
-					Оценить
-				</UiButton>
+				<template v-else-if="mine">
+					<span class="table__none">—</span>
+					<UiButton
+						class="table__button"
+						variant="outline"
+						size="sm"
+						@click="reviewing = { game, editing: true }"
+					>
+						Оценить
+					</UiButton>
+				</template>
 				<span v-else class="table__none">—</span>
 			</span>
 		</div>
@@ -86,7 +88,7 @@ const reviewedGame = computed(() =>
 			{{
 				mine
 					? 'Пока ничего не пройдено. Первая игра уже ждёт на главной.'
-					: `${player} пока ничего не прошёл(а).`
+					: `${user} пока ничего не прошёл(а).`
 			}}
 		</div>
 	</div>
@@ -97,7 +99,7 @@ const reviewedGame = computed(() =>
 
 	<ReviewDialog
 		:game="reviewedGame"
-		:login="player"
+		:login="user"
 		:own="mine"
 		:start-editing="reviewing?.editing"
 		@close="reviewing = undefined"

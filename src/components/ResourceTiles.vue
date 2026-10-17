@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
-import type { Effect, PlayerResources } from '../api-facade/contracts'
+import type { Effect, UserResources } from '../api-facade/contracts'
 import { RouteName } from '../router/routeNames'
 import { useResourcesStore } from '../stores/resourcesStore'
 import { formatRemaining } from '../utils/format'
+import { groupItems } from '../utils/userItems'
 import UiBadge from './ui/UiBadge.vue'
 
 type Props = {
-	resources?: PlayerResources
-	/** tiles of the current user: «Мои очки» and no player in the links */
+	resources?: UserResources
+	/** tiles of the current user: «Мои очки» and no user in the links */
 	mine?: boolean
 }
 
@@ -20,15 +21,17 @@ const resourcesStore = useResourcesStore()
 const MAIN_POINTS_COUNT = 3
 
 const points = computed(() =>
-	resourcesStore.pointTypes
+	resourcesStore.personalTypes
 		.slice(0, MAIN_POINTS_COUNT)
 		.map((type) => ({ id: type.id, name: type.name, value: resources?.points[type.id] ?? 0 })),
 )
 
+const items = computed(() => groupItems(resources?.items ?? []))
+
 const linkTo = (tab: string): RouteLocationRaw => ({
 	name: RouteName.Resources,
 	params: { tab },
-	query: mine || tab === 'points' ? undefined : { player: resources?.player.login },
+	query: mine || tab === 'points' ? undefined : { user: resources?.user.login },
 })
 
 const effectUses = (effect: Effect) =>
@@ -53,10 +56,9 @@ const effectUses = (effect: Effect) =>
 				<span class="tile__title">Предметы</span>
 				<RouterLink class="tile__link" :to="linkTo('items')">Все</RouterLink>
 			</div>
-			<div v-for="item in resources?.items" :key="item.id" class="row row--items">
+			<div v-for="item in items" :key="item.itemId" class="row row--items">
 				<span>{{ item.name }}</span>
-				<span class="row__value row__value--right">{{ item.held }}</span>
-				<span class="row__uses">{{ item.usesLeft }}/{{ item.usesMax }}</span>
+				<span class="row__value row__value--right">{{ item.count }}</span>
 			</div>
 			<span v-if="!resources?.items.length" class="tile__empty">Пусто</span>
 		</div>
@@ -152,7 +154,7 @@ const effectUses = (effect: Effect) =>
 
 .row--items {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) 32px 40px;
+	grid-template-columns: minmax(0, 1fr) 32px;
 	gap: 8px;
 }
 

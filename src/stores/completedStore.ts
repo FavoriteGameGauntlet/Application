@@ -19,7 +19,7 @@ export const useCompletedStore = defineStore(StoreName.Completed, () => {
 		const toast = useToastStore()
 
 		try {
-			await api.completed.saveReview(game.id, review)
+			await api.completed.saveReview(game.gameId, review)
 			await loadMine()
 			toast.show('Отзыв сохранён', `${game.name}: ${review.rating} / 10`)
 		} catch (e) {

@@ -21,7 +21,7 @@ watch(
 	() => journalStore.revision,
 	async () => {
 		recent.value = await journalStore.fetch({
-			player: sessionStore.login,
+			user: sessionStore.login,
 			limit: RECENT_EVENTS_COUNT,
 		})
 	},
@@ -34,7 +34,7 @@ watch(
 		<CurrentGameCard with-timer />
 
 		<div class="home__grid">
-			<ResourceTiles mine :resources="resourcesStore.byPlayer[sessionStore.login]" />
+			<ResourceTiles mine :resources="resourcesStore.byUser[sessionStore.login]" />
 
 			<EventFeed
 				title="Недавние события"

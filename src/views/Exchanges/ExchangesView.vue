@@ -1,56 +1,25 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import type {
-	Exchange,
-	ResourceHistoryRow,
-	ResourceRef,
-} from '../../api-facade/contracts'
+import { computed, onMounted, ref } from 'vue'
+import type { Exchange, ResourceRef } from '../../api-facade/contracts'
+import UserResourcesPanel from '../../components/UserResourcesPanel.vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiDialog from '../../components/ui/UiDialog.vue'
 import UiIcon from '../../components/ui/UiIcon.vue'
-import UiInput from '../../components/ui/UiInput.vue'
-import UiSelect from '../../components/ui/UiSelect.vue'
-import { RouteName } from '../../router/routeNames'
 import { useExchangesStore } from '../../stores/exchangesStore'
-import { useJournalStore } from '../../stores/journalStore'
-import { useMembersStore } from '../../stores/membersStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useSessionStore } from '../../stores/sessionStore'
-import { formatMoment, formatRemaining } from '../../utils/format'
 import { formatResource } from '../../utils/formatResource'
-
-type Category = 'items' | 'points' | 'perks' | 'effects'
+import { countItems } from '../../utils/userItems'
 
 const exchangesStore = useExchangesStore()
-const journalStore = useJournalStore()
-const membersStore = useMembersStore()
 const resourcesStore = useResourcesStore()
 const sessionStore = useSessionStore()
 
-const categories = [
-	{ value: 'items', label: 'Предметы' },
-	{ value: 'points', label: 'Очки' },
-	{ value: 'perks', label: 'Перки' },
-	{ value: 'effects', label: 'Эффекты' },
-]
-
 const confirming = ref<Exchange>()
 
-const selectedPlayer = ref(sessionStore.login)
-const category = ref<Category>('items')
-const query = ref('')
-const expanded = ref<number>()
-const history = ref<ResourceHistoryRow[]>([])
+const selectedUser = ref(sessionStore.login)
 
-const mine = computed(() => resourcesStore.byPlayer[sessionStore.login])
-const selected = computed(() => resourcesStore.byPlayer[selectedPlayer.value])
-
-const playerOptions = computed(() =>
-	membersStore.players.map((p) => ({
-		value: p.login,
-		label: p.login === sessionStore.login ? `${p.login} (ты)` : p.login,
-	})),
-)
+const mine = computed(() => resourcesStore.byUser[sessionStore.login])
 
 const text = (ref: ResourceRef) => formatResource(ref, resourcesStore.pointTypes)
 
@@ -58,7 +27,7 @@ const text = (ref: ResourceRef) => formatResource(ref, resourcesStore.pointTypes
 const have = (ref: ResourceRef) => {
 	if (ref.kind === 'points') return mine.value?.points[ref.id] ?? 0
 	if (ref.kind === 'item') {
-		return mine.value?.items.find((i) => i.id === ref.id)?.held ?? 0
+		return countItems(mine.value?.items ?? [], ref.id)
 	}
 
 	return 0
@@ -102,74 +71,6 @@ const confirmRows = computed(() => {
 		}
 	})
 })
-
-const rows = computed(() => {
-	const q = query.value.trim().toLowerCase()
-	const resources = selected.value
-
-	if (!resources) return []
-
-	const all = {
-		items: () =>
-			resources.items.map((item) => ({
-				id: item.id,
-				name: item.name,
-				note: `${item.usesLeft}/${item.usesMax} исп.`,
-				value: `×${item.held}`,
-				expandable: true,
-			})),
-		points: () =>
-			resourcesStore.pointTypes.map((type) => ({
-				id: type.id,
-				name: type.name,
-				note: '',
-				value: String(resources.points[type.id] ?? 0),
-				expandable: false,
-			})),
-		perks: () =>
-			resources.perks.map((perk) => ({
-				id: perk.id,
-				name: perk.name,
-				note: perk.kind === 'active' ? 'активный' : 'пассивный',
-				value: '',
-				expandable: false,
-			})),
-		effects: () =>
-			resources.effects.map((effect) => ({
-				id: effect.id,
-				name: effect.name,
-				note: effect.usesMax != null ? `${effect.usesLeft}/${effect.usesMax} исп.` : '',
-				value: effect.expiresAt ? formatRemaining(effect.expiresAt) : '',
-				expandable: false,
-			})),
-	}
-
-	return all[category.value]().filter((r) => !q || r.name.toLowerCase().includes(q))
-})
-
-watch(
-	[selectedPlayer, () => journalStore.revision],
-	() => resourcesStore.loadPlayer(selectedPlayer.value),
-	{ immediate: true },
-)
-
-watch([selectedPlayer, category], () => {
-	expanded.value = undefined
-	query.value = ''
-})
-
-const toggleRow = async (id: number, expandable: boolean) => {
-	if (!expandable) return
-
-	if (expanded.value === id) {
-		expanded.value = undefined
-		return
-	}
-
-	expanded.value = id
-	history.value = []
-	history.value = await resourcesStore.fetchHistory(selectedPlayer.value, 'items', id)
-}
 
 const onConfirm = async () => {
 	const exchange = confirming.value
@@ -250,57 +151,7 @@ onMounted(() => exchangesStore.load())
 				</span>
 			</div>
 
-			<div class="panel">
-				<span class="label">Ресурсы игрока</span>
-
-				<div class="panel__selects">
-					<UiSelect v-model="selectedPlayer" :options="playerOptions" aria-label="Игрок" />
-					<UiSelect v-model="category" :options="categories" aria-label="Тип ресурса" />
-				</div>
-
-				<UiInput v-model="query" placeholder="Найти…" icon="search" />
-
-				<div class="rows">
-					<div
-						v-for="row in rows"
-						:key="row.id"
-						class="row"
-						:class="{ 'row--open': expanded === row.id }"
-					>
-						<div
-							class="row__main"
-							:class="{ 'row__main--expandable': row.expandable }"
-							@click="toggleRow(row.id, row.expandable)"
-						>
-							<span class="row__name" :class="{ 'row__name--open': expanded === row.id }">
-								{{ row.name }}
-							</span>
-							<span class="row__note">{{ row.note }}</span>
-							<span class="row__value">{{ row.value }}</span>
-						</div>
-
-						<div v-if="expanded === row.id" class="row__history">
-							<div v-for="(h, i) in history" :key="i" class="history">
-								<span class="history__source">{{ formatMoment(h.at) }} · {{ h.source }}</span>
-								<span class="history__delta">{{ h.delta }}</span>
-							</div>
-							<span v-if="!history.length" class="history__empty">Изменений за неделю нет.</span>
-							<RouterLink
-								class="row__link"
-								:to="{
-									name: RouteName.Resources,
-									params: { tab: 'history' },
-									query: { player: selectedPlayer },
-								}"
-							>
-								Все изменения
-							</RouterLink>
-						</div>
-					</div>
-
-					<span v-if="!rows.length" class="rows__empty">Ничего не нашлось.</span>
-				</div>
-			</div>
+			<UserResourcesPanel v-model:user="selectedUser" />
 		</div>
 	</div>
 
@@ -465,122 +316,6 @@ onMounted(() => exchangesStore.load())
 .note {
 	font: var(--type-body-sm);
 	color: var(--text-muted);
-}
-
-.panel {
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
-	min-width: 0;
-	padding: 16px;
-	overflow: hidden;
-	background: var(--surface-card);
-	border: 1px solid var(--border-subtle);
-	border-radius: var(--radius-lg);
-	box-shadow: var(--shadow-1);
-}
-
-.panel__selects {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-}
-
-.rows {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
-}
-
-.row {
-	display: flex;
-	flex-direction: column;
-	border-radius: var(--radius-sm);
-}
-
-.row--open {
-	background: var(--surface-sunken);
-}
-
-.row__main {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	min-height: 36px;
-	padding: 0 10px;
-	font: var(--type-body-sm);
-	color: var(--text-strong);
-	border-radius: var(--radius-sm);
-}
-
-.row__main:hover {
-	background: var(--surface-sunken);
-}
-
-.row__main--expandable {
-	cursor: pointer;
-}
-
-.row__name {
-	flex: 1;
-	min-width: 0;
-}
-
-.row__name--open {
-	font-weight: 600;
-}
-
-.row__note {
-	font: var(--type-caption);
-	color: var(--text-subtle);
-}
-
-.row__value {
-	font: 600 13px / 1 var(--font-mono);
-	color: var(--text-strong);
-}
-
-.row__history {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-	padding: 4px 10px 10px;
-}
-
-.history {
-	display: flex;
-	justify-content: space-between;
-	gap: 8px;
-	font: var(--type-caption);
-	color: var(--text-muted);
-}
-
-.history__source {
-	min-width: 0;
-}
-
-.history__delta {
-	font: var(--type-mono);
-	color: var(--text-strong);
-}
-
-.history__empty {
-	font: var(--type-caption);
-	color: var(--text-subtle);
-}
-
-.row__link {
-	align-self: flex-start;
-	margin-top: 2px;
-	font: var(--type-label);
-	letter-spacing: var(--tracking-label);
-	text-transform: uppercase;
-}
-
-.rows__empty {
-	padding: 8px 10px;
-	font: var(--type-body-sm);
-	color: var(--text-subtle);
 }
 
 .dialog {

@@ -7,7 +7,7 @@ import { useMembersStore } from '../../stores/membersStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useWishlistStore } from '../../stores/wishlistStore'
 import CompletedTab from './components/CompletedTab.vue'
-import PlayerWishlistTab from './components/PlayerWishlistTab.vue'
+import UserWishlistTab from './components/UserWishlistTab.vue'
 import WishlistTab from './components/WishlistTab.vue'
 
 const tabs = [
@@ -23,15 +23,15 @@ const wishlistStore = useWishlistStore()
 
 const tab = ref(tabs[0])
 
-const otherPlayers = computed(() =>
-	membersStore.players
+const otherUsers = computed(() =>
+	membersStore.users
 		.filter((p) => p.login !== sessionStore.login)
 		.map((p) => p.login),
 )
 
-const selectedPlayer = ref(otherPlayers.value[0])
+const selectedUser = ref(otherUsers.value[0])
 
-const isPlayerTab = computed(
+const isUserTab = computed(
 	() => tab.value === 'Вишлисты игроков' || tab.value === 'Пройденные игроков',
 )
 
@@ -47,17 +47,17 @@ onMounted(() => wishlistStore.loadMine())
 		<div class="games__content">
 			<UiTabs v-model="tab" :items="tabs" />
 
-			<div v-if="isPlayerTab" class="player">
-				<span class="player__label">Игрок</span>
-				<div class="player__select">
-					<UiSelect v-model="selectedPlayer" :options="otherPlayers" aria-label="Игрок" />
+			<div v-if="isUserTab" class="user">
+				<span class="user__label">Игрок</span>
+				<div class="user__select">
+					<UiSelect v-model="selectedUser" :options="otherUsers" aria-label="Игрок" />
 				</div>
 			</div>
 
 			<WishlistTab v-if="tab === 'Мой вишлист'" />
-			<PlayerWishlistTab v-else-if="tab === 'Вишлисты игроков'" :player="selectedPlayer" />
-			<CompletedTab v-else-if="tab === 'Мои пройденные'" :player="sessionStore.login" mine />
-			<CompletedTab v-else :player="selectedPlayer" />
+			<UserWishlistTab v-else-if="tab === 'Вишлисты игроков'" :user="selectedUser" />
+			<CompletedTab v-else-if="tab === 'Мои пройденные'" :user="sessionStore.login" mine />
+			<CompletedTab v-else :user="selectedUser" />
 		</div>
 	</div>
 </template>
@@ -82,20 +82,20 @@ onMounted(() => wishlistStore.loadMine())
 	gap: 16px;
 }
 
-.player {
+.user {
 	display: flex;
 	align-items: center;
 	gap: 12px;
 }
 
-.player__label {
+.user__label {
 	font: var(--type-label);
 	letter-spacing: var(--tracking-label);
 	text-transform: uppercase;
 	color: var(--text-muted);
 }
 
-.player__select {
+.user__select {
 	width: 240px;
 }
 </style>

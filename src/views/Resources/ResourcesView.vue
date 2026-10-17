@@ -5,11 +5,13 @@ import type { ResourceKind } from '../../api-facade/contracts'
 import UiTabs from '../../components/ui/UiTabs.vue'
 import { RouteName } from '../../router/routeNames'
 import HistoryTab from './components/HistoryTab.vue'
-import PlayerResourcesTab from './components/PlayerResourcesTab.vue'
+import UserResourcesTab from './components/UserResourcesTab.vue'
 import PointsTab from './components/PointsTab.vue'
+import SharedPointsTab from './components/SharedPointsTab.vue'
 
 const tabs = [
 	{ value: 'points', label: 'Очки' },
+	{ value: 'shared', label: 'Общие очки' },
 	{ value: 'items', label: 'Предметы' },
 	{ value: 'perks', label: 'Перки' },
 	{ value: 'effects', label: 'Эффекты' },
@@ -27,7 +29,7 @@ const tab = computed(() => {
 
 const resourceKind = computed(() => tab.value as ResourceKind)
 
-const player = computed(() => route.query.player as string | undefined)
+const user = computed(() => route.query.user as string | undefined)
 
 const setTab = (value: string | undefined) =>
 	router.push({
@@ -44,8 +46,9 @@ const setTab = (value: string | undefined) =>
 		<UiTabs :model-value="tab" :items="tabs" @update:model-value="setTab" />
 
 		<PointsTab v-if="tab === 'points'" />
-		<HistoryTab v-else-if="tab === 'history'" :player />
-		<PlayerResourcesTab v-else :key="tab" :kind="resourceKind" :player />
+		<SharedPointsTab v-else-if="tab === 'shared'" />
+		<HistoryTab v-else-if="tab === 'history'" :user />
+		<UserResourcesTab v-else :key="tab" :kind="resourceKind" :user />
 	</div>
 </template>
 

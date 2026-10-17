@@ -4,7 +4,7 @@ import type { CompletedGame } from '../../../api-facade/contracts'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiField from '../../../components/ui/UiField.vue'
-import UiPlayerAvatar from '../../../components/ui/UiPlayerAvatar.vue'
+import UiUserAvatar from '../../../components/ui/UiUserAvatar.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import { useCompletedStore } from '../../../stores/completedStore'
 import { useMembersStore } from '../../../stores/membersStore'
@@ -82,7 +82,7 @@ const onSave = async () => {
 				<div class="view__cell">
 					<span class="label">Игрок</span>
 					<span class="view__value">
-						<UiPlayerAvatar :name="login" :color="membersStore.colorOf(login)" :size="24" />
+						<UiUserAvatar :name="login" :color="membersStore.colorOf(login)" :size="24" />
 						{{ login }}
 					</span>
 				</div>

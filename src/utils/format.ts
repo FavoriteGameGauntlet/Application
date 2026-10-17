@@ -1,4 +1,4 @@
-import type { ISODate, Seconds } from '../api-facade/contracts'
+import type { ISODate, JournalSource, Login, Seconds } from '../api-facade/contracts'
 import { plural } from './plural'
 
 const pad = (n: number) => String(n).padStart(2, '0')
@@ -50,9 +50,43 @@ export const formatMoment = (iso: ISODate) => {
 	return `${dayMonth(d)} ${time}`
 }
 
-/** «1 ч 40 м», «22 ч», «1 день» */
-export const formatRemaining = (iso: ISODate) => {
-	const minutes = Math.max(0, Math.round((Date.parse(iso) - Date.now()) / 60_000))
+/** the user of a journal change: the login, «все» for the shared points */
+export const formatUserName = (login: Login | null) => login ?? 'все'
+
+/** «предмет «Колобок»», «колесо · «×2 золото»», «исправление» */
+export const formatJournalSource = (
+	{ type, name, event }: JournalSource,
+	correctsEntryId?: number,
+) => {
+	switch (type) {
+		case 'item':
+			return `предмет «${name}»`
+		case 'perk':
+			return `перк «${name}»`
+		case 'effect':
+			return `эффект «${name}»`
+		case 'wheel_row':
+			return `колесо · «${name}»`
+		case 'exchange':
+			return `обмен «${name}»`
+		case 'timer':
+			return name ? `таймер · ${name}` : 'таймер'
+		case 'game':
+			return event === 'started'
+				? `начало игры · ${name}`
+				: event === 'completed'
+					? `прохождение · ${name}`
+					: event === 'rerolled'
+						? `перекрут игры · ${name}`
+						: `отмена игры · ${name}`
+		case 'manual':
+			return correctsEntryId === undefined ? 'ручное изменение' : 'исправление'
+	}
+}
+
+/** 6000 → «1 ч 40 м», 79200 → «22 ч», 86400 → «1 день» */
+export const formatSpan = (seconds: Seconds) => {
+	const minutes = Math.max(0, Math.round(seconds / 60))
 	const days = Math.floor(minutes / 1440)
 
 	if (days >= 1) return `${days} ${plural(days, ['день', 'дня', 'дней'])}`
@@ -63,4 +97,43 @@ export const formatRemaining = (iso: ISODate) => {
 	if (hours === 0) return `${rest} м`
 
 	return rest ? `${hours} ч ${rest} м` : `${hours} ч`
+}
+
+/** «от 0 до 1000», «от −20», «до 100», «без границ» */
+export const formatBounds = (minimum: number | null, maximum: number | null) => {
+	if (minimum !== null && maximum !== null) return `от ${minimum} до ${maximum}`
+	if (minimum !== null) return `от ${minimum}`
+	if (maximum !== null) return `до ${maximum}`
+
+	return 'без границ'
+}
+
+/** «1 ч 40 м», «22 ч», «1 день» */
+export const formatRemaining =(iso: ISODate) =>
+	formatSpan((Date.parse(iso) - Date.now()) / 1000)
+
+const SPAN_UNITS: [prefix: string, seconds: number][] = [
+	['д', 86_400],
+	['ч', 3_600],
+	['м', 60],
+	['с', 1],
+]
+
+/** «1 день», «2 ч», «1 ч 40 м» → seconds; undefined when it isn't a duration */
+export const parseSpan = (text: string): Seconds | undefined => {
+	const value = text.trim().toLowerCase()
+
+	if (!/^(\d+\s*[а-я]+\s*)+$/.test(value)) return undefined
+
+	let total = 0
+
+	for (const [, amount, unit] of value.matchAll(/(\d+)\s*([а-я]+)/g)) {
+		const seconds = SPAN_UNITS.find(([prefix]) => unit.startsWith(prefix))?.[1]
+
+		if (seconds === undefined) return undefined
+
+		total += Number(amount) * seconds
+	}
+
+	return total
 }

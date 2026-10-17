@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed } from 'vue'
 import { api } from '../api-facade/api'
+import type { SignUpData } from '../api-facade/contracts'
 import { usePersistentRef } from '../composables/usePersistentRef'
 import { StoreName } from '../enums/storeName'
 import { router } from '../router/router'
@@ -22,7 +23,7 @@ export const useAuthStore = defineStore(StoreName.Auth, () => {
 
 	const loginState = makeLoadingState()
 
-	const signUp = async (data: { login: string; password: string }) => {
+	const signUp = async (data: SignUpData) => {
 		if (loginState.isLoading.value) return
 		if (!isLoginReady)
 			throw new Error('Persistent storage is not yet initialized')

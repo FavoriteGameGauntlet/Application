@@ -5,6 +5,9 @@ export enum StoreKey {
 	Login = 'login',
 	DisplayName = 'displayName',
 	Theme = 'theme',
+	Scale = 'scale',
+	MiniWidth = 'miniWidth',
+	SidebarCollapsed = 'sidebarCollapsed',
 }
 
 export type StoredData = Partial<{
@@ -12,6 +15,11 @@ export type StoredData = Partial<{
 	[StoreKey.Login]: string
 	[StoreKey.DisplayName]: string
 	[StoreKey.Theme]: string
+	/** interface scale in percent */
+	[StoreKey.Scale]: number
+	/** width of the mini window in px at the interface scale of 100%, the height follows the ratio */
+	[StoreKey.MiniWidth]: number
+	[StoreKey.SidebarCollapsed]: boolean
 }>
 
 const defaults: StoredData = {
@@ -19,6 +27,9 @@ const defaults: StoredData = {
 	[StoreKey.Login]: undefined,
 	[StoreKey.DisplayName]: undefined,
 	[StoreKey.Theme]: undefined,
+	[StoreKey.Scale]: undefined,
+	[StoreKey.MiniWidth]: undefined,
+	[StoreKey.SidebarCollapsed]: undefined,
 } as const
 
 let store: Store | null = null

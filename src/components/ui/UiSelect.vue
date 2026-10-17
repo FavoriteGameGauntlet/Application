@@ -13,6 +13,8 @@ type Props = {
 	error?: string
 	options?: Option[]
 	placeholder?: string
+	/** 40px high, for dense forms */
+	compact?: boolean
 }
 
 const { options = [] } = defineProps<Props>()
@@ -31,7 +33,10 @@ const normalizedOptions = computed(() =>
 				v-model="model"
 				v-bind="$attrs"
 				class="ui-select__control"
-				:class="{ 'ui-select__control--error': error }"
+				:class="{
+					'ui-select__control--error': error,
+					'ui-select__control--compact': compact,
+				}"
 			>
 				<option v-if="placeholder" value="">{{ placeholder }}</option>
 				<option v-for="o in normalizedOptions" :key="o.value" :value="o.value">
@@ -40,6 +45,7 @@ const normalizedOptions = computed(() =>
 			</select>
 			<UiIcon
 				class="ui-select__chevron"
+				:class="{ 'ui-select__chevron--compact': compact }"
 				name="chevron-down"
 				:size="18"
 				color="var(--text-muted)"
@@ -79,10 +85,21 @@ const normalizedOptions = computed(() =>
 	border-color: var(--danger);
 }
 
+.ui-select__control--compact {
+	height: 40px;
+	padding: 0 30px 0 10px;
+	font: var(--type-body-sm);
+}
+
 .ui-select__chevron {
 	position: absolute;
 	right: 12px;
 	top: 13px;
 	pointer-events: none;
+}
+
+.ui-select__chevron--compact {
+	right: 8px;
+	top: 11px;
 }
 </style>

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { ItemStack, ResourceKind } from '../../../api-facade/contracts'
+import type { ResourceKind, UserItem } from '../../../api-facade/contracts'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiIcon from '../../../components/ui/UiIcon.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
-import UiPlayerAvatar from '../../../components/ui/UiPlayerAvatar.vue'
+import UiUserAvatar from '../../../components/ui/UiUserAvatar.vue'
 import { useJournalStore } from '../../../stores/journalStore'
 import { useMembersStore } from '../../../stores/membersStore'
 import { useResourcesStore } from '../../../stores/resourcesStore'
@@ -15,22 +15,16 @@ import UseItemDialog from './UseItemDialog.vue'
 
 type Props = {
 	kind: ResourceKind
-	/** player to select initially */
-	player?: string
+	/** user to select initially */
+	user?: string
 }
 
-const { kind, player } = defineProps<Props>()
+const { kind, user } = defineProps<Props>()
 
 const journalStore = useJournalStore()
 const membersStore = useMembersStore()
 const resourcesStore = useResourcesStore()
 const sessionStore = useSessionStore()
-
-const countHints = {
-	items: 'предметов',
-	perks: 'перков',
-	effects: 'эффектов',
-}
 
 const emptyHints = {
 	items: 'предметов',
@@ -39,23 +33,23 @@ const emptyHints = {
 }
 
 const query = ref('')
-const selected = ref(player ?? sessionStore.login)
-const usingItem = ref<ItemStack>()
+const selected = ref(user ?? sessionStore.login)
+const usingItem = ref<UserItem>()
 
 watch(
-	() => player,
+	() => user,
 	() => {
-		selected.value = player ?? sessionStore.login
+		selected.value = user ?? sessionStore.login
 	},
 )
 
 const isMine = computed(() => selected.value === sessionStore.login)
-const resources = computed(() => resourcesStore.byPlayer[selected.value])
+const resources = computed(() => resourcesStore.byUser[selected.value])
 
-const players = computed(() => {
+const users = computed(() => {
 	const q = query.value.trim().toLowerCase()
 
-	return membersStore.players
+	return membersStore.users
 		.filter((p) => !q || p.login.includes(q))
 		.map((p) => ({
 			...p,
@@ -72,7 +66,7 @@ watch(
 
 watch(
 	[selected, () => journalStore.revision],
-	() => resourcesStore.loadPlayer(selected.value),
+	() => resourcesStore.loadUser(selected.value),
 	{ immediate: true },
 )
 
@@ -94,26 +88,24 @@ const hasUses = (left?: number, max?: number) => max != null && left != null
 			<span class="label">Игроки</span>
 			<UiInput v-model="query" placeholder="Найти игрока…" icon="search" />
 
-			<div class="players">
+			<div class="users">
 				<div
-					v-for="p in players"
+					v-for="p in users"
 					:key="p.login"
-					class="player"
-					:class="{ 'player--on': p.login === selected }"
+					class="user"
+					:class="{ 'user--on': p.login === selected }"
 					@click="selected = p.login"
 				>
-					<UiPlayerAvatar :name="p.login" :color="`var(--player-${p.colorIndex})`" :size="22" />
-					<span class="player__name">{{ p.label }}</span>
-					<span class="player__count">{{ p.count }}</span>
+					<UiUserAvatar :name="p.login" :color="`var(--user-${p.colorIndex})`" :size="22" />
+					<span class="user__name">{{ p.label }}</span>
+					<span class="user__count">{{ p.count }}</span>
 				</div>
 			</div>
-
-			<span class="panel__hint">Справа — число {{ countHints[kind] }}</span>
 		</div>
 
 		<div class="content">
 			<div class="who">
-				<UiPlayerAvatar :name="selected" :color="membersStore.colorOf(selected)" :size="36" />
+				<UiUserAvatar :name="selected" :color="membersStore.colorOf(selected)" :size="36" />
 				<span class="who__name">{{ selected }}</span>
 				<UiBadge v-if="isMine" tone="accent">ты</UiBadge>
 			</div>
@@ -122,7 +114,6 @@ const hasUses = (left?: number, max?: number) => max != null && left != null
 				<div v-for="item in resources?.items" :key="item.id" class="card">
 					<div class="card__head">
 						<span class="card__title">{{ item.name }}</span>
-						<span class="card__held">×{{ item.held }}</span>
 					</div>
 					<span class="card__text">{{ item.description }}</span>
 					<span class="card__meta">
@@ -134,7 +125,7 @@ const hasUses = (left?: number, max?: number) => max != null && left != null
 						class="card__use"
 						variant="outline"
 						size="sm"
-						:disabled="item.held === 0 || item.usesLeft === 0"
+						:disabled="item.usesLeft === 0"
 						@click="usingItem = item"
 					>
 						Использовать
@@ -233,13 +224,13 @@ const hasUses = (left?: number, max?: number) => max != null && left != null
 	color: var(--text-muted);
 }
 
-.players {
+.users {
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
 }
 
-.player {
+.user {
 	display: flex;
 	align-items: center;
 	gap: 10px;
@@ -251,27 +242,22 @@ const hasUses = (left?: number, max?: number) => max != null && left != null
 	cursor: pointer;
 }
 
-.player:hover,
-.player--on {
+.user:hover,
+.user--on {
 	background: var(--surface-sunken);
 }
 
-.player--on {
+.user--on {
 	font-weight: 600;
 }
 
-.player__name {
+.user__name {
 	flex: 1;
 }
 
-.player__count {
+.user__count {
 	font: 600 13px / 1 var(--font-mono);
 	color: var(--text-muted);
-}
-
-.panel__hint {
-	font: var(--type-caption);
-	color: var(--text-subtle);
 }
 
 .content {
@@ -322,11 +308,6 @@ const hasUses = (left?: number, max?: number) => max != null && left != null
 	font: var(--type-h4);
 	letter-spacing: var(--tracking-display);
 	text-transform: uppercase;
-	color: var(--text-strong);
-}
-
-.card__held {
-	font: 700 14px / 1 var(--font-mono);
 	color: var(--text-strong);
 }
 

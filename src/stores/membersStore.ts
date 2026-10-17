@@ -7,12 +7,12 @@ import { StoreName } from '../enums/storeName'
 export const useMembersStore = defineStore(StoreName.Members, () => {
 	const list = ref<Member[]>([])
 
-	const players = computed(() => list.value.map((m) => m.player))
+	const users = computed(() => list.value.map((m) => m.user))
 
 	const colorOf = (login: Login) => {
-		const colorIndex = players.value.find((p) => p.login === login)?.colorIndex
+		const colorIndex = users.value.find((p) => p.login === login)?.colorIndex
 
-		return `var(--player-${colorIndex ?? 1})`
+		return `var(--user-${colorIndex ?? 1})`
 	}
 
 	const load = async () => {
@@ -21,5 +21,5 @@ export const useMembersStore = defineStore(StoreName.Members, () => {
 
 	const get = (login: Login) => api.members.get(login)
 
-	return { list, players, colorOf, load, get }
+	return { list, users, colorOf, load, get }
 })

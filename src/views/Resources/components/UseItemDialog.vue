@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { ItemStack } from '../../../api-facade/contracts'
+import type { UserItem } from '../../../api-facade/contracts'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import { useResourcesStore } from '../../../stores/resourcesStore'
 
 type Props = {
-	item?: ItemStack
+	item?: UserItem
 }
 
 const { item } = defineProps<Props>()

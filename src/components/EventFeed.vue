@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router'
-import type { JournalEntry } from '../api-facade/contracts'
+import type { JournalEntry, Login } from '../api-facade/contracts'
 import { useSessionStore } from '../stores/sessionStore'
-import { formatMoment } from '../utils/format'
+import { formatJournalSource, formatMoment, formatUserName } from '../utils/format'
 
 type Props = {
 	title: string
@@ -18,13 +18,8 @@ defineProps<Props>()
 
 const sessionStore = useSessionStore()
 
-const who = (login: string) => {
-	if (login === sessionStore.login) return 'ты'
-	if (login === 'admin') return 'админ'
-	if (login === 'all') return 'все'
-
-	return login
-}
+const who = (login: Login | null) =>
+	login === sessionStore.login ? 'ты' : formatUserName(login)
 </script>
 
 <template>
@@ -44,12 +39,13 @@ const who = (login: string) => {
 			<div class="event__body">
 				<div class="event__head">
 					<span class="event__source">
-						<span class="event__who">{{ who(entry.actor) }}</span> · {{ entry.source.label }}
+						<span class="event__who">{{ who(entry.actor) }}</span> ·
+							{{ formatJournalSource(entry.source, entry.correctsEntryId) }}
 					</span>
 					<span class="event__time">{{ formatMoment(entry.at).replace('сегодня ', '') }}</span>
 				</div>
 				<div v-for="(change, i) in entry.changes" :key="i" class="event__change">
-					<span class="event__player">{{ who(change.player) }}</span>
+					<span class="event__user">{{ who(change.login) }}</span>
 					<span class="event__text">{{ change.text }}</span>
 				</div>
 			</div>
@@ -148,7 +144,7 @@ const who = (login: string) => {
 	font: var(--type-body-sm);
 }
 
-.event__player {
+.event__user {
 	color: var(--text-muted);
 }
 

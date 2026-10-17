@@ -12,27 +12,26 @@ const DEFAULT_GOAL = 7200
 export const useTimerStore = defineStore(StoreName.Timer, () => {
 	const timer = ref<Timer>()
 
-	const receivedAt = ref(Date.now())
 	const now = ref(Date.now())
 
 	const isRunning = computed(() => timer.value?.state === 'running')
-	const goal = computed(() => timer.value?.goal ?? DEFAULT_GOAL)
+	const goal = computed(() => timer.value?.duration ?? DEFAULT_GOAL)
 
-	/** server value plus the time passed since it was received */
-	const elapsed = computed(() => {
-		if (!timer.value) return 0
-		if (!isRunning.value) return timer.value.elapsed
+	/** what is left at the last action minus the time passed since it */
+	const remainingTime = computed(() => {
+		if (!timer.value) return goal.value
+		if (!isRunning.value) return timer.value.remainingTime
 
-		return Math.min(
-			goal.value,
-			timer.value.elapsed + Math.floor((now.value - receivedAt.value) / 1000),
-		)
+		const passed = Math.floor((now.value - Date.parse(timer.value.lastActionDate)) / 1000)
+
+		return Math.max(0, timer.value.remainingTime - passed)
 	})
+
+	const elapsed = computed(() => goal.value - remainingTime.value)
 
 	const set = (value: Timer) => {
 		timer.value = value
-		receivedAt.value = Date.now()
-		now.value = receivedAt.value
+		now.value = Date.now()
 	}
 
 	const load = async () => {

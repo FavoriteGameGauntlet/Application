@@ -1,19 +1,36 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
+import type { WheelGroup } from '../../api-facade/contracts'
 import UiBadge from '../../components/ui/UiBadge.vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiTabs from '../../components/ui/UiTabs.vue'
 import { RouteName } from '../../router/routeNames'
 import { useCurrentGameStore } from '../../stores/currentGameStore'
+import { useResourcesStore } from '../../stores/resourcesStore'
 import { useWheelStore, type WheelTab } from '../../stores/wheelStore'
 import { useWishlistStore } from '../../stores/wishlistStore'
+import { formatCost } from '../../utils/formatResource'
+import SpinPaymentDialog from './components/SpinPaymentDialog.vue'
 
 const REEL_OFFSETS = [-3, -2, -1, 0, 1, 2, 3]
-const PREVIEW_COUNT = 4
 
 const currentGameStore = useCurrentGameStore()
+const resourcesStore = useResourcesStore()
 const wheelStore = useWheelStore()
 const wishlistStore = useWishlistStore()
+
+/** «Билет на колесо ×2, 50 золота»; empty when the spin of the group is free */
+const costText = (group?: WheelGroup) =>
+	(group?.cost ?? []).map((r) => formatCost(r, resourcesStore.pointTypes)).join(', ')
+
+/** the cost is charged when the result is applied */
+const resultCost = computed(() => {
+	const source = wheelStore.result?.source
+
+	if (!source || source === 'wishlist') return ''
+
+	return costText(wheelStore.groups.find((g) => g.id === source.groupId))
+})
 
 /** a game can't be spun while another one is being played */
 const gameInProgress = computed(
@@ -41,10 +58,6 @@ const reelCenter = computed(() => {
 
 	return n ? wheelStore.pool[wheelStore.pos % n] : 'Вишлист пуст'
 })
-
-const groupPreview = (names: string[]) =>
-	names.slice(0, PREVIEW_COUNT).join(' · ') +
-	(names.length > PREVIEW_COUNT ? ` · ещё ${names.length - PREVIEW_COUNT}` : '')
 
 const isWishlistResult = computed(() => wheelStore.result?.source === 'wishlist')
 
@@ -92,8 +105,8 @@ onMounted(() => wheelStore.load())
 							<span class="group__name">{{ group.name }}</span>
 							<span class="group__count">{{ group.entries.length }}</span>
 						</div>
-						<div v-if="group.id === wheelStore.groupId" class="group__preview">
-							{{ groupPreview(group.entries.map((e) => e.name)) }}
+						<div class="group__cost">
+							{{ costText(group) ? `Цена: ${costText(group)}` : 'Бесплатно' }}
 						</div>
 					</div>
 				</div>
@@ -137,7 +150,6 @@ onMounted(() => wheelStore.load())
 
 					<div class="result__head">
 						<div class="result__title">
-							<span class="label">Выпало · {{ wheelStore.resultSource }}</span>
 							<span class="result__name">{{ wheelStore.result.result.name }}</span>
 						</div>
 						<UiButton variant="secondary" @click="wheelStore.apply()">
@@ -148,6 +160,9 @@ onMounted(() => wheelStore.load())
 
 					<div class="result__body">
 						<span class="result__desc">{{ resultDescription }}</span>
+						<span v-if="resultCost" class="result__cost">
+							Спишется при применении: {{ resultCost }}
+						</span>
 						<div v-if="wheelStore.result.result.isManualChange" class="result__manual">
 							<UiBadge tone="info" dot>Вручную</UiBadge>
 							<span>после применения нужно внести изменение вручную</span>
@@ -157,6 +172,12 @@ onMounted(() => wheelStore.load())
 			</div>
 		</div>
 	</div>
+
+	<SpinPaymentDialog
+		:choices="wheelStore.pendingChoices"
+		@close="wheelStore.cancelPayment()"
+		@confirm="wheelStore.confirmPayment($event)"
+	/>
 </template>
 
 <style scoped>
@@ -269,8 +290,8 @@ onMounted(() => wheelStore.load())
 	color: var(--text-subtle);
 }
 
-.group__preview {
-	padding: 8px 0 0 32px;
+.group__cost {
+	padding: 4px 0 0 32px;
 	font: var(--type-caption);
 	color: var(--text-muted);
 }
@@ -397,13 +418,6 @@ onMounted(() => wheelStore.load())
 	gap: 6px;
 }
 
-.label {
-	font: var(--type-label);
-	letter-spacing: var(--tracking-label);
-	text-transform: uppercase;
-	color: var(--text-muted);
-}
-
 .result__name {
 	font: var(--type-h4);
 	letter-spacing: var(--tracking-display);
@@ -422,6 +436,11 @@ onMounted(() => wheelStore.load())
 .result__desc {
 	font: var(--type-body-sm);
 	color: var(--text-body);
+}
+
+.result__cost {
+	font: var(--type-body-sm);
+	color: var(--text-muted);
 }
 
 .result__manual {

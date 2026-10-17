@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { api } from '../api-facade/api'
 import type {
+	CatalogOption,
 	Login,
-	PlayerResources,
+	UserResources,
 	PointsLeaderboard,
 	PointType,
 	ResourceKind,
@@ -15,20 +16,30 @@ import { useSessionStore } from './sessionStore'
 import { useToastStore } from './toastStore'
 
 export const useResourcesStore = defineStore(StoreName.Resources, () => {
+	/** both personal and shared types */
 	const pointTypes = ref<PointType[]>([])
-	const byPlayer = ref<Record<Login, PlayerResources>>({})
+	const personalTypes = computed(() => pointTypes.value.filter((t) => !t.isShared))
+	const sharedTypes = computed(() => pointTypes.value.filter((t) => t.isShared))
+	/** by the id of the shared point type */
+	const sharedPoints = ref<Record<number, number>>({})
+	const byUser = ref<Record<Login, UserResources>>({})
 	const leaderboards = ref<Record<number, PointsLeaderboard>>({})
 	const summaries = ref<Partial<Record<ResourceKind, ResourceSummary[]>>>({})
+	const catalogs = ref<Partial<Record<ResourceKind, CatalogOption[]>>>({})
 
 	const loadPointTypes = async () => {
 		pointTypes.value = await api.resources.pointTypes()
 	}
 
-	const loadPlayer = async (login: Login) => {
-		byPlayer.value[login] = await api.resources.player(login)
+	const loadSharedPoints = async () => {
+		sharedPoints.value = await api.resources.sharedPoints()
 	}
 
-	const loadMine = () => loadPlayer(useSessionStore().login)
+	const loadUser = async (login: Login) => {
+		byUser.value[login] = await api.resources.user(login)
+	}
+
+	const loadMine = () => loadUser(useSessionStore().login)
 
 	const loadLeaderboard = async (typeId: number) => {
 		leaderboards.value[typeId] = await api.resources.leaderboard(typeId)
@@ -38,7 +49,11 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 		summaries.value[kind] = await api.resources.summary(kind)
 	}
 
-	const fetchHistory = (login: Login, kind: ResourceKind, id: number) =>
+	const loadCatalog = async (kind: ResourceKind) => {
+		catalogs.value[kind] = await api.resources.catalog(kind)
+	}
+
+	const fetchHistory =(login: Login, kind: ResourceKind, id: number) =>
 		api.resources.history(login, kind, id, 4)
 
 	const useItem = async (item: { id: number; name: string }) => {
@@ -69,14 +84,20 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 
 	return {
 		pointTypes,
-		byPlayer,
+		personalTypes,
+		sharedTypes,
+		sharedPoints,
+		byUser,
 		leaderboards,
 		summaries,
+		catalogs,
 		loadPointTypes,
-		loadPlayer,
+		loadSharedPoints,
+		loadUser,
 		loadMine,
 		loadLeaderboard,
 		loadSummary,
+		loadCatalog,
 		fetchHistory,
 		useItem,
 		usePerk,

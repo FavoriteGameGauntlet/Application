@@ -12,6 +12,8 @@ type Props = {
 	icon?: string
 	disabled?: boolean
 	autoFocus?: boolean
+	/** 40px high, for dense forms */
+	compact?: boolean
 }
 
 const { autoFocus } = defineProps<Props>()
@@ -31,7 +33,11 @@ onMounted(() => {
 	<UiField :label :hint :error>
 		<span
 			class="ui-input"
-			:class="{ 'ui-input--error': error, 'ui-input--disabled': disabled }"
+			:class="{
+				'ui-input--error': error,
+				'ui-input--disabled': disabled,
+				'ui-input--compact': compact,
+			}"
 		>
 			<UiIcon v-if="icon" :name="icon" :size="18" />
 			<input ref="input" v-model="model" v-bind="$attrs" :disabled />
@@ -65,6 +71,11 @@ onMounted(() => {
 
 .ui-input--disabled {
 	background: var(--surface-sunken);
+}
+
+.ui-input--compact {
+	height: 40px;
+	padding: 0 10px;
 }
 
 input {

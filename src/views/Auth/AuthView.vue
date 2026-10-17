@@ -11,6 +11,7 @@ import { useAuthStore } from '../../stores/authStore'
 import { useToastStore } from '../../stores/toastStore'
 
 const MIN_PASSWORD_LENGTH = 8
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -20,6 +21,7 @@ const tab = ref('Вход')
 const isRegister = computed(() => tab.value === 'Регистрация')
 
 const login = ref('')
+const email = ref('')
 const password = ref('')
 const passwordRepeat = ref('')
 
@@ -28,6 +30,12 @@ const serverError = ref<string>()
 
 const loginError = computed(() =>
 	tried.value && !login.value.trim() ? 'Впиши логин.' : undefined,
+)
+const isEmailValid = computed(() => EMAIL_PATTERN.test(email.value.trim()))
+const emailError = computed(() =>
+	tried.value && isRegister.value && !isEmailValid.value
+		? 'Впиши почту в формате name@example.com.'
+		: undefined,
 )
 const passwordError = computed(() =>
 	tried.value && password.value.length < MIN_PASSWORD_LENGTH
@@ -44,7 +52,8 @@ const isValid = computed(
 	() =>
 		!!login.value.trim() &&
 		password.value.length >= MIN_PASSWORD_LENGTH &&
-		(!isRegister.value || passwordRepeat.value === password.value),
+		(!isRegister.value ||
+			(isEmailValid.value && passwordRepeat.value === password.value)),
 )
 
 watch(tab, () => {
@@ -64,7 +73,7 @@ const onSubmit = async () => {
 
 	try {
 		if (isRegister.value) {
-			await authStore.signUp(credentials)
+			await authStore.signUp({ ...credentials, email: email.value.trim() })
 		} else {
 			await authStore.logIn(credentials)
 		}
@@ -78,7 +87,7 @@ const onSubmit = async () => {
 		return
 	}
 
-	await router.push({ name: RouteName.Home })
+	await router.push({ name: RouteName.Parties })
 
 	if (isRegister.value) {
 		toastStore.show(
@@ -106,6 +115,14 @@ const onSubmit = async () => {
 						placeholder="kirill"
 						icon="user"
 						:error="loginError"
+					/>
+					<UiInput
+						v-if="isRegister"
+						v-model="email"
+						type="email"
+						label="Почта"
+						placeholder="kirill@example.com"
+						:error="emailError"
 					/>
 					<UiInput
 						v-model="password"

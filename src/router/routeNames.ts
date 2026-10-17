@@ -1,6 +1,7 @@
 export const enum RouteName {
 	Root = 'root',
 	Login = 'login',
+	Parties = 'parties',
 	Home = 'home',
 	Games = 'games',
 	Wheel = 'wheel',
@@ -8,4 +9,14 @@ export const enum RouteName {
 	UserDetail = 'user-detail',
 	Resources = 'resources',
 	Exchanges = 'exchanges',
+	Manual = 'manual',
+	AdminPointTypes = 'admin-point-types',
+	AdminItems = 'admin-items',
+	AdminEffects = 'admin-effects',
+	AdminPerks = 'admin-perks',
+	AdminExchanges = 'admin-exchanges',
+	AdminWheel = 'admin-wheel',
+	AdminRewards = 'admin-rewards',
+	AdminMembers = 'admin-members',
+	AdminParams = 'admin-params',
 }

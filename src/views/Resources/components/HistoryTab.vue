@@ -3,7 +3,7 @@ import { computed, reactive, ref, useTemplateRef, watch } from 'vue'
 import type {
 	JournalEntry,
 	JournalQuery,
-	JournalSourceKind,
+	JournalSourceType,
 	ResourceRef,
 } from '../../../api-facade/contracts'
 import { useClickOutside } from '../../../composables/useClickOutside'
@@ -11,31 +11,37 @@ import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiIcon from '../../../components/ui/UiIcon.vue'
 import UiIconButton from '../../../components/ui/UiIconButton.vue'
 import { useJournalStore } from '../../../stores/journalStore'
+import { useManualStore } from '../../../stores/manualStore'
 import { useMembersStore } from '../../../stores/membersStore'
 import { useResourcesStore } from '../../../stores/resourcesStore'
 import { useSessionStore } from '../../../stores/sessionStore'
-import { useToastStore } from '../../../stores/toastStore'
-import { formatMoment } from '../../../utils/format'
+import { formatJournalSource, formatMoment, formatUserName } from '../../../utils/format'
 
-type FilterKey = 'player' | 'resource' | 'source' | 'period'
+type FilterKey = 'user' | 'resource' | 'source' | 'period'
 
 type Props = {
-	/** player to filter by initially */
-	player?: string
+	/** user to filter by initially */
+	user?: string
 }
 
-const { player } = defineProps<Props>()
+const { user } = defineProps<Props>()
 
 const journalStore = useJournalStore()
 const membersStore = useMembersStore()
 const resourcesStore = useResourcesStore()
+const manualStore = useManualStore()
 const sessionStore = useSessionStore()
-const toastStore = useToastStore()
 
 const ALL = ''
 
+/** the last day or week counted from the current moment */
+const PERIOD_MS: Record<string, number> = {
+	day: 24 * 3_600_000,
+	week: 7 * 24 * 3_600_000,
+}
+
 const filters = reactive<Record<FilterKey, string>>({
-	player: player ?? ALL,
+	user: user ?? ALL,
 	resource: ALL,
 	source: ALL,
 	period: 'week',
@@ -48,12 +54,11 @@ useClickOutside(filtersPanel, () => (openFilter.value = undefined))
 
 const specs = computed(() => [
 	{
-		key: 'player' as const,
+		key: 'user' as const,
 		title: 'Игрок',
 		options: [
 			{ value: ALL, label: 'все' },
-			...membersStore.players.map((p) => ({ value: p.login, label: p.login })),
-			{ value: 'admin', label: 'админ' },
+			...membersStore.users.map((p) => ({ value: p.login, label: p.login })),
 		],
 	},
 	{
@@ -74,18 +79,21 @@ const specs = computed(() => [
 		options: [
 			{ value: ALL, label: 'все' },
 			{ value: 'item', label: 'предмет' },
-			{ value: 'wheel', label: 'колесо' },
+			{ value: 'perk', label: 'перк' },
+			{ value: 'effect', label: 'эффект' },
+			{ value: 'wheel_row', label: 'колесо' },
 			{ value: 'exchange', label: 'обмен' },
 			{ value: 'timer', label: 'таймер' },
-			{ value: 'grant', label: 'грант' },
+			{ value: 'game', label: 'игра' },
+			{ value: 'manual', label: 'вручную' },
 		],
 	},
 	{
 		key: 'period' as const,
 		title: 'Период',
 		options: [
-			{ value: 'today', label: 'сегодня' },
-			{ value: 'week', label: 'неделя' },
+			{ value: 'day', label: 'за день' },
+			{ value: 'week', label: 'за неделю' },
 		],
 	},
 ])
@@ -114,9 +122,9 @@ const toResource = (value: string): JournalQuery['resource'] => {
 }
 
 watch(
-	() => player,
+	() => user,
 	() => {
-		filters.player = player ?? ALL
+		filters.user = user ?? ALL
 	},
 )
 
@@ -124,10 +132,10 @@ watch(
 	[filters, () => journalStore.revision],
 	async () => {
 		entries.value = await journalStore.fetch({
-			player: filters.player || undefined,
+			user: filters.user || undefined,
 			resource: toResource(filters.resource),
-			source: (filters.source || undefined) as JournalSourceKind | undefined,
-			period: filters.period as 'today' | 'week',
+			source: (filters.source || undefined) as JournalSourceType | undefined,
+			from: new Date(Date.now() - PERIOD_MS[filters.period]).toISOString(),
 		})
 	},
 	{ immediate: true },
@@ -138,15 +146,6 @@ const pick = (key: FilterKey, value: string) => {
 	openFilter.value = undefined
 }
 
-const who = (login: string) => {
-	if (login === 'admin') return 'админ'
-	if (login === 'all') return 'все'
-
-	return login
-}
-
-const onFix = () =>
-	toastStore.show('Пока не нарисовано', 'Этого экрана ещё нет в макетах.', 'info')
 </script>
 
 <template>
@@ -187,21 +186,26 @@ const onFix = () =>
 		<div v-for="entry in entries" :key="entry.id" class="table__row table__row--body">
 			<span class="table__time">{{ formatMoment(entry.at) }}</span>
 			<span class="table__who">
-				<span class="table__actor">{{ who(entry.actor) }}</span>
-				<span class="table__source">{{ entry.source.label }}</span>
+				<span class="table__actor">{{ formatUserName(entry.actor) }}</span>
+				<span class="table__source">{{ formatJournalSource(entry.source, entry.correctsEntryId) }}</span>
 				<UiBadge v-if="entry.manual" tone="info" dot>вручную</UiBadge>
 			</span>
 			<span class="table__changes">
 				<UiBadge
 					v-for="(change, i) in entry.changes"
 					:key="i"
-					:tone="change.player === sessionStore.login ? 'accent' : 'neutral'"
+					:tone="change.login === sessionStore.login ? 'accent' : 'neutral'"
 				>
-					{{ who(change.player) }}: {{ change.text }}
+					{{ formatUserName(change.login) }}: {{ change.text }}
 				</UiBadge>
 			</span>
 			<span class="table__fix">
-				<UiIconButton icon="pencil" size="sm" label="Исправить" @click="onFix" />
+				<UiIconButton
+					icon="pencil"
+					size="sm"
+					label="Исправить"
+					@click="manualStore.startFix(entry)"
+				/>
 			</span>
 		</div>
 

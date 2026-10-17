@@ -1,6 +1,9 @@
 export const enum StoreName {
 	Auth = 'auth',
 	Theme = 'theme',
+	Scale = 'scale',
+	MiniMode = 'mini-mode',
+	Sidebar = 'sidebar',
 	Toast = 'toast',
 	Session = 'session',
 	Members = 'members',
@@ -12,4 +15,9 @@ export const enum StoreName {
 	Resources = 'resources',
 	Journal = 'journal',
 	Exchanges = 'exchanges',
+	Parties = 'parties',
+	Manual = 'manual',
+	AdminCatalog = 'admin-catalog',
+	AdminWheel = 'admin-wheel',
+	AdminSettings = 'admin-settings',
 }

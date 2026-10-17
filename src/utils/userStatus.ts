@@ -1,7 +1,7 @@
-import type { PlayerStatus } from '../api-facade/contracts'
+import type { UserStatus } from '../api-facade/contracts'
 
-export const playerStatusView: Record<
-	PlayerStatus,
+export const userStatusView: Record<
+	UserStatus,
 	{ label: string; tone: 'success' | 'neutral' | 'info' | 'danger' }
 > = {
 	playing: { label: 'играет', tone: 'success' },

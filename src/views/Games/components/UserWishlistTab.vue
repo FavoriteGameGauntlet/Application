@@ -7,10 +7,10 @@ import { useWishlistStore } from '../../../stores/wishlistStore'
 import { formatDate } from '../../../utils/format'
 
 type Props = {
-	player: string
+	user: string
 }
 
-const { player } = defineProps<Props>()
+const { user } = defineProps<Props>()
 
 const toastStore = useToastStore()
 const wishlistStore = useWishlistStore()
@@ -18,10 +18,10 @@ const wishlistStore = useWishlistStore()
 const query = ref('')
 
 watch(
-	() => player,
+	() => user,
 	() => {
 		query.value = ''
-		wishlistStore.load(player)
+		wishlistStore.load(user)
 	},
 	{ immediate: true },
 )
@@ -38,7 +38,7 @@ const onAdd = async () => {
 		return
 	}
 
-	if (await wishlistStore.add(player, name)) {
+	if (await wishlistStore.add(user, name)) {
 		query.value = ''
 	}
 }
@@ -61,12 +61,12 @@ const onAdd = async () => {
 
 	<div class="table">
 		<div class="table__row table__row--head">
-			<span>Игра в вишлисте {{ player }}</span>
+			<span>Игра в вишлисте {{ user }}</span>
 			<span>Добавлена</span>
 		</div>
 
 		<div
-			v-for="game in wishlistStore.lists[player]"
+			v-for="game in wishlistStore.lists[user]"
 			:key="game.id"
 			class="table__row table__row--body"
 		>
@@ -74,8 +74,8 @@ const onAdd = async () => {
 			<span class="table__date">{{ formatDate(game.addedAt) }}</span>
 		</div>
 
-		<div v-if="!wishlistStore.lists[player]?.length" class="table__empty">
-			Вишлист {{ player }} пока пуст. Подкинь игру через поле выше.
+		<div v-if="!wishlistStore.lists[user]?.length" class="table__empty">
+			Вишлист {{ user }} пока пуст. Подкинь игру через поле выше.
 		</div>
 	</div>
 </template>

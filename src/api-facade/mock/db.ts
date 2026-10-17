@@ -2,16 +2,18 @@ import type {
 	CompletedGame,
 	Effect,
 	ISODate,
-	ItemStack,
 	JournalEntry,
+	JournalSource,
 	Login,
 	Perk,
-	PlayerRef,
-	PlayerResources,
-	PlayerStatus,
+	UserRef,
+	UserItem,
+	UserResources,
+	UserStatus,
 	PointType,
 	ResourceRef,
 	Seconds,
+	SpinCostRef,
 	TimerState,
 	WheelGroup,
 	WheelSpinResult,
@@ -27,7 +29,7 @@ const fromNow = (ms: number): ISODate => new Date(Date.now() + ms).toISOString()
 
 export const ME: Login = 'kirill'
 
-export const players: PlayerRef[] = [
+export const users: UserRef[] = [
 	'kirill',
 	'anna',
 	'max',
@@ -36,14 +38,85 @@ export const players: PlayerRef[] = [
 	'oleg',
 ].map((login, i) => ({ login, colorIndex: i + 1 }))
 
+const pointType = (
+	id: number,
+	name: string,
+	description: string,
+	unitForms: PointType['unitForms'],
+	rest: Partial<PointType> = {},
+): PointType => ({
+	id,
+	name,
+	description,
+	unitForms,
+	startValue: 0,
+	isPublic: true,
+	isShared: false,
+	minimum: null,
+	maximum: null,
+	...rest,
+})
+
 export const pointTypes: PointType[] = [
-	{ id: 1, name: 'Золото', unitForms: ['золото', 'золота', 'золота'] },
-	{ id: 2, name: 'Репутация', unitForms: ['репутация', 'репутации', 'репутации'] },
-	{ id: 3, name: 'Билеты', unitForms: ['билет', 'билета', 'билетов'] },
-	{ id: 4, name: 'Осколки', unitForms: ['осколок', 'осколка', 'осколков'] },
-	{ id: 5, name: 'Опыт', unitForms: ['опыт', 'опыта', 'опыта'] },
-	{ id: 6, name: 'Карма', unitForms: ['карма', 'кармы', 'кармы'] },
+	pointType(
+		1,
+		'Золото',
+		'Основная валюта: идёт за таймер и прохождения, тратится в обменах.',
+		['золото', 'золота', 'золота'],
+		{ startValue: 100, minimum: 0 },
+	),
+	pointType(
+		2,
+		'Репутация',
+		'Растёт за пройденные игры и отзывы. Нужна для редких обменов.',
+		['репутация', 'репутации', 'репутации'],
+		{ minimum: 0, maximum: 100 },
+	),
+	pointType(
+		3,
+		'Билеты',
+		'Один билет — один прокрут колеса сверх обычных.',
+		['билет', 'билета', 'билетов'],
+		{ startValue: 1, minimum: 0 },
+	),
+	pointType(
+		4,
+		'Осколки',
+		'Остаются, когда разбираешь предметы. Копятся на перки.',
+		['осколок', 'осколка', 'осколков'],
+		{ minimum: 0 },
+	),
+	pointType(
+		5,
+		'Опыт',
+		'Показывает, сколько ты наиграл(а) за сезон. Ни на что не тратится.',
+		['опыт', 'опыта', 'опыта'],
+	),
+	pointType(
+		6,
+		'Карма',
+		'Плюс за помощь другим, минус за проклятия. Может уйти в минус.',
+		['карма', 'кармы', 'кармы'],
+		{ minimum: -20 },
+	),
+	pointType(
+		7,
+		'Казна',
+		'Общие очки пати: копятся у всех вместе и тратятся на общие цели.',
+		['очко казны', 'очка казны', 'очков казны'],
+		{ isShared: true, minimum: 0, maximum: 1000 },
+	),
+	pointType(
+		8,
+		'Скрытый рейтинг',
+		'Служебные очки: их видят только админы пати.',
+		['очко рейтинга', 'очка рейтинга', 'очков рейтинга'],
+		{ isPublic: false },
+	),
 ]
+
+/** values of the shared point types by the id of the type */
+export const sharedPoints: Record<number, number> = { 7: 240 }
 
 type ItemDef = { id: number; description: string; usesMax: number }
 
@@ -94,21 +167,22 @@ export const perkCatalog: Record<string, Omit<Perk, 'name'>> = {
 	},
 }
 
-export const makeItem = (
-	name: string,
-	held: number,
-	usesLeft?: number,
-): ItemStack => {
+let nextUserItemId = 1
+
+export const newUserItemId = () => nextUserItemId++
+
+/** `count` separate copies of the item, each with its own uses */
+export const makeItems = (name: string, count: number, usesLeft?: number): UserItem[] => {
 	const def = itemCatalog[name]
 
-	return {
-		id: def.id,
+	return Array.from({ length: count }, () => ({
+		id: newUserItemId(),
+		itemId: def.id,
 		name,
 		description: def.description,
-		held,
 		usesLeft: usesLeft ?? def.usesMax,
 		usesMax: def.usesMax,
-	}
+	}))
 }
 
 export const makePerk = (name: string, usesLeft?: number): Perk => {
@@ -152,7 +226,7 @@ export const effectRef = (name: string): ResourceRef => ({
 	name,
 })
 
-const ref = (login: Login) => players.find((p) => p.login === login)!
+const ref = (login: Login) => users.find((p) => p.login === login)!
 
 const points = (
 	gold: number,
@@ -161,7 +235,15 @@ const points = (
 	shards: number,
 	xp: number,
 	karma: number,
-): Record<number, number> => ({ 1: gold, 2: rep, 3: tickets, 4: shards, 5: xp, 6: karma })
+): Record<number, number> => ({
+	1: gold,
+	2: rep,
+	3: tickets,
+	4: shards,
+	5: xp,
+	6: karma,
+	8: Math.round(xp / 100),
+})
 
 const effect = (
 	name: string,
@@ -178,15 +260,15 @@ const effect = (
 	...(uses && { usesLeft: uses[0], usesMax: uses[1] }),
 })
 
-export const resources: Record<Login, PlayerResources> = {
+export const resources: Record<Login, UserResources> = {
 	kirill: {
-		player: ref('kirill'),
+		user: ref('kirill'),
 		points: points(340, 12, 3, 27, 1180, -4),
 		items: [
-			makeItem('Свиток удачи', 6),
-			makeItem('Билет на колесо', 11),
-			makeItem('Щит', 3, 2),
-			makeItem('Проклятие', 2, 1),
+			...makeItems('Свиток удачи', 6),
+			...makeItems('Билет на колесо', 11),
+			...makeItems('Щит', 3, 2),
+			...makeItems('Проклятие', 2, 1),
 		],
 		perks: [makePerk('Везунчик'), makePerk('Марафонец')],
 		effects: [
@@ -225,13 +307,13 @@ export const resources: Record<Login, PlayerResources> = {
 		],
 	},
 	anna: {
-		player: ref('anna'),
+		user: ref('anna'),
 		points: points(520, 18, 5, 41, 1640, 6),
 		items: [
-			makeItem('Колобок', 1),
-			makeItem('Свиток удачи', 4),
-			makeItem('Щит', 2, 2),
-			makeItem('Кубик реролла', 1),
+			...makeItems('Колобок', 1),
+			...makeItems('Свиток удачи', 4),
+			...makeItems('Щит', 2, 2),
+			...makeItems('Кубик реролла', 1),
 		],
 		perks: [makePerk('Везунчик', 0)],
 		effects: [
@@ -244,12 +326,12 @@ export const resources: Record<Login, PlayerResources> = {
 		],
 	},
 	max: {
-		player: ref('max'),
+		user: ref('max'),
 		points: points(290, 9, 2, 12, 990, 0),
 		items: [
-			makeItem('Билет на колесо', 4),
-			makeItem('Щит', 1),
-			makeItem('Кубик реролла', 2),
+			...makeItems('Билет на колесо', 4),
+			...makeItems('Щит', 1),
+			...makeItems('Кубик реролла', 2),
 		],
 		perks: [makePerk('Марафонец')],
 		effects: [
@@ -262,9 +344,9 @@ export const resources: Record<Login, PlayerResources> = {
 		],
 	},
 	lena: {
-		player: ref('lena'),
+		user: ref('lena'),
 		points: points(210, 15, 4, 30, 870, 3),
-		items: [makeItem('Свиток удачи', 2), makeItem('Свиток пропуска', 1)],
+		items: [...makeItems('Свиток удачи', 2), ...makeItems('Свиток пропуска', 1)],
 		perks: [],
 		effects: [
 			effect(
@@ -276,9 +358,9 @@ export const resources: Record<Login, PlayerResources> = {
 		],
 	},
 	sasha: {
-		player: ref('sasha'),
+		user: ref('sasha'),
 		points: points(180, 7, 1, 8, 610, -2),
-		items: [makeItem('Колобок', 1), makeItem('Билет на колесо', 2)],
+		items: [...makeItems('Колобок', 1), ...makeItems('Билет на колесо', 2)],
 		perks: [],
 		effects: [
 			effect(
@@ -290,12 +372,23 @@ export const resources: Record<Login, PlayerResources> = {
 		],
 	},
 	oleg: {
-		player: ref('oleg'),
+		user: ref('oleg'),
 		points: points(95, 4, 0, 3, 240, 1),
-		items: [makeItem('Билет на колесо', 1)],
+		items: [...makeItems('Билет на колесо', 1)],
 		perks: [],
 		effects: [],
 	},
+}
+
+const gameIds = new Map<string, number>()
+
+/** the party game is shared by all users, so the id depends on the name only */
+export const gameId = (name: string): number => {
+	const key = name.toLowerCase()
+
+	if (!gameIds.has(key)) gameIds.set(key, gameIds.size + 1)
+
+	return gameIds.get(key)!
 }
 
 const wish = (id: number, name: string, addedAt: ISODate): WishlistGame => ({
@@ -309,11 +402,11 @@ export const wishlists: Record<Login, WishlistGame[]> = {
 		wish(1, 'Celeste', '2026-09-05T12:00:00Z'),
 		wish(2, 'Hades', '2026-09-11T12:00:00Z'),
 		wish(3, 'Outer Wilds', '2026-09-20T12:00:00Z'),
-		wish(4, 'Inside', '2026-10-01T12:00:00Z'),
+		wish(4, 'Hollow Knight', '2026-10-01T12:00:00Z'),
 		wish(5, 'Stardew Valley', '2026-10-04T12:00:00Z'),
 	],
 	anna: [
-		wish(6, 'Celeste', '2026-09-01T12:00:00Z'),
+		wish(6, 'Sea of Stars', '2026-09-01T12:00:00Z'),
 		wish(7, 'Hollow Knight: Silksong', '2026-09-03T12:00:00Z'),
 		wish(8, 'Ori and the Will of the Wisps', '2026-09-12T12:00:00Z'),
 		wish(9, 'Tunic', '2026-09-30T12:00:00Z'),
@@ -332,7 +425,6 @@ export const wishlists: Record<Login, WishlistGame[]> = {
 }
 
 const done = (
-	id: number,
 	name: string,
 	startedAt: string,
 	endedAt: string,
@@ -342,7 +434,7 @@ const done = (
 	rating: number | null = null,
 	review: string | null = null,
 ): CompletedGame => ({
-	id,
+	gameId: gameId(name),
 	name,
 	startedAt: `${startedAt}T12:00:00Z`,
 	endedAt: `${endedAt}T12:00:00Z`,
@@ -355,7 +447,6 @@ const done = (
 export const completed: Record<Login, CompletedGame[]> = {
 	kirill: [
 		done(
-			1,
 			'Disco Elysium',
 			'2026-09-12',
 			'2026-10-07',
@@ -365,11 +456,10 @@ export const completed: Record<Login, CompletedGame[]> = {
 			9,
 			'Лучшие диалоги, что я читал в играх. Провалил половину проверок и ни о чём не жалею.',
 		),
-		done(2, 'Inside', '2026-09-24', '2026-09-28', 4, 5, 'completed'),
-		done(3, 'Dead Cells', '2026-09-15', '2026-09-19', 6, 40, 'cancelled'),
-		done(4, 'Control', '2026-09-09', '2026-09-10', 1, 15, 'rerolled'),
+		done('Inside', '2026-09-24', '2026-09-28', 4, 5, 'completed'),
+		done('Dead Cells', '2026-09-15', '2026-09-19', 6, 40, 'cancelled'),
+		done('Control', '2026-09-09', '2026-09-10', 1, 15, 'rerolled'),
 		done(
-			5,
 			'Portal 2',
 			'2026-08-25',
 			'2026-09-02',
@@ -382,7 +472,6 @@ export const completed: Record<Login, CompletedGame[]> = {
 	],
 	anna: [
 		done(
-			6,
 			'Celeste',
 			'2026-09-20',
 			'2026-10-06',
@@ -393,7 +482,6 @@ export const completed: Record<Login, CompletedGame[]> = {
 			'Сложно, честно и очень тепло. Б-стороны добила на одном упрямстве.',
 		),
 		done(
-			7,
 			'Hades',
 			'2026-09-01',
 			'2026-09-18',
@@ -403,9 +491,8 @@ export const completed: Record<Login, CompletedGame[]> = {
 			8,
 			'Затягивает с первого забега. Под конец гринд немного утомил.',
 		),
-		done(8, 'Cuphead', '2026-08-28', '2026-08-31', 3, 20, 'cancelled'),
+		done('Cuphead', '2026-08-28', '2026-08-31', 3, 20, 'cancelled'),
 		done(
-			9,
 			'Firewatch',
 			'2026-08-20',
 			'2026-08-23',
@@ -418,7 +505,6 @@ export const completed: Record<Login, CompletedGame[]> = {
 	],
 	max: [
 		done(
-			10,
 			'Undertale',
 			'2026-09-10',
 			'2026-09-18',
@@ -430,8 +516,8 @@ export const completed: Record<Login, CompletedGame[]> = {
 		),
 	],
 	lena: [
-		done(11, 'Inscryption', '2026-09-14', '2026-09-29', 12, 40, 'completed'),
-		done(12, 'Control', '2026-09-05', '2026-09-08', 2, 10, 'rerolled'),
+		done('Inscryption', '2026-09-14', '2026-09-29', 12, 40, 'completed'),
+		done('Control', '2026-09-05', '2026-09-08', 2, 10, 'rerolled'),
 	],
 	sasha: [],
 	oleg: [],
@@ -441,28 +527,33 @@ const entry = (
 	id: number,
 	at: ISODate,
 	actor: JournalEntry['actor'],
-	kind: JournalEntry['source']['kind'],
-	label: string,
+	source: JournalSource,
 	manual: boolean,
 	changes: JournalEntry['changes'],
 ): JournalEntry => ({
 	id,
 	at,
 	actor,
-	source: { kind, label },
+	source,
 	manual,
 	changes,
 })
 
+const itemSource = (name: string): JournalSource => ({
+	type: 'item',
+	id: itemCatalog[name]?.id,
+	name,
+})
+
 export const journal: JournalEntry[] = [
-	entry(1, ago(12 * MIN), 'anna', 'item', 'предмет «Колобок»', true, [
+	entry(1, ago(12 * MIN), 'anna', itemSource('Колобок'), true, [
 		{
-			player: 'anna',
+			login: 'anna',
 			text: '−1 Колобок',
 			resource: itemRef('Колобок', -1),
 		},
 		{
-			player: 'sasha',
+			login: 'sasha',
 			text: '+1 Колобок',
 			resource: itemRef('Колобок', 1),
 		},
@@ -471,49 +562,47 @@ export const journal: JournalEntry[] = [
 		2,
 		ago(30 * MIN),
 		'kirill',
-		'item',
-		'предмет «Кубическая дуэль»',
+		itemSource('Кубическая дуэль'),
 		true,
 		[
-			{ player: 'kirill', text: '+3 очка' },
-			{ player: 'kirill', text: '+1 Реролл игры' },
+			{ login: 'kirill', text: '+3 очка' },
+			{ login: 'kirill', text: '+1 Реролл игры' },
 		],
 	),
 	entry(
 		3,
 		ago(2 * HOUR),
 		'kirill',
-		'exchange',
-		'обмен «Набор для рерола»',
+		{ type: 'exchange', id: 1, name: 'Набор для рерола' },
 		false,
 		[
 			{
-				player: 'kirill',
+				login: 'kirill',
 				text: '−80 золота',
 				resource: pointRef('Золото', -80),
 			},
 			{
-				player: 'kirill',
+				login: 'kirill',
 				text: '−2 репутации',
 				resource: pointRef('Репутация', -2),
 			},
 			{
-				player: 'kirill',
+				login: 'kirill',
 				text: '+1 Свиток пропуска',
 				resource: itemRef('Свиток пропуска', 1),
 			},
 		],
 	),
-	entry(4, ago(3 * HOUR), 'anna', 'item', 'предмет «Проклятие»', false, [
+	entry(4, ago(3 * HOUR), 'anna', itemSource('Проклятие'), false, [
 		{
-			player: 'kirill',
+			login: 'kirill',
 			text: 'эффект Проклятие · 3 ч',
 			resource: effectRef('Проклятие'),
 		},
 	]),
-	entry(5, ago(5 * HOUR), 'max', 'wheel', 'колесо · «×2 золото»', false, [
+	entry(5, ago(5 * HOUR), 'max', { type: 'wheel_row', id: 12, name: '×2 золото' }, false, [
 		{
-			player: 'max',
+			login: 'max',
 			text: 'эффект ×2 золото · 2 ч',
 			resource: effectRef('×2 золото'),
 		},
@@ -522,22 +611,53 @@ export const journal: JournalEntry[] = [
 		6,
 		ago(DAY + 2 * HOUR),
 		'lena',
-		'timer',
-		'таймер · Disco Elysium',
+		{ type: 'timer', name: 'Disco Elysium' },
 		false,
 		[
 			{
-				player: 'lena',
+				login: 'lena',
 				text: '+50 золота',
 				resource: pointRef('Золото', 50),
 			},
 		],
 	),
-	entry(7, ago(DAY + 6 * HOUR), 'admin', 'grant', 'грант', false, [
+	entry(7, ago(DAY + 6 * HOUR), 'anna', { type: 'manual' }, true, [
 		{
-			player: 'all',
+			login: 'kirill',
 			text: '+100 золота',
 			resource: pointRef('Золото', 100),
+		},
+		{
+			login: 'max',
+			text: '+100 золота',
+			resource: pointRef('Золото', 100),
+		},
+	]),
+	entry(
+		8,
+		ago(3 * DAY),
+		'kirill',
+		{
+			type: 'game',
+			id: gameId('Heroes of Might and Magic: Olden Era'),
+			name: 'Heroes of Might and Magic: Olden Era',
+			event: 'started',
+		},
+		false,
+		[],
+	),
+	entry(9, ago(40 * MIN), 'max', { type: 'manual' }, true, [
+		{
+			login: null,
+			text: '+20 очков казны',
+			resource: pointRef('Казна', 20),
+		},
+	]),
+	entry(10, ago(4 * HOUR), 'anna', { type: 'manual' }, true, [
+		{
+			login: 'max',
+			text: '+3 очка рейтинга',
+			resource: pointRef('Скрытый рейтинг', 3),
 		},
 	]),
 ]
@@ -564,7 +684,9 @@ export const resourceHistory: Record<
  * Automatic entries are applied by the wheel itself, `isManualChange` entries
  * need the manual change form (effects, swaps, anything with a choice).
  */
-export const wheelGroups: WheelGroup[] = [
+export type WheelGroupDef = Omit<WheelGroup, 'cost'>
+
+export const wheelGroups: WheelGroupDef[] = [
 	{
 		id: 1,
 		name: 'Бонусы',
@@ -715,7 +837,7 @@ export const exchangeDefs: ExchangeDef[] = [
 ]
 
 export type MemberSeed = {
-	status: PlayerStatus
+	status: UserStatus
 	currentGame: string | null
 	playedHours: number
 	completedCount: number
@@ -766,9 +888,25 @@ export const MY_SPINS = 22
 
 export const TIMER_GOAL: Seconds = 7200
 
+/**
+ * What an admin set for a spin of each group of changes (by the id of the
+ * group), charged when the result is applied. A group without a cost is free.
+ */
+export const spinCosts: Record<number, SpinCostRef[]> = Object.fromEntries(
+	wheelGroups
+		.filter((g) => g.kind === 'changes')
+		.map((g): [number, SpinCostRef[]] => [
+			g.id,
+			[{ kind: 'item', id: itemCatalog['Билет на колесо'].id, name: 'Билет на колесо', amount: 1 }],
+		]),
+)
+
 export const state = {
 	currentGame: {
-		game: { id: 1, name: 'Heroes of Might and Magic: Olden Era' } as {
+		game: {
+			id: gameId('Heroes of Might and Magic: Olden Era'),
+			name: 'Heroes of Might and Magic: Olden Era',
+		} as {
 			id: number
 			name: string
 		} | null,
@@ -782,4 +920,8 @@ export const state = {
 	},
 	/** the spin that waits to be applied; a new spin replaces it */
 	spin: null as WheelSpinResult | null,
+	/** applied spins, their manual part is entered with the manual change form */
+	appliedSpins: {} as Record<number, WheelSpinResult>,
+	/** the party that the requests are made in */
+	partyId: 1,
 }
