@@ -423,6 +423,10 @@ export const mockApi: Api = {
 
 				return { id, name }
 			}),
+		setRole: (role) =>
+			reply(() => {
+				currentParty().role = role
+			}),
 	},
 
 	currentGame: {

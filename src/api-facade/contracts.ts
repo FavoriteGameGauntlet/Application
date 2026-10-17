@@ -463,6 +463,11 @@ export type Api = {
 		 */
 		getMe: () => Promise<Me>
 		getSeason: () => Promise<Season>
+		/**
+		 * Mocks only, to check both views of the app. On the backend the role is
+		 * given by the admins of the party and a user cannot change it.
+		 */
+		setRole: (role: PartyRole) => Promise<void>
 	}
 	currentGame: {
 		/**
