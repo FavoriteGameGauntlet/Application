@@ -10,6 +10,7 @@ export const useTabs = () => {
 		[RouteName.Users, RouteName.UserDetail],
 		RouteName.Resources,
 		RouteName.Exchanges,
+		RouteName.Catalog,
 	] as const
 
 	const currentTabIndex = computed((prevIndex: number | undefined) => {

@@ -616,6 +616,16 @@ export type Api = {
 		 */
 		catalog: (kind: ResourceKind) => Promise<CatalogOption[]>
 		/**
+		 * The same catalogue with the descriptions and the changes, for the
+		 * «Каталог» screen. The deleted entries never come: the admins get them
+		 * from `admin.catalog.list`, the users don't see them at all. The point
+		 * types come from `pointTypes`.
+		 *
+		 * Backend (missing): GET {party}/items, GET {party}/perks, GET {party}/effects
+		 * with the full entries
+		 */
+		catalogEntries: (kind: ResourceKind) => Promise<CatalogEntry[]>
+		/**
 		 * An item has no target: it works on the current user, and when
 		 * something else is needed the manual change form is opened
 		 * (POST {party}/grants).

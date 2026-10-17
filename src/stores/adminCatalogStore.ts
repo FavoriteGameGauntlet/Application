@@ -13,6 +13,8 @@ import { useToastStore } from './toastStore'
 
 export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 	const entries = ref<CatalogEntry[]>([])
+	/** the kind that `entries` belong to, they must not be shown for another one */
+	const entriesKind = ref<CatalogKind>()
 	const exchanges = ref<AdminExchange[]>([])
 	/** the switch «Показать удалённые» of the open list */
 	const showDeleted = ref(false)
@@ -20,8 +22,17 @@ export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 	const fetchCatalog = (kind: CatalogKind, includeDeleted = false) =>
 		api.admin.catalog.list(kind, includeDeleted)
 
+	let lastRequest = 0
+
 	const loadCatalog = async (kind: CatalogKind) => {
-		entries.value = await fetchCatalog(kind, showDeleted.value)
+		const request = ++lastRequest
+		const list = await fetchCatalog(kind, showDeleted.value)
+
+		// a slower answer for the kind that was left must not replace the open one
+		if (request !== lastRequest) return
+
+		entries.value = list
+		entriesKind.value = kind
 	}
 
 	const loadExchanges = async () => {
@@ -125,6 +136,7 @@ export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 
 	return {
 		entries,
+		entriesKind,
 		exchanges,
 		showDeleted,
 		fetchCatalog,

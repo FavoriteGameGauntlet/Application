@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
-import UiIcon from '../../../components/ui/UiIcon.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiUserAvatar from '../../../components/ui/UiUserAvatar.vue'
 import { useResourcesStore } from '../../../stores/resourcesStore'
 import { useSessionStore } from '../../../stores/sessionStore'
-import { formatBounds } from '../../../utils/format'
 
 const resourcesStore = useResourcesStore()
 const sessionStore = useSessionStore()
@@ -30,18 +28,6 @@ const rows = computed(() =>
 	selectedType.value === undefined
 		? []
 		: (resourcesStore.leaderboards[selectedType.value]?.rows ?? []),
-)
-
-const openTypeId = ref<number>()
-
-const typeRows = computed(() =>
-	types.value.map((type) => ({
-		type,
-		open: openTypeId.value === type.id,
-		unit: type.unitForms.join(' / '),
-		bounds: formatBounds(type.minimum, type.maximum),
-		value: myPoints.value[type.id] ?? 0,
-	})),
 )
 
 watch(
@@ -96,45 +82,6 @@ watch(
 				</span>
 				<span class="table__value">{{ row.value }}</span>
 			</div>
-		</div>
-
-		<div class="info">
-			<div class="info__row info__row--head">
-				<span class="info__name-head">Тип очков</span>
-				<span>Единица в журнале</span>
-				<span>Границы</span>
-				<span class="table__right">У тебя</span>
-			</div>
-
-			<div
-				v-for="row in typeRows"
-				:key="row.type.id"
-				class="info__item"
-				:class="{ 'info__item--open': row.open }"
-			>
-				<div
-					class="info__row info__row--body"
-					@click="openTypeId = row.open ? undefined : row.type.id"
-				>
-					<div class="info__name">
-						<span class="info__chevron">
-							<UiIcon :name="row.open ? 'chevron-down' : 'chevron-right'" :size="16" />
-						</span>
-						<span class="info__title">{{ row.type.name }}</span>
-					</div>
-					<span class="info__text">{{ row.unit }}</span>
-					<span class="info__text">{{ row.bounds }}</span>
-					<span class="table__value">{{ row.value }}</span>
-				</div>
-
-				<div v-if="row.open" class="info__desc">
-					<span class="label">Описание</span>
-					<span class="info__text">{{ row.type.description || 'Без описания' }}</span>
-					<span class="info__start">Стартовое значение: {{ row.type.startValue }}</span>
-				</div>
-			</div>
-
-			<div v-if="!typeRows.length" class="info__empty">Ничего не найдено.</div>
 		</div>
 	</div>
 </template>
@@ -249,96 +196,5 @@ watch(
 	font: 700 15px / 1 var(--font-mono);
 	font-variant-numeric: tabular-nums;
 	color: var(--text-strong);
-}
-
-.info {
-	grid-column: 1 / -1;
-	overflow: hidden;
-	background: var(--surface-card);
-	border: 1px solid var(--border-subtle);
-	border-radius: var(--radius-lg);
-	box-shadow: var(--shadow-1);
-}
-
-.info__row {
-	display: grid;
-	grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.5fr) minmax(0, 1fr) 120px;
-	gap: 12px;
-	align-items: center;
-}
-
-.info__row--head {
-	padding: 12px 16px;
-	font: var(--type-label);
-	letter-spacing: var(--tracking-label);
-	text-transform: uppercase;
-	color: var(--text-muted);
-	background: var(--surface-sunken);
-}
-
-.info__name-head {
-	padding-left: 24px;
-}
-
-.info__row--body {
-	min-height: 52px;
-	padding: 10px 16px;
-	cursor: pointer;
-}
-
-.info__row--body:hover {
-	background: var(--surface-sunken);
-}
-
-.info__item {
-	border-top: 1px solid var(--border-subtle);
-}
-
-.info__item--open {
-	background: var(--surface-sunken);
-}
-
-.info__name {
-	display: flex;
-	align-items: flex-start;
-	gap: 8px;
-}
-
-.info__chevron {
-	display: flex;
-	flex: none;
-	margin-top: 3px;
-	color: var(--text-muted);
-}
-
-.info__title {
-	font: 600 15px / 1.45 var(--font-body);
-	color: var(--text-strong);
-}
-
-.info__text {
-	font: var(--type-body-sm);
-	color: var(--text-body);
-	text-wrap: pretty;
-}
-
-.info__desc {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-	max-width: 720px;
-	padding: 0 16px 16px 40px;
-}
-
-.info__start {
-	font: var(--type-caption);
-	color: var(--text-muted);
-}
-
-.info__empty {
-	padding: 16px;
-	font: var(--type-body-sm);
-	color: var(--text-subtle);
-	border-top: 1px solid var(--border-subtle);
 }
 </style>

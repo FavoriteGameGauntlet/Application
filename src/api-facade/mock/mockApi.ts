@@ -669,6 +669,7 @@ export const mockApi: Api = {
 					.filter((e) => !e.deleted)
 					.map(({ id, name }) => ({ id, name })),
 			),
+		catalogEntries: (kind) => reply(() => adminDb.catalog[kind].filter((e) => !e.deleted)),
 		useItem: (userItemId) =>
 			reply(() => {
 				const res = db.resources[db.ME]

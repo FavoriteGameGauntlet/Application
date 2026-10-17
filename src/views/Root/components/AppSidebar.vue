@@ -35,13 +35,10 @@ const items: NavItem[] = [
 	},
 	{ label: 'Ресурсы', icon: 'coins', name: RouteName.Resources },
 	{ label: 'Обмены', icon: 'arrow-left-right', name: RouteName.Exchanges },
+	{ label: 'Каталог', icon: 'book-open', name: RouteName.Catalog },
 ]
 
 const adminCatalogs: NavItem[] = [
-	{ label: 'Типы очков', icon: 'coins', name: RouteName.AdminPointTypes },
-	{ label: 'Предметы', icon: 'package', name: RouteName.AdminItems },
-	{ label: 'Эффекты', icon: 'sparkles', name: RouteName.AdminEffects },
-	{ label: 'Перки', icon: 'award', name: RouteName.AdminPerks },
 	{ label: 'Обмены', icon: 'arrow-left-right', name: RouteName.AdminExchanges },
 	{ label: 'Колесо', icon: 'refresh-cw', name: RouteName.AdminWheel },
 	{ label: 'Награды', icon: 'gift', name: RouteName.AdminRewards },
@@ -122,7 +119,7 @@ const isActive = (item: NavItem) =>
 
 				<RouterLink
 					class="nav-item"
-					:to="{ name: RouteName.AdminItems }"
+					:to="{ name: RouteName.AdminExchanges }"
 					:title="hint('Панель админа')"
 				>
 					<UiIcon name="shield" :size="18" />

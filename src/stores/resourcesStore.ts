@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { api } from '../api-facade/api'
 import type {
+	CatalogEntry,
 	CatalogOption,
 	Login,
 	UserResources,
@@ -26,6 +27,7 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 	const leaderboards = ref<Record<number, PointsLeaderboard>>({})
 	const summaries = ref<Partial<Record<ResourceKind, ResourceSummary[]>>>({})
 	const catalogs = ref<Partial<Record<ResourceKind, CatalogOption[]>>>({})
+	const catalogEntries = ref<Partial<Record<ResourceKind, CatalogEntry[]>>>({})
 
 	const loadPointTypes = async () => {
 		pointTypes.value = await api.resources.pointTypes()
@@ -51,6 +53,10 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 
 	const loadCatalog = async (kind: ResourceKind) => {
 		catalogs.value[kind] = await api.resources.catalog(kind)
+	}
+
+	const loadCatalogEntries = async (kind: ResourceKind) => {
+		catalogEntries.value[kind] = await api.resources.catalogEntries(kind)
 	}
 
 	const fetchHistory =(login: Login, kind: ResourceKind, id: number) =>
@@ -91,6 +97,7 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 		leaderboards,
 		summaries,
 		catalogs,
+		catalogEntries,
 		loadPointTypes,
 		loadSharedPoints,
 		loadUser,
@@ -98,6 +105,7 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 		loadLeaderboard,
 		loadSummary,
 		loadCatalog,
+		loadCatalogEntries,
 		fetchHistory,
 		useItem,
 		usePerk,

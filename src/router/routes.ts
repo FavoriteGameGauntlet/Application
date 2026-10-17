@@ -1,11 +1,11 @@
 import type { RouteRecordRaw } from 'vue-router'
-import AdminCatalogView from '../views/Admin/AdminCatalogView.vue'
 import AdminExchangesView from '../views/Admin/AdminExchangesView.vue'
 import AdminMembersView from '../views/Admin/AdminMembersView.vue'
 import AdminParamsView from '../views/Admin/AdminParamsView.vue'
 import AdminRewardsView from '../views/Admin/AdminRewardsView.vue'
 import AdminWheelView from '../views/Admin/AdminWheelView.vue'
 import AuthView from '../views/Auth/AuthView.vue'
+import CatalogView from '../views/Catalog/CatalogView.vue'
 import ExchangesView from '../views/Exchanges/ExchangesView.vue'
 import GamesView from '../views/Games/GamesView.vue'
 import HomeView from '../views/Home/HomeView.vue'
@@ -68,6 +68,12 @@ export const routes: RouteRecordRaw[] = [
 			},
 
 			{
+				path: 'catalog',
+				component: CatalogView,
+				name: RouteName.Catalog,
+			},
+
+			{
 				path: 'manual',
 				component: ManualView,
 				name: RouteName.Manual,
@@ -77,32 +83,8 @@ export const routes: RouteRecordRaw[] = [
 				path: 'admin',
 				// the admin panel has a sidebar of its own, only admins of the party get in
 				meta: { admin: true },
-				redirect: { name: RouteName.AdminItems },
+				redirect: { name: RouteName.AdminExchanges },
 				children: [
-					{
-						path: 'point-types',
-						component: AdminCatalogView,
-						props: { kind: 'point-types' },
-						name: RouteName.AdminPointTypes,
-					},
-					{
-						path: 'items',
-						component: AdminCatalogView,
-						props: { kind: 'items' },
-						name: RouteName.AdminItems,
-					},
-					{
-						path: 'effects',
-						component: AdminCatalogView,
-						props: { kind: 'effects' },
-						name: RouteName.AdminEffects,
-					},
-					{
-						path: 'perks',
-						component: AdminCatalogView,
-						props: { kind: 'perks' },
-						name: RouteName.AdminPerks,
-					},
 					{
 						path: 'exchanges',
 						component: AdminExchangesView,
