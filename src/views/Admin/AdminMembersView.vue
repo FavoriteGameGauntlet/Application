@@ -8,6 +8,7 @@ import UiBadge from '../../components/ui/UiBadge.vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiIconButton from '../../components/ui/UiIconButton.vue'
 import UiInput from '../../components/ui/UiInput.vue'
+import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiUserAvatar from '../../components/ui/UiUserAvatar.vue'
 import { useAdminSettingsStore } from '../../stores/adminSettingsStore'
 import { useMembersStore } from '../../stores/membersStore'
@@ -120,7 +121,7 @@ onMounted(() => store.loadMembers())
 <template>
 	<div class="members">
 		<div class="head">
-			<span class="head__title">Участники и права</span>
+			<UiPageTitle>Участники и права</UiPageTitle>
 			<span class="head__count">{{ count }}</span>
 			<div class="head__spacer"></div>
 			<div class="head__search">
@@ -210,13 +211,6 @@ onMounted(() => store.loadMembers())
 	display: flex;
 	align-items: center;
 	gap: 12px;
-}
-
-.head__title {
-	font: var(--type-h2);
-	letter-spacing: var(--tracking-display);
-	text-transform: uppercase;
-	color: var(--text-strong);
 }
 
 .head__count {

@@ -7,6 +7,7 @@ import UiBadge from '../../components/ui/UiBadge.vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiIconButton from '../../components/ui/UiIconButton.vue'
 import UiInput from '../../components/ui/UiInput.vue'
+import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiSelect from '../../components/ui/UiSelect.vue'
 import { RouteName } from '../../router/routeNames'
 import { useManualStore } from '../../stores/manualStore'
@@ -291,9 +292,9 @@ onMounted(async () => {
 			</span>
 		</div>
 
-		<span class="title">
+		<UiPageTitle>
 			{{ draft.kind === 'fix' ? 'Исправить запись' : 'Применить вручную' }}
-		</span>
+		</UiPageTitle>
 
 		<div class="layout">
 			<div class="main">
@@ -447,13 +448,6 @@ onMounted(async () => {
 }
 
 .crumbs__current {
-	color: var(--text-strong);
-}
-
-.title {
-	font: var(--type-h2);
-	letter-spacing: var(--tracking-display);
-	text-transform: uppercase;
 	color: var(--text-strong);
 }
 

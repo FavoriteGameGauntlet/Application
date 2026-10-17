@@ -9,6 +9,7 @@ import UiCheckbox from '../../components/ui/UiCheckbox.vue'
 import UiIcon from '../../components/ui/UiIcon.vue'
 import UiIconButton from '../../components/ui/UiIconButton.vue'
 import UiInput from '../../components/ui/UiInput.vue'
+import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiTabs from '../../components/ui/UiTabs.vue'
 import UiTag from '../../components/ui/UiTag.vue'
 import { useAdminWheelStore } from '../../stores/adminWheelStore'
@@ -208,7 +209,7 @@ onMounted(() => store.load())
 
 <template>
 	<div class="wheel">
-		<span class="title">Колесо</span>
+		<UiPageTitle>Колесо</UiPageTitle>
 
 		<UiTabs :model-value="store.kind" :items="tabs" @update:model-value="setKind($event!)" />
 
@@ -378,13 +379,6 @@ onMounted(() => store.load())
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
-}
-
-.title {
-	font: var(--type-h2);
-	letter-spacing: var(--tracking-display);
-	text-transform: uppercase;
-	color: var(--text-strong);
 }
 
 .layout {

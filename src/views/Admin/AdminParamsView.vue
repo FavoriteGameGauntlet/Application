@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
 import UiIconButton from '../../components/ui/UiIconButton.vue'
 import UiInput from '../../components/ui/UiInput.vue'
+import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import { useAdminSettingsStore } from '../../stores/adminSettingsStore'
 
 const store = useAdminSettingsStore()
@@ -33,7 +34,7 @@ onMounted(() => store.loadParams())
 <template>
 	<div class="params">
 		<div class="head">
-			<span class="title">Системные параметры</span>
+			<UiPageTitle>Системные параметры</UiPageTitle>
 			<div class="head__search">
 				<UiInput v-model="query" compact icon="search" placeholder="Найти…" aria-label="Поиск" />
 			</div>
@@ -104,13 +105,6 @@ onMounted(() => store.loadParams())
 
 .head__search {
 	width: 260px;
-}
-
-.title {
-	font: var(--type-h2);
-	letter-spacing: var(--tracking-display);
-	text-transform: uppercase;
-	color: var(--text-strong);
 }
 
 .table {

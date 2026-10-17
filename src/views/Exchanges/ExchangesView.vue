@@ -5,6 +5,7 @@ import UserResourcesPanel from '../../components/UserResourcesPanel.vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiDialog from '../../components/ui/UiDialog.vue'
 import UiIcon from '../../components/ui/UiIcon.vue'
+import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import { useExchangesStore } from '../../stores/exchangesStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useSessionStore } from '../../stores/sessionStore'
@@ -87,7 +88,7 @@ onMounted(() => exchangesStore.load())
 
 <template>
 	<div class="exchanges">
-		<span class="exchanges__title">Обмены</span>
+		<UiPageTitle>Обмены</UiPageTitle>
 
 		<div class="layout">
 			<div class="list">
@@ -190,13 +191,6 @@ onMounted(() => exchangesStore.load())
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
-}
-
-.exchanges__title {
-	font: var(--type-h2);
-	letter-spacing: var(--tracking-display);
-	text-transform: uppercase;
-	color: var(--text-strong);
 }
 
 .layout {

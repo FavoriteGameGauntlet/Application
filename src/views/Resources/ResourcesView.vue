@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { ResourceKind } from '../../api-facade/contracts'
+import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiTabs from '../../components/ui/UiTabs.vue'
 import { RouteName } from '../../router/routeNames'
 import HistoryTab from './components/HistoryTab.vue'
@@ -41,7 +42,7 @@ const setTab = (value: string | undefined) =>
 
 <template>
 	<div class="resources">
-		<span class="resources__title">Ресурсы</span>
+		<UiPageTitle>Ресурсы</UiPageTitle>
 
 		<UiTabs :model-value="tab" :items="tabs" @update:model-value="setTab" />
 
@@ -57,12 +58,5 @@ const setTab = (value: string | undefined) =>
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
-}
-
-.resources__title {
-	font: var(--type-h2);
-	letter-spacing: var(--tracking-display);
-	text-transform: uppercase;
-	color: var(--text-strong);
 }
 </style>

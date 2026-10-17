@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import CurrentGameCard from '../../components/CurrentGameCard.vue'
+import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiSelect from '../../components/ui/UiSelect.vue'
 import UiTabs from '../../components/ui/UiTabs.vue'
 import { useMembersStore } from '../../stores/membersStore'
@@ -40,7 +41,7 @@ onMounted(() => wishlistStore.loadMine())
 
 <template>
 	<div class="games">
-		<span class="games__title">Игры</span>
+		<UiPageTitle>Игры</UiPageTitle>
 
 		<CurrentGameCard />
 
@@ -67,13 +68,6 @@ onMounted(() => wishlistStore.loadMine())
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
-}
-
-.games__title {
-	font: var(--type-h2);
-	letter-spacing: var(--tracking-display);
-	text-transform: uppercase;
-	color: var(--text-strong);
 }
 
 .games__content {

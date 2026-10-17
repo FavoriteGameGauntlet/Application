@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
+import UiPageTitle from '../../../components/ui/UiPageTitle.vue'
 import UiSwitch from '../../../components/ui/UiSwitch.vue'
 
 type Props = {
@@ -17,7 +18,7 @@ const emit = defineEmits<{ add: [] }>()
 
 <template>
 	<div class="head">
-		<span class="head__title">{{ title }}</span>
+		<UiPageTitle>{{ title }}</UiPageTitle>
 		<div class="head__spacer"></div>
 		<div class="head__search">
 			<UiInput v-model="query" compact icon="search" placeholder="Найти…" aria-label="Поиск" />
@@ -32,13 +33,6 @@ const emit = defineEmits<{ add: [] }>()
 	display: flex;
 	align-items: center;
 	gap: 20px;
-}
-
-.head__title {
-	font: var(--type-h2);
-	letter-spacing: var(--tracking-display);
-	text-transform: uppercase;
-	color: var(--text-strong);
 }
 
 .head__spacer {

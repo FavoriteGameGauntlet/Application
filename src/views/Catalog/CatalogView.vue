@@ -6,6 +6,7 @@ import UiButton from '../../components/ui/UiButton.vue'
 import UiIcon from '../../components/ui/UiIcon.vue'
 import UiIconButton from '../../components/ui/UiIconButton.vue'
 import UiInput from '../../components/ui/UiInput.vue'
+import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiSwitch from '../../components/ui/UiSwitch.vue'
 import UiTabs from '../../components/ui/UiTabs.vue'
 import UiTag from '../../components/ui/UiTag.vue'
@@ -182,7 +183,7 @@ watch(
 <template>
 	<div class="catalog">
 		<div class="head">
-			<span class="head__title">Каталог</span>
+			<UiPageTitle>Каталог</UiPageTitle>
 			<div class="head__spacer"></div>
 			<div class="head__search">
 				<UiInput v-model="query" compact icon="search" placeholder="Найти…" aria-label="Поиск" />
@@ -305,13 +306,6 @@ watch(
 	display: flex;
 	align-items: center;
 	gap: 20px;
-}
-
-.head__title {
-	font: var(--type-h2);
-	letter-spacing: var(--tracking-display);
-	text-transform: uppercase;
-	color: var(--text-strong);
 }
 
 .head__spacer {

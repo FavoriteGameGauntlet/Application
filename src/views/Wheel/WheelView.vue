@@ -3,6 +3,7 @@ import { computed, onMounted } from 'vue'
 import type { WheelGroup } from '../../api-facade/contracts'
 import UiBadge from '../../components/ui/UiBadge.vue'
 import UiButton from '../../components/ui/UiButton.vue'
+import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiTabs from '../../components/ui/UiTabs.vue'
 import { RouteName } from '../../router/routeNames'
 import { useCurrentGameStore } from '../../stores/currentGameStore'
@@ -76,7 +77,7 @@ onMounted(() => wheelStore.load())
 <template>
 	<div class="wheel">
 		<div class="head">
-			<span class="head__title">Колесо</span>
+			<UiPageTitle>Колесо</UiPageTitle>
 			<UiTabs
 				:model-value="wheelStore.tab"
 				:items="tabs"
@@ -191,13 +192,6 @@ onMounted(() => wheelStore.load())
 	display: flex;
 	align-items: flex-end;
 	gap: 32px;
-}
-
-.head__title {
-	font: var(--type-h2);
-	letter-spacing: var(--tracking-display);
-	text-transform: uppercase;
-	color: var(--text-strong);
 }
 
 .body {

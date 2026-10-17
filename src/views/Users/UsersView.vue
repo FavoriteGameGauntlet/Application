@@ -2,6 +2,7 @@
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import UiBadge from '../../components/ui/UiBadge.vue'
+import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiUserAvatar from '../../components/ui/UiUserAvatar.vue'
 import { RouteName } from '../../router/routeNames'
 import { useMembersStore } from '../../stores/membersStore'
@@ -29,7 +30,7 @@ onMounted(() => membersStore.load())
 <template>
 	<div class="users">
 		<div class="head">
-			<span class="head__title">Участники</span>
+			<UiPageTitle>Участники</UiPageTitle>
 			<span class="head__count">{{ count }}</span>
 		</div>
 
@@ -90,13 +91,6 @@ onMounted(() => membersStore.load())
 	display: flex;
 	align-items: baseline;
 	gap: 12px;
-}
-
-.head__title {
-	font: var(--type-h2);
-	letter-spacing: var(--tracking-display);
-	text-transform: uppercase;
-	color: var(--text-strong);
 }
 
 .head__count {

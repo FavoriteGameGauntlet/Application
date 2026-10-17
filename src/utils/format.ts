@@ -7,10 +7,6 @@ const pad = (n: number) => String(n).padStart(2, '0')
 export const formatClock = (seconds: Seconds) =>
 	`${pad(Math.floor(seconds / 3600))}:${pad(Math.floor(seconds / 60) % 60)}:${pad(seconds % 60)}`
 
-/** 5077 → «01:24» */
-export const formatClockShort = (seconds: Seconds) =>
-	`${pad(Math.floor(seconds / 3600))}:${pad(Math.floor(seconds / 60) % 60)}`
-
 /** 21600 → «6 ч» */
 export const formatHours = (seconds: Seconds) =>
 	`${Math.floor(seconds / 3600)} ч`

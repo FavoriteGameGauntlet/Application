@@ -6,6 +6,7 @@ import AppLogo from '../../components/AppLogo.vue'
 import TopbarControls from '../../components/TopbarControls.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
 import UiButton from '../../components/ui/UiButton.vue'
+import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import { RouteName } from '../../router/routeNames'
 import { usePartiesStore } from '../../stores/partiesStore'
 import { useToastStore } from '../../stores/toastStore'
@@ -64,7 +65,7 @@ onMounted(async () => {
 
 		<div class="scroll">
 			<div class="content">
-				<span class="title">Мои пати</span>
+				<UiPageTitle>Мои пати</UiPageTitle>
 
 				<div v-for="item in items" :key="item.party.id" class="card">
 					<span
@@ -141,13 +142,6 @@ onMounted(async () => {
 	max-width: 760px;
 	padding: 48px 32px;
 	margin: 0 auto;
-}
-
-.title {
-	font: var(--type-h2);
-	letter-spacing: var(--tracking-display);
-	text-transform: uppercase;
-	color: var(--text-strong);
 }
 
 .card {

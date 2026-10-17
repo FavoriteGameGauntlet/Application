@@ -4,6 +4,7 @@ import type { CatalogEntry, RewardRow, Rewards } from '../../api-facade/contract
 import UiButton from '../../components/ui/UiButton.vue'
 import UiIconButton from '../../components/ui/UiIconButton.vue'
 import UiInput from '../../components/ui/UiInput.vue'
+import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiSelect from '../../components/ui/UiSelect.vue'
 import { useAdminCatalogStore } from '../../stores/adminCatalogStore'
 import { useAdminSettingsStore } from '../../stores/adminSettingsStore'
@@ -98,7 +99,7 @@ onMounted(async () => {
 
 <template>
 	<div class="rewards">
-		<span class="title">Награды</span>
+		<UiPageTitle>Награды</UiPageTitle>
 
 		<div v-for="block in blocks" :key="block.key" class="card">
 			<span class="card__label">{{ block.title }}</span>
@@ -152,13 +153,6 @@ onMounted(async () => {
 	flex-direction: column;
 	gap: 16px;
 	max-width: 760px;
-}
-
-.title {
-	font: var(--type-h2);
-	letter-spacing: var(--tracking-display);
-	text-transform: uppercase;
-	color: var(--text-strong);
 }
 
 .card {
