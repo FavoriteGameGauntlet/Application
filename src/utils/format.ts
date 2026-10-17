@@ -1,4 +1,4 @@
-import type { ISODate, JournalSource, Login, Seconds } from '../api-facade/contracts'
+import type { ISODate, JournalSource, Seconds } from '../api-facade/contracts'
 import { plural } from './plural'
 
 const pad = (n: number) => String(n).padStart(2, '0')
@@ -49,9 +49,6 @@ export const formatMoment = (iso: ISODate) => {
 
 	return `${dayMonth(d)} ${time}`
 }
-
-/** the user of a journal change: the login, «все» for the shared points */
-export const formatUserName = (login: Login | null) => login ?? 'все'
 
 /** «предмет «Колобок»», «колесо · «×2 золото»», «исправление» */
 export const formatJournalSource = (

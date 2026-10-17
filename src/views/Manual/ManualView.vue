@@ -14,12 +14,7 @@ import { useMembersStore } from '../../stores/membersStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToastStore } from '../../stores/toastStore'
-import {
-	formatJournalSource,
-	formatMoment,
-	formatUserName,
-	parseSpan,
-} from '../../utils/format'
+import { formatJournalSource, formatMoment, parseSpan } from '../../utils/format'
 import { countItems } from '../../utils/userItems'
 
 type RowType = ManualChange['kind']
@@ -312,7 +307,7 @@ onMounted(async () => {
 					<div class="entry">
 						<span class="entry__time">{{ formatMoment(draft.entry.at) }}</span>
 						<span class="entry__who">
-							<span class="entry__actor">{{ formatUserName(draft.entry.actor) }}</span>
+							<span class="entry__actor">{{ draft.entry.actor }}</span>
 							<span class="entry__source">{{ formatJournalSource(draft.entry.source, draft.entry.correctsEntryId) }}</span>
 							<UiBadge v-if="draft.entry.manual" tone="info" dot>вручную</UiBadge>
 						</span>
@@ -322,7 +317,7 @@ onMounted(async () => {
 								:key="i"
 								:tone="change.login === sessionStore.login ? 'accent' : 'neutral'"
 							>
-								{{ formatUserName(change.login) }}: {{ change.text }}
+								{{ change.login ? `${change.login}: ` : '' }}{{ change.text }}
 							</UiBadge>
 						</span>
 					</div>

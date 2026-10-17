@@ -15,7 +15,7 @@ import { useManualStore } from '../../../stores/manualStore'
 import { useMembersStore } from '../../../stores/membersStore'
 import { useResourcesStore } from '../../../stores/resourcesStore'
 import { useSessionStore } from '../../../stores/sessionStore'
-import { formatJournalSource, formatMoment, formatUserName } from '../../../utils/format'
+import { formatJournalSource, formatMoment } from '../../../utils/format'
 
 type FilterKey = 'user' | 'resource' | 'source' | 'period'
 
@@ -186,7 +186,7 @@ const pick = (key: FilterKey, value: string) => {
 		<div v-for="entry in entries" :key="entry.id" class="table__row table__row--body">
 			<span class="table__time">{{ formatMoment(entry.at) }}</span>
 			<span class="table__who">
-				<span class="table__actor">{{ formatUserName(entry.actor) }}</span>
+				<span class="table__actor">{{ entry.actor }}</span>
 				<span class="table__source">{{ formatJournalSource(entry.source, entry.correctsEntryId) }}</span>
 				<UiBadge v-if="entry.manual" tone="info" dot>вручную</UiBadge>
 			</span>
@@ -196,7 +196,7 @@ const pick = (key: FilterKey, value: string) => {
 					:key="i"
 					:tone="change.login === sessionStore.login ? 'accent' : 'neutral'"
 				>
-					{{ formatUserName(change.login) }}: {{ change.text }}
+					{{ change.login ? `${change.login}: ` : '' }}{{ change.text }}
 				</UiBadge>
 			</span>
 			<span class="table__fix">
