@@ -1,32 +1,12 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import type { JournalEntry } from '../../api-facade/contracts'
 import CurrentGameCard from '../../components/CurrentGameCard.vue'
-import EventFeed from '../../components/EventFeed.vue'
+import PlayerEvents from '../../components/PlayerEvents.vue'
 import ResourceTiles from '../../components/ResourceTiles.vue'
-import { RouteName } from '../../router/routeNames'
-import { useJournalStore } from '../../stores/journalStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useSessionStore } from '../../stores/sessionStore'
 
-const RECENT_EVENTS_COUNT = 3
-
-const journalStore = useJournalStore()
 const resourcesStore = useResourcesStore()
 const sessionStore = useSessionStore()
-
-const recent = ref<JournalEntry[]>([])
-
-watch(
-	() => journalStore.revision,
-	async () => {
-		recent.value = await journalStore.fetch({
-			user: sessionStore.login,
-			limit: RECENT_EVENTS_COUNT,
-		})
-	},
-	{ immediate: true },
-)
 </script>
 
 <template>
@@ -36,12 +16,7 @@ watch(
 		<div class="home__grid">
 			<ResourceTiles mine :resources="resourcesStore.byUser[sessionStore.login]" />
 
-			<EventFeed
-				title="Недавние события"
-				link-label="Вся история"
-				:link-to="{ name: RouteName.Resources, params: { tab: 'history' } }"
-				:entries="recent"
-			/>
+			<PlayerEvents :login="sessionStore.login" />
 		</div>
 	</div>
 </template>

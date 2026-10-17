@@ -1,25 +1,20 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router'
-import type { JournalEntry, Login } from '../api-facade/contracts'
-import { useSessionStore } from '../stores/sessionStore'
-import { formatJournalSource, formatMoment, formatUserName } from '../utils/format'
+import type { JournalEntry } from '../api-facade/contracts'
+import { useMembersStore } from '../stores/membersStore'
+import { formatJournalSource, formatMoment } from '../utils/format'
 
 type Props = {
 	title: string
 	linkLabel: string
 	linkTo: RouteLocationRaw
 	entries: JournalEntry[]
-	/** color of the dot of non-manual events */
-	dotColor?: string
 	emptyText?: string
 }
 
 defineProps<Props>()
 
-const sessionStore = useSessionStore()
-
-const who = (login: Login | null) =>
-	login === sessionStore.login ? 'ты' : formatUserName(login)
+const membersStore = useMembersStore()
 </script>
 
 <template>
@@ -30,22 +25,17 @@ const who = (login: Login | null) =>
 		</div>
 
 		<div v-for="entry in entries" :key="entry.id" class="event">
-			<span
-				class="event__dot"
-				:style="{
-					background: entry.manual ? 'var(--border-default)' : (dotColor ?? 'var(--accent)'),
-				}"
-			></span>
+			<span class="event__dot" :style="{ background: membersStore.colorOf(entry.actor) }"></span>
 			<div class="event__body">
 				<div class="event__head">
 					<span class="event__source">
-						<span class="event__who">{{ who(entry.actor) }}</span> ·
+						<span class="event__who">{{ entry.actor }}</span> ·
 							{{ formatJournalSource(entry.source, entry.correctsEntryId) }}
 					</span>
 					<span class="event__time">{{ formatMoment(entry.at).replace('сегодня ', '') }}</span>
 				</div>
 				<div v-for="(change, i) in entry.changes" :key="i" class="event__change">
-					<span class="event__user">{{ who(change.login) }}</span>
+					<span class="event__user">{{ change.login }}</span>
 					<span class="event__text">{{ change.text }}</span>
 				</div>
 			</div>
@@ -139,13 +129,16 @@ const who = (login: Login | null) =>
 
 .event__change {
 	display: grid;
-	grid-template-columns: 48px minmax(0, 1fr);
+	grid-template-columns: 80px minmax(0, 1fr);
 	gap: 8px;
 	font: var(--type-body-sm);
 }
 
 .event__user {
+	overflow: hidden;
 	color: var(--text-muted);
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .event__text {

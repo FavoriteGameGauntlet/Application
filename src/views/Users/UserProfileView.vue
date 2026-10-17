@@ -1,22 +1,18 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import type { JournalEntry, Member } from '../../api-facade/contracts'
-import EventFeed from '../../components/EventFeed.vue'
+import type { Member } from '../../api-facade/contracts'
+import PlayerEvents from '../../components/PlayerEvents.vue'
 import ResourceTiles from '../../components/ResourceTiles.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
 import UiUserAvatar from '../../components/ui/UiUserAvatar.vue'
 import { RouteName } from '../../router/routeNames'
-import { useJournalStore } from '../../stores/journalStore'
 import { useMembersStore } from '../../stores/membersStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { formatHours } from '../../utils/format'
 import { userStatusView } from '../../utils/userStatus'
 
-const PROFILE_EVENTS_COUNT = 5
-
 const route = useRoute()
-const journalStore = useJournalStore()
 const membersStore = useMembersStore()
 const resourcesStore = useResourcesStore()
 
@@ -24,7 +20,6 @@ const login = computed(() => route.params.login as string)
 const color = computed(() => membersStore.colorOf(login.value))
 
 const member = ref<Member>()
-const feed = ref<JournalEntry[]>([])
 
 watch(
 	login,
@@ -37,17 +32,6 @@ watch(
 		])
 
 		member.value = loaded
-	},
-	{ immediate: true },
-)
-
-watch(
-	[login, () => journalStore.revision],
-	async () => {
-		feed.value = await journalStore.fetch({
-			user: login.value,
-			limit: PROFILE_EVENTS_COUNT,
-		})
 	},
 	{ immediate: true },
 )
@@ -80,7 +64,7 @@ const stats = computed(() => [
 					</UiBadge>
 				</span>
 				<span class="header__now">
-					Сейчас:
+					Текущая игра:
 					<span class="header__game">{{ member.currentGame ?? 'нет игры' }}</span>
 				</span>
 			</div>
@@ -96,18 +80,7 @@ const stats = computed(() => [
 		<div class="grid">
 			<ResourceTiles :resources="resourcesStore.byUser[login]" />
 
-			<EventFeed
-				title="История игрока"
-				link-label="В журнале"
-				:link-to="{
-					name: RouteName.Resources,
-					params: { tab: 'history' },
-					query: { user: login },
-				}"
-				:entries="feed"
-				:dot-color="color"
-				empty-text="За неделю ничего не происходило."
-			/>
+			<PlayerEvents :login />
 		</div>
 	</div>
 </template>
