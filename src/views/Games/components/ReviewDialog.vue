@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import type { CompletedGame } from '../../../api-facade/contracts'
+import type { GameHistoryEntry } from '../../../api-facade/contracts'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiField from '../../../components/ui/UiField.vue'
@@ -12,7 +12,7 @@ import { useToastStore } from '../../../stores/toastStore'
 import { formatDuration, formatPeriod } from '../../../utils/format'
 
 type Props = {
-	game?: CompletedGame
+	game?: GameHistoryEntry
 	/** whose game it is */
 	login: string
 	/** the game of the current user, so the review can be edited */
@@ -43,7 +43,7 @@ const ratingOptions = [
 const startEdit = () => {
 	editing.value = true
 	rating.value = game?.rating ? String(game.rating) : ''
-	draft.value = game?.review ?? ''
+	draft.value = game?.reviewComment ?? ''
 }
 
 watch(
@@ -70,7 +70,7 @@ const onSave = async () => {
 	emit('close')
 	await completedStore.saveReview(target, {
 		rating: Number(rating.value),
-		review: draft.value.trim(),
+		reviewComment: draft.value.trim(),
 	})
 }
 </script>
@@ -94,17 +94,17 @@ const onSave = async () => {
 				</div>
 				<div class="view__cell">
 					<span class="label">Время в игре</span>
-					<span class="view__value">{{ formatDuration(game.playedSeconds) }}</span>
+					<span class="view__value">{{ formatDuration(game.timeSpent) }}</span>
 				</div>
 				<div class="view__cell">
 					<span class="label">Начало → конец</span>
-					<span class="view__value">{{ formatPeriod(game.startedAt, game.endedAt) }}</span>
+					<span class="view__value">{{ formatPeriod(game.startedDate, game.endedDate) }}</span>
 				</div>
 			</div>
 
 			<div class="view__cell">
 				<span class="label">Отзыв</span>
-				<span class="view__review">{{ game.review || 'Отзыв не написан.' }}</span>
+				<span class="view__review">{{ game.reviewComment || 'Отзыв не написан.' }}</span>
 			</div>
 
 			<div v-if="own" class="actions">

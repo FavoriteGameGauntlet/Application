@@ -29,7 +29,7 @@ const initial = computed<FormValues>(() => ({
 	description: editing.value?.exchange?.description ?? '',
 }))
 
-const side = (refs: AdminExchange['give']) =>
+const side = (refs: AdminExchange['sourceEntries']) =>
 	refs.length ? refs.map((r) => formatResource(r, resourcesStore.pointTypes)) : ['—']
 
 const query = ref('')
@@ -45,8 +45,8 @@ const found = computed(() => {
 const rows = computed(() =>
 	found.value.map((exchange) => ({
 		exchange,
-		give: side(exchange.give),
-		get: side(exchange.get),
+		give: side(exchange.sourceEntries),
+		get: side(exchange.targetEntries),
 	})),
 )
 

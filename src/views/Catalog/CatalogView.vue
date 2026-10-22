@@ -95,7 +95,7 @@ const detail = (entry: CatalogEntry): Pick<Row, 'main' | 'extra' | 'notes'> => {
 				extra: [String(entry.minimum ?? '—'), String(entry.maximum ?? '—')],
 				notes: [
 					`Стартовое значение: ${entry.startValue}`,
-					...(sessionStore.isAdmin ? [`Единица в журнале: ${entry.unitForms?.join(' / ')}`] : []),
+					...(sessionStore.isAdmin ? [`Единица в журнале: ${entry.unitForms && Object.values(entry.unitForms).join(' / ')}`] : []),
 				],
 			}
 		case 'items':

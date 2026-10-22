@@ -7,7 +7,7 @@ export const formatResource = (ref: ResourceRef, pointTypes: PointType[]) => {
 		case 'points': {
 			const type = pointTypes.find((t) => t.id === ref.id)
 
-			return `${ref.amount} ${type ? plural(ref.amount, type.unitForms) : ref.name.toLowerCase()}`
+			return `${ref.amount} ${type ? plural(ref.amount, [type.unitForms.one, type.unitForms.several, type.unitForms.many]) : ref.name.toLowerCase()}`
 		}
 		case 'item':
 			return ref.amount > 1 ? `${ref.name} ×${ref.amount}` : ref.name

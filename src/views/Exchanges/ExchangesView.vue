@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import type { Exchange, ResourceRef } from '../../api-facade/contracts'
+import type { ExchangeOffer, ResourceRef } from '../../api-facade/contracts'
 import UserResourcesPanel from '../../components/UserResourcesPanel.vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiDialog from '../../components/ui/UiDialog.vue'
@@ -16,7 +16,7 @@ const exchangesStore = useExchangesStore()
 const resourcesStore = useResourcesStore()
 const sessionStore = useSessionStore()
 
-const confirming = ref<Exchange>()
+const confirming = ref<ExchangeOffer>()
 
 const selectedUser = ref(sessionStore.login)
 
@@ -40,12 +40,12 @@ const amountOf = (ref: ResourceRef) =>
 const cards = computed(() =>
 	exchangesStore.list.map((exchange) => ({
 		exchange,
-		give: exchange.give.map((ref) => {
+		give: exchange.sourceEntries.map((ref) => {
 			const enough = have(ref) >= amountOf(ref)
 
 			return { text: enough ? text(ref) : `${text(ref)} (${have(ref)})`, enough }
 		}),
-		get: exchange.get.map(text),
+		get: exchange.targetEntries.map(text),
 	})),
 )
 
@@ -55,8 +55,8 @@ const confirmRows = computed(() => {
 	if (!exchange) return []
 
 	return [
-		...exchange.give.map((ref) => ({ ref, sign: -1 })),
-		...exchange.get.map((ref) => ({ ref, sign: 1 })),
+		...exchange.sourceEntries.map((ref) => ({ ref, sign: -1 })),
+		...exchange.targetEntries.map((ref) => ({ ref, sign: 1 })),
 	].map(({ ref, sign }) => {
 		if (ref.kind === 'perk') {
 			return { name: `Перк «${ref.name}»`, was: 'нет', now: 'есть', gain: true }

@@ -2,9 +2,9 @@ import { formatJournalSource } from '../../utils/format'
 import { countItems } from '../../utils/userItems'
 import type {
 	Api,
-	CompletedGame,
 	CurrentGame,
-	Exchange,
+	ExchangeOffer,
+	GameHistoryEntry,
 	JournalEntry,
 	Login,
 	Member,
@@ -140,25 +140,25 @@ const requireGame = () => {
 	return { game, playedSeconds, startedAt }
 }
 
-const closeGame = (status: CompletedGame['status']) => {
+const closeGame = (endState: GameHistoryEntry['endState']) => {
 	const { game, playedSeconds, startedAt } = requireGame()
 
 	db.completed[db.ME].unshift({
 		gameId: game.id,
 		name: game.name,
-		startedAt,
-		endedAt: now(),
-		playedSeconds,
-		status,
+		startedDate: startedAt,
+		endedDate: now(),
+		timeSpent: playedSeconds,
+		endState,
 		rating: null,
-		review: null,
+		reviewComment: null,
 	})
 
 	db.state.currentGame = { game: null, playedSeconds: 0, startedAt: now() }
 	db.state.timer = { state: 'created', elapsed: 0, stampedAt: Date.now() }
 
 	const entry = pushJournal(
-		{ type: 'game', id: game.id, name: game.name, event: status },
+		{ type: 'game', id: game.id, name: game.name, event: endState },
 		false,
 		[],
 	)
@@ -332,16 +332,16 @@ const getMember = (login: Login): Member => {
 		playedSeconds: db.MY_PLAYED_HOURS * 3600,
 		completedCount:
 			db.MY_COMPLETED_BEFORE_SEASON +
-			db.completed[db.ME].filter((g) => g.status === 'completed').length,
+			db.completed[db.ME].filter((g) => g.endState === 'completed').length,
 		spinsCount: db.MY_SPINS,
 	}
 }
 
 // ---- exchanges
 
-const toExchange = (def: db.ExchangeDef): Exchange => {
-	const owned = def.get.some((r) => r.kind === 'perk' && ownsPerk(db.ME, r.id))
-	const lacks = def.give.some(
+const toExchange = (def: db.ExchangeDef): ExchangeOffer => {
+	const owned = def.targetEntries.some((r) => r.kind === 'perk' && ownsPerk(db.ME, r.id))
+	const lacks = def.sourceEntries.some(
 		(r) => (r.kind === 'points' || r.kind === 'item') && have(db.ME, r) < r.amount,
 	)
 
@@ -395,7 +395,9 @@ const withVisibleChanges = (entries: JournalEntry[]): JournalEntry[] => {
 /** only exchanges that the admin hasn't deleted and that have something to exchange */
 const visibleExchanges = () =>
 	db.exchangeDefs.filter(
-		(d) => !adminDb.deletedExchangeIds.has(d.id) && (d.give.length || d.get.length),
+		(d) =>
+			!adminDb.deletedExchangeIds.has(d.id) &&
+			(d.sourceEntries.length || d.targetEntries.length),
 	)
 
 const toParty = (party: adminDb.PartyDef): Party => ({
@@ -491,7 +493,7 @@ export const mockApi: Api = {
 				const game = {
 					id: newId(),
 					name,
-					addedAt: now(),
+					addedDate: now(),
 					addedBy: login === db.ME ? undefined : db.ME,
 				}
 
@@ -522,7 +524,7 @@ export const mockApi: Api = {
 				if (!game) fail(404, 'NOT_FOUND', 'Игра не найдена в истории')
 
 				game.rating = review.rating
-				game.review = review.review
+				game.reviewComment = review.reviewComment
 				return game
 			}),
 	},
@@ -778,19 +780,19 @@ export const mockApi: Api = {
 					fail(409, 'UNAVAILABLE', 'Обмен сейчас недоступен')
 				}
 
-				def.give.forEach((r) => applyRef(db.ME, r, -1))
-				def.get.forEach((r) => applyRef(db.ME, r, 1))
+				def.sourceEntries.forEach((r) => applyRef(db.ME, r, -1))
+				def.targetEntries.forEach((r) => applyRef(db.ME, r, 1))
 
 				const journalEntry = pushJournal(
 					{ type: 'exchange', id: def.id, name: def.name },
 					false,
 					[
-						...def.give.map((resource) => ({
+						...def.sourceEntries.map((resource) => ({
 							login: db.ME,
 							text: `−${text(resource)}`,
 							resource,
 						})),
-						...def.get.map((resource) => ({
+						...def.targetEntries.map((resource) => ({
 							login: db.ME,
 							text: `+${text(resource)}`,
 							resource,

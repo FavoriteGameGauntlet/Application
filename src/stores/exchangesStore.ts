@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '../api-facade/api'
-import type { Exchange } from '../api-facade/contracts'
+import type { ExchangeOffer } from '../api-facade/contracts'
 import { StoreName } from '../enums/storeName'
 import { formatResource } from '../utils/formatResource'
 import { useJournalStore } from './journalStore'
@@ -9,13 +9,13 @@ import { useResourcesStore } from './resourcesStore'
 import { useToastStore } from './toastStore'
 
 export const useExchangesStore = defineStore(StoreName.Exchanges, () => {
-	const list = ref<Exchange[]>([])
+	const list = ref<ExchangeOffer[]>([])
 
 	const load = async () => {
 		list.value = await api.exchanges.list()
 	}
 
-	const execute = async (exchange: Exchange) => {
+	const execute = async (exchange: ExchangeOffer) => {
 		const toast = useToastStore()
 		const resources = useResourcesStore()
 
@@ -24,7 +24,7 @@ export const useExchangesStore = defineStore(StoreName.Exchanges, () => {
 
 			toast.show(
 				'Обмен проведён',
-				exchange.get.map((r) => formatResource(r, resources.pointTypes)).join(', '),
+				exchange.targetEntries.map((r) => formatResource(r, resources.pointTypes)).join(', '),
 			)
 
 			await Promise.all([load(), resources.loadMine()])

@@ -78,29 +78,29 @@ export type Timer = {
 
 // 3. Wishlist and completed games
 
-export type WishlistGame = {
+export type WishlistEntry = {
 	id: number
 	name: string
-	addedAt: ISODate
+	addedDate: ISODate
 	addedBy?: Login
 }
 
-export type CompletedGameStatus = 'completed' | 'cancelled' | 'rerolled'
+export type GameEndState = 'completed' | 'cancelled' | 'rerolled'
 
-export type CompletedGame = {
+export type GameHistoryEntry = {
 	/** the id of the party game; a user can pick a game only once, so it is the key of the row */
 	gameId: number
 	name: string
-	startedAt: ISODate
-	endedAt: ISODate
-	playedSeconds: Seconds
-	status: CompletedGameStatus
+	startedDate: ISODate
+	endedDate: ISODate
+	timeSpent: Seconds
+	endState: GameEndState
 	/** 1..10 */
 	rating: number | null
-	review: string | null
+	reviewComment: string | null
 }
 
-export type Review = { rating: number; review: string }
+export type GameReview = { rating: number; reviewComment: string }
 
 // 4. Wheel
 
@@ -140,12 +140,14 @@ export type WheelSpinResult = {
 
 // 5. Resources
 
+/** nominative forms for 1 / 2-4 / 5+, e.g. билет / билета / билетов */
+export type UnitForms = { one: string; several: string; many: string }
+
 export type PointType = {
 	id: number
 	name: string
 	description: string
-	/** nominative forms for 1 / 2-4 / 5+, e.g. билет / билета / билетов */
-	unitForms: [one: string, few: string, many: string]
+	unitForms: UnitForms
 	startValue: number
 	/** false: only the admins of the party see the type and its values */
 	isPublic: boolean
@@ -235,7 +237,7 @@ export type JournalSource = {
 	/** the name of the entity above, a manual change has none */
 	name?: string
 	/** game only: what happened to the game */
-	event?: 'started' | CompletedGameStatus
+	event?: 'started' | GameEndState
 }
 
 export type JournalEntry = {
@@ -284,12 +286,14 @@ export type Member = {
 
 // 8. Exchanges
 
-export type Exchange = {
+export type ExchangeOffer = {
 	id: number
 	name: string
 	description: string
-	give: ResourceRef[]
-	get: ResourceRef[]
+	/** what the user gives */
+	sourceEntries: ResourceRef[]
+	/** what the user gets */
+	targetEntries: ResourceRef[]
 	available: boolean
 	unavailableReason?: 'insufficient' | 'perk_owned'
 }
@@ -348,7 +352,7 @@ export type CatalogEntry = {
 	/** soft delete: hidden from the users, the history stays */
 	deleted: boolean
 	/** point-types */
-	unitForms?: [one: string, few: string, many: string]
+	unitForms?: UnitForms
 	/** point-types */
 	startValue?: number
 	/** point-types */
@@ -377,8 +381,8 @@ export type AdminExchange = {
 	id: number
 	name: string
 	description: string
-	give: ResourceRef[]
-	get: ResourceRef[]
+	sourceEntries: ResourceRef[]
+	targetEntries: ResourceRef[]
 	deleted: boolean
 }
 
@@ -427,7 +431,7 @@ export type SpinPayment = { items: number[]; perks: number[]; effects: number[] 
 export type PartyMember = {
 	login: Login
 	displayName: string | null
-	joinedAt: ISODate
+	joinedDate: ISODate
 	isAdmin: boolean
 }
 
@@ -495,21 +499,21 @@ export type Api = {
 	}
 	timer: {
 		/**
-		 * Backend: GET {party}/timers/current, reward from
-		 * GET {party}/rewards/timer (moved from /timers/reward)
+		 * Backend: GET {party}/timer, the reward from
+		 * GET {party}/rewards/timer (missing, so `timer` is not connected yet)
 		 */
 		get: () => Promise<Timer>
 		/**
-		 * Backend: POST {party}/timers/current/start. The timer is created by the
+		 * Backend: POST {party}/timer/start. The timer is created by the
 		 * server when a game starts (wheel.apply), the client doesn't create it.
 		 */
 		start: () => Promise<Timer>
-		/** Backend: POST {party}/timers/current/pause */
+		/** Backend: POST {party}/timer/pause */
 		pause: () => Promise<Timer>
 	}
 	wishlist: {
 		/** Backend: GET {party}/games/users/{login}/wishlist */
-		list: (login: Login) => Promise<WishlistGame[]>
+		list: (login: Login) => Promise<WishlistEntry[]>
 		/**
 		 * also used to add a game to another user's wishlist; 409 DUPLICATE,
 		 * 409 ALREADY_PICKED when that user has already picked the game (it is
@@ -517,26 +521,30 @@ export type Api = {
 		 *
 		 * Backend: POST {party}/games/users/{login}/wishlist
 		 */
-		add: (login: Login, name: string) => Promise<WishlistGame>
+		add: (login: Login, name: string) => Promise<WishlistEntry>
 		/**
-		 * Backend (missing): PATCH {party}/games/users/{login}/wishlist/{id} with
-		 * {name}. The entries also have to return `addedDate` and `addedBy`, and
-		 * POST has to answer with the created entry.
+		 * Backend: PATCH {party}/games/users/{login}/wishlist/{id} with {name};
+		 * the login is the current user's.
 		 */
-		rename: (id: number, name: string) => Promise<WishlistGame>
-		/** Backend (missing): DELETE {party}/games/users/{login}/wishlist/{id} */
+		rename: (id: number, name: string) => Promise<WishlistEntry>
+		/** Backend: DELETE {party}/games/users/{login}/wishlist/{id}, the login is the current user's */
 		remove: (id: number) => Promise<void>
 	}
 	completed: {
-		/** Backend: GET {party}/games/users/{login}/history (events, not games) */
-		list: (login: Login) => Promise<CompletedGame[]>
 		/**
-		 * Backend (missing): PUT {party}/games/{gameId}/review for the current
-		 * user with {rating, reviewComment}, the reviews of all users are
-		 * read with GET {party}/games/{gameId}/reviews. Any game from the history
-		 * can be rated, whatever its end state; 404 when the game is not there.
+		 * Backend: GET {party}/games/users/{login}/history, one record per game.
+		 * The rating and the review of the user come from
+		 * GET {party}/games/{gameId}/reviews/{login} (404 = not rated).
 		 */
-		saveReview: (gameId: number, review: Review) => Promise<CompletedGame>
+		list: (login: Login) => Promise<GameHistoryEntry[]>
+		/**
+		 * Backend: PUT {party}/games/{gameId}/review for the current user with
+		 * {rating, reviewComment}, the answer is empty so the history is read
+		 * again. The reviews of all users are read with
+		 * GET {party}/games/{gameId}/reviews. Any game from the history can be
+		 * rated, whatever its end state; 404 when the game is not there.
+		 */
+		saveReview: (gameId: number, review: GameReview) => Promise<GameHistoryEntry>
 	}
 	wheel: {
 		// The game wheel has no counterpart on the backend: /wheel-effects/* is a
@@ -589,8 +597,8 @@ export type Api = {
 		 * Both personal and shared types (`isShared`), the client splits them. The
 		 * types with `isPublic = false` come only for the admins of the party.
 		 *
-		 * Backend: GET {party}/points/types (add `description`, `unitForms`; the
-		 * `isPublic` filter on the backend)
+		 * Backend: GET {party}/points/types (the `isPublic` filter is on the
+		 * backend)
 		 */
 		pointTypes: () => Promise<PointType[]>
 		/**
@@ -598,7 +606,7 @@ export type Api = {
 		 * changed with the manual change form.
 		 *
 		 * Backend: GET {party}/points/party, changed with
-		 * POST/PUT {party}/points/party/types/{id}
+		 * PATCH {party}/points/party/types/{id}
 		 */
 		sharedPoints: () => Promise<Record<number, number>>
 		/** Backend: GET {party}/points/users (sorted by the client) */
@@ -617,7 +625,8 @@ export type Api = {
 		 * The catalogue of the party without the deleted entries; the manual
 		 * change form picks the resource from it.
 		 *
-		 * Backend: GET {party}/items, GET {party}/perks, GET {party}/effects
+		 * Backend: GET {party}/items/catalog, GET {party}/perks/catalog,
+		 * GET {party}/effects/catalog
 		 */
 		catalog: (kind: ResourceKind) => Promise<CatalogOption[]>
 		/**
@@ -626,8 +635,8 @@ export type Api = {
 		 * from `admin.catalog.list`, the users don't see them at all. The point
 		 * types come from `pointTypes`.
 		 *
-		 * Backend (missing): GET {party}/items, GET {party}/perks, GET {party}/effects
-		 * with the full entries
+		 * Backend (missing): GET {party}/items/catalog, GET {party}/perks/catalog,
+		 * GET {party}/effects/catalog with the full entries (the perk has no kind)
 		 */
 		catalogEntries: (kind: ResourceKind) => Promise<CatalogEntry[]>
 		/**
@@ -676,7 +685,7 @@ export type Api = {
 	}
 	exchanges: {
 		/** Backend: GET {party}/exchanges/catalog */
-		list: () => Promise<Exchange[]>
+		list: () => Promise<ExchangeOffer[]>
 		/** Backend: POST {party}/exchanges/catalog/{id}/use */
 		execute: (id: number) => Promise<{
 			resources: UserResources

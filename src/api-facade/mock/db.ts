@@ -1,6 +1,6 @@
 import type {
-	CompletedGame,
 	Effect,
+	GameHistoryEntry,
 	ISODate,
 	JournalEntry,
 	JournalSource,
@@ -17,7 +17,7 @@ import type {
 	TimerState,
 	WheelGroup,
 	WheelSpinResult,
-	WishlistGame,
+	WishlistEntry,
 } from '../contracts'
 
 const MIN = 60_000
@@ -62,62 +62,62 @@ export const pointTypes: PointType[] = [
 		1,
 		'Золото',
 		'Основная валюта: идёт за таймер и прохождения, тратится в обменах.',
-		['золото', 'золота', 'золота'],
+		{ one: 'золото', several: 'золота', many: 'золота' },
 		{ startValue: 100, minimum: 0 },
 	),
 	pointType(
 		2,
 		'Репутация',
 		'Растёт за пройденные игры и отзывы. Нужна для редких обменов.',
-		['репутация', 'репутации', 'репутации'],
+		{ one: 'репутация', several: 'репутации', many: 'репутации' },
 		{ minimum: 0, maximum: 100 },
 	),
 	pointType(
 		9,
 		'Очки великого и бесконечного собирательства редких сокровищ всех миров',
 		'Очки с очень длинным названием, чтобы проверять переносы и обрезку текста.',
-		['очко', 'очка', 'очков'],
+		{ one: 'очко', several: 'очка', many: 'очков' },
 		{ minimum: 0 },
 	),
 	pointType(
 		3,
 		'Билеты',
 		'Один билет — один прокрут колеса сверх обычных.',
-		['билет', 'билета', 'билетов'],
+		{ one: 'билет', several: 'билета', many: 'билетов' },
 		{ startValue: 1, minimum: 0 },
 	),
 	pointType(
 		4,
 		'Осколки',
 		'Остаются, когда разбираешь предметы. Копятся на перки.',
-		['осколок', 'осколка', 'осколков'],
+		{ one: 'осколок', several: 'осколка', many: 'осколков' },
 		{ minimum: 0 },
 	),
 	pointType(
 		5,
 		'Опыт',
 		'Показывает, сколько ты наиграл(а) за сезон. Ни на что не тратится.',
-		['опыт', 'опыта', 'опыта'],
+		{ one: 'опыт', several: 'опыта', many: 'опыта' },
 	),
 	pointType(
 		6,
 		'Карма',
 		'Плюс за помощь другим, минус за проклятия. Может уйти в минус.',
-		['карма', 'кармы', 'кармы'],
+		{ one: 'карма', several: 'кармы', many: 'кармы' },
 		{ minimum: -20 },
 	),
 	pointType(
 		7,
 		'Казна',
 		'Общие очки пати: копятся у всех вместе и тратятся на общие цели.',
-		['очко казны', 'очка казны', 'очков казны'],
+		{ one: 'очко казны', several: 'очка казны', many: 'очков казны' },
 		{ isShared: true, minimum: 0, maximum: 1000 },
 	),
 	pointType(
 		8,
 		'Скрытый рейтинг',
 		'Служебные очки: их видят только админы пати.',
-		['очко рейтинга', 'очка рейтинга', 'очков рейтинга'],
+		{ one: 'очко рейтинга', several: 'очка рейтинга', many: 'очков рейтинга' },
 		{ isPublic: false },
 	),
 ]
@@ -425,13 +425,13 @@ export const gameId = (name: string): number => {
 	return gameIds.get(key)!
 }
 
-const wish = (id: number, name: string, addedAt: ISODate): WishlistGame => ({
+const wish = (id: number, name: string, addedDate: ISODate): WishlistEntry => ({
 	id,
 	name,
-	addedAt,
+	addedDate,
 })
 
-export const wishlists: Record<Login, WishlistGame[]> = {
+export const wishlists: Record<Login, WishlistEntry[]> = {
 	kirill: [
 		wish(1, 'Celeste', '2026-09-05T12:00:00Z'),
 		wish(2, 'Hades', '2026-09-11T12:00:00Z'),
@@ -460,25 +460,25 @@ export const wishlists: Record<Login, WishlistGame[]> = {
 
 const done = (
 	name: string,
-	startedAt: string,
-	endedAt: string,
+	startedDate: string,
+	endedDate: string,
 	hours: number,
 	minutes: number,
-	status: CompletedGame['status'],
+	endState: GameHistoryEntry['endState'],
 	rating: number | null = null,
-	review: string | null = null,
-): CompletedGame => ({
+	reviewComment: string | null = null,
+): GameHistoryEntry => ({
 	gameId: gameId(name),
 	name,
-	startedAt: `${startedAt}T12:00:00Z`,
-	endedAt: `${endedAt}T12:00:00Z`,
-	playedSeconds: hours * 3600 + minutes * 60,
-	status,
+	startedDate: `${startedDate}T12:00:00Z`,
+	endedDate: `${endedDate}T12:00:00Z`,
+	timeSpent: hours * 3600 + minutes * 60,
+	endState,
 	rating,
-	review,
+	reviewComment,
 })
 
-export const completed: Record<Login, CompletedGame[]> = {
+export const completed: Record<Login, GameHistoryEntry[]> = {
 	kirill: [
 		done(
 			'Disco Elysium',
@@ -832,8 +832,8 @@ export type ExchangeDef = {
 	id: number
 	name: string
 	description: string
-	give: ResourceRef[]
-	get: ResourceRef[]
+	sourceEntries: ResourceRef[]
+	targetEntries: ResourceRef[]
 }
 
 export const exchangeDefs: ExchangeDef[] = [
@@ -842,27 +842,27 @@ export const exchangeDefs: ExchangeDef[] = [
 		name: 'Набор для рерола',
 		description:
 			'Пригодится, если колесо выдало неудачную игру. Свиток снимает текущую игру без штрафа, кубик даёт перекрут.',
-		give: [pointRef('Золото', 80), pointRef('Репутация', 2)],
-		get: [itemRef('Свиток пропуска', 1), itemRef('Кубик реролла', 1)],
+		sourceEntries: [pointRef('Золото', 80), pointRef('Репутация', 2)],
+		targetEntries: [itemRef('Свиток пропуска', 1), itemRef('Кубик реролла', 1)],
 	},
 	{
 		id: 2,
 		name: 'Перк «Коллекционер»',
 		description:
 			'Постоянный перк: +1 случайный предмет за каждую пройденную игру. Покупается один раз за сезон.',
-		give: [
+		sourceEntries: [
 			pointRef('Билеты', 3),
 			itemRef('Свиток удачи', 1),
 			pointRef('Осколки', 40),
 		],
-		get: [perkRef('Коллекционер')],
+		targetEntries: [perkRef('Коллекционер')],
 	},
 	{
 		id: 3,
 		name: 'Разобрать щиты',
 		description: 'Лишние щиты можно превратить в золото и осколки.',
-		give: [itemRef('Щит', 2)],
-		get: [
+		sourceEntries: [itemRef('Щит', 2)],
+		targetEntries: [
 			pointRef('Золото', 60),
 			pointRef('Осколки', 10),
 			pointRef('Билеты', 1),

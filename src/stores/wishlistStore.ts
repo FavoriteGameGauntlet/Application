@@ -1,14 +1,14 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { api } from '../api-facade/api'
-import type { Login, WishlistGame } from '../api-facade/contracts'
+import type { Login, WishlistEntry } from '../api-facade/contracts'
 import type { HttpErrorResponse } from '../api-facade/http'
 import { StoreName } from '../enums/storeName'
 import { useSessionStore } from './sessionStore'
 import { useToastStore } from './toastStore'
 
 export const useWishlistStore = defineStore(StoreName.Wishlist, () => {
-	const lists = ref<Record<Login, WishlistGame[]>>({})
+	const lists = ref<Record<Login, WishlistEntry[]>>({})
 
 	const mine = computed(() => lists.value[useSessionStore().login] ?? [])
 

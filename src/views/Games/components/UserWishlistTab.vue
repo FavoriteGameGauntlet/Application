@@ -71,7 +71,7 @@ const onAdd = async () => {
 			class="table__row table__row--body"
 		>
 			<span class="table__name">{{ game.name }}</span>
-			<span class="table__date">{{ formatDate(game.addedAt) }}</span>
+			<span class="table__date">{{ formatDate(game.addedDate) }}</span>
 		</div>
 
 		<div v-if="!wishlistStore.lists[user]?.length" class="table__empty">

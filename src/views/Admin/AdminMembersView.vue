@@ -154,7 +154,7 @@ onMounted(() => store.loadMembers())
 					{{ member.displayName || member.login }}
 				</span>
 
-				<span class="joined">{{ formatDate(member.joinedAt) }}</span>
+				<span class="joined">{{ formatDate(member.joinedDate) }}</span>
 
 				<span class="role">
 					<UiBadge tone="navy">{{ member.isAdmin ? 'админ' : 'игрок' }}</UiBadge>

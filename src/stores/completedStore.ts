@@ -1,13 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '../api-facade/api'
-import type { CompletedGame, Login, Review } from '../api-facade/contracts'
+import type { GameHistoryEntry, GameReview, Login } from '../api-facade/contracts'
 import { StoreName } from '../enums/storeName'
 import { useSessionStore } from './sessionStore'
 import { useToastStore } from './toastStore'
 
 export const useCompletedStore = defineStore(StoreName.Completed, () => {
-	const lists = ref<Record<Login, CompletedGame[]>>({})
+	const lists = ref<Record<Login, GameHistoryEntry[]>>({})
 
 	const load = async (login: Login) => {
 		lists.value[login] = await api.completed.list(login)
@@ -15,7 +15,7 @@ export const useCompletedStore = defineStore(StoreName.Completed, () => {
 
 	const loadMine = () => load(useSessionStore().login)
 
-	const saveReview = async (game: CompletedGame, review: Review) => {
+	const saveReview = async (game: GameHistoryEntry, review: GameReview) => {
 		const toast = useToastStore()
 
 		try {

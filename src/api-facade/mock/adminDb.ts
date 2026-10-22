@@ -316,9 +316,9 @@ export const rewards: Rewards = {
 const member = (
 	login: string,
 	displayName: string | null,
-	joinedAt: string,
+	joinedDate: string,
 	isAdmin: boolean,
-): PartyMember => ({ login, displayName, joinedAt: `${joinedAt}T12:00:00Z`, isAdmin })
+): PartyMember => ({ login, displayName, joinedDate: `${joinedDate}T12:00:00Z`, isAdmin })
 
 export const members: PartyMember[] = [
 	member('kirill', 'Кирилл', '2026-09-01', true),

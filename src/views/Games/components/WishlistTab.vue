@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { WishlistGame } from '../../../api-facade/contracts'
+import type { WishlistEntry } from '../../../api-facade/contracts'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiIconButton from '../../../components/ui/UiIconButton.vue'
@@ -19,7 +19,7 @@ const query = ref('')
 const editingId = ref<number>()
 const editingName = ref('')
 
-const deleting = ref<WishlistGame>()
+const deleting = ref<WishlistEntry>()
 
 const rows = computed(() => {
 	const q = query.value.trim().toLowerCase()
@@ -50,7 +50,7 @@ const onAdd = async () => {
 	}
 }
 
-const startEdit = (game: WishlistGame) => {
+const startEdit = (game: WishlistEntry) => {
 	editingId.value = game.id
 	editingName.value = game.name
 }
@@ -114,7 +114,7 @@ const confirmDelete = async () => {
 			</template>
 			<span v-else class="table__name">{{ game.name }}</span>
 
-			<span class="table__date">{{ formatDate(game.addedAt) }}</span>
+			<span class="table__date">{{ formatDate(game.addedDate) }}</span>
 
 			<span class="table__actions">
 				<template v-if="editingId === game.id">

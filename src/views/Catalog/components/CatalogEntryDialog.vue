@@ -159,9 +159,9 @@ const fields = computed<FormField[]>(() => {
 const initial = computed<FormValues>(() => ({
 	name: entry?.name ?? '',
 	description: entry?.description ?? '',
-	unit1: entry?.unitForms?.[0] ?? '',
-	unit2: entry?.unitForms?.[1] ?? '',
-	unit5: entry?.unitForms?.[2] ?? '',
+	unit1: entry?.unitForms?.one ?? '',
+	unit2: entry?.unitForms?.several ?? '',
+	unit5: entry?.unitForms?.many ?? '',
 	changes: entry?.changes ?? [],
 	duration: entry?.duration ? formatSpan(entry.duration) : '',
 	usesMax: entry?.usesMax != null ? String(entry.usesMax) : '',
@@ -219,7 +219,7 @@ const onSave = async (values: FormValues) => {
 			return invalid('Старт вне границ', 'Стартовое значение должно быть между минимумом и максимумом.')
 		}
 
-		input.unitForms = [text('unit1'), text('unit2'), text('unit5')]
+		input.unitForms = { one: text('unit1'), several: text('unit2'), many: text('unit5') }
 		input.startValue = startValue
 		input.minimum = minimum
 		input.maximum = maximum

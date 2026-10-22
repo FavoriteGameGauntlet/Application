@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { CompletedGame } from '../../../api-facade/contracts'
+import type { GameHistoryEntry } from '../../../api-facade/contracts'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import { useCompletedStore } from '../../../stores/completedStore'
@@ -24,7 +24,7 @@ const statuses = {
 	rerolled: { label: 'Перекручена', tone: 'info' },
 } as const
 
-const reviewing = ref<{ game: CompletedGame; editing: boolean }>()
+const reviewing = ref<{ game: GameHistoryEntry; editing: boolean }>()
 
 const games = computed(() => completedStore.lists[user] ?? [])
 
@@ -52,10 +52,10 @@ const reviewedGame = computed(() =>
 
 		<div v-for="game in games" :key="game.gameId" class="table__row table__row--body">
 			<span class="table__name">{{ game.name }}</span>
-			<span class="table__num">{{ formatPeriod(game.startedAt, game.endedAt) }}</span>
-			<span class="table__num">{{ formatDuration(game.playedSeconds) }}</span>
+			<span class="table__num">{{ formatPeriod(game.startedDate, game.endedDate) }}</span>
+			<span class="table__num">{{ formatDuration(game.timeSpent) }}</span>
 			<span class="table__status">
-				<UiBadge :tone="statuses[game.status].tone">{{ statuses[game.status].label }}</UiBadge>
+				<UiBadge :tone="statuses[game.endState].tone">{{ statuses[game.endState].label }}</UiBadge>
 			</span>
 			<span class="table__rating">
 				<template v-if="game.rating">

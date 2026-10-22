@@ -108,7 +108,11 @@ export const adminApi: Api['admin'] = {
 						id: entry.id,
 						name: entry.name,
 						description: entry.description,
-						unitForms: entry.unitForms ?? [entry.name, entry.name, entry.name],
+						unitForms: entry.unitForms ?? {
+								one: entry.name,
+								several: entry.name,
+								many: entry.name,
+							},
 						startValue: entry.startValue ?? 0,
 						isPublic: entry.isPublic ?? true,
 						isShared: entry.isShared ?? false,
@@ -160,7 +164,7 @@ export const adminApi: Api['admin'] = {
 			),
 		create: (input) =>
 			reply(() => {
-				const def: db.ExchangeDef = { id: newId(), ...input, give: [], get: [] }
+				const def: db.ExchangeDef = { id: newId(), ...input, sourceEntries: [], targetEntries: [] }
 
 				db.exchangeDefs.push(def)
 
@@ -282,7 +286,7 @@ export const adminApi: Api['admin'] = {
 				const member = {
 					login,
 					displayName: null,
-					joinedAt: new Date().toISOString(),
+					joinedDate: new Date().toISOString(),
 					isAdmin: false,
 				}
 
