@@ -1,16 +1,43 @@
-import type { Api, Login, PointType } from '../contracts'
+import { formatJournalSource } from '../../utils/format'
+import type {
+	Api,
+	Login,
+	PointType,
+	ResourceKind,
+} from '../contracts'
 import { http } from '../http'
-import { getMembers, partyPath, toUserRefs, userRefOf } from './context'
+import { type CatalogDto, countHolders, toCatalogEntry } from './catalogEntries'
+import {
+	currentLogin,
+	getMembers,
+	getPointTypes,
+	partyPath,
+	toUserRefs,
+	userRefOf,
+} from './context'
+import { journal, latestOwnEntry } from './journal'
 
 type PointValueDto = { pointType: PointType; value: number }
 
+const refKind = {
+	items: 'item',
+	perks: 'perk',
+	effects: 'effect',
+} as const satisfies Record<ResourceKind, string>
+
 export const resources: Pick<
 	Api['resources'],
-	'pointTypes' | 'sharedPoints' | 'leaderboard' | 'summary' | 'catalog'
+	| 'pointTypes'
+	| 'sharedPoints'
+	| 'leaderboard'
+	| 'summary'
+	| 'catalog'
+	| 'catalogEntries'
+	| 'useItem'
+	| 'usePerk'
+	| 'history'
 > = {
-	pointTypes: async () =>
-		(await http.get<{ response: PointType[] }>(`${await partyPath()}/points/types`))
-			.body,
+	pointTypes: getPointTypes,
 
 	sharedPoints: async () => {
 		const points = (
@@ -59,4 +86,57 @@ export const resources: Pick<
 				`${await partyPath()}/${kind}/catalog`,
 			)
 		).body.map(({ id, name }) => ({ id, name })),
+
+	catalogEntries: async (kind) => {
+		const [{ body }, pointTypes, holders] = await Promise.all([
+			partyPath().then((path) =>
+				http.get<{ response: CatalogDto[typeof kind][] }>(`${path}/${kind}/catalog`),
+			),
+			getPointTypes(),
+			countHolders(kind),
+		])
+
+		return body.map((dto) => ({
+			...toCatalogEntry(kind, dto, pointTypes),
+			holdersTotal: holders.get(dto.id) ?? 0,
+		}))
+	},
+
+	useItem: async (userItemId, use) => {
+		await http.post(
+			`${await partyPath()}/items/${await currentLogin()}/${userItemId}/use`,
+			{ body: use },
+		)
+
+		return { journalEntry: await latestOwnEntry() }
+	},
+
+	usePerk: async (perkId, use) => {
+		await http.post(
+			`${await partyPath()}/perks/${await currentLogin()}/${perkId}/use`,
+			{ body: use },
+		)
+
+		return { journalEntry: await latestOwnEntry() }
+	},
+
+	history: async (login, kind, id, limit = 4) => {
+		const { items } = await journal.list({
+			user: login,
+			resource: { kind: refKind[kind], id },
+			limit,
+		})
+
+		return items
+			.flatMap((entry) =>
+				entry.changes
+					.filter((c) => c.login === login)
+					.map((c) => ({
+						at: entry.at,
+						source: formatJournalSource(entry.source, entry.correctsEntryId),
+						delta: c.text.match(/^[+−-]\d+/)?.[0] ?? c.text,
+					})),
+			)
+			.slice(0, limit)
+	},
 }

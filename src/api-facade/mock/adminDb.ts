@@ -1,6 +1,7 @@
 import type {
 	AdminWheelGroup,
 	CatalogEntry,
+	ChangeRow,
 	CatalogKind,
 	Party,
 	PartyMember,
@@ -17,6 +18,7 @@ export const parties: PartyDef[] = [
 		id: 1,
 		name: 'Осенний сезон',
 		membersCount: 6,
+		createdAt: '2026-08-25T12:00:00Z',
 		startsAt: '2026-09-01T12:00:00Z',
 		endsAt: '2026-11-15T12:00:00Z',
 		status: 'active',
@@ -26,6 +28,7 @@ export const parties: PartyDef[] = [
 		id: 2,
 		name: 'Летний сезон',
 		membersCount: 5,
+		createdAt: '2026-05-25T12:00:00Z',
 		startsAt: '2026-06-01T12:00:00Z',
 		endsAt: '2026-08-31T12:00:00Z',
 		status: 'finished',
@@ -35,6 +38,7 @@ export const parties: PartyDef[] = [
 		id: 3,
 		name: 'Рабочая пати',
 		membersCount: 9,
+		createdAt: '2026-08-25T12:00:00Z',
 		startsAt: '2026-09-01T12:00:00Z',
 		endsAt: '2026-11-30T12:00:00Z',
 		status: 'active',
@@ -63,7 +67,6 @@ const effect = (
 	changes: string[],
 	duration: number | null,
 	description: string,
-	usesMax: number | null = null,
 ): CatalogEntry => ({
 	id: db.effectRef(name).id,
 	name,
@@ -71,7 +74,6 @@ const effect = (
 	deleted: false,
 	changes,
 	duration,
-	usesMax,
 })
 
 const perk = (
@@ -155,7 +157,6 @@ export const catalog: Record<CatalogKind, CatalogEntry[]> = {
 			['блок негативных предметов'],
 			24 * 3600,
 			'Проклятия и похожие предметы на тебя не действуют.',
-			2,
 		),
 		effect(
 			'Проклятие',
@@ -174,7 +175,6 @@ export const catalog: Record<CatalogKind, CatalogEntry[]> = {
 			['пауза таймера', 'прогресс сохраняется'],
 			null,
 			'Можно отойти от игры, и таймер не сбросится.',
-			3,
 		),
 		effect(
 			'−10% очков',
@@ -233,6 +233,13 @@ const refText = (ref: ResourceRef) => {
 	}
 }
 
+/** the refs of the mock catalogue as the rows of the contract; a perk or an effect has no amount */
+const toChangeRow = (ref: ResourceRef): ChangeRow => ({
+	kind: ref.kind,
+	targetId: ref.id,
+	amount: 'amount' in ref ? ref.amount : 1,
+})
+
 const NO_REPEAT_GROUPS = ['Штрафы', 'Перки']
 
 const changeGroup = (group: db.WheelGroupDef): AdminWheelGroup => ({
@@ -246,6 +253,8 @@ const changeGroup = (group: db.WheelGroupDef): AdminWheelGroup => ({
 		name: entry.name,
 		description: entry.description,
 		changes: (entry.entries ?? []).map(refText),
+		entries: (entry.entries ?? []).map(toChangeRow),
+		isManualChange: entry.isManualChange === true,
 	})),
 })
 
@@ -265,6 +274,8 @@ const gameGroup = (
 		name: gameName,
 		description,
 		changes: [],
+		entries: [],
+		isManualChange: false,
 	})),
 })
 

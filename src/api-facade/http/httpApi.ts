@@ -1,9 +1,16 @@
 import type { Api } from '../contracts'
+import { adminCatalog } from './adminCatalog'
+import { adminWheel } from './adminWheel'
 import { auth } from './auth'
 import { adminExchanges, exchanges } from './exchanges'
 import { completed, currentGame, wishlist } from './games'
+import { journal } from './journal'
+import { members } from './members'
 import { adminMembers, parties, session } from './parties'
+import { presence } from './presence'
 import { resources } from './resources'
+import { timer } from './timers'
+import { wheel } from './wheel'
 
 type DeepPartial<T> = {
 	[K in keyof T]?: T[K] extends (...args: never[]) => unknown
@@ -41,12 +48,22 @@ const implemented: DeepPartial<Api> = {
 	auth,
 	session,
 	currentGame,
+	timer,
+	wheel,
 	wishlist,
 	completed,
 	resources,
+	journal,
+	members,
 	exchanges,
+	presence,
 	parties,
-	admin: { exchanges: adminExchanges, members: adminMembers },
+	admin: {
+		catalog: adminCatalog,
+		exchanges: adminExchanges,
+		wheel: adminWheel,
+		members: adminMembers,
+	},
 }
 
 export const httpApi = withStubs(implemented) as Api

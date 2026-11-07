@@ -80,7 +80,7 @@ export const useAdminWheelStore = defineStore(StoreName.AdminWheel, () => {
 	const saveEntry = (
 		target: AdminWheelGroup,
 		entry: AdminWheelEntry | undefined,
-		input: Pick<AdminWheelEntry, 'name' | 'description' | 'changes'>,
+		input: Pick<AdminWheelEntry, 'name' | 'description' | 'entries' | 'isManualChange'>,
 	) =>
 		run(() => api.admin.wheel.saveEntry(target.id, entry?.id, input), {
 			title: entry ? 'Сохранено' : 'Добавлено',

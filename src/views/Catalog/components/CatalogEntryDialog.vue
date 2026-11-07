@@ -1,11 +1,22 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { CatalogEntry, CatalogEntryInput, CatalogKind } from '../../../api-facade/contracts'
-import type { FormField, FormValues } from '../../../components/formDialog'
+import type { FormField, FormRow, FormValues } from '../../../components/formDialog'
 import FormDialog from '../../../components/FormDialog.vue'
 import { useAdminCatalogStore } from '../../../stores/adminCatalogStore'
 import { useToastStore } from '../../../stores/toastStore'
 import { formatSpan, parseSpan } from '../../../utils/format'
+import {
+	itemEntriesToForm,
+	modifiersToForm,
+	parseItemEntries,
+	parseModifiers,
+} from '../../../utils/formRows'
+import type {
+	ItemCondition,
+	ItemEntryRow,
+	PerkAbility,
+} from '../../../api-facade/contracts'
 
 type Props = {
 	open: boolean
@@ -29,6 +40,22 @@ const adds: Record<CatalogKind, string> = {
 	effects: 'Новый эффект',
 	perks: 'Новый перк',
 }
+
+const conditionLabels: Record<ItemCondition, string> = {
+	target_not_self: 'Цель — не тот, кто использует',
+	target_online: 'Все цели в сети',
+	target_offline: 'Все цели не в сети',
+	holder_not_playing: 'У того, кто использует, нет текущей игры',
+}
+
+const conditionFields: FormField[] = (Object.keys(conditionLabels) as ItemCondition[]).map(
+	(condition) => ({
+		key: `condition_${condition}`,
+		type: 'check' as const,
+		label: conditionLabels[condition],
+		hint: '',
+	}),
+)
 
 const fields = computed<FormField[]>(() => {
 	const common: FormField[] = [
@@ -97,11 +124,11 @@ const fields = computed<FormField[]>(() => {
 			return [
 				...common,
 				{
-					key: 'changes',
-					label: 'Изменение',
-					type: 'tags',
-					placeholder: '+50 Золото',
-					hint: 'Впиши изменение и нажми Enter.',
+					key: 'entries',
+					label: 'Что делает предмет',
+					type: 'rows',
+					variant: 'item-entry',
+					hint: 'Каждая строка — одно изменение. Минус забирает, «Выбранный предмет» игрок указывает при использовании.',
 				},
 				{
 					key: 'usesMax',
@@ -109,16 +136,17 @@ const fields = computed<FormField[]>(() => {
 					placeholder: '1',
 					hint: 'Сколько раз можно использовать одну копию предмета.',
 				},
+				...conditionFields,
 			]
 		case 'effects':
 			return [
 				...common,
 				{
-					key: 'changes',
-					label: 'Изменение',
-					type: 'tags',
-					placeholder: 'Золото за таймер ×2',
-					hint: 'Впиши изменение и нажми Enter.',
+					key: 'modifiers',
+					label: 'Пока эффект действует',
+					type: 'rows',
+					variant: 'modifier',
+					hint: 'Очки, которые меняются сами, пока эффект активен. Пусто — эффект только описание.',
 				},
 				{
 					key: 'duration',
@@ -126,22 +154,16 @@ const fields = computed<FormField[]>(() => {
 					placeholder: '1 день',
 					hint: 'Пусто — без срока.',
 				},
-				{
-					key: 'usesMax',
-					label: 'Использований',
-					placeholder: '3',
-					hint: 'Пусто — без ограничения, пока действует.',
-				},
 			]
 		default:
 			return [
 				...common,
 				{
-					key: 'changes',
-					label: 'Эффект',
-					type: 'tags',
-					placeholder: 'Бесплатный перекрут',
-					hint: 'Впиши изменение и нажми Enter.',
+					key: 'modifiers',
+					label: 'Пока перк у игрока',
+					type: 'rows',
+					variant: 'modifier',
+					hint: 'Очки, которые меняются сами, пока перк есть. Пусто — перк только описание.',
 				},
 				{
 					key: 'perkKind',
@@ -151,6 +173,36 @@ const fields = computed<FormField[]>(() => {
 						{ value: 'active', label: 'активный' },
 						{ value: 'passive', label: 'пассивный' },
 					],
+				},
+				{
+					key: 'abilityEntries',
+					label: 'Что делает способность (активный перк)',
+					type: 'rows',
+					variant: 'item-entry',
+					hint: 'Применяется, когда игрок использует способность, как у предмета.',
+				},
+				{
+					key: 'abilityUsesMax',
+					label: 'Использований: максимум',
+					placeholder: '3',
+					hint: 'Пусто — без ограничения. Тогда зарядов и обновления нет.',
+				},
+				{
+					key: 'abilityUsesStart',
+					label: 'Использований: сколько у нового владельца',
+					placeholder: '1',
+				},
+				{
+					key: 'abilityCharges',
+					label: 'Зарядов на одно использование',
+					placeholder: '0',
+					hint: 'Столько событий, заряжающих способность, дают одно использование. 0 — зарядов нет.',
+				},
+				{
+					key: 'abilityRenewal',
+					label: 'Обновление использований',
+					placeholder: '1 день',
+					hint: 'Через это время после последнего изменения использования возвращаются к максимуму. Пусто — не обновляются.',
 				},
 			]
 	}
@@ -162,7 +214,19 @@ const initial = computed<FormValues>(() => ({
 	unit1: entry?.unitForms?.one ?? '',
 	unit2: entry?.unitForms?.several ?? '',
 	unit5: entry?.unitForms?.many ?? '',
-	changes: entry?.changes ?? [],
+	entries: itemEntriesToForm(entry?.entries ?? []),
+	modifiers: modifiersToForm(entry?.modifiers ?? []),
+	abilityEntries: itemEntriesToForm(entry?.ability?.entries ?? []),
+	abilityUsesMax: entry?.ability?.uses ? String(entry.ability.uses.max) : '',
+	abilityUsesStart: entry?.ability?.uses ? String(entry.ability.uses.start) : '',
+	abilityCharges: entry?.ability ? String(entry.ability.chargesMax) : '',
+	abilityRenewal: entry?.ability?.renewalPeriod ? formatSpan(entry.ability.renewalPeriod) : '',
+	...Object.fromEntries(
+		(Object.keys(conditionLabels) as ItemCondition[]).map((c) => [
+			`condition_${c}`,
+			entry?.conditions?.includes(c) ?? false,
+		]),
+	),
 	duration: entry?.duration ? formatSpan(entry.duration) : '',
 	usesMax: entry?.usesMax != null ? String(entry.usesMax) : '',
 	perkKind: entry?.perkKind ?? 'active',
@@ -179,9 +243,49 @@ const invalid = (title: string, text: string) => {
 	toastStore.show(title, text, 'danger')
 }
 
+/** the limits of the ability, or the text of what is wrong with them */
+const readAbility = (
+	text: (key: string) => string,
+	entries: ItemEntryRow[],
+): PerkAbility | string => {
+	const usesMax = text('abilityUsesMax')
+	const usesStart = text('abilityUsesStart')
+	const charges = text('abilityCharges')
+	const renewal = text('abilityRenewal')
+	const chargesMax = charges ? Number(charges) : 0
+	const renewalPeriod = renewal ? parseSpan(renewal) : undefined
+
+	if (!Number.isInteger(chargesMax) || chargesMax < 0) {
+		return 'Зарядов — целое число, не меньше нуля.'
+	}
+
+	if (renewal && (renewalPeriod == null || renewalPeriod < 1 || renewalPeriod > 315_360_000)) {
+		return 'Обновление: напиши, например, «2 ч» или «1 день», не дольше 10 лет.'
+	}
+
+	if (!usesMax && !usesStart) {
+		return chargesMax > 0 || renewal
+			? 'Заряды и обновление нужны, только когда использования ограничены.'
+			: { entries, chargesMax: 0 }
+	}
+
+	const max = Number(usesMax)
+	const start = Number(usesStart)
+
+	if (!usesMax || !usesStart || !Number.isInteger(max) || max < 1 || !Number.isInteger(start) || start < 0) {
+		return 'Использования: максимум — целое число от 1, у нового владельца — целое число от 0. Или оставь оба пустыми.'
+	}
+
+	return {
+		entries,
+		uses: { max, start },
+		chargesMax,
+		...(renewalPeriod != null && { renewalPeriod }),
+	}
+}
+
 const onSave = async (values: FormValues) => {
 	const text = (key: string) => String(values[key] ?? '').trim()
-	const changes = (values.changes as string[] | undefined) ?? []
 	const name = text('name')
 	const description = text('description')
 
@@ -189,10 +293,6 @@ const onSave = async (values: FormValues) => {
 
 	if (kind === 'point-types' && !(text('unit1') && text('unit2') && text('unit5'))) {
 		return invalid('Впиши единицы', 'Нужны все три формы: 1, 2–4 и 5 и больше.')
-	}
-
-	if (kind !== 'point-types' && !changes.length) {
-		return invalid('Добавь изменение', 'Хотя бы одно: что произойдёт при использовании.')
 	}
 
 	if (!description) return invalid('Добавь описание', 'Игроки увидят его в подсказках.')
@@ -226,37 +326,80 @@ const onSave = async (values: FormValues) => {
 		input.isPublic = values.isPublic === true
 
 		if (!entry) input.isShared = values.isShared === true
-	} else {
-		input.changes = changes
 	}
 
 	if (kind === 'items') {
+		const entries = parseItemEntries(values.entries as FormRow[])
+
+		if ('error' in entries) return invalid('Проверь изменения', entries.error)
+		if (!entries.value.length) {
+			return invalid('Добавь изменение', 'Хотя бы одно: что произойдёт при использовании.')
+		}
+
 		const usesMax = Number(text('usesMax'))
 
 		if (!(Number.isInteger(usesMax) && usesMax > 0)) {
 			return invalid('Не понял число использований', 'Нужно целое число больше нуля.')
 		}
 
+		const conditions = (Object.keys(conditionLabels) as ItemCondition[]).filter(
+			(c) => values[`condition_${c}`] === true,
+		)
+
+		if (conditions.includes('target_online') && conditions.includes('target_offline')) {
+			return invalid('Условия не сочетаются', 'Цели не могут быть и в сети, и не в сети.')
+		}
+
+		const needsTargets = conditions.some((c) => c.startsWith('target_'))
+
+		if (needsTargets && !entries.value.some((e) => e.who === 'chosen')) {
+			return invalid('Нужна выбранная цель', 'Условия про цели работают, когда есть строка «Выбранным игрокам».')
+		}
+
+		input.entries = entries.value
 		input.usesMax = usesMax
+		input.conditions = conditions
 	}
 
 	if (kind === 'effects') {
+		const modifiers = parseModifiers(values.modifiers as FormRow[])
+
+		if ('error' in modifiers) return invalid('Проверь изменения', modifiers.error)
+
+		input.modifiers = modifiers.value
+
 		const duration = text('duration')
-		const usesMax = text('usesMax')
 
 		input.duration = duration ? (parseSpan(duration) ?? NaN) : null
-		input.usesMax = usesMax ? Number(usesMax) : null
 
 		if (Number.isNaN(input.duration)) {
 			return invalid('Не понял длительность', 'Напиши, например, «2 ч» или «1 день».')
 		}
-
-		if (input.usesMax !== null && !(Number.isInteger(input.usesMax) && input.usesMax > 0)) {
-			return invalid('Не понял число использований', 'Нужно целое число больше нуля.')
-		}
 	}
 
-	if (kind === 'perks') input.perkKind = text('perkKind') === 'passive' ? 'passive' : 'active'
+	if (kind === 'perks') {
+		const modifiers = parseModifiers(values.modifiers as FormRow[])
+
+		if ('error' in modifiers) return invalid('Проверь изменения', modifiers.error)
+
+		input.modifiers = modifiers.value
+		input.perkKind = text('perkKind') === 'passive' ? 'passive' : 'active'
+
+		if (input.perkKind === 'active') {
+			const entries = parseItemEntries(values.abilityEntries as FormRow[])
+
+			if ('error' in entries) return invalid('Проверь способность', entries.error)
+			if (!entries.value.length) {
+				return invalid('Добавь изменение', 'Активному перку нужна хотя бы одна строка способности.')
+			}
+
+			const ability = readAbility(text, entries.value)
+
+			if (typeof ability === 'string') return invalid('Проверь способность', ability)
+
+			input.ability = ability
+		}
+	}
 
 	if (await store.saveEntry(kind, entry?.id, input)) emit('close')
 }

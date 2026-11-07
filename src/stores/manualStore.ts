@@ -21,7 +21,6 @@ type FixDraft = {
 
 type WheelDraft = {
 	kind: 'wheel'
-	spinId: number
 	name: string
 	group: string
 	description: string
@@ -73,9 +72,7 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 		try {
 			await api.manual.apply({
 				changes,
-				...(current.kind === 'fix'
-					? { correctsEntryId: current.entry.id }
-					: { spinId: current.spinId }),
+				...(current.kind === 'fix' && { correctsEntryId: current.entry.id }),
 			})
 
 			toast.show(

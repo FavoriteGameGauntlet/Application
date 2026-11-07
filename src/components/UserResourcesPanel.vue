@@ -76,7 +76,7 @@ const rows = computed(() => {
 			resources.effects.map((effect) => ({
 				id: effect.id,
 				name: effect.name,
-				note: effect.usesMax != null ? `${effect.usesLeft}/${effect.usesMax} исп.` : '',
+				note: '',
 				value: effect.expiresAt ? formatRemaining(effect.expiresAt) : '',
 				expandable: false,
 			})),

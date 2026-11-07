@@ -1,5 +1,13 @@
+import { Temporal } from '@js-temporal/polyfill'
 import { persistentStorage, StoreKey } from '../../services/persistentStorage'
-import type { ISODate, Login, UserRef } from '../contracts'
+import type {
+	ISODate,
+	Login,
+	PointType,
+	Seconds,
+	UserRef,
+	UserStatus,
+} from '../contracts'
 import { http } from '../http'
 
 /** the number of `--user-N` colors in the theme */
@@ -22,11 +30,22 @@ export const partyPath = async () => {
 	return `/parties/${id}`
 }
 
+/** an ISO 8601 duration ("PT2h10m5s") of the backend in seconds */
+export const toSeconds = (duration: string): Seconds =>
+	Temporal.Duration.from(duration).total('seconds')
+
 export type MemberDto = {
 	login: Login
 	displayName?: string
 	isAdmin: boolean
 	joinedDate: ISODate
+	status: UserStatus
+	/** the name of the current game */
+	currentGame: string | null
+	/** ISO 8601 duration */
+	timeSpent: string
+	completedCount: number
+	spinsCount: number
 }
 
 export const getMembers = async () =>
@@ -46,3 +65,7 @@ export const toUserRefs = (members: MemberDto[]) => {
 
 export const userRefOf = (refs: Map<Login, UserRef>, login: Login): UserRef =>
 	refs.get(login) ?? { login, colorIndex: 1 }
+
+export const getPointTypes = async () =>
+	(await http.get<{ response: PointType[] }>(`${await partyPath()}/points/types`))
+		.body

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { usePresence } from '../../composables/usePresence'
 import { RouteName } from '../../router/routeNames'
 import { useCurrentGameStore } from '../../stores/currentGameStore'
 import { useMembersStore } from '../../stores/membersStore'
@@ -16,6 +17,8 @@ import MiniTimer from './components/MiniTimer.vue'
 const route = useRoute()
 const router = useRouter()
 const miniModeStore = useMiniModeStore()
+
+usePresence()
 
 const isReady = ref(false)
 

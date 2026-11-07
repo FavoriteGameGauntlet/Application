@@ -2,6 +2,7 @@ import type { Api, ExchangeOffer } from '../contracts'
 import { http } from '../http'
 import { type NamedChangeEntryDto, toResourceRef } from './changeEntry'
 import { partyPath } from './context'
+import { fromCostRow, fromGainRow } from './rows'
 
 type ExchangeDto = {
 	id: number
@@ -30,7 +31,28 @@ export const exchanges: Pick<Api['exchanges'], 'list'> = {
 		).body.map((e) => ({ ...e, ...toSides(e) })),
 }
 
-export const adminExchanges: Pick<Api['admin']['exchanges'], 'list' | 'remove'> = {
+export const adminExchanges: Pick<
+	Api['admin']['exchanges'],
+	'list' | 'create' | 'remove'
+> = {
+	create: async ({ name, description, sourceEntries, targetEntries }) => {
+		const exchange = (
+			await http.post<{ response: ExchangeDto }>(
+				`${await partyPath()}/exchanges/catalog`,
+				{
+					body: {
+						name,
+						description,
+						sourceEntries: sourceEntries.map(fromCostRow),
+						targetEntries: targetEntries.map(fromGainRow),
+					},
+				},
+			)
+		).body
+
+		return { ...exchange, ...toSides(exchange), deleted: false }
+	},
+
 	list: async (includeDeleted) => {
 		const path = await partyPath()
 		const [active, removed] = await Promise.all([

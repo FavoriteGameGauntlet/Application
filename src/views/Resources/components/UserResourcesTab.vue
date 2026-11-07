@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { ResourceKind, UserItem } from '../../../api-facade/contracts'
+import type { ItemUse, Perk, ResourceKind, UserItem } from '../../../api-facade/contracts'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiIcon from '../../../components/ui/UiIcon.vue'
@@ -11,7 +11,8 @@ import { useMembersStore } from '../../../stores/membersStore'
 import { useResourcesStore } from '../../../stores/resourcesStore'
 import { useSessionStore } from '../../../stores/sessionStore'
 import { formatRemaining } from '../../../utils/format'
-import UseItemDialog from './UseItemDialog.vue'
+import { needsUseForm } from '../../../utils/itemUse'
+import UseDialog, { type UseSubject } from './UseDialog.vue'
 
 type Props = {
 	kind: ResourceKind
@@ -34,7 +35,46 @@ const emptyHints = {
 
 const query = ref('')
 const selected = ref(user ?? sessionStore.login)
-const usingItem = ref<UserItem>()
+/** what the open dialog uses and what happens when it is confirmed */
+const using = ref<{ subject: UseSubject; run: (use: ItemUse) => Promise<void> }>()
+
+const openItem = (item: UserItem) => {
+	using.value = {
+		subject: {
+			title: `Использовать «${item.name}»`,
+			text: item.description,
+			entries: item.entries ?? [],
+			conditions: item.conditions ?? [],
+			excludeCopyId: item.id,
+		},
+		run: (use) => resourcesStore.useItem(item, use),
+	}
+}
+
+/** a perk with targets or copies to pick asks first, any other is used at once */
+const usePerk = (perk: Perk) => {
+	if (!needsUseForm(perk.abilityEntries, sessionStore.login)) {
+		return resourcesStore.usePerk(perk.id, perk.effect.name)
+	}
+
+	using.value = {
+		subject: {
+			title: `Использовать «${perk.effect.name}»`,
+			text: perk.effect.text,
+			entries: perk.abilityEntries ?? [],
+			conditions: [],
+		},
+		run: (use) => resourcesStore.usePerk(perk.id, perk.effect.name, use),
+	}
+}
+
+const onConfirmUse = async (use: ItemUse) => {
+	const current = using.value
+
+	using.value = undefined
+
+	await current?.run(use)
+}
 
 watch(
 	() => user,
@@ -78,8 +118,6 @@ const emptyText = computed(
 	() =>
 		`${isMine.value ? 'У тебя' : `У ${selected.value}`} пока нет ${emptyHints[kind]}.`,
 )
-
-const hasUses = (left?: number, max?: number) => max != null && left != null
 </script>
 
 <template>
@@ -126,7 +164,7 @@ const hasUses = (left?: number, max?: number) => max != null && left != null
 						variant="outline"
 						size="sm"
 						:disabled="item.usesLeft === 0"
-						@click="usingItem = item"
+						@click="openItem(item)"
 					>
 						Использовать
 					</UiButton>
@@ -161,7 +199,7 @@ const hasUses = (left?: number, max?: number) => max != null && left != null
 						variant="outline"
 						size="sm"
 						:disabled="!perk.usesLeft"
-						@click="resourcesStore.usePerk(perk.id, perk.effect.name)"
+						@click="usePerk(perk)"
 					>
 						Использовать
 					</UiButton>
@@ -179,13 +217,9 @@ const hasUses = (left?: number, max?: number) => max != null && left != null
 							<UiIcon name="clock" :size="14" />
 							осталось {{ formatRemaining(effect.expiresAt) }}
 						</span>
-						<span v-else-if="!hasUses(effect.usesLeft, effect.usesMax)" class="term">
+						<span v-else class="term">
 							<UiIcon name="infinity" :size="14" />
 							без срока
-						</span>
-						<span v-if="hasUses(effect.usesLeft, effect.usesMax)" class="card__meta">
-							<span>Использований</span>
-							<span class="card__meta-value">{{ effect.usesLeft }} из {{ effect.usesMax }}</span>
 						</span>
 					</div>
 				</div>
@@ -195,7 +229,11 @@ const hasUses = (left?: number, max?: number) => max != null && left != null
 		</div>
 	</div>
 
-	<UseItemDialog :item="usingItem" @close="usingItem = undefined" />
+	<UseDialog
+		:subject="using?.subject"
+		@close="using = undefined"
+		@confirm="onConfirmUse"
+	/>
 </template>
 
 <style scoped>

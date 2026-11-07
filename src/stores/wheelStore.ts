@@ -217,8 +217,15 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		const group = resultSource.value
 		const toast = useToastStore()
 
+		// the backend takes targets for a group of changes only (and requires them);
+		// the design has no picker yet, so the change goes to the one who spun
+		const { source } = applied
+		const kind =
+			source === 'wishlist' ? undefined : groups.value.find((g) => g.id === source.groupId)?.kind
+		const targetLogins = kind === 'changes' ? [useSessionStore().login] : undefined
+
 		try {
-			await api.wheel.apply(applied.spinId, payment)
+			await api.wheel.apply(payment, targetLogins)
 
 			result.value = null
 			spunEntries.value = null
@@ -241,7 +248,6 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 
 				if (applied.result.isManualChange) {
 					await useManualStore().startWheel({
-						spinId: applied.spinId,
 						name: applied.result.name,
 						group,
 						description:

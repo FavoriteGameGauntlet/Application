@@ -3,9 +3,12 @@ import { ref } from 'vue'
 import { api } from '../api-facade/api'
 import type {
 	AdminExchange,
+	AdminExchangeInput,
 	CatalogEntry,
 	CatalogEntryInput,
 	CatalogKind,
+	CatalogOption,
+	ChangeRow,
 } from '../api-facade/contracts'
 import { StoreName } from '../enums/storeName'
 import { useResourcesStore } from './resourcesStore'
@@ -18,6 +21,34 @@ export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 	const exchanges = ref<AdminExchange[]>([])
 	/** the switch «Показать удалённые» of the open list */
 	const showDeleted = ref(false)
+
+	/** what a row of a change can name, by the kind of the resource */
+	const targets = ref<Record<ChangeRow['kind'], CatalogOption[]>>({
+		points: [],
+		item: [],
+		perk: [],
+		effect: [],
+	})
+	const targetsLoaded = ref(false)
+
+	/** the lists are read once and again after the catalogue is changed */
+	const loadTargets = async () => {
+		if (targetsLoaded.value) return
+
+		const [items, perks, effects] = await Promise.all([
+			api.resources.catalog('items'),
+			api.resources.catalog('perks'),
+			api.resources.catalog('effects'),
+		])
+
+		targets.value = {
+			points: useResourcesStore().pointTypes.map(({ id, name }) => ({ id, name })),
+			item: items,
+			perk: perks,
+			effect: effects,
+		}
+		targetsLoaded.value = true
+	}
 
 	const fetchCatalog = (kind: CatalogKind, includeDeleted = false) =>
 		api.admin.catalog.list(kind, includeDeleted)
@@ -59,6 +90,7 @@ export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 
 			toast.show(id === undefined ? 'Добавлено' : 'Сохранено', input.name)
 
+			targetsLoaded.value = false
 			await Promise.all([loadCatalog(kind), refreshUserData(kind)])
 			return true
 		} catch (e) {
@@ -71,6 +103,8 @@ export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 		const toast = useToastStore()
 
 		try {
+			targetsLoaded.value = false
+
 			if (deleted) {
 				await api.admin.catalog.remove(kind, entry.id)
 			} else {
@@ -89,10 +123,7 @@ export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 		}
 	}
 
-	const saveExchange = async (
-		id: number | undefined,
-		input: { name: string; description: string },
-	) => {
+	const saveExchange = async (id: number | undefined, input: AdminExchangeInput) => {
 		const toast = useToastStore()
 
 		try {
@@ -139,6 +170,8 @@ export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 		entriesKind,
 		exchanges,
 		showDeleted,
+		targets,
+		loadTargets,
 		fetchCatalog,
 		loadCatalog,
 		loadExchanges,

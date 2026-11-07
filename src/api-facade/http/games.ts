@@ -1,7 +1,9 @@
 import { Temporal } from '@js-temporal/polyfill'
 import type { Api, GameHistoryEntry, Login, WishlistEntry } from '../contracts'
 import { type HttpErrorResponse, http } from '../http'
-import { currentLogin, partyPath } from './context'
+import { currentLogin, partyPath, toSeconds } from './context'
+import { latestOwnEntry } from './journal'
+import { getReward } from './rewards'
 
 type GameHistoryEntryDto = Omit<
 	GameHistoryEntry,
@@ -49,7 +51,55 @@ const listHistory = async (login: Login): Promise<GameHistoryEntry[]> => {
 	)
 }
 
-export const currentGame: Pick<Api['currentGame'], 'cancel'> = {
+type CurrentGameDto = {
+	gameId: number
+	name: string
+	/** ISO 8601 duration */
+	timeSpent: string
+	startDate: string
+}
+
+export const currentGame: Pick<
+	Api['currentGame'],
+	'get' | 'complete' | 'cancel'
+> = {
+	get: async () => {
+		const [{ body: game }, completionReward] = await Promise.all([
+			partyPath().then(async (path) =>
+				http.get<{ response: CurrentGameDto | '' }>(
+					`${path}/games/users/${await currentLogin()}/current`,
+				),
+			),
+			getReward('game'),
+		])
+
+		// 204: the user has no current game, the empty body is parsed as ''
+		if (game === '') return { game: null, playedSeconds: 0, completionReward }
+
+		return {
+			game: { id: game.gameId, name: game.name },
+			playedSeconds: toSeconds(game.timeSpent),
+			completionReward,
+		}
+	},
+
+	complete: async () => {
+		const login = await currentLogin()
+
+		await http.post(`${await partyPath()}/games/current/actions`, {
+			body: { action: 'finish' },
+		})
+
+		const journalEntry = await latestOwnEntry()
+
+		return {
+			granted: journalEntry.changes.flatMap((c) =>
+				c.login === login && c.resource ? [c.resource] : [],
+			),
+			journalEntry,
+		}
+	},
+
 	cancel: async () => {
 		await http.post(`${await partyPath()}/games/current/actions`, {
 			body: { action: 'cancel' },
@@ -92,7 +142,9 @@ export const completed: Api['completed'] = {
 	list: listHistory,
 
 	saveReview: async (gameId, review) => {
-		await http.put(`${await partyPath()}/games/${gameId}/review`, { body: review })
+		await http.put(`${await partyPath()}/games/${gameId}/review`, {
+			body: review,
+		})
 
 		const game = (await listHistory(await currentLogin())).find(
 			(g) => g.gameId === gameId,

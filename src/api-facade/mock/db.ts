@@ -15,6 +15,7 @@ import type {
 	Seconds,
 	SpinCostRef,
 	TimerState,
+	WheelEntry,
 	WheelGroup,
 	WheelSpinResult,
 	WishlistEntry,
@@ -272,14 +273,12 @@ const effect = (
 	description: string,
 	source: string,
 	expiresIn: number | null,
-	uses?: [left: number, max: number],
 ): Effect => ({
 	id: effectId(name),
 	name,
 	description,
 	source,
 	expiresAt: expiresIn === null ? null : fromNow(expiresIn),
-	...(uses && { usesLeft: uses[0], usesMax: uses[1] }),
 })
 
 export const resources: Record<Login, UserResources> = {
@@ -310,7 +309,6 @@ export const resources: Record<Login, UserResources> = {
 				'Блокирует негативные предметы.',
 				'предмет «Щит» · ты',
 				22 * HOUR,
-				[1, 2],
 			),
 			effect(
 				'Проклятие',
@@ -329,14 +327,12 @@ export const resources: Record<Login, UserResources> = {
 				'Ставит таймер на паузу без потери прогресса.',
 				'предмет «Зелье времени» · ты',
 				null,
-				[2, 3],
 			),
 			effect(
 				'Хранитель сокровищ из забытых подземелий и затерянных древних миров',
 				'Эффект с очень длинным названием для проверки обрезки текста.',
 				'колесо · Бонусы',
 				5 * HOUR,
-				[1, 3],
 			),
 		],
 	},
@@ -935,6 +931,9 @@ export const spinCosts: Record<number, SpinCostRef[]> = Object.fromEntries(
 		]),
 )
 
+/** the saved spin; the mock keeps the id of the item, the backend does not return it */
+export type MockSpin = WheelSpinResult & { result: WheelEntry }
+
 export const state = {
 	currentGame: {
 		game: {
@@ -953,9 +952,7 @@ export const state = {
 		stampedAt: Date.now(),
 	},
 	/** the spin that waits to be applied; a new spin replaces it */
-	spin: null as WheelSpinResult | null,
-	/** applied spins, their manual part is entered with the manual change form */
-	appliedSpins: {} as Record<number, WheelSpinResult>,
+	spin: null as MockSpin | null,
 	/** the party that the requests are made in */
 	partyId: 1,
 }

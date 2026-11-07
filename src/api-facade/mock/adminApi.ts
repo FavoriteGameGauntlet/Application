@@ -1,14 +1,22 @@
 import type {
 	AdminExchange,
+	AdminExchangeInput,
 	AdminWheelGroup,
 	Api,
 	CatalogEntry,
+	CatalogEntryInput,
 	CatalogKind,
+	ChangeRow,
+	ItemEntryRow,
+	PointModifierRow,
+	ResourceRef,
+	SpinCostRow,
 } from '../contracts'
 import { countItems } from '../../utils/userItems'
 import * as adminDb from './adminDb'
 import * as db from './db'
 import { fail, newId, reply } from './helpers'
+import { signedText } from './journal'
 
 const costCatalog = {
 	points: 'point-types',
@@ -16,6 +24,52 @@ const costCatalog = {
 	perk: 'perks',
 	effect: 'effects',
 } as const
+
+const nameOf = (kind: ChangeRow['kind'], id: number) =>
+	adminDb.catalog[costCatalog[kind]].find((e) => e.id === id)?.name ?? ''
+
+const toRef = (kind: ChangeRow['kind'], id: number, amount: number): ResourceRef => {
+	const name = nameOf(kind, id)
+
+	return kind === 'perk' || kind === 'effect'
+		? { kind, id, name }
+		: { kind, id, name, amount }
+}
+
+/** «+50 Золото», «−1 Щит», «+перк Коллекционер» */
+const changeText = ({ kind, targetId, amount }: ChangeRow) =>
+	`${amount < 0 && (kind === 'perk' || kind === 'effect') ? '−' : ''}${signedText(toRef(kind, targetId, amount))}`
+
+const entryText = (row: ItemEntryRow) => {
+	const text =
+		row.kind === 'user-item'
+			? `${row.amount < 0 ? '−' : '+'}выбранный предмет${Math.abs(row.amount) > 1 ? ` ×${Math.abs(row.amount)}` : ''}`
+			: changeText({ kind: row.kind, targetId: row.targetId ?? 0, amount: row.amount })
+
+	return row.who === 'chosen' ? `${text} (выбранным игрокам)` : text
+}
+
+const modifierText = (m: PointModifierRow) =>
+	changeText({ kind: 'points', targetId: m.pointTypeId, amount: m.amount })
+
+/** the text that the catalogue shows for the structured fields of an entry */
+const changesOf = (input: CatalogEntryInput): string[] => [
+	...(input.modifiers ?? []).map(modifierText),
+	...(input.entries ?? []).map(entryText),
+	...(input.ability?.entries ?? []).map(entryText),
+]
+
+const withChanges = (input: CatalogEntryInput): CatalogEntryInput & { changes?: string[] } => {
+	const changes = changesOf(input)
+
+	return changes.length ? { ...input, changes } : input
+}
+
+const toExchangeSides = ({ sourceEntries, targetEntries }: AdminExchangeInput) => {
+	const refs = (rows: SpinCostRow[]) => rows.map((r) => toRef(r.kind, r.targetId, r.amount))
+
+	return { sourceEntries: refs(sourceEntries), targetEntries: refs(targetEntries) }
+}
 
 /** how many of the resource the users hold altogether */
 const holders = (kind: CatalogKind, id: number) => {
@@ -99,7 +153,12 @@ export const adminApi: Api['admin'] = {
 			),
 		create: (kind, input) =>
 			reply(() => {
-				const entry: CatalogEntry = { ...input, id: newId(), deleted: false }
+				const entry: CatalogEntry = {
+					...withChanges(input),
+					perkKind: input.ability ? 'active' : input.perkKind,
+					id: newId(),
+					deleted: false,
+				}
 
 				adminDb.catalog[kind].push(entry)
 
@@ -129,7 +188,7 @@ export const adminApi: Api['admin'] = {
 			reply(() => {
 				const entry = findEntry(kind, id)
 
-				Object.assign(entry, input)
+				Object.assign(entry, withChanges(input))
 
 				const type = db.pointTypes.find((t) => t.id === id)
 
@@ -164,7 +223,12 @@ export const adminApi: Api['admin'] = {
 			),
 		create: (input) =>
 			reply(() => {
-				const def: db.ExchangeDef = { id: newId(), ...input, sourceEntries: [], targetEntries: [] }
+				const def: db.ExchangeDef = {
+					id: newId(),
+					name: input.name,
+					description: input.description,
+					...toExchangeSides(input),
+				}
 
 				db.exchangeDefs.push(def)
 
@@ -174,7 +238,11 @@ export const adminApi: Api['admin'] = {
 			reply(() => {
 				const def = findExchange(id)
 
-				Object.assign(def, input)
+				Object.assign(def, {
+					name: input.name,
+					description: input.description,
+					...toExchangeSides(input),
+				})
 
 				return toAdminExchange(def)
 			}),
@@ -224,8 +292,10 @@ export const adminApi: Api['admin'] = {
 
 				if (group.system) fail(409, 'SYSTEM_GROUP', 'Эту группу нельзя менять')
 
+				const next = { ...input, changes: input.entries.map(changeText) }
+
 				if (entryId === undefined) {
-					group.entries.push({ id: newId(), ...input })
+					group.entries.push({ id: newId(), ...next })
 					return
 				}
 
@@ -233,7 +303,7 @@ export const adminApi: Api['admin'] = {
 
 				if (!entry) fail(404, 'NOT_FOUND', 'Пункт не найден')
 
-				Object.assign(entry, input)
+				Object.assign(entry, next)
 			}),
 		removeEntry: (groupId, entryId) =>
 			reply(() => {

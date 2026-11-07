@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { AdminExchange } from '../../api-facade/contracts'
-import type { FormField, FormValues } from '../../components/formDialog'
+import type { AdminExchange, SpinCostRow } from '../../api-facade/contracts'
+import type { FormField, FormRow, FormValues } from '../../components/formDialog'
 import FormDialog from '../../components/FormDialog.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
 import UiIcon from '../../components/ui/UiIcon.vue'
@@ -10,6 +10,7 @@ import { useAdminCatalogStore } from '../../stores/adminCatalogStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useToastStore } from '../../stores/toastStore'
 import { formatResource } from '../../utils/formatResource'
+import { changeRowsToForm, parseCostRows } from '../../utils/formRows'
 import AdminListHeader from './components/AdminListHeader.vue'
 
 const store = useAdminCatalogStore()
@@ -22,11 +23,38 @@ const editing = ref<{ exchange?: AdminExchange }>()
 const fields: FormField[] = [
 	{ key: 'name', label: 'Название', placeholder: 'Набор для рерола' },
 	{ key: 'description', label: 'Описание', placeholder: 'Что даёт и когда пригодится' },
+	{
+		key: 'sourceEntries',
+		label: 'Отдаёшь',
+		type: 'rows',
+		variant: 'cost',
+		hint: 'Что игрок отдаёт. Со списком целей отдают выбранные игроки.',
+	},
+	{
+		key: 'targetEntries',
+		label: 'Получаешь',
+		type: 'rows',
+		variant: 'cost',
+		hint: 'Что игрок получает.',
+	},
 ]
+
+const sideRows = (refs: AdminExchange['sourceEntries']): FormRow[] =>
+	changeRowsToForm(
+		refs.map(
+			(r): SpinCostRow => ({
+				kind: r.kind,
+				targetId: r.id,
+				amount: 'amount' in r ? r.amount : 1,
+			}),
+		),
+	)
 
 const initial = computed<FormValues>(() => ({
 	name: editing.value?.exchange?.name ?? '',
 	description: editing.value?.exchange?.description ?? '',
+	sourceEntries: sideRows(editing.value?.exchange?.sourceEntries ?? []),
+	targetEntries: sideRows(editing.value?.exchange?.targetEntries ?? []),
 }))
 
 const side = (refs: AdminExchange['sourceEntries']) =>
@@ -58,7 +86,29 @@ const onSave = async (values: FormValues) => {
 		return
 	}
 
-	const input = { name, description: String(values.description).trim() }
+	const sourceEntries = parseCostRows(values.sourceEntries as FormRow[])
+	const targetEntries = parseCostRows(values.targetEntries as FormRow[])
+
+	if ('error' in sourceEntries || 'error' in targetEntries) {
+		toastStore.show(
+			'Проверь стороны обмена',
+			'error' in sourceEntries ? sourceEntries.error : (targetEntries as { error: string }).error,
+			'danger',
+		)
+		return
+	}
+
+	if (!sourceEntries.value.length && !targetEntries.value.length) {
+		toastStore.show('Добавь стороны', 'Хотя бы одна строка: что отдаёт или что получает игрок.', 'danger')
+		return
+	}
+
+	const input = {
+		name,
+		description: String(values.description).trim(),
+		sourceEntries: sourceEntries.value,
+		targetEntries: targetEntries.value,
+	}
 
 	if (await store.saveExchange(editing.value?.exchange?.id, input)) {
 		editing.value = undefined

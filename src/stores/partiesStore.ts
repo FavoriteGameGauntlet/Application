@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '../api-facade/api'
-import type { Party } from '../api-facade/contracts'
+import type { Party, PartyInput } from '../api-facade/contracts'
 import { StoreName } from '../enums/storeName'
 
 export const usePartiesStore = defineStore(StoreName.Parties, () => {
@@ -13,5 +13,15 @@ export const usePartiesStore = defineStore(StoreName.Parties, () => {
 
 	const select = (party: Party) => api.parties.select(party.id)
 
-	return { list, load, select }
+	const create = async (input: PartyInput) => {
+		await api.parties.create(input)
+		await load()
+	}
+
+	const update = async (id: number, input: PartyInput) => {
+		await api.parties.update(id, input)
+		await load()
+	}
+
+	return { list, load, select, create, update }
 })

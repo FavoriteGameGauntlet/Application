@@ -2,7 +2,8 @@
 import { computed, onMounted, ref } from 'vue'
 import type { AdminWheelEntry, AdminWheelGroup } from '../../api-facade/contracts'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
-import type { FormField, FormValues } from '../../components/formDialog'
+import type { FormField, FormRow, FormValues } from '../../components/formDialog'
+import { changeRowsToForm, parseChangeRows } from '../../utils/formRows'
 import FormDialog from '../../components/FormDialog.vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiCheckbox from '../../components/ui/UiCheckbox.vue'
@@ -93,11 +94,17 @@ const fields = computed<FormField[]>(() => {
 			hint: 'Показывается игроку, когда пункт выпал.',
 		},
 		{
-			key: 'changes',
+			key: 'entries',
 			label: 'Изменение',
-			type: 'tags',
-			placeholder: '+50 Золото',
-			hint: 'Enter — добавить. Пусто — игрок вносит изменения вручную.',
+			type: 'rows',
+			variant: 'change',
+			hint: 'Применится само тем, кому достался пункт. Минус забирает.',
+		},
+		{
+			key: 'isManualChange',
+			type: 'check',
+			label: 'Игрок вносит изменение вручную',
+			hint: 'После прокрута откроется форма ручного изменения.',
 		},
 	]
 })
@@ -108,7 +115,8 @@ const initial = computed<FormValues>(() => {
 	const values: FormValues = {
 		name: '',
 		description: '',
-		changes: [],
+		entries: [],
+		isManualChange: false,
 	}
 
 	if (current?.kind === 'group') {
@@ -116,7 +124,8 @@ const initial = computed<FormValues>(() => {
 	} else if (current?.entry) {
 		values.name = current.entry.name
 		values.description = current.entry.description ?? ''
-		values.changes = current.entry.changes
+		values.entries = changeRowsToForm(current.entry.entries)
+		values.isManualChange = current.entry.isManualChange
 	}
 
 	return values
@@ -160,11 +169,27 @@ const onSave = async (values: FormValues) => {
 
 	if (!group.value) return
 
-	const input = {
-		name,
-		description,
-		changes: (values.changes as string[] | undefined) ?? [],
+	const entries = isChanges.value
+		? parseChangeRows(values.entries as FormRow[])
+		: { value: [] }
+
+	if ('error' in entries) {
+		toastStore.show('Проверь изменения', entries.error, 'danger')
+		return
 	}
+
+	const isManualChange = isChanges.value && values.isManualChange === true
+
+	if (isChanges.value && !entries.value.length && !isManualChange) {
+		toastStore.show(
+			'Добавь изменение',
+			'Или отметь, что игрок вносит его вручную.',
+			'danger',
+		)
+		return
+	}
+
+	const input = { name, description, entries: entries.value, isManualChange }
 
 	if (await store.saveEntry(group.value, current?.entry, input)) dialog.value = undefined
 }
@@ -315,7 +340,7 @@ onMounted(() => store.load())
 
 							<div v-if="isChanges" class="cell cell--tags">
 								<UiTag v-for="tag in entry.changes" :key="tag">{{ tag }}</UiTag>
-								<span v-if="!entry.changes.length" class="cell__manual">вручную</span>
+								<span v-if="entry.isManualChange" class="cell__manual">вручную</span>
 							</div>
 
 							<span class="table__actions">

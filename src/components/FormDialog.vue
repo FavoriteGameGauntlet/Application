@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { reactive, watch } from 'vue'
+import { computed, reactive, watch } from 'vue'
+import RowsEditor from './RowsEditor.vue'
 import UiButton from './ui/UiButton.vue'
 import UiCheckbox from './ui/UiCheckbox.vue'
 import UiDialog from './ui/UiDialog.vue'
@@ -8,7 +9,7 @@ import UiInput from './ui/UiInput.vue'
 import UiSelect from './ui/UiSelect.vue'
 import UiTag from './ui/UiTag.vue'
 import UiTextarea from './ui/UiTextarea.vue'
-import type { FormField, FormValues } from './formDialog'
+import type { FormField, FormRow, FormValues } from './formDialog'
 
 type Props = {
 	open: boolean
@@ -26,6 +27,10 @@ const texts = reactive<Record<string, string>>({})
 const lists = reactive<Record<string, string[]>>({})
 const flags = reactive<Record<string, boolean>>({})
 const drafts = reactive<Record<string, string>>({})
+const rowLists = reactive<Record<string, FormRow[]>>({})
+
+/** the rows need more room than a single line */
+const width = computed(() => (fields.some((f) => f.type === 'rows') ? 560 : 440))
 
 watch(
 	() => open,
@@ -36,10 +41,14 @@ watch(
 			const value = initial[field.key]
 
 			if (field.type === 'tags') {
-				lists[field.key] = Array.isArray(value) ? [...value] : []
+				lists[field.key] = Array.isArray(value) ? [...(value as string[])] : []
 				drafts[field.key] = ''
 			} else if (field.type === 'check') {
 				flags[field.key] = value === true
+			} else if (field.type === 'rows') {
+				rowLists[field.key] = Array.isArray(value)
+					? (value as FormRow[]).map((row) => ({ ...row }))
+					: []
 			} else {
 				texts[field.key] = typeof value === 'string' ? value : ''
 			}
@@ -66,6 +75,8 @@ const onSubmit = () => {
 			values[field.key] = [...lists[field.key]]
 		} else if (field.type === 'check') {
 			values[field.key] = flags[field.key]
+		} else if (field.type === 'rows') {
+			values[field.key] = rowLists[field.key].map((row) => ({ ...row }))
 		} else {
 			values[field.key] = texts[field.key]
 		}
@@ -76,7 +87,7 @@ const onSubmit = () => {
 </script>
 
 <template>
-	<UiDialog :open :title :width="440" @close="emit('close')">
+	<UiDialog :open :title :width="width" @close="emit('close')">
 		<form class="form" @submit.prevent="onSubmit">
 			<div class="form__fields">
 				<template v-for="field in fields" :key="field.key">
@@ -84,6 +95,14 @@ const onSubmit = () => {
 						<UiCheckbox v-model="flags[field.key]" :label="field.label" />
 						<span class="note check__hint">{{ field.hint }}</span>
 					</div>
+
+					<RowsEditor
+						v-else-if="field.type === 'rows'"
+						v-model="rowLists[field.key]"
+						:variant="field.variant ?? 'change'"
+						:label="field.label"
+						:hint="field.hint"
+					/>
 
 					<div v-else-if="field.type === 'tags'" class="tags">
 						<span class="tags__label">{{ field.label }}</span>

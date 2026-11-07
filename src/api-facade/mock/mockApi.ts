@@ -18,7 +18,6 @@ import type {
 	UserResources,
 	WheelEntry,
 	WheelSource,
-	WheelSpinResult,
 } from '../contracts'
 import { adminApi } from './adminApi'
 import * as adminDb from './adminDb'
@@ -278,12 +277,11 @@ const costLine = (cost: SpinCostRef): JournalEntry['changes'][number] => {
 /** the result is stored on the server, a new spin replaces the previous one */
 const makeSpin = (source: WheelSource, entries: WheelEntry[]) => {
 	const resultIndex = Math.floor(Math.random() * entries.length)
-	const spin: WheelSpinResult = {
+	const spin: db.MockSpin = {
 		source,
 		entries: entries.map((e) => e.name),
 		resultIndex,
 		result: entries[resultIndex],
-		spinId: newId(),
 	}
 
 	db.state.spin = spin
@@ -305,6 +303,9 @@ const spinWishlist = () => {
 
 // ---- members
 
+const displayNameOf = (login: Login) =>
+	adminDb.members.find((m) => m.login === login)?.displayName ?? null
+
 const getMember = (login: Login): Member => {
 	const user = db.users.find((p) => p.login === login)
 
@@ -315,6 +316,7 @@ const getMember = (login: Login): Member => {
 
 		return {
 			user,
+			displayName: displayNameOf(login),
 			status: seed.status,
 			currentGame: seed.currentGame,
 			playedSeconds: seed.playedHours * 3600,
@@ -327,6 +329,7 @@ const getMember = (login: Login): Member => {
 
 	return {
 		user,
+		displayName: displayNameOf(login),
 		status: game && db.state.timer.state === 'running' ? 'playing' : 'paused',
 		currentGame: game?.name ?? null,
 		playedSeconds: db.MY_PLAYED_HOURS * 3600,
@@ -405,6 +408,12 @@ const toParty = (party: adminDb.PartyDef): Party => ({
 	membersCount: party.id === 1 ? adminDb.members.length : party.membersCount,
 	current: party.id === db.state.partyId,
 })
+
+const requireValidDates = ({ startsAt, endsAt }: { startsAt: string; endsAt: string }) => {
+	if (Date.parse(endsAt) <= Date.parse(startsAt)) {
+		fail(422, 'PARTY_DATES_INVALID', 'Конец должен быть позже начала')
+	}
+}
 
 const isChangeOf = (entry: JournalEntry, login: Login) =>
 	entry.actor === login || entry.changes.some((c) => c.login === login)
@@ -547,11 +556,11 @@ export const mockApi: Api = {
 
 				return makeSpin(source, group.entries)
 			}),
-		apply: (spinId, payment) =>
+		apply: (payment) =>
 			reply(() => {
 				const spin = db.state.spin
 
-				if (!spin || spin.spinId !== spinId) {
+				if (!spin) {
 					fail(404, 'NOT_FOUND', 'Прокрут не найден')
 				}
 
@@ -575,7 +584,6 @@ export const mockApi: Api = {
 					})
 					entries.forEach((r) => applyRef(db.ME, r, 1))
 					db.state.spin = null
-					db.state.appliedSpins[spin.spinId] = spin
 
 					const refLines = [
 						...cost.map(costLine),
@@ -808,8 +816,45 @@ export const mockApi: Api = {
 		apply: (request) => reply(() => ({ journalEntry: applyManual(request) })),
 	},
 
+	presence: {
+		ping: () => reply(() => undefined),
+	},
+
 	parties: {
 		list: () => reply(() => adminDb.parties.map(toParty)),
+		create: (input) =>
+			reply(() => {
+				requireValidDates(input)
+
+				const party: adminDb.PartyDef = {
+					id: newId(),
+					name: input.name,
+					membersCount: 1,
+					createdAt: now(),
+					startsAt: input.startsAt,
+					endsAt: input.endsAt,
+					status: Date.parse(input.endsAt) < Date.now() ? 'finished' : 'active',
+					role: 'admin',
+				}
+
+				adminDb.parties.push(party)
+
+				return toParty(party)
+			}),
+		update: (id, input) =>
+			reply(() => {
+				requireValidDates(input)
+
+				const party = adminDb.parties.find((p) => p.id === id)
+
+				if (!party) fail(404, 'PARTY_NOT_FOUND', 'Пати не найдена')
+				if (party.role !== 'admin') fail(401, 'NOT_ADMIN', 'Нужны права админа')
+
+				party.name = input.name
+				party.startsAt = input.startsAt
+				party.endsAt = input.endsAt
+				party.status = Date.parse(input.endsAt) < Date.now() ? 'finished' : 'active'
+			}),
 		select: (id) =>
 			reply(() => {
 				if (!adminDb.parties.some((p) => p.id === id)) {

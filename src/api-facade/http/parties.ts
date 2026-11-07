@@ -1,5 +1,5 @@
 import { persistentStorage, StoreKey } from '../../services/persistentStorage'
-import type { Api, PartyMember } from '../contracts'
+import type { Api, Party, PartyInput, PartyMember } from '../contracts'
 import { http } from '../http'
 import {
 	currentLogin,
@@ -37,7 +37,53 @@ export const session: Pick<Api['session'], 'getMe' | 'getSeason'> = {
 	},
 }
 
-export const parties: Pick<Api['parties'], 'select'> = {
+type PartyDto = Pick<Party, 'id' | 'name' | 'membersCount' | 'status' | 'role'> & {
+	createdDate: string
+	startDate: string
+	endDate: string
+}
+
+const toParty = (
+	{ createdDate, startDate, endDate, ...party }: PartyDto,
+	selected: number | undefined,
+): Party => ({
+	...party,
+	createdAt: createdDate,
+	startsAt: startDate,
+	endsAt: endDate,
+	current: party.id === selected,
+})
+
+const toPartyBody = ({ name, startsAt, endsAt }: PartyInput) => ({
+	name,
+	startDate: startsAt,
+	endDate: endsAt,
+})
+
+export const parties: Api['parties'] = {
+	list: async () => {
+		const [{ body }, selected] = await Promise.all([
+			http.get<{ response: PartyDto[] }>('/parties'),
+			persistentStorage.get(StoreKey.PartyId),
+		])
+
+		return body.map((party) => toParty(party, selected))
+	},
+
+	create: async (input) =>
+		toParty(
+			(
+				await http.post<{ response: PartyDto }>('/parties', {
+					body: toPartyBody(input),
+				})
+			).body,
+			await persistentStorage.get(StoreKey.PartyId),
+		),
+
+	update: async (id, input) => {
+		await http.patch(`/parties/${id}`, { body: toPartyBody(input) })
+	},
+
 	select: (id) => persistentStorage.set(StoreKey.PartyId, id),
 }
 

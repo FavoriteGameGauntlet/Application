@@ -48,7 +48,7 @@ const heads: Record<CatalogView, string[]> = {
 	shared: pointsHeads,
 	items: ['Предмет', 'Изменение', 'Использований'],
 	perks: ['Перк', 'Эффект', 'Тип'],
-	effects: ['Эффект', 'Изменение', 'Длительность', 'Использований'],
+	effects: ['Эффект', 'Изменение', 'Длительность'],
 }
 
 /** the admins see how many of the resource the users hold */
@@ -109,7 +109,7 @@ const detail = (entry: CatalogEntry): Pick<Row, 'main' | 'extra' | 'notes'> => {
 		case 'effects':
 			return {
 				main: entry.changes ?? [],
-				extra: [entry.duration ? formatSpan(entry.duration) : '—', String(entry.usesMax ?? '—')],
+				extra: [entry.duration ? formatSpan(entry.duration) : '—'],
 				notes: [],
 			}
 	}

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
-import type { Effect, UserResources } from '../api-facade/contracts'
+import type { UserResources } from '../api-facade/contracts'
 import { RouteName } from '../router/routeNames'
 import { useResourcesStore } from '../stores/resourcesStore'
 import { formatRemaining } from '../utils/format'
@@ -33,9 +33,6 @@ const linkTo = (tab: string): RouteLocationRaw => ({
 	params: { tab },
 	query: mine || tab === 'points' ? undefined : { user: resources?.user.login },
 })
-
-const effectUses = (effect: Effect) =>
-	effect.usesMax != null ? `${effect.usesLeft}/${effect.usesMax}` : '—'
 </script>
 
 <template>
@@ -84,7 +81,6 @@ const effectUses = (effect: Effect) =>
 				<span class="row__badge">
 					<UiBadge>{{ effect.expiresAt ? formatRemaining(effect.expiresAt) : '∞' }}</UiBadge>
 				</span>
-				<span class="row__uses row__uses--effect">{{ effectUses(effect) }}</span>
 			</div>
 			<span v-if="!resources?.effects.length" class="tile__empty">Пусто</span>
 		</div>
@@ -163,7 +159,7 @@ const effectUses = (effect: Effect) =>
 
 .row--effects {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) 88px 32px;
+	grid-template-columns: minmax(0, 1fr) 88px;
 	gap: 8px;
 	align-items: center;
 	min-height: 24px;
@@ -199,10 +195,5 @@ const effectUses = (effect: Effect) =>
 .row__badge :deep(.ui-badge) {
 	justify-content: center;
 	min-width: 100%;
-}
-
-.row__uses--effect {
-	grid-column: 3;
-	grid-row: 1;
 }
 </style>

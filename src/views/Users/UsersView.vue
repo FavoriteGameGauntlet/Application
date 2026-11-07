@@ -57,7 +57,8 @@ onMounted(() => membersStore.load())
 						:color="`var(--user-${member.user.colorIndex})`"
 						:size="28"
 					/>
-					{{ member.user.login }}
+					{{ member.displayName ?? member.user.login }}
+					<span v-if="member.displayName" class="user__login">{{ member.user.login }}</span>
 					<UiBadge v-if="member.user.login === sessionStore.login" tone="accent">ты</UiBadge>
 				</span>
 				<span class="table__status">
@@ -182,6 +183,10 @@ onMounted(() => membersStore.load())
 }
 
 .note {
+	font: var(--type-body-sm);
+	color: var(--text-muted);
+}
+.user__login {
 	font: var(--type-body-sm);
 	color: var(--text-muted);
 }

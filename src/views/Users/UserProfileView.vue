@@ -58,7 +58,7 @@ const stats = computed(() => [
 
 			<div class="header__info">
 				<span class="header__name-row">
-					<span class="header__name">{{ login }}</span>
+					<span class="header__name" :title="login">{{ member.displayName ?? login }}</span>
 					<UiBadge :tone="userStatusView[member.status].tone" dot>
 						{{ userStatusView[member.status].label }}
 					</UiBadge>

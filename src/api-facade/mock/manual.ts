@@ -74,7 +74,6 @@ const effectOf = (id: number, duration?: Seconds): Effect => {
 		description: entry.description,
 		source: `вручную · ${db.ME}`,
 		expiresAt: duration ? new Date(Date.now() + duration * 1000).toISOString() : null,
-		...(entry.usesMax != null && { usesLeft: entry.usesMax, usesMax: entry.usesMax }),
 	}
 }
 
@@ -86,11 +85,6 @@ const sourceOf = (request: ManualRequest): JournalEntry['source'] => {
 
 		return { type: 'manual' }
 	}
-
-	const spin =
-		request.spinId === undefined ? undefined : db.state.appliedSpins[request.spinId]
-
-	if (spin) return { type: 'wheel_row', id: spin.result.id, name: spin.result.name }
 
 	return { type: 'manual' }
 }

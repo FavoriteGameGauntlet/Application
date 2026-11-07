@@ -1,4 +1,5 @@
-import type { ResourceRef } from '../contracts'
+import type { PointType, ResourceRef } from '../contracts'
+import { formatResource } from '../../utils/formatResource'
 
 /** NamedChangeEntry: exactly one target is set, the name is left out when the target is gone */
 export type NamedChangeEntryDto = {
@@ -40,3 +41,61 @@ export const toResourceRef = (entry: NamedChangeEntryDto): ResourceRef => {
 
 	throw new Error('A change entry has no target')
 }
+
+/** NamedItemEntry: a NamedChangeEntry that also says whom it acts on */
+export type NamedItemEntryDto = NamedChangeEntryDto & {
+	/** the copies the entry acts on are picked when the item is used */
+	userItem: boolean
+	target: 'self' | 'chosen'
+}
+
+export const entryName = (entry: NamedChangeEntryDto) =>
+	entry.pointTypeName ??
+	entry.itemName ??
+	entry.perkName ??
+	entry.effectName ??
+	''
+
+export const signOf = (amount: number) => (amount < 0 ? '−' : '+')
+
+/** «+50», «−1» */
+export const signedAmount = (amount: number) =>
+	`${signOf(amount)}${Math.abs(amount)}`
+
+/** «+50 золота», «−Щит ×2», «+перк Коллекционер» */
+export const toChangeText = (
+	entry: NamedChangeEntryDto,
+	pointTypes: PointType[],
+) => `${signOf(entry.amount)}${formatResource(toResourceRef(entry), pointTypes)}`
+
+/** an entry of an item or of a perk ability, which may act on the chosen users */
+export const toItemEntryText = (
+	entry: NamedItemEntryDto,
+	pointTypes: PointType[],
+) => {
+	const text = entry.userItem
+		? `${signOf(entry.amount)}выбранный предмет${Math.abs(entry.amount) > 1 ? ` ×${Math.abs(entry.amount)}` : ''}`
+		: toChangeText(entry, pointTypes)
+
+	return entry.target === 'chosen' ? `${text} (выбранным игрокам)` : text
+}
+
+/** PointModifier: a point change an effect or a perk applies while it is active */
+export type NamedPointModifierDto = {
+	pointTypeId: number
+	pointTypeName?: string | null
+	amount: number
+}
+
+export const toModifierText = (
+	modifier: NamedPointModifierDto,
+	pointTypes: PointType[],
+) =>
+	toChangeText(
+		{
+			pointTypeId: modifier.pointTypeId,
+			pointTypeName: modifier.pointTypeName,
+			amount: modifier.amount,
+		},
+		pointTypes,
+	)

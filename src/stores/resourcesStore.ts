@@ -4,6 +4,7 @@ import { api } from '../api-facade/api'
 import type {
 	CatalogEntry,
 	CatalogOption,
+	ItemUse,
 	Login,
 	UserResources,
 	PointsLeaderboard,
@@ -62,11 +63,11 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 	const fetchHistory =(login: Login, kind: ResourceKind, id: number) =>
 		api.resources.history(login, kind, id, 4)
 
-	const useItem = async (item: { id: number; name: string }) => {
+	const useItem = async (item: { id: number; name: string }, use?: ItemUse) => {
 		const toast = useToastStore()
 
 		try {
-			await api.resources.useItem(item.id)
+			await api.resources.useItem(item.id, use)
 			toast.show('Использован предмет', item.name)
 			await loadMine()
 			useJournalStore().bump()
@@ -75,11 +76,11 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 		}
 	}
 
-	const usePerk = async (perkId: number, effectName: string) => {
+	const usePerk = async (perkId: number, effectName: string, use?: ItemUse) => {
 		const toast = useToastStore()
 
 		try {
-			await api.resources.usePerk(perkId)
+			await api.resources.usePerk(perkId, use)
 			toast.show('Эффект перка использован', effectName)
 			await loadMine()
 			useJournalStore().bump()

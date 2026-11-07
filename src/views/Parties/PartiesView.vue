@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Party } from '../../api-facade/contracts'
 import AppLogo from '../../components/AppLogo.vue'
+import type { FormField, FormValues } from '../../components/formDialog'
+import FormDialog from '../../components/FormDialog.vue'
 import TopbarControls from '../../components/TopbarControls.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
 import UiButton from '../../components/ui/UiButton.vue'
@@ -10,7 +12,12 @@ import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import { RouteName } from '../../router/routeNames'
 import { usePartiesStore } from '../../stores/partiesStore'
 import { useToastStore } from '../../stores/toastStore'
-import { formatDate, formatPeriod } from '../../utils/format'
+import {
+	formatDate,
+	formatDateInput,
+	formatPeriod,
+	parseDateInput,
+} from '../../utils/format'
 import { plural } from '../../utils/plural'
 
 const router = useRouter()
@@ -32,6 +39,71 @@ const items = computed(() =>
 		active: party.status === 'active',
 	})),
 )
+
+/** the party that the dialog edits; `{}` is a new one, undefined means the dialog is closed */
+const editing = ref<{ party?: Party }>()
+
+const fields: FormField[] = [
+	{ key: 'name', label: 'Название', placeholder: 'Осенний сезон' },
+	{
+		key: 'startsAt',
+		label: 'Начало',
+		placeholder: '01.09.2026',
+		hint: 'День, число.месяц.год.',
+	},
+	{
+		key: 'endsAt',
+		label: 'Конец',
+		placeholder: '30.11.2026',
+		hint: 'Последний день включительно, позже начала. После него пати завершится.',
+	},
+]
+
+const initial = computed<FormValues>(() => {
+	const party = editing.value?.party
+
+	return {
+		name: party?.name ?? '',
+		startsAt: party ? formatDateInput(party.startsAt) : '',
+		endsAt: party ? formatDateInput(party.endsAt) : '',
+	}
+})
+
+const onSave = async (values: FormValues) => {
+	const name = String(values.name).trim()
+	const startsAt = parseDateInput(String(values.startsAt))
+	const endsAt = parseDateInput(String(values.endsAt), true)
+
+	if (!name) {
+		toastStore.show('Впиши название', 'Без него не сохранится.', 'danger')
+		return
+	}
+
+	if (!startsAt || !endsAt) {
+		toastStore.show('Не понял дату', 'Напиши в виде 01.09.2026.', 'danger')
+		return
+	}
+
+	if (Date.parse(endsAt) <= Date.parse(startsAt)) {
+		toastStore.show('Даты перепутаны', 'Конец должен быть позже начала.', 'danger')
+		return
+	}
+
+	const party = editing.value?.party
+
+	try {
+		if (party) {
+			await partiesStore.update(party.id, { name, startsAt, endsAt })
+		} else {
+			await partiesStore.create({ name, startsAt, endsAt })
+		}
+
+		toastStore.show(party ? 'Сохранено' : 'Пати создана', name)
+		editing.value = undefined
+	} catch (e) {
+		toastStore.error(e)
+	}
+}
 
 const onOpen = async (party: Party, text: string) => {
 	try {
@@ -65,7 +137,10 @@ onMounted(async () => {
 
 		<div class="scroll">
 			<div class="content">
-				<UiPageTitle>Мои пати</UiPageTitle>
+				<div class="head">
+					<UiPageTitle>Мои пати</UiPageTitle>
+					<UiButton variant="outline" icon="plus" @click="editing = {}">Новая пати</UiButton>
+				</div>
 
 				<div v-for="item in items" :key="item.party.id" class="card">
 					<span
@@ -91,6 +166,14 @@ onMounted(async () => {
 					</div>
 
 					<UiButton
+						v-if="item.party.role === 'admin'"
+						variant="ghost"
+						@click="editing = { party: item.party }"
+					>
+						Изменить
+					</UiButton>
+
+					<UiButton
 						:variant="item.party.current ? 'primary' : 'outline'"
 						@click="onOpen(item.party, item.meta)"
 					>
@@ -99,6 +182,15 @@ onMounted(async () => {
 				</div>
 			</div>
 		</div>
+
+		<FormDialog
+			:open="editing !== undefined"
+			:title="editing?.party ? `Изменить «${editing.party.name}»` : 'Новая пати'"
+			:fields
+			:initial
+			@close="editing = undefined"
+			@save="onSave"
+		/>
 	</div>
 </template>
 
@@ -122,6 +214,13 @@ onMounted(async () => {
 	padding: 0 24px;
 	background: var(--surface-card);
 	border-bottom: 1px solid var(--border-subtle);
+}
+
+.head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
 }
 
 .topbar__spacer {
