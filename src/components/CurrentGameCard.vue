@@ -189,8 +189,17 @@ const onCancel = () => {
 					</button>
 				</span>
 				<span class="timer__time">
-					<span class="timer__elapsed">{{ timerStore.clock.remaining }}</span>
-					<span class="timer__goal">/ {{ timerStore.clock.goal }}</span>
+					<template v-if="timerStore.clock">
+						<span class="timer__elapsed">{{ timerStore.clock.remaining }}</span>
+						<span class="timer__goal">/ {{ timerStore.clock.goal }}</span>
+					</template>
+					<template v-else>
+						<span
+							class="timer__bar timer__bar--elapsed"
+							aria-hidden="true"
+						></span>
+						<span class="timer__bar timer__bar--goal" aria-hidden="true"></span>
+					</template>
 				</span>
 			</div>
 
@@ -407,6 +416,22 @@ const onCancel = () => {
 .timer__goal {
 	font: var(--type-mono);
 	color: var(--text-muted);
+}
+
+/* stand in for the clock while there is no timer */
+.timer__bar {
+	background: var(--surface-sunken);
+	border-radius: var(--radius-xs);
+}
+
+.timer__bar--elapsed {
+	width: 112px;
+	height: 24px;
+}
+
+.timer__bar--goal {
+	width: 56px;
+	height: 14px;
 }
 
 .timer__spacer {

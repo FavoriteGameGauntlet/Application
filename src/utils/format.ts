@@ -6,9 +6,6 @@ const pad = (n: number) => String(n).padStart(2, '0')
 export const formatClock = (seconds: Seconds) =>
 	`${pad(Math.floor(seconds / 3600))}:${pad(Math.floor(seconds / 60) % 60)}:${pad(seconds % 60)}`
 
-/** shown in place of `formatClock` when there is no timer */
-export const CLOCK_PLACEHOLDER = '--:--:--'
-
 /** 21600 → «6 ч» */
 export const formatHours = (seconds: Seconds) =>
 	`${Math.floor(seconds / 3600)} ч`

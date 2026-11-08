@@ -4,7 +4,7 @@ import { api } from '../api-facade/api'
 import type { Timer } from '../api-facade/contracts'
 import type { HttpErrorResponse } from '../api-facade/http'
 import { StoreName } from '../enums/storeName'
-import { CLOCK_PLACEHOLDER, formatClock } from '../utils/format'
+import { formatClock } from '../utils/format'
 import { useCurrentGameStore } from './currentGameStore'
 import { useJournalStore } from './journalStore'
 import { useMembersStore } from './membersStore'
@@ -39,14 +39,15 @@ export const useTimerStore = defineStore(StoreName.Timer, () => {
 
 	const elapsed = computed(() => goal.value - remaining.value)
 
-	/** the clock texts for the screens; placeholders while there is no timer */
-	const clock = computed(() => {
-		const [remainingText, goalText] = timer.value
-			? [formatClock(remaining.value), formatClock(goal.value)]
-			: [CLOCK_PLACEHOLDER, CLOCK_PLACEHOLDER]
-
-		return { remaining: remainingText, goal: goalText.slice(1) }
-	})
+	/** the clock texts for the screens; none while there is no timer */
+	const clock = computed(() =>
+		timer.value
+			? {
+					remaining: formatClock(remaining.value),
+					goal: formatClock(goal.value).slice(1),
+				}
+			: undefined,
+	)
 
 	const set = (value: Timer) => {
 		timer.value = value

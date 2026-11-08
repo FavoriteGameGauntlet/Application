@@ -84,8 +84,20 @@ const ring = computed(
 					/>
 				</svg>
 
-				<span class="mini__elapsed">{{ timerStore.clock.remaining }}</span>
-				<span class="mini__goal">/ {{ timerStore.clock.goal }}</span>
+				<template v-if="timerStore.clock">
+					<span class="mini__elapsed">{{ timerStore.clock.remaining }}</span>
+					<span class="mini__goal">/ {{ timerStore.clock.goal }}</span>
+				</template>
+				<template v-else>
+					<span
+						class="mini__elapsed mini__bar mini__bar--elapsed"
+						aria-hidden="true"
+					></span>
+					<span
+						class="mini__goal mini__bar mini__bar--goal"
+						aria-hidden="true"
+					></span>
+				</template>
 			</div>
 
 			<UiButton
@@ -171,5 +183,22 @@ const ring = computed(
 	top: calc(50% + 22px);
 	font: var(--type-mono);
 	color: var(--text-muted);
+}
+
+/* stand in for the clock while there is no timer; the fixed width with auto margins centers them */
+.mini__bar {
+	margin: 0 auto;
+	background: var(--surface-sunken);
+	border-radius: var(--radius-xs);
+}
+
+.mini__bar--elapsed {
+	width: 112px;
+	height: 26px;
+}
+
+.mini__bar--goal {
+	width: 56px;
+	height: 14px;
 }
 </style>
