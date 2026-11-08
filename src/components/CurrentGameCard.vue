@@ -229,7 +229,7 @@ const onCancel = () => {
 <style scoped>
 .current-game {
 	/* the main buttons above and below, with a game and without one, are of the same width */
-	--action-width: 188px;
+	--action-width: 200px;
 
 	position: relative;
 	z-index: 3;
@@ -331,10 +331,12 @@ const onCancel = () => {
 .split {
 	position: relative;
 	display: flex;
+	flex: none;
 	width: var(--action-width);
 }
 
 .current-game .current-game__wheel {
+	flex: none;
 	width: var(--action-width);
 }
 
@@ -452,6 +454,7 @@ const onCancel = () => {
 }
 
 .timer .timer__toggle {
+	flex: none;
 	width: var(--action-width);
 }
 </style>
