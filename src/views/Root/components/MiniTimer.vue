@@ -6,7 +6,6 @@ import UiIconButton from '../../../components/ui/UiIconButton.vue'
 import { useCurrentGameStore } from '../../../stores/currentGameStore'
 import { MINI_SIZE, useMiniModeStore } from '../../../stores/miniModeStore'
 import { useTimerStore } from '../../../stores/timerStore'
-import { formatClock } from '../../../utils/format'
 
 const currentGameStore = useCurrentGameStore()
 const miniModeStore = useMiniModeStore()
@@ -35,7 +34,8 @@ const hasGame = computed(() => !!currentGameStore.current?.game)
 
 /** the ring has pathLength of 100, so the dash is just the percent */
 const ring = computed(
-	() => `${Math.min(100, (100 * timerStore.elapsed) / timerStore.goal).toFixed(1)} 100`,
+	() =>
+		`${Math.min(100, (100 * timerStore.elapsed) / timerStore.goal).toFixed(1)} 100`,
 )
 </script>
 
@@ -84,8 +84,8 @@ const ring = computed(
 					/>
 				</svg>
 
-				<span class="mini__elapsed">{{ formatClock(timerStore.remaining) }}</span>
-				<span class="mini__goal">/ {{ formatClock(timerStore.goal).slice(1) }}</span>
+				<span class="mini__elapsed">{{ timerStore.clock.remaining }}</span>
+				<span class="mini__goal">/ {{ timerStore.clock.goal }}</span>
 			</div>
 
 			<UiButton

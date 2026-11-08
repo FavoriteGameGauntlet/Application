@@ -6,7 +6,7 @@ import { RouteName } from '../router/routeNames'
 import { useCurrentGameStore } from '../stores/currentGameStore'
 import { useTimerStore } from '../stores/timerStore'
 import { useWheelStore } from '../stores/wheelStore'
-import { formatClock, formatHours } from '../utils/format'
+import { formatHours } from '../utils/format'
 import RewardPopover from './RewardPopover.vue'
 import UiBadge from './ui/UiBadge.vue'
 import UiButton from './ui/UiButton.vue'
@@ -84,7 +84,8 @@ const onCancel = () => {
 						</button>
 
 						<UiBadge>
-							Сыграно: {{ formatHours(currentGameStore.current?.playedSeconds ?? 0) }}
+							Сыграно:
+							{{ formatHours(currentGameStore.current?.playedSeconds ?? 0) }}
 						</UiBadge>
 					</template>
 
@@ -105,7 +106,12 @@ const onCancel = () => {
 			</div>
 
 			<div v-if="game" class="split">
-				<UiButton class="split__main" variant="outline" icon="check" @click="onComplete">
+				<UiButton
+					class="split__main"
+					variant="outline"
+					icon="check"
+					@click="onComplete"
+				>
 					Завершить
 				</UiButton>
 				<UiButton
@@ -130,14 +136,32 @@ const onCancel = () => {
 				</div>
 			</div>
 
-			<UiButton v-else variant="outline" icon="refresh-cw" @click="goToWheelGames">
+			<UiButton
+				v-else
+				variant="outline"
+				icon="refresh-cw"
+				@click="goToWheelGames"
+			>
 				Выбрать на колесе
 			</UiButton>
 		</div>
 
 		<div v-if="withTimer" class="timer">
-			<svg class="timer__ring" width="44" height="44" viewBox="0 0 44 44" aria-hidden="true">
-				<circle cx="22" cy="22" r="18" fill="none" stroke="var(--surface-sunken)" stroke-width="6" />
+			<svg
+				class="timer__ring"
+				width="44"
+				height="44"
+				viewBox="0 0 44 44"
+				aria-hidden="true"
+			>
+				<circle
+					cx="22"
+					cy="22"
+					r="18"
+					fill="none"
+					stroke="var(--surface-sunken)"
+					stroke-width="6"
+				/>
 				<circle
 					cx="22"
 					cy="22"
@@ -154,6 +178,7 @@ const onCancel = () => {
 				<span class="current-game__label-row">
 					<span class="label">Таймер</span>
 					<button
+						v-if="game"
 						class="info-button"
 						aria-label="Награда за таймер"
 						title="Награда за таймер"
@@ -164,8 +189,8 @@ const onCancel = () => {
 					</button>
 				</span>
 				<span class="timer__time">
-					<span class="timer__elapsed">{{ formatClock(timerStore.remaining) }}</span>
-					<span class="timer__goal">/ {{ formatClock(timerStore.goal).slice(1) }}</span>
+					<span class="timer__elapsed">{{ timerStore.clock.remaining }}</span>
+					<span class="timer__goal">/ {{ timerStore.clock.goal }}</span>
 				</span>
 			</div>
 

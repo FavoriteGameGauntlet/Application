@@ -6,6 +6,9 @@ const pad = (n: number) => String(n).padStart(2, '0')
 export const formatClock = (seconds: Seconds) =>
 	`${pad(Math.floor(seconds / 3600))}:${pad(Math.floor(seconds / 60) % 60)}:${pad(seconds % 60)}`
 
+/** shown in place of `formatClock` when there is no timer */
+export const CLOCK_PLACEHOLDER = '--:--:--'
+
 /** 21600 → «6 ч» */
 export const formatHours = (seconds: Seconds) =>
 	`${Math.floor(seconds / 3600)} ч`
@@ -104,7 +107,10 @@ export const formatSpanExact = (seconds: Seconds) => {
 }
 
 /** «от 0 до 1000», «от −20», «до 100», «без границ» */
-export const formatBounds = (minimum: number | null, maximum: number | null) => {
+export const formatBounds = (
+	minimum: number | null,
+	maximum: number | null,
+) => {
 	if (minimum !== null && maximum !== null) return `от ${minimum} до ${maximum}`
 	if (minimum !== null) return `от ${minimum}`
 	if (maximum !== null) return `до ${maximum}`
@@ -113,7 +119,7 @@ export const formatBounds = (minimum: number | null, maximum: number | null) => 
 }
 
 /** «1 ч 40 м», «22 ч», «36 ч» */
-export const formatRemaining =(iso: ISODate) =>
+export const formatRemaining = (iso: ISODate) =>
 	formatSpan((Date.parse(iso) - Date.now()) / 1000)
 
 const SPAN_UNITS: [prefix: string, seconds: number][] = [
@@ -155,12 +161,19 @@ export const formatDateInput = (iso: ISODate) => {
  * «01.09.2026» as a moment in the local time zone: the start of that day, or
  * its last second when `endOfDay` is set. undefined when the text is not a date.
  */
-export const parseDateInput = (text: string, endOfDay = false): ISODate | undefined => {
+export const parseDateInput = (
+	text: string,
+	endOfDay = false,
+): ISODate | undefined => {
 	const match = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(text.trim())
 
 	if (!match) return undefined
 
-	const [day, month, year] = [Number(match[1]), Number(match[2]), Number(match[3])]
+	const [day, month, year] = [
+		Number(match[1]),
+		Number(match[2]),
+		Number(match[3]),
+	]
 	const d = endOfDay
 		? new Date(year, month - 1, day, 23, 59, 59)
 		: new Date(year, month - 1, day)

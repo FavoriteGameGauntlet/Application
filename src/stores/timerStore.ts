@@ -4,6 +4,7 @@ import { api } from '../api-facade/api'
 import type { Timer } from '../api-facade/contracts'
 import type { HttpErrorResponse } from '../api-facade/http'
 import { StoreName } from '../enums/storeName'
+import { CLOCK_PLACEHOLDER, formatClock } from '../utils/format'
 import { useCurrentGameStore } from './currentGameStore'
 import { useJournalStore } from './journalStore'
 import { useMembersStore } from './membersStore'
@@ -32,9 +33,20 @@ export const useTimerStore = defineStore(StoreName.Timer, () => {
 	})
 
 	/** a timer that has run out is over, even before the server tells so */
-	const isRunning = computed(() => timer.value?.state === 'running' && remaining.value > 0)
+	const isRunning = computed(
+		() => timer.value?.state === 'running' && remaining.value > 0,
+	)
 
 	const elapsed = computed(() => goal.value - remaining.value)
+
+	/** the clock texts for the screens; placeholders while there is no timer */
+	const clock = computed(() => {
+		const [remainingText, goalText] = timer.value
+			? [formatClock(remaining.value), formatClock(goal.value)]
+			: [CLOCK_PLACEHOLDER, CLOCK_PLACEHOLDER]
+
+		return { remaining: remainingText, goal: goalText.slice(1) }
+	})
 
 	const set = (value: Timer) => {
 		timer.value = value
@@ -46,10 +58,19 @@ export const useTimerStore = defineStore(StoreName.Timer, () => {
 		try {
 			set(await api.timer.get())
 		} catch (e) {
-			if ((e as Partial<HttpErrorResponse>).body?.code !== 'CURRENT_TIMER_NOT_FOUND') throw e
+			if (
+				(e as Partial<HttpErrorResponse>).body?.code !==
+				'CURRENT_TIMER_NOT_FOUND'
+			)
+				throw e
 
 			timer.value = undefined
 		}
+	}
+
+	/** the server has a timer only for a current game, so without a game there is nothing to ask for */
+	const clear = () => {
+		timer.value = undefined
 	}
 
 	const toggle = async () => {
@@ -111,5 +132,16 @@ export const useTimerStore = defineStore(StoreName.Timer, () => {
 		)
 	}
 
-	return { timer, goal, isRunning, remaining, elapsed, load, toggle, init }
+	return {
+		timer,
+		goal,
+		isRunning,
+		remaining,
+		elapsed,
+		clock,
+		load,
+		clear,
+		toggle,
+		init,
+	}
 })

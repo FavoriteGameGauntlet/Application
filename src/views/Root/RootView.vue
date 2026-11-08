@@ -8,7 +8,6 @@ import { useMembersStore } from '../../stores/membersStore'
 import { useMiniModeStore } from '../../stores/miniModeStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useSessionStore } from '../../stores/sessionStore'
-import { useTimerStore } from '../../stores/timerStore'
 import { useToastStore } from '../../stores/toastStore'
 import AppSidebar from './components/AppSidebar.vue'
 import AppTopbar from './components/AppTopbar.vue'
@@ -36,7 +35,6 @@ onMounted(async () => {
 			useResourcesStore().loadPointTypes(),
 			useResourcesStore().loadMine(),
 			useCurrentGameStore().load(),
-			useTimerStore().load(),
 		])
 	} catch (e) {
 		useToastStore().error(e)
