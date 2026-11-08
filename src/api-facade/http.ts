@@ -1,5 +1,5 @@
 import { Temporal } from '@js-temporal/polyfill'
-import { type ClientOptions, fetch } from '@tauri-apps/plugin-http'
+import { invoke } from '@tauri-apps/api/core'
 import { API_URL } from '../constants/apiUrl'
 import { unauthorizedInterceptor } from './interceptors/unauthorizedInterceptor'
 
@@ -14,13 +14,20 @@ export type HttpErrorResponse = {
 	method: string
 }
 
-export type HttpResponse<T = object | string> = Omit<Response, 'body'> & {
+export type HttpResponse<T = object | string> = {
+	status: number
+	statusText: string
 	body: T
 }
 
-const parseBody = async (response: Response) => {
-	const body = await response.text()
+/** the answer of the `http_request` command in `src-tauri/src/http.rs` */
+type RawResponse = {
+	status: number
+	statusText: string
+	body: string
+}
 
+const parseBody = (body: string) => {
 	try {
 		return body.length ? JSON.parse(body) : body
 	} catch {
@@ -31,31 +38,25 @@ const parseBody = async (response: Response) => {
 
 const makeRequest = async <T extends object | string = object | string>(
 	url: string,
-	opts?: RequestInit & ClientOptions,
+	opts: { method: string; body?: string },
 ): Promise<HttpResponse<T>> => {
 	const fullUrl = API_URL + url
-	const method = opts?.method || 'GET'
+	const method = opts.method
 
 	const requestTime = Temporal.Now.zonedDateTimeISO()
 	const requestTimestamp = `${requestTime.hour.toString().padStart(2, '0')}:${requestTime.minute.toString().padStart(2, '0')}:${requestTime.second.toString().padStart(2, '0')}.${requestTime.millisecond.toString().padStart(3, '0')}`
 
 	console.log(`[Request] ${method} ${fullUrl} | ${requestTimestamp}`, {
-		body: opts?.body,
-		headers: {
-			'Content-Type': 'application/json',
-			...opts?.headers,
-		},
+		body: opts.body,
 	})
 
 	try {
-		const response = await fetch(fullUrl, {
-			...opts,
-			headers: {
-				'Content-Type': 'application/json',
-				...opts?.headers,
-			},
+		const response = await invoke<RawResponse>('http_request', {
+			method,
+			url: fullUrl,
+			body: opts.body,
 		})
-		const responseBody: T = await parseBody(response)
+		const responseBody: T = parseBody(response.body)
 
 		const time = Temporal.Now.zonedDateTimeISO()
 		const timestamp = `${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}:${time.second.toString().padStart(2, '0')}.${time.millisecond.toString().padStart(3, '0')}`
@@ -67,7 +68,7 @@ const makeRequest = async <T extends object | string = object | string>(
 			},
 		)
 
-		if (!response.ok) {
+		if (response.status < 200 || response.status >= 300) {
 			const e = {
 				status: response.status,
 				statusText: response.statusText,
@@ -90,10 +91,7 @@ const makeRequest = async <T extends object | string = object | string>(
 	}
 }
 
-type HttpRequestOptions = Omit<
-	RequestInit & ClientOptions,
-	'method' | 'body'
-> & {
+type HttpRequestOptions = {
 	body?: object | string | null
 }
 
