@@ -1,17 +1,4 @@
-import { apiAuth } from './api/apiAuth'
-import { apiGames } from './api/apiGames'
-import { apiPoints } from './api/apiPoints'
-import { apiSystemParameters } from './api/apiSystemParameters'
-import { apiTimers } from './api/apiTimers'
-import { apiUsers } from './api/apiUsers'
-import { apiWheelEffects } from './api/apiWheelEffects'
+import type { Api } from './contracts'
+import { httpApi } from './http/httpApi'
 
-export const api = {
-	auth: apiAuth,
-	games: apiGames,
-	points: apiPoints,
-	systemParameters: apiSystemParameters,
-	timers: apiTimers,
-	users: apiUsers,
-	wheelEffects: apiWheelEffects,
-}
+export const api: Api = httpApi

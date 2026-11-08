@@ -1,0 +1,22 @@
+:root{
+--font-display:'Exo 2','Onest',system-ui,sans-serif;
+--font-body:'Onest',system-ui,-apple-system,'Segoe UI',sans-serif;
+--font-mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+--fw-regular:400;/* @kind other */--fw-medium:500;/* @kind other */--fw-semibold:600;/* @kind other */--fw-bold:700;/* @kind other */--fw-black:800;/* @kind other */
+--fs-12:12px;--fs-13:13px;--fs-14:14px;--fs-16:16px;--fs-18:18px;--fs-20:20px;--fs-24:24px;--fs-32:32px;--fs-40:40px;--fs-56:56px;--fs-72:72px;
+--lh-tight:1.05;/* @kind other */--lh-snug:1.2;/* @kind other */--lh-normal:1.45;/* @kind other */--lh-relaxed:1.6;/* @kind other */
+--tracking-display:0.04em;/* @kind other */--tracking-label:0.08em;/* @kind other */--tracking-normal:0;/* @kind other */
+/* Roles */
+--type-display:800 var(--fs-56)/var(--lh-tight) var(--font-display);
+--type-h1:800 var(--fs-40)/var(--lh-tight) var(--font-display);
+--type-h2:700 var(--fs-32)/var(--lh-snug) var(--font-display);
+--type-h3:700 var(--fs-24)/var(--lh-snug) var(--font-display);
+--type-h4:700 var(--fs-18)/var(--lh-snug) var(--font-display);
+--type-body-lg:400 var(--fs-18)/var(--lh-relaxed) var(--font-body);
+--type-body:400 var(--fs-16)/var(--lh-normal) var(--font-body);
+--type-body-sm:400 var(--fs-14)/var(--lh-normal) var(--font-body);
+--type-caption:500 var(--fs-12)/var(--lh-normal) var(--font-body);
+--type-label:700 var(--fs-12)/1 var(--font-display);
+--type-stat:800 var(--fs-32)/1 var(--font-display);
+--type-mono:500 var(--fs-13)/var(--lh-normal) var(--font-mono);
+}

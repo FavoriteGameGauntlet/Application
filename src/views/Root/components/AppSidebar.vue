@@ -1,147 +1,253 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import AppLogo from '../../../components/AppLogo.vue'
+import UiIcon from '../../../components/ui/UiIcon.vue'
 import { RouteName } from '../../../router/routeNames'
-import NavbarLink from './NavbarLink.vue'
-import { useAuthStore } from '../../../stores/authStore'
-import { useFeatureTimerStore } from '../../../stores/feature/featureTimerStore.ts'
-import { Theme, useThemeStore } from '../../../stores/themeStore'
+import { useManualStore } from '../../../stores/manualStore'
+import { useSessionStore } from '../../../stores/sessionStore'
+import { useSidebarStore } from '../../../stores/sidebarStore'
 
-const authStore = useAuthStore()
-const timerStore = useFeatureTimerStore()
-const themeStore = useThemeStore()
-
-const comingSoon = ['Перки', 'Характеристики', 'Предметы', 'Квесты', 'Карта']
-
-const isDarkTheme = computed(() => themeStore.theme === Theme.Dark)
-
-const onLogOutButtonClick = () => {
-	authStore.logOut()
+type NavItem = {
+	label: string
+	icon: string
+	name: RouteName
+	alsoActiveOn?: RouteName[]
 }
+
+const route = useRoute()
+const manualStore = useManualStore()
+const sessionStore = useSessionStore()
+const sidebarStore = useSidebarStore()
+
+/** without the label next to it, the icon needs one on hover */
+const hint = (label: string) => (sidebarStore.isCollapsed ? label : undefined)
+
+const items: NavItem[] = [
+	{ label: 'Главная', icon: 'house', name: RouteName.Home },
+	{ label: 'Игры', icon: 'gamepad-2', name: RouteName.Games },
+	{ label: 'Колесо', icon: 'refresh-cw', name: RouteName.Wheel },
+	{
+		label: 'Участники',
+		icon: 'users',
+		name: RouteName.Users,
+		alsoActiveOn: [RouteName.UserDetail],
+	},
+	{ label: 'Ресурсы', icon: 'coins', name: RouteName.Resources },
+	{ label: 'Обмены', icon: 'arrow-left-right', name: RouteName.Exchanges },
+	{ label: 'Каталог', icon: 'book-open', name: RouteName.Catalog },
+]
+
+const adminCatalogs: NavItem[] = [
+	{ label: 'Обмены', icon: 'arrow-left-right', name: RouteName.AdminExchanges },
+	{ label: 'Колесо', icon: 'refresh-cw', name: RouteName.AdminWheel },
+	{ label: 'Награды', icon: 'gift', name: RouteName.AdminRewards },
+]
+
+const adminSystem: NavItem[] = [
+	{ label: 'Участники и права', icon: 'users', name: RouteName.AdminMembers },
+]
+
+const isAdminArea = computed(() => route.matched.some((r) => r.meta.admin))
+
+/** the manual change form belongs to the screen it was opened from */
+const manualParent = computed(() =>
+	manualStore.draft?.kind === 'fix' ? RouteName.Resources : RouteName.Wheel,
+)
+
+const isActive = (item: NavItem) =>
+	route.name === item.name ||
+	!!item.alsoActiveOn?.includes(route.name as RouteName) ||
+	(route.name === RouteName.Manual && item.name === manualParent.value)
 </script>
 
 <template>
-	<div class="sidebar">
-		<div class="wordmark">FGG3</div>
+	<nav class="sidebar" :class="{ 'sidebar--collapsed': sidebarStore.isCollapsed }">
+		<AppLogo class="sidebar__logo" :height="32" :symbol="sidebarStore.isCollapsed" />
 
-		<NavbarLink :to="RouteName.Timer" :disabled="timerStore.timerUnavailable">
-			⏱ Таймер
-		</NavbarLink>
+		<template v-if="isAdminArea">
+			<RouterLink class="back" :to="{ name: RouteName.Home }" :title="hint('К пати')">
+				<UiIcon name="arrow-left" :size="16" />
+				<span class="label">К пати</span>
+			</RouterLink>
 
-		<NavbarLink :to="RouteName.Wheel"> 🎡 Колесо </NavbarLink>
+			<span class="group">Каталоги</span>
 
-		<NavbarLink :to="RouteName.Profile"> 👤 Профиль </NavbarLink>
+			<RouterLink
+				v-for="item in adminCatalogs"
+				:key="item.name"
+				class="nav-item"
+				:class="{ 'nav-item--active': isActive(item) }"
+				:to="{ name: item.name }"
+				:title="hint(item.label)"
+			>
+				<UiIcon :name="item.icon" :size="18" />
+				<span class="label">{{ item.label }}</span>
+			</RouterLink>
 
-		<NavbarLink :to="RouteName.Users"> 👥 Игроки </NavbarLink>
+			<span class="divider"></span>
 
-		<NavbarLink :to="RouteName.Games"> 🎮 Игры </NavbarLink>
+			<RouterLink
+				v-for="item in adminSystem"
+				:key="item.name"
+				class="nav-item"
+				:class="{ 'nav-item--active': isActive(item) }"
+				:to="{ name: item.name }"
+				:title="hint(item.label)"
+			>
+				<UiIcon :name="item.icon" :size="18" />
+				<span class="label">{{ item.label }}</span>
+			</RouterLink>
+		</template>
 
-		<div class="coming-soon-divider">СКОРО</div>
-		<NavbarLink v-for="item in comingSoon" :key="item">
-			{{ item }}
-		</NavbarLink>
+		<template v-else>
+			<RouterLink
+				v-for="item in items"
+				:key="item.name"
+				class="nav-item"
+				:class="{ 'nav-item--active': isActive(item) }"
+				:to="{ name: item.name }"
+				:title="hint(item.label)"
+			>
+				<UiIcon :name="item.icon" :size="18" />
+				<span class="label">{{ item.label }}</span>
+			</RouterLink>
 
-		<div class="spacer"></div>
+			<template v-if="sessionStore.isAdmin">
+				<span class="divider"></span>
+
+				<RouterLink
+					class="nav-item"
+					:to="{ name: RouteName.AdminExchanges }"
+					:title="hint('Панель админа')"
+				>
+					<UiIcon name="shield" :size="18" />
+					<span class="label">Панель админа</span>
+				</RouterLink>
+			</template>
+		</template>
 
 		<button
-			class="theme-toggle"
+			class="nav-item nav-item--bottom"
 			type="button"
-			role="switch"
-			:aria-checked="isDarkTheme"
-			@click="themeStore.toggle()"
+			:title="hint('Развернуть меню')"
+			@click="sidebarStore.toggle()"
 		>
-			<span>{{ isDarkTheme ? '🌙' : '☀️' }} Тёмная тема</span>
-			<span class="theme-toggle__track" :class="{ 'theme-toggle__track--on': isDarkTheme }">
-				<span class="theme-toggle__thumb"></span>
-			</span>
+			<UiIcon name="panel-left" :size="18" />
+			<span class="label">Свернуть меню</span>
 		</button>
-
-		<button class="logout-button" @click="onLogOutButtonClick">Выйти</button>
-	</div>
+	</nav>
 </template>
 
 <style scoped>
 .sidebar {
-	width: 200px;
-	flex: none;
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
-	padding: 20px 14px;
-	border-right: 1px solid var(--color-border);
+	gap: 4px;
+	flex: none;
+	width: var(--sidebar-w);
+	padding: 20px 16px 16px;
+	background: var(--surface-card);
+	border-right: 1px solid var(--border-subtle);
 }
 
-.wordmark {
-	font-size: 1.25rem;
-	font-weight: 800;
-	text-align: center;
-	padding-bottom: 16px;
+.sidebar--collapsed {
+	width: 72px;
 }
 
-.coming-soon-divider {
-	margin-top: 10px;
-	padding-top: 10px;
-	border-top: 1px solid var(--color-border);
-	font-size: 0.625rem;
-	letter-spacing: 0.08em;
-	color: var(--color-faint);
+.sidebar__logo {
+	align-self: flex-start;
+	margin: 0 8px 24px;
 }
 
-.spacer {
-	flex: 1;
+.sidebar--collapsed .sidebar__logo {
+	align-self: center;
+	margin-inline: 0;
 }
 
-.logout-button {
-	background: none;
-	border: none;
-	padding: 6px 10px;
-	font-size: 0.8125rem;
-	color: var(--color-muted);
-	cursor: pointer;
-	text-align: left;
+.sidebar--collapsed .label,
+.sidebar--collapsed .group {
+	display: none;
 }
 
-.logout-button:hover {
-	text-decoration: underline;
+.sidebar--collapsed .nav-item,
+.sidebar--collapsed .back {
+	justify-content: center;
+	padding: 0;
 }
 
-.theme-toggle {
+.nav-item {
+	position: relative;
 	display: flex;
+	flex: none;
 	align-items: center;
-	justify-content: space-between;
-	gap: 8px;
-	background: none;
-	border: none;
-	padding: 6px 10px;
-	font-size: 0.8125rem;
-	color: var(--color-muted);
+	gap: 12px;
+	height: 40px;
+	padding: 0 12px;
+	font: 700 13px / 1 var(--font-display);
+	letter-spacing: var(--tracking-label);
+	text-transform: uppercase;
+	text-decoration: none;
+	color: var(--text-muted);
+	border-radius: var(--radius-sm);
 	cursor: pointer;
-	text-align: left;
+	transition: background var(--dur-fast) var(--ease-out);
 }
 
-.theme-toggle__track {
-	flex-shrink: 0;
-	width: 28px;
-	height: 16px;
-	border-radius: 999px;
-	background-color: var(--color-border);
-	transition: background-color 0.15s ease;
+.nav-item:hover,
+.nav-item--active {
+	color: var(--text-strong);
+	background: var(--surface-sunken);
 }
 
-.theme-toggle__track--on {
-	background-color: var(--color-accent);
+.nav-item--bottom {
+	margin-top: auto;
 }
 
-.theme-toggle__thumb {
-	display: block;
-	width: 12px;
-	height: 12px;
-	margin: 2px;
-	border-radius: 50%;
-	background-color: var(--color-surface);
-	transition: transform 0.15s ease;
+.nav-item--active::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 10px;
+	bottom: 10px;
+	width: 3px;
+	border-radius: 2px;
+	background: var(--accent);
 }
 
-.theme-toggle__track--on .theme-toggle__thumb {
-	transform: translateX(12px);
+.back {
+	display: flex;
+	flex: none;
+	align-items: center;
+	gap: 8px;
+	height: 36px;
+	padding: 0 12px;
+	font: var(--type-label);
+	letter-spacing: var(--tracking-label);
+	text-transform: uppercase;
+	text-decoration: none;
+	color: var(--text-muted);
+	border-radius: var(--radius-sm);
+	cursor: pointer;
+}
+
+.back:hover {
+	color: var(--text-strong);
+	background: var(--surface-sunken);
+}
+
+.group {
+	padding: 16px 12px 6px;
+	font: var(--type-label);
+	letter-spacing: var(--tracking-label);
+	text-transform: uppercase;
+	color: var(--text-subtle);
+}
+
+.divider {
+	flex: none;
+	height: 1px;
+	margin: 12px 0;
+	background: var(--border-subtle);
 }
 </style>

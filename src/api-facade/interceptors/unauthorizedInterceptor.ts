@@ -3,7 +3,7 @@ import { router } from '../../router/router'
 import { useAuthStore } from '../../stores/authStore'
 import type { HttpErrorResponse } from '../http'
 
-const SESSION_EXPIRED_CODES = ['COOKIE_NOT_FOUND', 'NO_ACTIVE_SESSION']
+const SESSION_EXPIRED_CODES = ['COOKIE_NOT_FOUND', 'ACTIVE_SESSION_NOT_FOUND']
 
 export const unauthorizedInterceptor = async (
 	response: HttpErrorResponse,

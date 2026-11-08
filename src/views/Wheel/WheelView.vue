@@ -1,441 +1,456 @@
 <script setup lang="ts">
+import { computed, onMounted } from 'vue'
+import type { WheelGroup } from '../../api-facade/contracts'
+import UiBadge from '../../components/ui/UiBadge.vue'
 import UiButton from '../../components/ui/UiButton.vue'
-import trashIcon from '../../assets/icons/trash.svg'
-import { useFeatureWheelStore } from '../../stores/feature/featureWheelStore'
-import { computed, onMounted, ref, watch } from 'vue'
-import UiView from '../../components/ui/UiView.vue'
-import WheelEffectApplyForm from './components/WheelEffectApplyForm.vue'
-import WheelEffectCard from './components/WheelEffectCard.vue'
-import { TimerState } from '../../api-facade/models/timers-models'
-import type { RolledWheelEffectDto } from '../../api-facade/models/wheel-effects-models'
-import { formatInstant } from '../../utils/temporal'
-import { useAuthStore } from '../../stores/authStore'
-import { useFeatureTimerStore } from '../../stores/feature/featureTimerStore'
-import { useFeatureUserStore } from '../../stores/feature/featureUserStore'
+import UiPageTitle from '../../components/ui/UiPageTitle.vue'
+import UiTabs from '../../components/ui/UiTabs.vue'
+import { RouteName } from '../../router/routeNames'
+import { useCurrentGameStore } from '../../stores/currentGameStore'
+import { useResourcesStore } from '../../stores/resourcesStore'
+import { useWheelStore, type WheelTab } from '../../stores/wheelStore'
+import { useWishlistStore } from '../../stores/wishlistStore'
+import { formatCost } from '../../utils/formatResource'
+import SpinPaymentDialog from './components/SpinPaymentDialog.vue'
 
-const wheelStore = useFeatureWheelStore()
-const authStore = useAuthStore()
-const userStore = useFeatureUserStore()
-const timerStore = useFeatureTimerStore()
+const REEL_OFFSETS = [-3, -2, -1, 0, 1, 2, 3]
 
-const effectsHistory = computed(() =>
-	authStore.login ? (userStore.userEffects[authStore.login] ?? []) : [],
+const currentGameStore = useCurrentGameStore()
+const resourcesStore = useResourcesStore()
+const wheelStore = useWheelStore()
+const wishlistStore = useWishlistStore()
+
+/** «Билет на колесо ×2, 50 золота»; empty when the spin of the group is free */
+const costText = (group?: WheelGroup) =>
+	(group?.cost ?? []).map((r) => formatCost(r, resourcesStore.pointTypes)).join(', ')
+
+/** the cost is charged when the result is applied */
+const resultCost = computed(() => {
+	const source = wheelStore.result?.source
+
+	if (!source) return ''
+
+	return costText(wheelStore.groups.find((g) => g.id === source.groupId))
+})
+
+const sources = computed(() =>
+	wheelStore.tab === 'games' ? wheelStore.gameGroups : wheelStore.changeGroups,
 )
 
-const emptyEffects: RolledWheelEffectDto[] = Array.from(
-	{ length: 5 },
-	(_, i) => ({ name: '', isApplied: false, position: i }),
+const groupName = (group: WheelGroup) =>
+	group.kind === 'wishlist' ? 'Твой вишлист' : group.name
+
+const groupCount = (group: WheelGroup) =>
+	group.kind === 'wishlist' ? wishlistStore.mine.length : group.entries.length
+
+/** a game can't be spun while another one is being played */
+const gameInProgress = computed(
+	() => wheelStore.tab === 'games' && !!currentGameStore.current?.game,
 )
 
-const hasRoll = computed(() => !!wheelStore.currentEffects)
+const tabs = [
+	{ value: 'points', label: 'Пункты' },
+	{ value: 'games', label: 'Игры' },
+]
 
-const visibleEffects = computed(() => {
-	if (wheelStore.currentEffects) {
-		return [...wheelStore.currentEffects].sort(
-			(a, b) => a.position - b.position,
-		)
+const reel = computed(() => {
+	const pool = wheelStore.pool
+	const n = pool.length
+
+	return REEL_OFFSETS.map((k) => ({
+		key: k,
+		text: n ? pool[(((wheelStore.pos + k) % n) + n) % n] : '',
+		opacity: k === 0 ? 0 : 1 - Math.abs(k) * 0.22,
+	}))
+})
+
+const reelCenter = computed(() => {
+	const n = wheelStore.pool.length
+
+	if (n) return wheelStore.pool[wheelStore.pos % n]
+
+	switch (wheelStore.group?.kind) {
+		case 'wishlist':
+			return 'Вишлист пуст'
+		case 'games':
+			return 'В группе нет игр'
+		case 'changes':
+			return 'В группе нет пунктов'
+		default:
+			return wheelStore.tab === 'games' ? 'Нет источников' : 'Нет групп'
 	}
-
-	return emptyEffects
 })
 
-const centerIndex = computed(() =>
-	Math.floor((visibleEffects.value.length - 1) / 2),
-)
+const resultDescription = computed(() => {
+	const result = wheelStore.result
 
-const isReroll = ref(false)
+	if (!result) return ''
+	if (wheelStore.resultStartsGame) return 'Станет текущей игрой, таймер начнётся с нуля.'
 
-const onRollButtonClick = () => {
-	wheelStore.getAvailableEffects()
-	wheelStore.roll(isReroll.value)
-}
-
-const hasAppliedEffect = computed(
-	() => wheelStore.currentEffects?.some((effect) => effect.isApplied) ?? false,
-)
-
-const onClearButtonClick = () => {
-	wheelStore.clearLastRoll()
-}
-
-const selectedEffect = ref<RolledWheelEffectDto | null>(null)
-const showApplyForm = ref(false)
-
-const closeModal = () => {
-	selectedEffect.value = null
-	showApplyForm.value = false
-}
-
-onMounted(() => {
-	wheelStore.getLastRoll()
-
-	if (authStore.login) userStore.getUserEffects(authStore.login)
-	if (authStore.isLoggedIn) wheelStore.getAvailableCount()
+	return result.result.description ?? `Эффект из группы «${wheelStore.resultSource}».`
 })
 
-watch(
-	() => timerStore.state,
-	(state) => {
-		if (state === TimerState.Finished && authStore.isLoggedIn) {
-			wheelStore.getAvailableCount()
-		}
-	},
-)
+onMounted(() => wheelStore.load())
 </script>
 
 <template>
-	<UiView>
-		<div class="wheel">
-			<div class="wheel-header">
-				<h1>Колесо</h1>
-				<span class="attempts-pill"
-					>попыток: {{ wheelStore.availableRollCount }}</span
-				>
-			</div>
-
-			<div class="reel">
-				<div class="effects-grid">
-					<WheelEffectCard
-						v-for="(effect, i) in visibleEffects"
-						:key="i"
-						:effect="effect"
-						:is-center="i === centerIndex"
-						:is-placeholder="!hasRoll"
-						@select="selectedEffect = $event"
-					/>
-				</div>
-				<div class="reel-pointer"></div>
-			</div>
-
-			<div class="roll-controls">
-				<div class="roll-extra">
-					<label class="reroll-checkbox">
-						<input type="checkbox" v-model="isReroll" />
-						Перекрутить
-					</label>
-
-					<p v-if="isReroll" class="reroll-message">
-						Прокруты не будут потрачены
-					</p>
-				</div>
-
-				<UiButton
-					class="roll-button"
-					:disabled="
-						!wheelStore.availableRollCount ||
-						(!!wheelStore.currentEffects && !hasAppliedEffect && !isReroll)
-					"
-					@click="onRollButtonClick"
-				>
-					{{ isReroll ? 'Перекрутить' : 'Прокрутить' }}
-				</UiButton>
-
-				<UiButton
-					class="clear-button"
-					:disabled="!hasAppliedEffect"
-					title="Очистить"
-					aria-label="Очистить"
-					@click="onClearButtonClick"
-				>
-					<span class="clear-icon" :style='{ "--icon-url": `url("${trashIcon}")` }'></span>
-				</UiButton>
-			</div>
-
-			<h2 class="history-title">История применённых эффектов</h2>
-			<p v-if="userStore.getUserEffectsState.isLoading">Загрузка...</p>
-			<p v-else-if="userStore.getUserEffectsState.isError">Ошибка загрузки</p>
-			<template v-else-if="userStore.getUserEffectsState.isLoaded">
-				<p v-if="!effectsHistory.length" class="empty-message">
-					Нет истории эффектов
-				</p>
-				<ul v-else class="item-list">
-					<li
-						v-for="(effect, i) in effectsHistory"
-						:key="i"
-						class="info-card info-card--row"
-					>
-						<span class="item-title">{{ effect.name }}</span>
-						<span class="item-meta">{{ formatInstant(effect.rollDate) }}</span>
-					</li>
-				</ul>
-			</template>
+	<div class="wheel">
+		<div class="head">
+			<UiPageTitle>Колесо</UiPageTitle>
+			<UiTabs
+				:model-value="wheelStore.tab"
+				:items="tabs"
+				@update:model-value="wheelStore.setTab($event as WheelTab)"
+			/>
 		</div>
 
-		<Teleport to="body">
-			<div v-if="selectedEffect" class="modal-overlay" @click.self="closeModal">
-				<div class="modal" :class="{ 'modal--wide': showApplyForm }">
-					<template v-if="!showApplyForm">
-						<h2 class="modal-title">{{ selectedEffect.name }}</h2>
-						<p v-if="selectedEffect.description" class="modal-description">
-							{{ selectedEffect.description }}
-						</p>
-						<p v-else class="modal-empty">Описание отсутствует</p>
-						<label class="effect-applied">
-							<input
-								type="checkbox"
-								:checked="selectedEffect.isApplied"
-								disabled
-							/>
-							Применён
-						</label>
-						<div class="modal-actions">
-							<button
-								v-if="!selectedEffect.isApplied"
-								class="modal-button modal-button--primary"
-								@click="showApplyForm = true"
-							>
-								Применить
-							</button>
-							<button class="modal-button" @click="closeModal">Закрыть</button>
-						</div>
-					</template>
+		<div class="body">
+			<div class="panel">
+				<div class="panel__title">
+					{{ wheelStore.tab === 'games' ? 'Источник' : 'Группа' }}
+				</div>
 
-					<WheelEffectApplyForm
-						v-else
-						:effect="selectedEffect"
-						@close="showApplyForm = false"
-					/>
+				<div class="groups">
+					<div
+						v-for="group in sources"
+						:key="group.id"
+						class="group"
+						:class="{ 'group--on': group.id === wheelStore.group?.id }"
+						@click="wheelStore.setGroup(group.id)"
+					>
+						<div class="group__row">
+							<span class="group__radio">
+								<span class="group__dot"></span>
+							</span>
+							<span class="group__name">{{ groupName(group) }}</span>
+							<span class="group__count">{{ groupCount(group) }}</span>
+						</div>
+						<div class="group__cost">
+							{{ costText(group) ? `Цена: ${costText(group)}` : 'Бесплатно' }}
+						</div>
+					</div>
+				</div>
+
+				<div v-if="wheelStore.tab === 'games'" class="source">
+					<span class="source__hint">Выпавшая игра станет текущей.</span>
+					<RouterLink
+						v-if="wheelStore.group?.kind === 'wishlist'"
+						class="source__link"
+						:to="{ name: RouteName.Games }"
+					>
+						Открыть вишлист
+					</RouterLink>
 				</div>
 			</div>
-		</Teleport>
-	</UiView>
+
+			<div class="main">
+				<div class="reel">
+					<div v-for="row in reel" :key="row.key" class="reel__row" :style="{ opacity: row.opacity }">
+						{{ row.text }}
+					</div>
+					<div class="reel__center">{{ reelCenter }}</div>
+				</div>
+
+				<div class="spin">
+					<UiButton
+						size="lg"
+						icon="refresh-cw"
+						:disabled="wheelStore.spinning || !wheelStore.pool.length || gameInProgress"
+						@click="wheelStore.spin()"
+					>
+						{{ wheelStore.spinning ? 'Крутится…' : 'Крутить колесо' }}
+					</UiButton>
+					<span v-if="gameInProgress" class="spin__hint">
+						Идёт игра. Колесо игр можно крутить, когда она закончена.
+					</span>
+				</div>
+
+				<div v-if="wheelStore.result && !wheelStore.spinning" class="result">
+					<span class="result__accent"></span>
+
+					<div class="result__head">
+						<div class="result__title">
+							<span class="result__name">{{ wheelStore.result.result.name }}</span>
+						</div>
+						<UiButton variant="secondary" @click="wheelStore.apply()">
+							{{ wheelStore.resultStartsGame ? 'Взять игру' : 'Применить' }}
+						</UiButton>
+						<UiButton variant="outline" @click="wheelStore.clearResult()">Сбросить</UiButton>
+					</div>
+
+					<div class="result__body">
+						<span class="result__desc">{{ resultDescription }}</span>
+						<span v-if="resultCost" class="result__cost">
+							Спишется при применении: {{ resultCost }}
+						</span>
+						<div v-if="wheelStore.result.result.isManualChange" class="result__manual">
+							<UiBadge tone="info" dot>Вручную</UiBadge>
+							<span>после применения нужно внести изменение вручную</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<SpinPaymentDialog
+		:choices="wheelStore.pendingChoices"
+		@close="wheelStore.cancelPayment()"
+		@confirm="wheelStore.confirmPayment($event)"
+	/>
 </template>
 
 <style scoped>
 .wheel {
 	display: flex;
 	flex-direction: column;
-	gap: 20px;
-	width: 100%;
+	gap: 24px;
 }
 
-.wheel-header {
+.head {
 	display: flex;
-	justify-content: space-between;
-	align-items: center;
+	align-items: flex-end;
+	gap: 32px;
 }
 
-.attempts-pill {
-	border: 1px solid var(--color-border);
-	border-radius: 20px;
-	padding: 5px 14px;
-	font-size: 0.8125rem;
-	color: var(--color-muted);
+.body {
+	display: flex;
+	align-items: flex-start;
+	gap: 32px;
+}
+
+.panel {
+	flex: none;
+	width: 320px;
+	overflow: hidden;
+	background: var(--surface-card);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-1);
+}
+
+.panel__title {
+	padding: 14px 16px;
+	font: var(--type-h4);
+	letter-spacing: var(--tracking-display);
+	text-transform: uppercase;
+	color: var(--text-strong);
+	background: var(--surface-sunken);
+}
+
+.groups {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 4px;
+}
+
+.group {
+	padding: 12px;
+	border-radius: var(--radius-sm);
+	cursor: pointer;
+}
+
+.group:hover,
+.group--on {
+	background: var(--surface-sunken);
+}
+
+.group__row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.group__radio {
+	display: flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	border: 2px solid var(--border-default);
+	border-radius: var(--radius-pill);
+}
+
+.group--on .group__radio {
+	border-color: var(--border-strong);
+}
+
+.group__dot {
+	width: 10px;
+	height: 10px;
+	border-radius: var(--radius-pill);
+	background: transparent;
+}
+
+.group--on .group__dot {
+	background: var(--accent);
+}
+
+.group__name {
+	flex: 1;
+	font: var(--type-body-sm);
+	color: var(--text-strong);
+}
+
+.group--on .group__name {
+	font-weight: 600;
+}
+
+.group__count {
+	font: var(--type-mono);
+	color: var(--text-subtle);
+}
+
+.group__cost {
+	padding: 4px 0 0 32px;
+	font: var(--type-caption);
+	color: var(--text-muted);
+}
+
+.source {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 16px;
+}
+
+.source__hint {
+	font: var(--type-caption);
+	color: var(--text-muted);
+}
+
+.source__link {
+	align-self: flex-start;
+	margin-top: 4px;
+	font: var(--type-label);
+	letter-spacing: var(--tracking-label);
+	text-transform: uppercase;
+}
+
+.main {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 16px;
+	max-width: 520px;
 }
 
 .reel {
 	position: relative;
-	display: flex;
-	padding: 16px 28px 16px 16px;
-	border: 1px solid var(--color-border);
+	padding: 4px 0;
+	overflow: hidden;
+	background: var(--surface-card);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-1);
 }
 
-.effects-grid {
+.reel__row {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 40px;
+	font: var(--type-body-sm);
+	color: var(--text-subtle);
+}
+
+.reel__center {
+	position: absolute;
+	top: 124px;
+	right: 12px;
+	left: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 40px;
+	font: var(--type-h4);
+	letter-spacing: var(--tracking-display);
+	text-transform: uppercase;
+	color: var(--text-on-contrast);
+	background: var(--surface-contrast);
+	border-radius: var(--radius-sm);
+}
+
+.spin {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
-	width: 100%;
-}
-
-.effect-applied {
-	display: flex;
 	align-items: center;
-	gap: 4px;
-	font-size: 0.75rem;
-	color: var(--color-muted);
-	cursor: default;
+	align-self: center;
 }
 
-.reel-pointer {
-	position: absolute;
-	right: 8px;
-	top: 50%;
-	transform: translateY(-50%);
-	width: 0;
-	height: 0;
-	border-top: 8px solid transparent;
-	border-bottom: 8px solid transparent;
-	border-right: 12px solid var(--color-muted);
+.spin__hint {
+	font: var(--type-body-sm);
+	color: var(--text-muted);
 }
 
-.roll-controls {
-	display: grid;
-	grid-template-columns: 1fr auto 1fr;
-	align-items: center;
-	column-gap: 16px;
-}
-
-.roll-extra {
-	grid-column: 1;
+.result {
 	position: relative;
-	justify-self: start;
-}
-
-.roll-button {
-	grid-column: 2;
-	height: 56px;
-	width: 224px;
-}
-
-.clear-button {
-	grid-column: 3;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	height: 56px;
-	width: 56px;
-	justify-self: start;
-}
-
-.clear-icon {
-	display: inline-block;
-	width: 20px;
-	height: 20px;
-	background-color: currentColor;
-	-webkit-mask-image: var(--icon-url);
-	mask-image: var(--icon-url);
-	-webkit-mask-size: contain;
-	mask-size: contain;
-	-webkit-mask-repeat: no-repeat;
-	mask-repeat: no-repeat;
-	-webkit-mask-position: center;
-	mask-position: center;
-}
-
-.reroll-checkbox {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	font-size: 0.875rem;
-	color: var(--color-text-secondary);
-	cursor: pointer;
-}
-
-.reroll-message {
-	position: absolute;
-	top: 100%;
-	left: 0;
-	margin-top: 4px;
-	font-size: 0.8125rem;
-	color: var(--color-muted);
-	white-space: nowrap;
-}
-
-.history-title {
-	font-size: 0.875rem;
-	color: var(--color-muted);
-	font-weight: 500;
-}
-
-.empty-message {
-	color: var(--color-muted);
-}
-
-.item-list {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-	list-style: none;
-	padding: 0;
-	width: 100%;
-}
-
-.info-card {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-	padding: 12px 16px;
-	border: 1px solid var(--color-border);
-	border-radius: 4px;
-}
-
-.info-card--row {
-	flex-direction: row;
-	align-items: center;
-	justify-content: space-between;
-}
-
-.item-title {
-	font-weight: 500;
-}
-
-.item-meta {
-	font-size: 0.875rem;
-	color: var(--color-muted);
-}
-
-.modal-overlay {
-	position: fixed;
-	inset: 0;
-	background-color: rgba(0, 0, 0, 0.4);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	z-index: 100;
-}
-
-.modal {
-	background: var(--color-surface);
-	border-radius: 8px;
-	padding: 24px;
-	max-width: 400px;
-	width: 90%;
-	max-height: 85vh;
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
-	overflow-y: auto;
+	padding: 16px;
+	background: var(--surface-card);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-1);
 }
 
-.modal--wide {
-	max-width: 720px;
+.result__accent {
+	position: absolute;
+	top: 0;
+	left: 16px;
+	width: 40px;
+	height: 4px;
+	background: var(--accent);
+	border-radius: 0 0 2px 2px;
 }
 
-.modal-title {
-	font-size: 1.25rem;
-	font-weight: 600;
-}
-
-.modal-description {
-	color: var(--color-text-secondary);
-	line-height: 1.6;
-}
-
-.modal-empty {
-	color: var(--color-faint);
-	font-style: italic;
-}
-
-.modal-actions {
+.result__head {
 	display: flex;
+	align-items: center;
 	gap: 8px;
-	justify-content: flex-end;
 }
 
-.modal-button {
-	padding: 6px 16px;
-	border: 1px solid var(--color-muted);
-	border-radius: 4px;
-	cursor: pointer;
-	background: transparent;
+.result__title {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 6px;
 }
 
-.modal-button:hover:not(:disabled) {
-	background-color: var(--color-hover-bg);
+.result__name {
+	font: var(--type-h4);
+	letter-spacing: var(--tracking-display);
+	text-transform: uppercase;
+	color: var(--text-strong);
 }
 
-.modal-button:disabled {
-	opacity: 0.5;
-	cursor: not-allowed;
+.result__body {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding-top: 12px;
+	border-top: 1px solid var(--border-subtle);
 }
 
-.modal-button--primary {
-	background-color: var(--color-accent);
-	border-color: var(--color-accent);
-	color: var(--color-on-accent);
+.result__desc {
+	font: var(--type-body-sm);
+	color: var(--text-body);
 }
 
-.modal-button--primary:hover:not(:disabled) {
-	background-color: var(--color-accent-hover);
+.result__cost {
+	font: var(--type-body-sm);
+	color: var(--text-muted);
+}
+
+.result__manual {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font: var(--type-caption);
+	color: var(--text-muted);
 }
 </style>

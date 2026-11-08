@@ -1,0 +1,19 @@
+:root{
+--space-0:0;--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--space-6:24px;--space-8:32px;--space-10:40px;--space-12:48px;--space-16:64px;--space-20:80px;
+/* Radii — echo the softened hexagon corners of the symbol */
+--radius-xs:3px;--radius-sm:6px;--radius-md:10px;--radius-lg:14px;--radius-xl:20px;--radius-pill:999px;
+--border-width:1.5px;/* @kind spacing */--border-width-strong:2px;/* @kind spacing */
+/* Shadows — navy-tinted, flat & short */
+--shadow-1:0 1px 2px rgba(27,23,64,.08),0 1px 1px rgba(27,23,64,.04);
+--shadow-2:0 4px 12px rgba(27,23,64,.10),0 1px 2px rgba(27,23,64,.06);
+--shadow-3:0 16px 40px rgba(27,23,64,.18),0 2px 6px rgba(27,23,64,.08);
+--shadow-focus:0 0 0 3px rgba(255,176,0,.45);
+--shadow-hard:4px 4px 0 var(--fgg-navy);
+/* Motion */
+--ease-out:cubic-bezier(.2,.8,.2,1);/* @kind other */--ease-snap:cubic-bezier(.34,1.56,.64,1);/* @kind other */
+--dur-fast:120ms;/* @kind other */--dur-base:180ms;/* @kind other */--dur-slow:320ms;/* @kind other */
+/* Layout */
+--container-max:1200px;/* @kind spacing */--sidebar-w:248px;/* @kind spacing */--topbar-h:64px;/* @kind spacing */
+/* Hexagon geometry (pointy-top, matches the symbol) */
+--hex-clip:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);/* @kind other */
+}

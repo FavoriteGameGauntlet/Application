@@ -7,7 +7,7 @@ export const authGuard: NavigationGuard = async (to) => {
 	const isLoggedIn = await authStore.getIsLoggedIn()
 
 	if (to.name === RouteName.Login) {
-		return !isLoggedIn || { name: RouteName.Timer }
+		return !isLoggedIn || { name: RouteName.Home }
 	}
 
 	return isLoggedIn || { name: RouteName.Login }

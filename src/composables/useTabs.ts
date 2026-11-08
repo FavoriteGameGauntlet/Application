@@ -4,10 +4,13 @@ import { router } from '../router/router'
 
 export const useTabs = () => {
 	const tabTargets = [
-		RouteName.Timer,
-		RouteName.Wheel,
+		RouteName.Home,
 		RouteName.Games,
+		RouteName.Wheel,
 		[RouteName.Users, RouteName.UserDetail],
+		RouteName.Resources,
+		RouteName.Exchanges,
+		RouteName.Catalog,
 	] as const
 
 	const currentTabIndex = computed((prevIndex: number | undefined) => {

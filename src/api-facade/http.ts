@@ -97,7 +97,28 @@ type HttpRequestOptions = Omit<
 	body?: object | string | null
 }
 
+const withMethod =
+	(method: string) =>
+	<
+		T extends { request?: unknown; response?: unknown } = {
+			request: undefined
+			response: undefined
+		},
+	>(
+		url: string,
+		opts?: HttpRequestOptions,
+	): Promise<HttpResponse<T['response']>> =>
+		makeRequest(url, {
+			...opts,
+			body: opts?.body ? JSON.stringify(opts.body) : undefined,
+			method,
+		})
+
 export const http = {
+	put: withMethod('PUT'),
+	patch: withMethod('PATCH'),
+	delete: withMethod('DELETE'),
+
 	get: <
 		T extends { request?: unknown; response?: unknown } = {
 			request: undefined

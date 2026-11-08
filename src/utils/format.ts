@@ -1,0 +1,161 @@
+import type { ISODate, JournalSource, Seconds } from '../api-facade/contracts'
+import { plural } from './plural'
+
+const pad = (n: number) => String(n).padStart(2, '0')
+
+/** 5077 → «01:24:37» */
+export const formatClock = (seconds: Seconds) =>
+	`${pad(Math.floor(seconds / 3600))}:${pad(Math.floor(seconds / 60) % 60)}:${pad(seconds % 60)}`
+
+/** 21600 → «6 ч» */
+export const formatHours = (seconds: Seconds) =>
+	`${Math.floor(seconds / 3600)} ч`
+
+/** 14700 → «4 ч 05 м» */
+export const formatDuration = (seconds: Seconds) =>
+	`${Math.floor(seconds / 3600)} ч ${pad(Math.floor(seconds / 60) % 60)} м`
+
+const dayMonth = (d: Date) => `${pad(d.getDate())}.${pad(d.getMonth() + 1)}`
+
+/** «05.09.2026» */
+export const formatDate = (iso: ISODate) => {
+	const d = new Date(iso)
+	return `${dayMonth(d)}.${d.getFullYear()}`
+}
+
+/** «12.09 → 07.10» */
+export const formatPeriod = (start: ISODate, end: ISODate) =>
+	`${dayMonth(new Date(start))} → ${dayMonth(new Date(end))}`
+
+const startOfDay = (d: Date) =>
+	new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+
+/** «сейчас», «сегодня 14:20», «вчера 22:30», «08.10 12:00» */
+export const formatMoment = (iso: ISODate) => {
+	const d = new Date(iso)
+	const now = new Date()
+
+	if (now.getTime() - d.getTime() < 60_000) return 'сейчас'
+
+	const time = `${pad(d.getHours())}:${pad(d.getMinutes())}`
+	const days = Math.round((startOfDay(now) - startOfDay(d)) / 86_400_000)
+
+	if (days === 0) return `сегодня ${time}`
+	if (days === 1) return `вчера ${time}`
+
+	return `${dayMonth(d)} ${time}`
+}
+
+/** «предмет «Колобок»», «колесо · «×2 золото»», «исправление» */
+export const formatJournalSource = (
+	{ type, name, event }: JournalSource,
+	correctsEntryId?: number,
+) => {
+	switch (type) {
+		case 'item':
+			return `предмет «${name}»`
+		case 'perk':
+			return `перк «${name}»`
+		case 'effect':
+			return `эффект «${name}»`
+		case 'wheel_row':
+			return `колесо · «${name}»`
+		case 'exchange':
+			return `обмен «${name}»`
+		case 'timer':
+			return name ? `таймер · ${name}` : 'таймер'
+		case 'game':
+			return event === 'started'
+				? `начало игры · ${name}`
+				: event === 'completed'
+					? `прохождение · ${name}`
+					: event === 'rerolled'
+						? `перекрут игры · ${name}`
+						: `отмена игры · ${name}`
+		case 'manual':
+			return correctsEntryId === undefined ? 'ручное изменение' : 'исправление'
+	}
+}
+
+/** 6000 → «1 ч 40 м», 79200 → «22 ч», 86400 → «1 день» */
+export const formatSpan = (seconds: Seconds) => {
+	const minutes = Math.max(0, Math.round(seconds / 60))
+	const days = Math.floor(minutes / 1440)
+
+	if (days >= 1) return `${days} ${plural(days, ['день', 'дня', 'дней'])}`
+
+	const hours = Math.floor(minutes / 60)
+	const rest = minutes % 60
+
+	if (hours === 0) return `${rest} м`
+
+	return rest ? `${hours} ч ${rest} м` : `${hours} ч`
+}
+
+/** «от 0 до 1000», «от −20», «до 100», «без границ» */
+export const formatBounds = (minimum: number | null, maximum: number | null) => {
+	if (minimum !== null && maximum !== null) return `от ${minimum} до ${maximum}`
+	if (minimum !== null) return `от ${minimum}`
+	if (maximum !== null) return `до ${maximum}`
+
+	return 'без границ'
+}
+
+/** «1 ч 40 м», «22 ч», «1 день» */
+export const formatRemaining =(iso: ISODate) =>
+	formatSpan((Date.parse(iso) - Date.now()) / 1000)
+
+const SPAN_UNITS: [prefix: string, seconds: number][] = [
+	['д', 86_400],
+	['ч', 3_600],
+	['м', 60],
+	['с', 1],
+]
+
+/** «1 день», «2 ч», «1 ч 40 м» → seconds; undefined when it isn't a duration */
+export const parseSpan = (text: string): Seconds | undefined => {
+	const value = text.trim().toLowerCase()
+
+	if (!/^(\d+\s*[а-я]+\s*)+$/.test(value)) return undefined
+
+	let total = 0
+
+	for (const [, amount, unit] of value.matchAll(/(\d+)\s*([а-я]+)/g)) {
+		const seconds = SPAN_UNITS.find(([prefix]) => unit.startsWith(prefix))?.[1]
+
+		if (seconds === undefined) return undefined
+
+		total += Number(amount) * seconds
+	}
+
+	return total
+}
+
+const pad2 = (n: number) => String(n).padStart(2, '0')
+
+/** «01.09.2026» */
+export const formatDateInput = (iso: ISODate) => {
+	const d = new Date(iso)
+
+	return `${pad2(d.getDate())}.${pad2(d.getMonth() + 1)}.${d.getFullYear()}`
+}
+
+/**
+ * «01.09.2026» as a moment in the local time zone: the start of that day, or
+ * its last second when `endOfDay` is set. undefined when the text is not a date.
+ */
+export const parseDateInput = (text: string, endOfDay = false): ISODate | undefined => {
+	const match = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(text.trim())
+
+	if (!match) return undefined
+
+	const [day, month, year] = [Number(match[1]), Number(match[2]), Number(match[3])]
+	const d = endOfDay
+		? new Date(year, month - 1, day, 23, 59, 59)
+		: new Date(year, month - 1, day)
+
+	// 31.02 would roll over into March
+	if (d.getDate() !== day || d.getMonth() !== month - 1) return undefined
+
+	return d.toISOString()
+}

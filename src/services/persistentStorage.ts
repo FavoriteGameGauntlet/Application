@@ -4,21 +4,36 @@ export enum StoreKey {
 	InitialRoute = 'initialRoute',
 	Login = 'login',
 	DisplayName = 'displayName',
+	PartyId = 'partyId',
 	Theme = 'theme',
+	Scale = 'scale',
+	MiniWidth = 'miniWidth',
+	SidebarCollapsed = 'sidebarCollapsed',
 }
 
 export type StoredData = Partial<{
 	[StoreKey.InitialRoute]: string
 	[StoreKey.Login]: string
 	[StoreKey.DisplayName]: string
+	/** the party the user works in; every backend address except /auth/* and /parties lives under it */
+	[StoreKey.PartyId]: number
 	[StoreKey.Theme]: string
+	/** interface scale in percent */
+	[StoreKey.Scale]: number
+	/** width of the mini window in px at the interface scale of 100%, the height follows the ratio */
+	[StoreKey.MiniWidth]: number
+	[StoreKey.SidebarCollapsed]: boolean
 }>
 
 const defaults: StoredData = {
 	[StoreKey.InitialRoute]: undefined,
 	[StoreKey.Login]: undefined,
 	[StoreKey.DisplayName]: undefined,
+	[StoreKey.PartyId]: undefined,
 	[StoreKey.Theme]: undefined,
+	[StoreKey.Scale]: undefined,
+	[StoreKey.MiniWidth]: undefined,
+	[StoreKey.SidebarCollapsed]: undefined,
 } as const
 
 let store: Store | null = null
