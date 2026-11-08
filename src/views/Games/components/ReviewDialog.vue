@@ -4,8 +4,8 @@ import type { GameHistoryEntry } from '../../../api-facade/contracts'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiField from '../../../components/ui/UiField.vue'
+import UiRating from '../../../components/ui/UiRating.vue'
 import UiUserAvatar from '../../../components/ui/UiUserAvatar.vue'
-import UiSelect from '../../../components/ui/UiSelect.vue'
 import { useCompletedStore } from '../../../stores/completedStore'
 import { useMembersStore } from '../../../stores/membersStore'
 import { useToastStore } from '../../../stores/toastStore'
@@ -29,20 +29,12 @@ const membersStore = useMembersStore()
 const toastStore = useToastStore()
 
 const editing = ref(false)
-const rating = ref('')
+const rating = ref(0)
 const draft = ref('')
-
-const ratingOptions = [
-	{ value: '', label: 'Выбери оценку' },
-	...[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((n) => ({
-		value: String(n),
-		label: `${n} / 10`,
-	})),
-]
 
 const startEdit = () => {
 	editing.value = true
-	rating.value = game?.rating ? String(game.rating) : ''
+	rating.value = game?.rating ?? 0
 	draft.value = game?.reviewComment ?? ''
 }
 
@@ -69,7 +61,7 @@ const onSave = async () => {
 
 	emit('close')
 	await completedStore.saveReview(target, {
-		rating: Number(rating.value),
+		rating: rating.value,
 		reviewComment: draft.value.trim(),
 	})
 }
@@ -113,7 +105,7 @@ const onSave = async () => {
 		</div>
 
 		<div v-else-if="game" class="edit">
-			<UiSelect v-model="rating" label="Оценка" :options="ratingOptions" />
+			<UiRating v-model="rating" label="Оценка" />
 
 			<UiField label="Отзыв">
 				<textarea v-model="draft" class="edit__text" placeholder="Что зашло, что нет…" rows="5"></textarea>
