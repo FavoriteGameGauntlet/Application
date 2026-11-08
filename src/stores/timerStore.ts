@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { api } from '../api-facade/api'
-import type { Timer } from '../api-facade/contracts'
+import type { Reward, Timer } from '../api-facade/contracts'
 import type { HttpErrorResponse } from '../api-facade/http'
 import { StoreName } from '../enums/storeName'
+import { formatClock } from '../utils/format'
 import { useCurrentGameStore } from './currentGameStore'
 import { useJournalStore } from './journalStore'
 import { useMembersStore } from './membersStore'
@@ -32,9 +33,21 @@ export const useTimerStore = defineStore(StoreName.Timer, () => {
 	})
 
 	/** a timer that has run out is over, even before the server tells so */
-	const isRunning = computed(() => timer.value?.state === 'running' && remaining.value > 0)
+	const isRunning = computed(
+		() => timer.value?.state === 'running' && remaining.value > 0,
+	)
 
 	const elapsed = computed(() => goal.value - remaining.value)
+
+	/** the clock texts for the screens; none while there is no timer */
+	const clock = computed(() =>
+		timer.value
+			? {
+					remaining: formatClock(remaining.value),
+					goal: formatClock(goal.value).slice(1),
+				}
+			: undefined,
+	)
 
 	const set = (value: Timer) => {
 		timer.value = value
@@ -46,10 +59,26 @@ export const useTimerStore = defineStore(StoreName.Timer, () => {
 		try {
 			set(await api.timer.get())
 		} catch (e) {
-			if ((e as Partial<HttpErrorResponse>).body?.code !== 'CURRENT_TIMER_NOT_FOUND') throw e
+			if (
+				(e as Partial<HttpErrorResponse>).body?.code !==
+				'CURRENT_TIMER_NOT_FOUND'
+			)
+				throw e
 
 			timer.value = undefined
 		}
+	}
+
+	/** the reward is the party's setting, so it is read apart from the timer and is there without one */
+	const reward = ref<Reward>([])
+
+	const loadReward = async () => {
+		reward.value = await api.timer.reward()
+	}
+
+	/** the server has a timer only for a current game, so without a game there is nothing to ask for */
+	const clear = () => {
+		timer.value = undefined
 	}
 
 	const toggle = async () => {
@@ -111,5 +140,18 @@ export const useTimerStore = defineStore(StoreName.Timer, () => {
 		)
 	}
 
-	return { timer, goal, isRunning, remaining, elapsed, load, toggle, init }
+	return {
+		timer,
+		goal,
+		isRunning,
+		remaining,
+		elapsed,
+		clock,
+		reward,
+		load,
+		loadReward,
+		clear,
+		toggle,
+		init,
+	}
 })

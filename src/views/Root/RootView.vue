@@ -36,7 +36,7 @@ onMounted(async () => {
 			useResourcesStore().loadPointTypes(),
 			useResourcesStore().loadMine(),
 			useCurrentGameStore().load(),
-			useTimerStore().load(),
+			useTimerStore().loadReward(),
 		])
 	} catch (e) {
 		useToastStore().error(e)

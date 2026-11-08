@@ -16,13 +16,16 @@ export const useCurrentGameStore = defineStore(StoreName.CurrentGame, () => {
 
 	const load = async () => {
 		current.value = await api.currentGame.get()
+
+		// the timer belongs to the game: it is read after the game is known, and only when there is one
+		if (current.value.game) await useTimerStore().load()
+		else useTimerStore().clear()
 	}
 
 	/** everything that depends on which game is being played */
 	const reloadDependants = () =>
 		Promise.all([
 			load(),
-			useTimerStore().load(),
 			useMembersStore().load(),
 			useCompletedStore().loadMine(),
 		])
@@ -37,10 +40,7 @@ export const useCurrentGameStore = defineStore(StoreName.CurrentGame, () => {
 
 			toast.show('Пройдено!', `${name}: ${granted}.`)
 
-			await Promise.all([
-				reloadDependants(),
-				useResourcesStore().loadMine(),
-			])
+			await Promise.all([reloadDependants(), useResourcesStore().loadMine()])
 			useJournalStore().bump()
 		} catch (e) {
 			toast.error(e)

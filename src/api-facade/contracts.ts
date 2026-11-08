@@ -73,7 +73,6 @@ export type Timer = {
 	duration: Seconds
 	/** the last start or pause */
 	lastActionDate: ISODate
-	reward: Reward
 }
 
 // 3. Wishlist and completed games
@@ -596,8 +595,10 @@ export type Api = {
 		reroll: () => Promise<void>
 	}
 	timer: {
-		/** Backend: GET {party}/timer, the reward from GET {party}/rewards/timer */
+		/** Backend: GET {party}/timer */
 		get: () => Promise<Timer>
+		/** Backend: GET {party}/rewards/timer. It doesn't need a timer, the reward is the party's setting. */
+		reward: () => Promise<Reward>
 		/**
 		 * Backend: POST {party}/timer/start. The timer is created by the
 		 * server when a game starts (wheel.apply), the client doesn't create it.

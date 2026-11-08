@@ -1,7 +1,11 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { api } from '../api-facade/api'
-import type { SpinPayment, WheelGroup, WheelSpinResult } from '../api-facade/contracts'
+import type {
+	SpinPayment,
+	WheelGroup,
+	WheelSpinResult,
+} from '../api-facade/contracts'
 import { StoreName } from '../enums/storeName'
 import {
 	buildPayment,
@@ -20,7 +24,6 @@ import { useResourcesStore } from './resourcesStore'
 import { useSessionStore } from './sessionStore'
 import { useToastStore } from './toastStore'
 import { useWishlistStore } from './wishlistStore'
-import { useTimerStore } from './timerStore'
 
 export type WheelTab = 'points' | 'games'
 
@@ -45,19 +48,24 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 	/** the cost rows with the copies to pick from, set while the choice dialog is open */
 	const pendingChoices = ref<PaymentChoice[] | null>(null)
 
-	const changeGroups = computed(() => groups.value.filter((g) => g.kind === 'changes'))
+	const changeGroups = computed(() =>
+		groups.value.filter((g) => g.kind === 'changes'),
+	)
 
 	/** the wishlist goes first, then the groups of games of the party */
 	const gameGroups = computed(() =>
 		groups.value
 			.filter((g) => g.kind !== 'changes')
-			.sort((a, b) => Number(b.kind === 'wishlist') - Number(a.kind === 'wishlist')),
+			.sort(
+				(a, b) => Number(b.kind === 'wishlist') - Number(a.kind === 'wishlist'),
+			),
 	)
 
 	/** the selected source of the current tab */
 	const group = computed(() =>
 		(tab.value === 'games' ? gameGroups.value : changeGroups.value).find(
-			(g) => g.id === (tab.value === 'games' ? gameGroupId.value : groupId.value),
+			(g) =>
+				g.id === (tab.value === 'games' ? gameGroupId.value : groupId.value),
 		),
 	)
 
@@ -184,10 +192,15 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		await Promise.all([router.push({ name: RouteName.Wheel }), load()])
 
 		gameGroupId.value =
-			gameGroups.value.find((g) => g.kind === 'wishlist')?.id ?? gameGroupId.value
+			gameGroups.value.find((g) => g.kind === 'wishlist')?.id ??
+			gameGroupId.value
 
 		if (!pool.value.length) {
-			useToastStore().show('Вишлист пуст', 'Перекручивать не из чего.', 'danger')
+			useToastStore().show(
+				'Вишлист пуст',
+				'Перекручивать не из чего.',
+				'danger',
+			)
 			return
 		}
 
@@ -202,7 +215,8 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 
 		if (!applied) return
 
-		const cost = groups.value.find((g) => g.id === applied.source.groupId)?.cost ?? []
+		const cost =
+			groups.value.find((g) => g.id === applied.source.groupId)?.cost ?? []
 
 		if (!cost.length) return applySpin(applied)
 
@@ -232,7 +246,8 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 
 		pendingChoices.value = null
 
-		if (choices && applied) await applySpin(applied, buildPayment(choices, picked))
+		if (choices && applied)
+			await applySpin(applied, buildPayment(choices, picked))
 	}
 
 	const cancelPayment = () => {
@@ -267,7 +282,6 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 
 				await Promise.all([
 					useCurrentGameStore().load(),
-					useTimerStore().load(),
 					useWishlistStore().loadMine(),
 					useMembersStore().load(),
 				])

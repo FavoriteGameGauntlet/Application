@@ -6,7 +6,6 @@ import UiIconButton from '../../../components/ui/UiIconButton.vue'
 import { useCurrentGameStore } from '../../../stores/currentGameStore'
 import { MINI_SIZE, useMiniModeStore } from '../../../stores/miniModeStore'
 import { useTimerStore } from '../../../stores/timerStore'
-import { formatClock } from '../../../utils/format'
 
 const currentGameStore = useCurrentGameStore()
 const miniModeStore = useMiniModeStore()
@@ -35,7 +34,8 @@ const hasGame = computed(() => !!currentGameStore.current?.game)
 
 /** the ring has pathLength of 100, so the dash is just the percent */
 const ring = computed(
-	() => `${Math.min(100, (100 * timerStore.elapsed) / timerStore.goal).toFixed(1)} 100`,
+	() =>
+		`${Math.min(100, (100 * timerStore.elapsed) / timerStore.goal).toFixed(1)} 100`,
 )
 </script>
 
@@ -72,6 +72,7 @@ const ring = computed(
 						stroke-width="12"
 					/>
 					<circle
+						v-if="timerStore.clock"
 						cx="88"
 						cy="88"
 						r="80"
@@ -84,8 +85,19 @@ const ring = computed(
 					/>
 				</svg>
 
-				<span class="mini__elapsed">{{ formatClock(timerStore.remaining) }}</span>
-				<span class="mini__goal">/ {{ formatClock(timerStore.goal).slice(1) }}</span>
+				<template v-if="timerStore.clock">
+					<span class="mini__elapsed">{{ timerStore.clock.remaining }}</span>
+					<span class="mini__goal">/ {{ timerStore.clock.goal }}</span>
+				</template>
+				<template v-else>
+					<span
+						class="mini__elapsed mini__bar mini__bar--elapsed"
+						aria-hidden="true"
+					></span>
+					<span class="mini__goal" aria-hidden="true">
+						/ <span class="mini__bar mini__bar--goal"></span>
+					</span>
+				</template>
 			</div>
 
 			<UiButton
@@ -171,5 +183,25 @@ const ring = computed(
 	top: calc(50% + 22px);
 	font: var(--type-mono);
 	color: var(--text-muted);
+}
+
+/* stand in for the clock while there is no timer */
+.mini__bar {
+	background: var(--surface-sunken);
+	border-radius: var(--radius-xs);
+}
+
+/* the fixed width with auto margins centers it */
+.mini__bar--elapsed {
+	width: 112px;
+	height: 26px;
+	margin: 0 auto;
+}
+
+.mini__bar--goal {
+	display: inline-block;
+	vertical-align: middle;
+	width: 56px;
+	height: 14px;
 }
 </style>

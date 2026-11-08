@@ -6,7 +6,7 @@ import { RouteName } from '../router/routeNames'
 import { useCurrentGameStore } from '../stores/currentGameStore'
 import { useTimerStore } from '../stores/timerStore'
 import { useWheelStore } from '../stores/wheelStore'
-import { formatClock, formatHours } from '../utils/format'
+import { formatHours } from '../utils/format'
 import RewardPopover from './RewardPopover.vue'
 import UiBadge from './ui/UiBadge.vue'
 import UiButton from './ui/UiButton.vue'
@@ -72,21 +72,20 @@ const onCancel = () => {
 				<span class="current-game__label-row">
 					<span class="label">Текущая игра</span>
 
-					<template v-if="game">
-						<button
-							class="info-button"
-							aria-label="Награда за прохождение"
-							title="Награда за прохождение"
-							:aria-expanded="gameInfoOpen"
-							@click="gameInfoOpen = !gameInfoOpen"
-						>
-							<UiIcon name="info" :size="16" />
-						</button>
+					<button
+						class="info-button"
+						aria-label="Награда за прохождение"
+						title="Награда за прохождение"
+						:aria-expanded="gameInfoOpen"
+						@click="gameInfoOpen = !gameInfoOpen"
+					>
+						<UiIcon name="info" :size="16" />
+					</button>
 
-						<UiBadge>
-							Сыграно: {{ formatHours(currentGameStore.current?.playedSeconds ?? 0) }}
-						</UiBadge>
-					</template>
+					<UiBadge v-if="game">
+						Сыграно:
+						{{ formatHours(currentGameStore.current?.playedSeconds ?? 0) }}
+					</UiBadge>
 
 					<RewardPopover
 						v-if="gameInfoOpen"
@@ -105,7 +104,12 @@ const onCancel = () => {
 			</div>
 
 			<div v-if="game" class="split">
-				<UiButton class="split__main" variant="outline" icon="check" @click="onComplete">
+				<UiButton
+					class="split__main"
+					variant="outline"
+					icon="check"
+					@click="onComplete"
+				>
 					Завершить
 				</UiButton>
 				<UiButton
@@ -130,15 +134,35 @@ const onCancel = () => {
 				</div>
 			</div>
 
-			<UiButton v-else variant="outline" icon="refresh-cw" @click="goToWheelGames">
-				Выбрать на колесе
+			<UiButton
+				v-else
+				class="current-game__wheel"
+				variant="outline"
+				icon="refresh-cw"
+				@click="goToWheelGames"
+			>
+				Прокрутить
 			</UiButton>
 		</div>
 
 		<div v-if="withTimer" class="timer">
-			<svg class="timer__ring" width="44" height="44" viewBox="0 0 44 44" aria-hidden="true">
-				<circle cx="22" cy="22" r="18" fill="none" stroke="var(--surface-sunken)" stroke-width="6" />
+			<svg
+				class="timer__ring"
+				width="44"
+				height="44"
+				viewBox="0 0 44 44"
+				aria-hidden="true"
+			>
 				<circle
+					cx="22"
+					cy="22"
+					r="18"
+					fill="none"
+					stroke="var(--surface-sunken)"
+					stroke-width="6"
+				/>
+				<circle
+					v-if="timerStore.clock"
 					cx="22"
 					cy="22"
 					r="18"
@@ -164,8 +188,19 @@ const onCancel = () => {
 					</button>
 				</span>
 				<span class="timer__time">
-					<span class="timer__elapsed">{{ formatClock(timerStore.remaining) }}</span>
-					<span class="timer__goal">/ {{ formatClock(timerStore.goal).slice(1) }}</span>
+					<template v-if="timerStore.clock">
+						<span class="timer__elapsed">{{ timerStore.clock.remaining }}</span>
+						<span class="timer__goal">/ {{ timerStore.clock.goal }}</span>
+					</template>
+					<template v-else>
+						<span
+							class="timer__bar timer__bar--elapsed"
+							aria-hidden="true"
+						></span>
+						<span class="timer__goal" aria-hidden="true">
+							/ <span class="timer__bar timer__bar--goal"></span>
+						</span>
+					</template>
 				</span>
 			</div>
 
@@ -173,7 +208,7 @@ const onCancel = () => {
 				v-if="timerInfoOpen"
 				class="popover popover--timer"
 				title="Награда за таймер"
-				:rows="timerStore.timer?.reward ?? []"
+				:rows="timerStore.reward"
 			/>
 
 			<div class="timer__spacer"></div>
@@ -181,6 +216,8 @@ const onCancel = () => {
 			<UiButton
 				class="timer__toggle"
 				:icon="timerStore.isRunning ? 'pause' : 'play'"
+				:disabled="!game"
+				:title="game ? undefined : 'Нет текущей игры'"
 				@click="timerStore.toggle()"
 			>
 				{{ timerStore.isRunning ? 'Пауза' : 'Старт' }}
@@ -191,6 +228,9 @@ const onCancel = () => {
 
 <style scoped>
 .current-game {
+	/* the main buttons above and below, with a game and without one, are of the same width */
+	--action-width: 200px;
+
 	position: relative;
 	z-index: 3;
 	display: flex;
@@ -291,10 +331,17 @@ const onCancel = () => {
 .split {
 	position: relative;
 	display: flex;
+	flex: none;
+	width: var(--action-width);
+}
+
+.current-game .current-game__wheel {
+	flex: none;
+	width: var(--action-width);
 }
 
 .split .split__main {
-	width: 150px;
+	flex: 1;
 	border-top-right-radius: 0;
 	border-bottom-right-radius: 0;
 }
@@ -384,11 +431,30 @@ const onCancel = () => {
 	color: var(--text-muted);
 }
 
+/* stand in for the clock while there is no timer */
+.timer__bar {
+	background: var(--surface-sunken);
+	border-radius: var(--radius-xs);
+}
+
+.timer__bar--elapsed {
+	width: 112px;
+	height: 24px;
+}
+
+.timer__bar--goal {
+	display: inline-block;
+	vertical-align: middle;
+	width: 56px;
+	height: 14px;
+}
+
 .timer__spacer {
 	flex: 1;
 }
 
 .timer .timer__toggle {
-	width: 188px;
+	flex: none;
+	width: var(--action-width);
 }
 </style>
