@@ -24,24 +24,37 @@ const membersStore = useMembersStore()
 			<RouterLink class="feed__link" :to="linkTo">{{ linkLabel }}</RouterLink>
 		</div>
 
-		<div v-for="entry in entries" :key="entry.id" class="event">
-			<span class="event__dot" :style="{ background: membersStore.colorOf(entry.actor) }"></span>
-			<div class="event__body">
-				<div class="event__head">
-					<span class="event__source">
-						<span class="event__who">{{ entry.actor }}</span> ·
+		<div v-if="entries.length" class="feed__list">
+			<div v-for="entry in entries" :key="entry.id" class="event">
+				<span
+					class="event__dot"
+					:style="{ background: membersStore.colorOf(entry.actor) }"
+				></span>
+				<div class="event__body">
+					<div class="event__head">
+						<span class="event__source">
+							<span class="event__who">{{ entry.actor }}</span> ·
 							{{ formatJournalSource(entry.source, entry.correctsEntryId) }}
-					</span>
-					<span class="event__time">{{ formatMoment(entry.at).replace('сегодня ', '') }}</span>
-				</div>
-				<div v-for="(change, i) in entry.changes" :key="i" class="event__change">
-					<span class="event__user">{{ change.login }}</span>
-					<span class="event__text">{{ change.text }}</span>
+						</span>
+						<span class="event__time">{{
+							formatMoment(entry.at).replace('сегодня ', '')
+						}}</span>
+					</div>
+					<div
+						v-for="(change, i) in entry.changes"
+						:key="i"
+						class="event__change"
+					>
+						<span class="event__user">{{ change.login }}</span>
+						<span class="event__text">{{ change.text }}</span>
+					</div>
 				</div>
 			</div>
 		</div>
 
-		<span v-if="!entries.length && emptyText" class="feed__empty">{{ emptyText }}</span>
+		<span v-if="!entries.length && emptyText" class="feed__empty">{{
+			emptyText
+		}}</span>
 	</div>
 </template>
 
@@ -81,6 +94,15 @@ const membersStore = useMembersStore()
 .feed__empty {
 	font: var(--type-body-sm);
 	color: var(--text-subtle);
+}
+
+/* several changes per entry make the height depend on more than the entry count */
+.feed__list {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	max-height: 360px;
+	overflow-y: auto;
 }
 
 .event {

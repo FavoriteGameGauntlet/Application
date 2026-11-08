@@ -12,6 +12,7 @@ type Props = {
 const { login } = defineProps<Props>()
 
 const DAY_MS = 24 * 60 * 60 * 1000
+const LIMIT = 5
 
 const journalStore = useJournalStore()
 
@@ -23,6 +24,7 @@ watch(
 		entries.value = await journalStore.fetch({
 			user: login,
 			from: new Date(Date.now() - DAY_MS).toISOString(),
+			limit: LIMIT,
 		})
 	},
 	{ immediate: true },
