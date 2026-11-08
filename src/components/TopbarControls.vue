@@ -1,31 +1,18 @@
 <script setup lang="ts">
 import { computed, ref, useTemplateRef } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { api, USE_MOCKS } from '../api-facade/api'
 import { useClickOutside } from '../composables/useClickOutside'
-import { RouteName } from '../router/routeNames'
 import { useAuthStore } from '../stores/authStore'
-import { useJournalStore } from '../stores/journalStore'
 import { useMembersStore } from '../stores/membersStore'
-import { useResourcesStore } from '../stores/resourcesStore'
 import { SCALES, useScaleStore } from '../stores/scaleStore'
-import { useSessionStore } from '../stores/sessionStore'
 import { useThemeStore } from '../stores/themeStore'
-import { useToastStore } from '../stores/toastStore'
 import UiIcon from './ui/UiIcon.vue'
 import UiSelect from './ui/UiSelect.vue'
 import UiUserAvatar from './ui/UiUserAvatar.vue'
 
-const route = useRoute()
-const router = useRouter()
 const authStore = useAuthStore()
-const journalStore = useJournalStore()
 const membersStore = useMembersStore()
-const resourcesStore = useResourcesStore()
 const scaleStore = useScaleStore()
-const sessionStore = useSessionStore()
 const themeStore = useThemeStore()
-const toastStore = useToastStore()
 
 const scaleOptions = SCALES.map((s) => ({ value: String(s), label: `${s}%` }))
 
@@ -36,25 +23,6 @@ const menuOpen = ref(false)
 const userMenu = useTemplateRef('userMenu')
 
 useClickOutside(userMenu, () => (menuOpen.value = false))
-
-/** the role depends on what the endpoints answer, so everything that hangs on it is reloaded */
-const onSwitchRole = async () => {
-	menuOpen.value = false
-
-	try {
-		await api.session.setRole(sessionStore.isAdmin ? 'user' : 'admin')
-		await sessionStore.load()
-		await Promise.all([resourcesStore.loadPointTypes(), resourcesStore.loadMine()])
-		journalStore.bump()
-
-		// the admin panel is only for the admins of the party
-		if (!sessionStore.isAdmin && route.matched.some((r) => r.meta.admin)) {
-			await router.replace({ name: RouteName.Home })
-		}
-	} catch (e) {
-		toastStore.error(e)
-	}
-}
 
 const onLogOut = () => {
 	menuOpen.value = false
@@ -88,16 +56,6 @@ const onLogOut = () => {
 			<div class="user-menu__item" @click="themeStore.toggle()">
 				<UiIcon :name="themeStore.isDark ? 'sun' : 'moon'" :size="16" />
 				{{ themeStore.isDark ? 'Светлая тема' : 'Тёмная тема' }}
-			</div>
-
-			<div
-				v-if="USE_MOCKS && sessionStore.me"
-				class="user-menu__item"
-				title="Только на моках: на бэкенде роль выдают админы пати"
-				@click="onSwitchRole"
-			>
-				<UiIcon name="shield" :size="16" />
-				{{ sessionStore.isAdmin ? 'Стать игроком' : 'Стать админом' }}
 			</div>
 
 			<span class="user-menu__divider"></span>

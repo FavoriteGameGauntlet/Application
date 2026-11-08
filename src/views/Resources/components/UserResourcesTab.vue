@@ -54,17 +54,17 @@ const openItem = (item: UserItem) => {
 /** a perk with targets or copies to pick asks first, any other is used at once */
 const usePerk = (perk: Perk) => {
 	if (!needsUseForm(perk.abilityEntries, sessionStore.login)) {
-		return resourcesStore.usePerk(perk.id, perk.effect.name)
+		return resourcesStore.usePerk(perk.id, perk.name)
 	}
 
 	using.value = {
 		subject: {
-			title: `Использовать «${perk.effect.name}»`,
-			text: perk.effect.text,
+			title: `Использовать «${perk.name}»`,
+			text: perk.description,
 			entries: perk.abilityEntries ?? [],
 			conditions: [],
 		},
-		run: (use) => resourcesStore.usePerk(perk.id, perk.effect.name, use),
+		run: (use) => resourcesStore.usePerk(perk.id, perk.name, use),
 	}
 }
 
@@ -179,14 +179,16 @@ const emptyText = computed(
 						<div class="effect__head">
 							<span class="effect__label">
 								<UiIcon name="sparkles" :size="14" />
-								Эффект
+								Что даёт
 							</span>
 							<UiBadge :tone="perk.kind === 'active' ? 'accent' : 'neutral'">
 								{{ perk.kind === 'active' ? 'активный' : 'пассивный' }}
 							</UiBadge>
 						</div>
-						<span class="effect__name" :title="perk.effect.name">{{ perk.effect.name }}</span>
-						<span class="effect__text">{{ perk.effect.text }}</span>
+						<span class="effect__text">{{ perk.description }}</span>
+						<span v-for="modifier in perk.modifiers" :key="modifier" class="effect__text">
+							{{ modifier }}
+						</span>
 						<span v-if="perk.kind === 'active'" class="effect__uses">
 							<span>Использований</span>
 							<span class="card__meta-value">{{ perk.usesLeft }} из {{ perk.usesMax }}</span>
@@ -423,14 +425,6 @@ const emptyText = computed(
 	color: var(--text-muted);
 }
 
-.effect__name {
-	min-width: 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	font: 600 15px / 1.4 var(--font-body);
-	color: var(--text-strong);
-}
 
 .effect__text {
 	font: var(--type-body-sm);

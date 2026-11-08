@@ -30,6 +30,7 @@ type HistoryEventDto = {
 	actorLogin: Login
 	source: { type: JournalSourceType; id?: number | null; name?: string | null }
 	isManualChange: boolean
+	correctsEntryId?: number | null
 	/** set only on the event that ends a game */
 	endState?: GameEndState | null
 	changes?: HistoryChangeDto[]
@@ -100,6 +101,9 @@ const toJournalEntry = (
 			...(source.type === 'game' && { event: event.endState ?? 'started' }),
 		},
 		manual: event.isManualChange,
+		...(event.correctsEntryId != null && {
+			correctsEntryId: event.correctsEntryId,
+		}),
 		changes: (event.changes ?? []).map((c) => toChange(c, pointTypes)),
 	}
 }

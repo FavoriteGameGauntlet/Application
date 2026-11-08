@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import type { CatalogEntry, RewardRow, Rewards } from '../../api-facade/contracts'
+import type { FormRow } from '../../components/formDialog'
+import { changeRowsToForm, parseChangeRows } from '../../utils/formRows'
+import { useToastStore } from '../../stores/toastStore'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiIconButton from '../../components/ui/UiIconButton.vue'
 import UiInput from '../../components/ui/UiInput.vue'
@@ -13,30 +16,29 @@ type Kind = RewardRow['kind']
 type Block = keyof Rewards
 
 /** the parameter that holds the length of the timer */
-const TIMER_DURATION_KEY = 'timer.duration'
 
 const catalogStore = useAdminCatalogStore()
 const settingsStore = useAdminSettingsStore()
 
-const draft = reactive<Rewards>({ timer: [], game: [] })
-const targets = ref<Record<Kind, CatalogEntry[]>>({ points: [], item: [], effect: [] })
+const toastStore = useToastStore()
+
+/** the rows as the admin types them */
+const draft = reactive<Record<Block, FormRow[]>>({ timer: [], game: [] })
+const targets = ref<Record<Kind, CatalogEntry[]>>({ points: [], item: [], perk: [], effect: [] })
 
 const kindOptions = [
 	{ value: 'points', label: 'Очки' },
 	{ value: 'item', label: 'Предмет' },
+	{ value: 'perk', label: 'Перк' },
 	{ value: 'effect', label: 'Эффект' },
 ]
 
-const defaultAmounts: Record<Kind, string> = { points: '+10', item: '+1', effect: '1 день' }
-
-const timerDuration = computed(
-	() => settingsStore.params.find((p) => p.key === TIMER_DURATION_KEY)?.value ?? '',
-)
+const defaultAmounts: Record<Kind, string> = { points: '10', item: '1', perk: '1', effect: '1' }
 
 const blocks = computed<{ key: Block; title: string; next: string }[]>(() => [
 	{
 		key: 'timer',
-		title: `За завершённый таймер (${timerDuration.value})`,
+		title: 'За завершённый таймер',
 		next: 'Действуют на следующие таймеры.',
 	},
 	{ key: 'game', title: 'За завершение игры', next: 'Действуют на следующие игры.' },
@@ -45,17 +47,18 @@ const blocks = computed<{ key: Block; title: string; next: string }[]>(() => [
 const targetOptions = (kind: Kind) =>
 	targets.value[kind].map((t) => ({ value: String(t.id), label: t.name }))
 
-const onKind = (row: RewardRow, kind: string) => {
-	row.kind = kind as Kind
-	row.targetId = targets.value[row.kind][0]?.id ?? 0
-	row.amount = defaultAmounts[row.kind]
+const onKind = (row: FormRow, kind: string) => {
+	row.kind = kind
+	row.targetId = String(targets.value[kind as Kind][0]?.id ?? '')
+	row.amount = defaultAmounts[kind as Kind]
 }
 
 const addRow = (key: Block) =>
 	draft[key].push({
 		kind: 'points',
-		targetId: targets.value.points[0]?.id ?? 0,
+		targetId: String(targets.value.points[0]?.id ?? ''),
 		amount: defaultAmounts.points,
+		who: 'self',
 	})
 
 /** a block is saved on its own, the other one keeps what is stored */
@@ -64,12 +67,20 @@ const payload = (key: Block, rows: RewardRow[]): Rewards => ({
 	[key]: rows,
 })
 
-const onSave = (block: { key: Block; next: string }) =>
-	settingsStore.saveRewards(
-		payload(block.key, draft[block.key]),
+const onSave = (block: { key: Block; next: string }) => {
+	const rows = parseChangeRows(draft[block.key])
+
+	if ('error' in rows) {
+		toastStore.show('Проверь награду', rows.error, 'danger')
+		return
+	}
+
+	return settingsStore.saveRewards(
+		payload(block.key, rows.value),
 		'Награды сохранены',
 		block.next,
 	)
+}
 
 const onClear = async (block: { key: Block; title: string }) => {
 	draft[block.key] = []
@@ -83,17 +94,17 @@ const onClear = async (block: { key: Block; title: string }) => {
 }
 
 onMounted(async () => {
-	const [points, items, effects] = await Promise.all([
+	const [points, items, perks, effects] = await Promise.all([
 		catalogStore.fetchCatalog('point-types'),
 		catalogStore.fetchCatalog('items'),
+		catalogStore.fetchCatalog('perks'),
 		catalogStore.fetchCatalog('effects'),
 		settingsStore.loadRewards(),
-		settingsStore.loadParams(),
 	])
 
-	targets.value = { points, item: items, effect: effects }
-	draft.timer = structuredClone(settingsStore.rewards.timer)
-	draft.game = structuredClone(settingsStore.rewards.game)
+	targets.value = { points, item: items, perk: perks, effect: effects }
+	draft.timer = changeRowsToForm(settingsStore.rewards.timer)
+	draft.game = changeRowsToForm(settingsStore.rewards.game)
 })
 </script>
 
@@ -112,12 +123,12 @@ onMounted(async () => {
 					@update:model-value="onKind(row, $event)"
 				/>
 				<UiSelect
-					:options="targetOptions(row.kind)"
-					:model-value="String(row.targetId)"
+					:options="targetOptions(row.kind as Kind)"
+					:model-value="row.targetId"
 					aria-label="Что"
-					@update:model-value="row.targetId = Number($event)"
+					@update:model-value="row.targetId = $event"
 				/>
-				<UiInput v-model="row.amount" aria-label="Сколько" />
+				<UiInput v-model="row.amount" inputmode="numeric" aria-label="Сколько" />
 				<UiIconButton
 					icon="x"
 					size="sm"

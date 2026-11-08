@@ -61,7 +61,7 @@ type CurrentGameDto = {
 
 export const currentGame: Pick<
 	Api['currentGame'],
-	'get' | 'complete' | 'cancel'
+	'get' | 'complete' | 'cancel' | 'reroll'
 > = {
 	get: async () => {
 		const [{ body: game }, completionReward] = await Promise.all([
@@ -103,6 +103,12 @@ export const currentGame: Pick<
 	cancel: async () => {
 		await http.post(`${await partyPath()}/games/current/actions`, {
 			body: { action: 'cancel' },
+		})
+	},
+
+	reroll: async () => {
+		await http.post(`${await partyPath()}/games/current/actions`, {
+			body: { action: 'reroll' },
 		})
 	},
 }

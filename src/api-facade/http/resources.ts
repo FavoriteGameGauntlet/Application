@@ -1,23 +1,111 @@
 import { formatJournalSource } from '../../utils/format'
 import type {
 	Api,
+	Effect,
+	ISODate,
+	ItemCondition,
+	JournalSource,
 	Login,
+	Perk,
 	PointType,
 	ResourceKind,
+	UserItem,
 } from '../contracts'
 import { http } from '../http'
+import { Temporal } from '@js-temporal/polyfill'
+import {
+	type NamedItemEntryDto,
+	type NamedPointModifierDto,
+	toItemEntryText,
+	toModifierText,
+} from './changeEntry'
 import { type CatalogDto, countHolders, toCatalogEntry } from './catalogEntries'
 import {
 	currentLogin,
 	getMembers,
 	getPointTypes,
 	partyPath,
+	toSeconds,
 	toUserRefs,
 	userRefOf,
 } from './context'
 import { journal, latestOwnEntry } from './journal'
+import { toItemEntryRow } from './rows'
 
 type PointValueDto = { pointType: PointType; value: number }
+
+type UserItemDto = {
+	id: number
+	itemId: number
+	name: string
+	description: string
+	usesMax: number
+	usesLeft: number
+	entries: NamedItemEntryDto[]
+	conditions: ItemCondition[]
+}
+
+type UserPerkDto = {
+	perkId: number
+	name: string
+	description: string
+	modifiers: NamedPointModifierDto[]
+	ability?: {
+		entries: NamedItemEntryDto[]
+		uses?: { max: number; start: number }
+		usesLeft?: number
+	}
+}
+
+type UserEffectDto = {
+	id: number
+	name: string
+	description: string
+	/** ISO 8601 duration, left out for a copy that lasts until it is ended */
+	duration?: string
+	startedDate: string
+	source: JournalSource
+}
+
+const toUserItem = (dto: UserItemDto, pointTypes: PointType[]): UserItem => ({
+	id: dto.id,
+	itemId: dto.itemId,
+	name: dto.name,
+	description:
+		dto.entries.map((e) => toItemEntryText(e, pointTypes)).join(', ') ||
+		dto.description,
+	usesLeft: dto.usesLeft,
+	usesMax: dto.usesMax,
+	entries: dto.entries.map(toItemEntryRow),
+	conditions: dto.conditions,
+})
+
+const toUserPerk = (dto: UserPerkDto, pointTypes: PointType[]): Perk => {
+	const { ability } = dto
+
+	return {
+		id: dto.perkId,
+		name: dto.name,
+		description: dto.description,
+		modifiers: dto.modifiers.map((m) => toModifierText(m, pointTypes)),
+		kind: ability ? 'active' : 'passive',
+		...(ability?.uses && { usesMax: ability.uses.max }),
+		...(ability?.usesLeft !== undefined && { usesLeft: ability.usesLeft }),
+		...(ability && { abilityEntries: ability.entries.map(toItemEntryRow) }),
+	}
+}
+
+const toUserEffect = (dto: UserEffectDto): Effect => ({
+	id: dto.id,
+	name: dto.name,
+	description: dto.description,
+	source: formatJournalSource(dto.source),
+	expiresAt: dto.duration
+		? (Temporal.Instant.from(dto.startedDate)
+				.add({ seconds: toSeconds(dto.duration) })
+				.toString() as ISODate)
+		: null,
+})
 
 const refKind = {
 	items: 'item',
@@ -25,18 +113,7 @@ const refKind = {
 	effects: 'effect',
 } as const satisfies Record<ResourceKind, string>
 
-export const resources: Pick<
-	Api['resources'],
-	| 'pointTypes'
-	| 'sharedPoints'
-	| 'leaderboard'
-	| 'summary'
-	| 'catalog'
-	| 'catalogEntries'
-	| 'useItem'
-	| 'usePerk'
-	| 'history'
-> = {
+export const resources: Api['resources'] = {
 	pointTypes: getPointTypes,
 
 	sharedPoints: async () => {
@@ -65,6 +142,29 @@ export const resources: Pick<
 					value: points.find((p) => p.pointType.id === typeId)?.value ?? 0,
 				}))
 				.sort((a, b) => b.value - a.value),
+		}
+	},
+
+	user: async (login) => {
+		const path = await partyPath()
+		const [members, pointTypes, points, items, perks, effects] =
+			await Promise.all([
+				getMembers(),
+				getPointTypes(),
+				http.get<{ response: PointValueDto[] }>(`${path}/points/users/${login}`),
+				http.get<{ response: UserItemDto[] }>(`${path}/items/${login}`),
+				http.get<{ response: UserPerkDto[] }>(`${path}/perks/${login}`),
+				http.get<{ response: UserEffectDto[] }>(`${path}/effects/${login}`),
+			])
+
+		return {
+			user: userRefOf(toUserRefs(members), login),
+			points: Object.fromEntries(
+				points.body.map((p) => [p.pointType.id, p.value]),
+			),
+			items: items.body.map((i) => toUserItem(i, pointTypes)),
+			perks: perks.body.map((p) => toUserPerk(p, pointTypes)),
+			effects: effects.body.map(toUserEffect),
 		}
 	},
 

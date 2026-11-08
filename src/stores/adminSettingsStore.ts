@@ -5,7 +5,6 @@ import type {
 	Login,
 	PartyMember,
 	Rewards,
-	SystemParam,
 } from '../api-facade/contracts'
 import type { HttpErrorResponse } from '../api-facade/http'
 import { StoreName } from '../enums/storeName'
@@ -18,7 +17,6 @@ const codeOf = (e: unknown) => (e as Partial<HttpErrorResponse>).body?.code
 export const useAdminSettingsStore = defineStore(StoreName.AdminSettings, () => {
 	const rewards = ref<Rewards>({ timer: [], game: [] })
 	const members = ref<PartyMember[]>([])
-	const params = ref<SystemParam[]>([])
 
 	const loadRewards = async () => {
 		rewards.value = await api.admin.rewards.get()
@@ -26,10 +24,6 @@ export const useAdminSettingsStore = defineStore(StoreName.AdminSettings, () => 
 
 	const loadMembers = async () => {
 		members.value = await api.admin.members.list()
-	}
-
-	const loadParams = async () => {
-		params.value = await api.admin.params.list()
 	}
 
 	const saveRewards = async (
@@ -112,39 +106,14 @@ export const useAdminSettingsStore = defineStore(StoreName.AdminSettings, () => 
 		}
 	}
 
-	const setParam = async (param: SystemParam, value: string) => {
-		try {
-			await api.admin.params.set(param.key, value)
-			await loadParams()
-		} catch (e) {
-			useToastStore().error(e)
-		}
-	}
-
-	const resetParam = async (param: SystemParam) => {
-		const toast = useToastStore()
-
-		try {
-			await api.admin.params.reset(param.key)
-			toast.show('Сброшено', `${param.title}: ${param.default}`, 'info')
-			await loadParams()
-		} catch (e) {
-			toast.error(e)
-		}
-	}
-
 	return {
 		rewards,
 		members,
-		params,
 		loadRewards,
 		loadMembers,
-		loadParams,
 		saveRewards,
 		addMember,
 		updateMember,
 		removeMember,
-		setParam,
-		resetParam,
 	}
 })

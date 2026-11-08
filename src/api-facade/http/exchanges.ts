@@ -1,7 +1,9 @@
-import type { Api, ExchangeOffer } from '../contracts'
+import type { AdminExchangeInput, Api, ExchangeOffer } from '../contracts'
 import { http } from '../http'
 import { type NamedChangeEntryDto, toResourceRef } from './changeEntry'
-import { partyPath } from './context'
+import { currentLogin, partyPath } from './context'
+import { latestOwnEntry } from './journal'
+import { resources } from './resources'
 import { fromCostRow, fromGainRow } from './rows'
 
 type ExchangeDto = {
@@ -22,35 +24,63 @@ const toSides = (e: ExchangeDto) => ({
 	targetEntries: e.targetEntries.map(toResourceRef),
 })
 
-export const exchanges: Pick<Api['exchanges'], 'list'> = {
+const toBody = ({
+	name,
+	description,
+	sourceEntries,
+	targetEntries,
+}: AdminExchangeInput) => ({
+	name,
+	description,
+	sourceEntries: sourceEntries.map(fromCostRow),
+	targetEntries: targetEntries.map(fromGainRow),
+})
+
+export const exchanges: Api['exchanges'] = {
 	list: async () =>
 		(
 			await http.get<{ response: ExchangeOfferDto[] }>(
 				`${await partyPath()}/exchanges/catalog`,
 			)
 		).body.map((e) => ({ ...e, ...toSides(e) })),
+
+	execute: async (id, targetLogins) => {
+		await http.post(`${await partyPath()}/exchanges/catalog/${id}/use`, {
+			body: targetLogins ? { targetLogins } : {},
+		})
+
+		return {
+			resources: await resources.user(await currentLogin()),
+			journalEntry: await latestOwnEntry(),
+		}
+	},
 }
 
-export const adminExchanges: Pick<
-	Api['admin']['exchanges'],
-	'list' | 'create' | 'remove'
-> = {
-	create: async ({ name, description, sourceEntries, targetEntries }) => {
+export const adminExchanges: Api['admin']['exchanges'] = {
+	create: async (input) => {
 		const exchange = (
 			await http.post<{ response: ExchangeDto }>(
 				`${await partyPath()}/exchanges/catalog`,
-				{
-					body: {
-						name,
-						description,
-						sourceEntries: sourceEntries.map(fromCostRow),
-						targetEntries: targetEntries.map(fromGainRow),
-					},
-				},
+				{ body: toBody(input) },
 			)
 		).body
 
 		return { ...exchange, ...toSides(exchange), deleted: false }
+	},
+
+	update: async (id, input) => {
+		const exchange = (
+			await http.patch<{ response: ExchangeDto }>(
+				`${await partyPath()}/exchanges/catalog/${id}`,
+				{ body: toBody(input) },
+			)
+		).body
+
+		return { ...exchange, ...toSides(exchange), deleted: false }
+	},
+
+	restore: async (id) => {
+		await http.post(`${await partyPath()}/exchanges/catalog/${id}/restore`)
 	},
 
 	list: async (includeDeleted) => {

@@ -76,12 +76,12 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 		}
 	}
 
-	const usePerk = async (perkId: number, effectName: string, use?: ItemUse) => {
+	const usePerk = async (perkId: number, name: string, use?: ItemUse) => {
 		const toast = useToastStore()
 
 		try {
 			await api.resources.usePerk(perkId, use)
-			toast.show('Эффект перка использован', effectName)
+			toast.show('Перк использован', name)
 			await loadMine()
 			useJournalStore().bump()
 		} catch (e) {

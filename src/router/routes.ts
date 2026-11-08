@@ -1,7 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router'
 import AdminExchangesView from '../views/Admin/AdminExchangesView.vue'
 import AdminMembersView from '../views/Admin/AdminMembersView.vue'
-import AdminParamsView from '../views/Admin/AdminParamsView.vue'
 import AdminRewardsView from '../views/Admin/AdminRewardsView.vue'
 import AdminWheelView from '../views/Admin/AdminWheelView.vue'
 import AuthView from '../views/Auth/AuthView.vue'
@@ -104,11 +103,6 @@ export const routes: RouteRecordRaw[] = [
 						path: 'members',
 						component: AdminMembersView,
 						name: RouteName.AdminMembers,
-					},
-					{
-						path: 'params',
-						component: AdminParamsView,
-						name: RouteName.AdminParams,
 					},
 				],
 			},

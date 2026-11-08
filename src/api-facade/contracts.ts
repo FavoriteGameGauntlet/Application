@@ -185,7 +185,9 @@ export type UserItem = {
 export type Perk = {
 	id: number
 	name: string
-	effect: { name: string; text: string }
+	description: string
+	/** point changes the perk applies while it is held, as text: «+10% золота» */
+	modifiers?: string[]
 	kind: 'active' | 'passive'
 	/** active perks only */
 	usesLeft?: number
@@ -505,13 +507,12 @@ export type AdminWheelGroup = {
 	entries: AdminWheelEntry[]
 }
 
-export type RewardRow = {
-	kind: 'points' | 'item' | 'effect'
-	/** id of the point type, item or effect */
-	targetId: number
-	/** «+50», «1 день» for an effect */
-	amount: string
-}
+/**
+ * One thing a reward grants, the amount keeps the sign. An effect lasts as long
+ * as its catalogue entry says, so a reward has no duration of its own: another
+ * duration is another effect.
+ */
+export type RewardRow = ChangeRow
 
 export type Rewards = { timer: RewardRow[]; game: RewardRow[] }
 
@@ -534,15 +535,6 @@ export type PartyMember = {
 	displayName: string | null
 	joinedDate: ISODate
 	isAdmin: boolean
-}
-
-export type SystemParam = {
-	key: string
-	title: string
-	hint: string
-	value: string
-	default: string
-	unit: string
 }
 
 // Backend addresses (localhost:8080/scalar) are noted as "Backend:" above the
@@ -568,11 +560,6 @@ export type Api = {
 		 */
 		getMe: () => Promise<Me>
 		getSeason: () => Promise<Season>
-		/**
-		 * Mocks only, to check both views of the app. On the backend the role is
-		 * given by the admins of the party and a user cannot change it.
-		 */
-		setRole: (role: PartyRole) => Promise<void>
 	}
 	currentGame: {
 		/**
@@ -591,7 +578,7 @@ export type Api = {
 		 * cancels the current game with the status `rerolled`, a new game is spun
 		 * with a separate wheel.spin afterwards
 		 *
-		 * Backend (missing): `reroll` in the actions of
+		 * Backend: `reroll` in the actions of
 		 * POST {party}/games/current/actions
 		 */
 		reroll: () => Promise<void>
@@ -649,7 +636,7 @@ export type Api = {
 		// game wheel endpoints below live under the same prefix.
 
 		/**
-		 * Backend (missing): GET {party}/wheel/groups returning
+		 * Backend: GET {party}/wheel/groups returning
 		 * [{id, name, kind, cost, entries: [{id, name, description?,
 		 * isManualChange, entries}]}], `cost` is the spin cost of the group.
 		 */
@@ -735,7 +722,7 @@ export type Api = {
 		 * from `admin.catalog.list`, the users don't see them at all. The point
 		 * types come from `pointTypes`.
 		 *
-		 * Backend (missing): GET {party}/items/catalog, GET {party}/perks/catalog,
+		 * Backend: GET {party}/items/catalog, GET {party}/perks/catalog,
 		 * GET {party}/effects/catalog with the full entries (the perk has no kind)
 		 */
 		catalogEntries: (kind: ResourceKind) => Promise<CatalogEntry[]>
@@ -772,8 +759,7 @@ export type Api = {
 	}
 	journal: {
 		/**
-		 * Backend (missing): one history endpoint for all entities replaces the
-		 * per-entity histories, GET {party}/history built on users.HistoryEvents.
+		 * Backend: GET {party}/history, one endpoint for all entities.
 		 * The items are the root events (`Type` is the source type, game events
 		 * included) with their point changes nested; limit and cursor count the
 		 * roots. Ids come with names (`source.id` + `source.name`, `resource.id` +
@@ -838,9 +824,8 @@ export type Api = {
 		select: (id: number) => Promise<void>
 	}
 	admin: {
-		// Backend (missing): the whole admin panel. The catalogs correspond to
-		// the create/update/delete addresses of points/types, items, effects and
-		// perks, the soft delete and the restore are missing there.
+		// Backend: the catalogs are the create/update/delete/restore addresses of
+		// points/types, items, effects and perks (`/removed` lists the deleted).
 		catalog: {
 			/** GET /admin/catalog/{kind}?includeDeleted= */
 			list: (kind: CatalogKind, includeDeleted: boolean) => Promise<CatalogEntry[]>
@@ -881,8 +866,8 @@ export type Api = {
 			 * Every group of changes has a cost of its own, the games are free. An
 			 * empty list makes a spin of the group free.
 			 *
-			 * Backend (missing): GET and PUT {party}/wheel/groups/{groupId}/spin-cost
-			 * with `entries` (negative amounts there)
+			 * Backend: PUT {party}/wheel/groups/{groupId}/spin-cost, the cost is read from
+			 * GET {party}/wheel/groups (negative amounts there)
 			 */
 			spinCost: (groupId: number) => Promise<SpinCostRow[]>
 			saveSpinCost: (groupId: number, rows: SpinCostRow[]) => Promise<void>
@@ -903,12 +888,6 @@ export type Api = {
 			) => Promise<PartyMember>
 			/** 409 LAST_ADMIN */
 			remove: (login: Login) => Promise<void>
-		}
-		params: {
-			list: () => Promise<SystemParam[]>
-			set: (key: string, value: string) => Promise<SystemParam>
-			/** back to the default value */
-			reset: (key: string) => Promise<SystemParam>
 		}
 	}
 }

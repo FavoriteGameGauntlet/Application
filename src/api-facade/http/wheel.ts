@@ -1,5 +1,6 @@
 import type { Api, SpinPayment, WheelSpinResult } from '../contracts'
 import { http } from '../http'
+import { type NamedChangeEntryDto, toResourceRef } from './changeEntry'
 import { partyPath } from './context'
 import { latestOwnEntry } from './journal'
 
@@ -12,7 +13,21 @@ type RolledWheelRowDto = {
 	rolledDate: string
 }
 
-type WheelGroupDto = { id: number; kind: 'game' | 'changes' | 'wishlist' }
+type WheelGroupDto = {
+	id: number
+	name: string
+	kind: 'game' | 'changes' | 'wishlist'
+	/** what one spin costs, the amounts are negative */
+	cost: NamedChangeEntryDto[]
+}
+
+type WheelGroupRowDto = {
+	id: number
+	name: string
+	description?: string
+	isManualChange?: boolean
+	entries?: NamedChangeEntryDto[]
+}
 
 /** the wishlist is a group of its own on the backend, with one per member */
 const groupIdOf = async (
@@ -59,7 +74,40 @@ const toPaymentBody = ({ items, perks, effects }: SpinPayment) => ({
 	userEffectIds: effects,
 })
 
-export const wheel: Pick<Api['wheel'], 'spin' | 'apply'> = {
+export const wheel: Api['wheel'] = {
+	groups: async () => {
+		const path = await partyPath()
+		const { body: groups } = await http.get<{ response: WheelGroupDto[] }>(
+			`${path}/wheel/groups`,
+		)
+
+		return Promise.all(
+			groups.map(async (group) => {
+				const { body: rows } = await http.get<{ response: WheelGroupRowDto[] }>(
+					`${path}/wheel/groups/${group.id}/rows`,
+				)
+
+				return {
+					id: group.id,
+					name: group.name,
+					kind: group.kind === 'changes' ? ('changes' as const) : ('games' as const),
+					entries: rows.map((row) => ({
+						id: row.id,
+						name: row.name,
+						...(row.description !== undefined && { description: row.description }),
+						isManualChange: row.isManualChange === true,
+						entries: (row.entries ?? []).map(toResourceRef),
+					})),
+					cost: group.cost.map((entry) => {
+						const ref = toResourceRef(entry)
+
+						return { ...ref, amount: 'amount' in ref ? ref.amount : 1 }
+					}),
+				}
+			}),
+		)
+	},
+
 	spin: async (source) => {
 		const path = await partyPath()
 		const { body } = await http.post<{ response: RolledWheelRowDto[] }>(

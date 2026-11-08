@@ -56,17 +56,24 @@ const listResources = async (
 }
 
 const listPointTypes = async (includeDeleted: boolean) => {
-	// the backend lists only the point types that are not removed
-	if (includeDeleted) {
-		throw new Error('The backend has no list of the removed point types')
-	}
-
-	const [types, holders] = await Promise.all([
+	const [types, removed, holders] = await Promise.all([
 		getPointTypes(),
+		includeDeleted
+			? partyPath().then(async (path) =>
+					(await http.get<{ response: PointType[] }>(`${path}/points/types/removed`))
+						.body,
+				)
+			: [],
 		countPointHolders(),
 	])
 
-	return withHolders(types.map(toPointTypeEntry), holders)
+	return withHolders(
+		[
+			...types.map(toPointTypeEntry),
+			...removed.map((t) => ({ ...toPointTypeEntry(t), deleted: true })),
+		],
+		holders,
+	)
 }
 
 const pointTypeBody = (input: CatalogEntryInput) => ({
@@ -137,7 +144,7 @@ const resourceBody = (kind: ResourceCatalogKind, input: CatalogEntryInput) => {
 
 export const adminCatalog: Pick<
 	Api['admin']['catalog'],
-	'list' | 'create' | 'update' | 'remove'
+	'list' | 'create' | 'update' | 'remove' | 'restore'
 > = {
 	list: (kind, includeDeleted) =>
 		kind === 'point-types'
@@ -166,24 +173,36 @@ export const adminCatalog: Pick<
 	},
 
 	update: async (kind, id, input) => {
-		if (kind !== 'point-types') {
-			throw new Error(
-				'The backend cannot change an item, a perk or an effect: remove it and add a new one',
-			)
+		const path = `${await partyPath()}${catalogPath[kind]}/${id}`
+
+		if (kind === 'point-types') {
+			await http.patch(path, { body: pointTypeBody(input) })
+
+			const type = (await getPointTypes()).find((t) => t.id === id)
+
+			if (!type) throw new Error('The point type is not found')
+
+			return toPointTypeEntry(type)
 		}
 
-		await http.patch(`${await partyPath()}${catalogPath[kind]}/${id}`, {
-			body: pointTypeBody(input),
-		})
+		// the ability of a perk cannot be changed
+		const body: Record<string, unknown> = { ...resourceBody(kind, input) }
 
-		const type = (await getPointTypes()).find((t) => t.id === id)
+		delete body.ability
 
-		if (!type) throw new Error('The point type is not found')
+		const [{ body: dto }, pointTypes] = await Promise.all([
+			http.patch<{ response: CatalogDto[ResourceKind] }>(path, { body }),
+			getPointTypes(),
+		])
 
-		return toPointTypeEntry(type)
+		return toCatalogEntry(kind, dto, pointTypes)
 	},
 
 	remove: async (kind, id) => {
 		await http.delete(`${await partyPath()}${catalogPath[kind]}/${id}`)
+	},
+
+	restore: async (kind, id) => {
+		await http.post(`${await partyPath()}${catalogPath[kind]}/${id}/restore`)
 	},
 }
