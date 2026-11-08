@@ -7,11 +7,26 @@ on:
 
 jobs:
   release:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            args: ''
+          # the oldest image Tauri supports, so the AppImage runs on older glibc too
+          - platform: ubuntu-22.04
+            args: '--bundles appimage'
+    runs-on: ${{ matrix.platform }}
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v7
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
 
       - uses: actions/setup-node@v6
         with:
@@ -33,7 +48,8 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: '${{ github.ref_name }}'
-          releaseBody: 'Для установки скачайте только файл `_x64-setup.exe`. Остальные не трогайте, они используются для автообновления.'
+          releaseBody: 'Для установки на Windows скачайте только файл `_x64-setup.exe`, на Linux — только файл `.AppImage`. Остальные не трогайте, они используются для автообновления.'
           releaseDraft: false
           prerelease: true
+          args: ${{ matrix.args }}
           assetNamePattern: '[name]_[arch][setup][ext]'
