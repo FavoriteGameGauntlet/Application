@@ -3,7 +3,6 @@ import type {
 	Api,
 	PointType,
 	SpinCostRow,
-	WheelGroup,
 } from '../contracts'
 import { http } from '../http'
 import { type NamedChangeEntryDto, toChangeText } from './changeEntry'
@@ -31,7 +30,7 @@ type WheelGroupRowDto = {
 const groupKind = {
 	games: 'game',
 	changes: 'changes',
-} as const satisfies Record<WheelGroup['kind'], WheelGroupDto['kind']>
+} as const satisfies Record<AdminWheelGroup['kind'], WheelGroupDto['kind']>
 
 const listGroups = async () =>
 	(

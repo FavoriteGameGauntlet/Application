@@ -32,7 +32,10 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 export const useWheelStore = defineStore(StoreName.Wheel, () => {
 	const tab = ref<WheelTab>('points')
 	const groups = ref<WheelGroup[]>([])
+	/** the selected group of the «points» tab */
 	const groupId = ref<number>()
+	/** the selected group of the «games» tab */
+	const gameGroupId = ref<number>()
 
 	const pos = ref(0)
 	const spinning = ref(false)
@@ -42,32 +45,50 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 	/** the cost rows with the copies to pick from, set while the choice dialog is open */
 	const pendingChoices = ref<PaymentChoice[] | null>(null)
 
-	/** the «points» tab; the games are spun from the wishlist */
 	const changeGroups = computed(() => groups.value.filter((g) => g.kind === 'changes'))
 
-	const group = computed(() => groups.value.find((g) => g.id === groupId.value))
+	/** the wishlist goes first, then the groups of games of the party */
+	const gameGroups = computed(() =>
+		groups.value
+			.filter((g) => g.kind !== 'changes')
+			.sort((a, b) => Number(b.kind === 'wishlist') - Number(a.kind === 'wishlist')),
+	)
+
+	/** the selected source of the current tab */
+	const group = computed(() =>
+		(tab.value === 'games' ? gameGroups.value : changeGroups.value).find(
+			(g) => g.id === (tab.value === 'games' ? gameGroupId.value : groupId.value),
+		),
+	)
 
 	const pool = computed(
 		() =>
 			spunEntries.value ??
-			(tab.value === 'games'
+			(group.value?.kind === 'wishlist'
 				? useWishlistStore().mine.map((g) => g.name)
 				: (group.value?.entries.map((e) => e.name) ?? [])),
 	)
 
-	/** what the result card shows after «Выпало ·» */
-	const resultSource = computed(() => {
+	const resultGroup = computed(() => {
 		const source = result.value?.source
 
-		if (!source) return ''
-		if (source === 'wishlist') return 'Вишлист'
+		return source && groups.value.find((g) => g.id === source.groupId)
+	})
 
-		return groups.value.find((g) => g.id === source.groupId)?.name ?? ''
+	/** applying the result starts the game instead of granting changes */
+	const resultStartsGame = computed(() => resultGroup.value?.kind !== 'changes')
+
+	/** what the result card shows after «Выпало ·» */
+	const resultSource = computed(() => {
+		if (resultGroup.value?.kind === 'wishlist') return 'Вишлист'
+
+		return resultGroup.value?.name ?? ''
 	})
 
 	const load = async () => {
 		groups.value = await api.wheel.groups()
 		groupId.value ??= changeGroups.value[0]?.id
+		gameGroupId.value ??= gameGroups.value[0]?.id
 
 		await useWishlistStore().loadMine()
 	}
@@ -89,7 +110,12 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 	const setGroup = (id: number) => {
 		if (spinning.value) return
 
-		groupId.value = id
+		if (tab.value === 'games') {
+			gameGroupId.value = id
+		} else {
+			groupId.value = id
+		}
+
 		pos.value = 0
 		clearResult()
 	}
@@ -123,17 +149,15 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		})
 
 	const spin = async () => {
-		if (spinning.value || !pool.value.length) return
+		const source = group.value
+
+		if (spinning.value || !source || !pool.value.length) return
 
 		spinning.value = true
 		result.value = null
 
 		try {
-			await animate(
-				await api.wheel.spin(
-					tab.value === 'games' ? 'wishlist' : { groupId: groupId.value! },
-				),
-			)
+			await animate(await api.wheel.spin({ groupId: source.id }))
 		} catch (e) {
 			spinning.value = false
 
@@ -156,10 +180,11 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		result.value = null
 		pos.value = 0
 
-		await Promise.all([
-			router.push({ name: RouteName.Wheel }),
-			useWishlistStore().loadMine(),
-		])
+		// the groups may not be loaded yet when the wheel was never opened
+		await Promise.all([router.push({ name: RouteName.Wheel }), load()])
+
+		gameGroupId.value =
+			gameGroups.value.find((g) => g.kind === 'wishlist')?.id ?? gameGroupId.value
 
 		if (!pool.value.length) {
 			useToastStore().show('Вишлист пуст', 'Перекручивать не из чего.', 'danger')
@@ -176,9 +201,11 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		const toast = useToastStore()
 
 		if (!applied) return
-		if (applied.source === 'wishlist') return applySpin(applied)
 
-		const { groupId: appliedGroupId } = applied.source
+		const cost = groups.value.find((g) => g.id === applied.source.groupId)?.cost ?? []
+
+		if (!cost.length) return applySpin(applied)
+
 		const resourcesStore = useResourcesStore()
 
 		try {
@@ -189,7 +216,6 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		}
 
 		const mine = resourcesStore.byUser[useSessionStore().login]
-		const cost = groups.value.find((g) => g.id === appliedGroupId)?.cost ?? []
 		const choices = paymentChoices(cost, mine)
 
 		if (choices.some(needsChoice)) {
@@ -219,10 +245,8 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 
 		// the backend takes targets for a group of changes only (and requires them);
 		// the design has no picker yet, so the change goes to the one who spun
-		const { source } = applied
-		const kind =
-			source === 'wishlist' ? undefined : groups.value.find((g) => g.id === source.groupId)?.kind
-		const targetLogins = kind === 'changes' ? [useSessionStore().login] : undefined
+		const startsGame = resultStartsGame.value
+		const targetLogins = startsGame ? undefined : [useSessionStore().login]
 
 		try {
 			await api.wheel.apply(payment, targetLogins)
@@ -230,7 +254,12 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 			result.value = null
 			spunEntries.value = null
 
-			if (applied.source === 'wishlist') {
+			if (startsGame) {
+				if (payment) {
+					await useResourcesStore().loadMine()
+					useJournalStore().bump()
+				}
+
 				toast.show(
 					`Новая игра: ${applied.result.name}`,
 					'Выпала на колесе. Таймер с нуля.',
@@ -266,12 +295,14 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		tab,
 		groups,
 		changeGroups,
-		groupId,
+		gameGroups,
+		group,
 		pos,
 		spinning,
 		result,
 		pool,
 		resultSource,
+		resultStartsGame,
 		pendingChoices,
 		load,
 		setTab,

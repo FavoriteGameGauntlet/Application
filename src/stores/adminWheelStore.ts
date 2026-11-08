@@ -5,13 +5,12 @@ import type {
 	AdminWheelEntry,
 	AdminWheelGroup,
 	SpinCostRow,
-	WheelGroup,
 } from '../api-facade/contracts'
 import { StoreName } from '../enums/storeName'
 import { useToastStore } from './toastStore'
 
 export const useAdminWheelStore = defineStore(StoreName.AdminWheel, () => {
-	const kind = ref<WheelGroup['kind']>('changes')
+	const kind = ref<AdminWheelGroup['kind']>('changes')
 	const groups = ref<AdminWheelGroup[]>([])
 	const groupId = ref<number>()
 
@@ -23,7 +22,7 @@ export const useAdminWheelStore = defineStore(StoreName.AdminWheel, () => {
 		groups.value = await api.admin.wheel.groups(kind.value)
 	}
 
-	const setKind = async (value: WheelGroup['kind']) => {
+	const setKind = async (value: AdminWheelGroup['kind']) => {
 		kind.value = value
 		groupId.value = undefined
 

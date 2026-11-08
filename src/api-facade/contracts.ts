@@ -115,19 +115,22 @@ export type WheelEntry = {
 }
 
 /**
- * Groups are not mixed: a group either holds games (free, can't be spun while a
- * game is being played) or holds changes (costs a resource set by an admin).
+ * Groups are not mixed: a group holds games or changes. A spin of a group of
+ * games can't be made while a game is being played, and applying it starts the
+ * game. The `wishlist` is the group of games of the current user, its games are
+ * in the wishlist (`entries` hold nothing). Any group can have a cost set by an
+ * admin.
  */
 export type WheelGroup = {
 	id: number
 	name: string
-	kind: 'games' | 'changes'
+	kind: 'wishlist' | 'games' | 'changes'
 	entries: WheelEntry[]
-	/** charged when a spin of the group is applied; empty for the games and for a free group */
+	/** charged when a spin of the group is applied; empty for a free group */
 	cost: SpinCostRef[]
 }
 
-export type WheelSource = 'wishlist' | { groupId: number }
+export type WheelSource = { groupId: number }
 
 export type WheelSpinResult = {
 	source: WheelSource
@@ -500,7 +503,7 @@ export type AdminWheelEntry = {
 export type AdminWheelGroup = {
 	id: number
 	name: string
-	kind: WheelGroup['kind']
+	kind: Exclude<WheelGroup['kind'], 'wishlist'>
 	/** the wishlist group: the entries are the games of the users, nothing to edit */
 	system: boolean
 	noRepeat: boolean
@@ -649,7 +652,7 @@ export type Api = {
 		 * INSUFFICIENT).
 		 *
 		 * Backend: POST {party}/wheel/spin with {groupId}; the wishlist is a
-		 * group of its own. The answer is the saved items in the order they sit
+		 * group of its own, with its id in `groups`. The answer is the saved items in the order they sit
 		 * on the wheel (`position` from 1), the middle one is the result. The
 		 * cost of a spin of changes is set by an admin, see `admin.wheel.spinCost`.
 		 */
@@ -847,8 +850,8 @@ export type Api = {
 			restore: (id: number) => Promise<void>
 		}
 		wheel: {
-			groups: (kind: WheelGroup['kind']) => Promise<AdminWheelGroup[]>
-			createGroup: (kind: WheelGroup['kind'], name: string) => Promise<AdminWheelGroup>
+			groups: (kind: AdminWheelGroup['kind']) => Promise<AdminWheelGroup[]>
+			createGroup: (kind: AdminWheelGroup['kind'], name: string) => Promise<AdminWheelGroup>
 			renameGroup: (groupId: number, name: string) => Promise<void>
 			setNoRepeat: (groupId: number, noRepeat: boolean) => Promise<void>
 			removeGroup: (groupId: number) => Promise<void>

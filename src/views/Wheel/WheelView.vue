@@ -28,10 +28,20 @@ const costText = (group?: WheelGroup) =>
 const resultCost = computed(() => {
 	const source = wheelStore.result?.source
 
-	if (!source || source === 'wishlist') return ''
+	if (!source) return ''
 
 	return costText(wheelStore.groups.find((g) => g.id === source.groupId))
 })
+
+const sources = computed(() =>
+	wheelStore.tab === 'games' ? wheelStore.gameGroups : wheelStore.changeGroups,
+)
+
+const groupName = (group: WheelGroup) =>
+	group.kind === 'wishlist' ? 'Твой вишлист' : group.name
+
+const groupCount = (group: WheelGroup) =>
+	group.kind === 'wishlist' ? wishlistStore.mine.length : group.entries.length
 
 /** a game can't be spun while another one is being played */
 const gameInProgress = computed(
@@ -57,16 +67,25 @@ const reel = computed(() => {
 const reelCenter = computed(() => {
 	const n = wheelStore.pool.length
 
-	return n ? wheelStore.pool[wheelStore.pos % n] : 'Вишлист пуст'
-})
+	if (n) return wheelStore.pool[wheelStore.pos % n]
 
-const isWishlistResult = computed(() => wheelStore.result?.source === 'wishlist')
+	switch (wheelStore.group?.kind) {
+		case 'wishlist':
+			return 'Вишлист пуст'
+		case 'games':
+			return 'В группе нет игр'
+		case 'changes':
+			return 'В группе нет пунктов'
+		default:
+			return wheelStore.tab === 'games' ? 'Нет источников' : 'Нет групп'
+	}
+})
 
 const resultDescription = computed(() => {
 	const result = wheelStore.result
 
 	if (!result) return ''
-	if (isWishlistResult.value) return 'Станет текущей игрой, таймер начнётся с нуля.'
+	if (wheelStore.resultStartsGame) return 'Станет текущей игрой, таймер начнётся с нуля.'
 
 	return result.result.description ?? `Эффект из группы «${wheelStore.resultSource}».`
 })
@@ -91,20 +110,20 @@ onMounted(() => wheelStore.load())
 					{{ wheelStore.tab === 'games' ? 'Источник' : 'Группа' }}
 				</div>
 
-				<div v-if="wheelStore.tab === 'points'" class="groups">
+				<div class="groups">
 					<div
-						v-for="group in wheelStore.changeGroups"
+						v-for="group in sources"
 						:key="group.id"
 						class="group"
-						:class="{ 'group--on': group.id === wheelStore.groupId }"
+						:class="{ 'group--on': group.id === wheelStore.group?.id }"
 						@click="wheelStore.setGroup(group.id)"
 					>
 						<div class="group__row">
 							<span class="group__radio">
 								<span class="group__dot"></span>
 							</span>
-							<span class="group__name">{{ group.name }}</span>
-							<span class="group__count">{{ group.entries.length }}</span>
+							<span class="group__name">{{ groupName(group) }}</span>
+							<span class="group__count">{{ groupCount(group) }}</span>
 						</div>
 						<div class="group__cost">
 							{{ costText(group) ? `Цена: ${costText(group)}` : 'Бесплатно' }}
@@ -112,13 +131,13 @@ onMounted(() => wheelStore.load())
 					</div>
 				</div>
 
-				<div v-else class="source">
-					<span class="source__text">
-						Твой вишлист:
-						<span class="source__count">{{ wishlistStore.mine.length }}</span>
-					</span>
+				<div v-if="wheelStore.tab === 'games'" class="source">
 					<span class="source__hint">Выпавшая игра станет текущей.</span>
-					<RouterLink class="source__link" :to="{ name: RouteName.Games }">
+					<RouterLink
+						v-if="wheelStore.group?.kind === 'wishlist'"
+						class="source__link"
+						:to="{ name: RouteName.Games }"
+					>
 						Открыть вишлист
 					</RouterLink>
 				</div>
@@ -154,7 +173,7 @@ onMounted(() => wheelStore.load())
 							<span class="result__name">{{ wheelStore.result.result.name }}</span>
 						</div>
 						<UiButton variant="secondary" @click="wheelStore.apply()">
-							{{ isWishlistResult ? 'Взять игру' : 'Применить' }}
+							{{ wheelStore.resultStartsGame ? 'Взять игру' : 'Применить' }}
 						</UiButton>
 						<UiButton variant="outline" @click="wheelStore.clearResult()">Сбросить</UiButton>
 					</div>
@@ -295,16 +314,6 @@ onMounted(() => wheelStore.load())
 	flex-direction: column;
 	gap: 8px;
 	padding: 16px;
-}
-
-.source__text {
-	font: var(--type-body-sm);
-	color: var(--text-body);
-}
-
-.source__count {
-	font: 600 14px / 1.45 var(--font-mono);
-	color: var(--text-strong);
 }
 
 .source__hint {

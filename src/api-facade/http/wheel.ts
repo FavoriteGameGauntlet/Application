@@ -29,22 +29,11 @@ type WheelGroupRowDto = {
 	entries?: NamedChangeEntryDto[]
 }
 
-/** the wishlist is a group of its own on the backend, with one per member */
-const groupIdOf = async (
-	source: Parameters<Api['wheel']['spin']>[0],
-	path: string,
-) => {
-	if (source !== 'wishlist') return source.groupId
-
-	const { body } = await http.get<{ response: WheelGroupDto[] }>(
-		`${path}/wheel/groups`,
-	)
-	const wishlist = body.find((g) => g.kind === 'wishlist')
-
-	if (!wishlist) throw new Error('The wishlist group is not found')
-
-	return wishlist.id
-}
+const GROUP_KINDS = {
+	game: 'games',
+	changes: 'changes',
+	wishlist: 'wishlist',
+} as const
 
 /** the spin has an odd number of items, the middle one is applied */
 const toSpinResult = (
@@ -83,14 +72,20 @@ export const wheel: Api['wheel'] = {
 
 		return Promise.all(
 			groups.map(async (group) => {
-				const { body: rows } = await http.get<{ response: WheelGroupRowDto[] }>(
-					`${path}/wheel/groups/${group.id}/rows`,
-				)
+				// the items of a wishlist are not listed here, they are the wishlist games
+				const rows =
+					group.kind === 'wishlist'
+						? []
+						: (
+								await http.get<{ response: WheelGroupRowDto[] }>(
+									`${path}/wheel/groups/${group.id}/rows`,
+								)
+							).body
 
 				return {
 					id: group.id,
 					name: group.name,
-					kind: group.kind === 'changes' ? ('changes' as const) : ('games' as const),
+					kind: GROUP_KINDS[group.kind],
 					entries: rows.map((row) => ({
 						id: row.id,
 						name: row.name,
@@ -112,7 +107,7 @@ export const wheel: Api['wheel'] = {
 		const path = await partyPath()
 		const { body } = await http.post<{ response: RolledWheelRowDto[] }>(
 			`${path}/wheel/spin`,
-			{ body: { groupId: await groupIdOf(source, path) } },
+			{ body: { groupId: source.groupId } },
 		)
 
 		return toSpinResult(source, body)
