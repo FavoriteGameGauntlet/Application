@@ -93,10 +93,9 @@ const ring = computed(
 						class="mini__elapsed mini__bar mini__bar--elapsed"
 						aria-hidden="true"
 					></span>
-					<span
-						class="mini__goal mini__bar mini__bar--goal"
-						aria-hidden="true"
-					></span>
+					<span class="mini__goal" aria-hidden="true">
+						/ <span class="mini__bar mini__bar--goal"></span>
+					</span>
 				</template>
 			</div>
 
@@ -185,19 +184,22 @@ const ring = computed(
 	color: var(--text-muted);
 }
 
-/* stand in for the clock while there is no timer; the fixed width with auto margins centers them */
+/* stand in for the clock while there is no timer */
 .mini__bar {
-	margin: 0 auto;
 	background: var(--surface-sunken);
 	border-radius: var(--radius-xs);
 }
 
+/* the fixed width with auto margins centers it */
 .mini__bar--elapsed {
 	width: 112px;
 	height: 26px;
+	margin: 0 auto;
 }
 
 .mini__bar--goal {
+	display: inline-block;
+	vertical-align: middle;
 	width: 56px;
 	height: 14px;
 }

@@ -197,7 +197,9 @@ const onCancel = () => {
 							class="timer__bar timer__bar--elapsed"
 							aria-hidden="true"
 						></span>
-						<span class="timer__bar timer__bar--goal" aria-hidden="true"></span>
+						<span class="timer__goal" aria-hidden="true">
+							/ <span class="timer__bar timer__bar--goal"></span>
+						</span>
 					</template>
 				</span>
 			</div>
@@ -439,6 +441,8 @@ const onCancel = () => {
 }
 
 .timer__bar--goal {
+	display: inline-block;
+	vertical-align: middle;
 	width: 56px;
 	height: 14px;
 }
