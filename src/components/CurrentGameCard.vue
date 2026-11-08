@@ -136,11 +136,12 @@ const onCancel = () => {
 
 			<UiButton
 				v-else
+				class="current-game__wheel"
 				variant="outline"
 				icon="refresh-cw"
 				@click="goToWheelGames"
 			>
-				Выбрать на колесе
+				Прокрутить
 			</UiButton>
 		</div>
 
@@ -225,6 +226,9 @@ const onCancel = () => {
 
 <style scoped>
 .current-game {
+	/* the main buttons above and below, with a game and without one, are of the same width */
+	--action-width: 188px;
+
 	position: relative;
 	z-index: 3;
 	display: flex;
@@ -325,10 +329,15 @@ const onCancel = () => {
 .split {
 	position: relative;
 	display: flex;
+	width: var(--action-width);
+}
+
+.current-game .current-game__wheel {
+	width: var(--action-width);
 }
 
 .split .split__main {
-	width: 150px;
+	flex: 1;
 	border-top-right-radius: 0;
 	border-bottom-right-radius: 0;
 }
@@ -439,6 +448,6 @@ const onCancel = () => {
 }
 
 .timer .timer__toggle {
-	width: 188px;
+	width: var(--action-width);
 }
 </style>
