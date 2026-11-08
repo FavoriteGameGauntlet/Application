@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { api } from '../api-facade/api'
-import type { Timer } from '../api-facade/contracts'
+import type { Reward, Timer } from '../api-facade/contracts'
 import type { HttpErrorResponse } from '../api-facade/http'
 import { StoreName } from '../enums/storeName'
 import { formatClock } from '../utils/format'
@@ -67,6 +67,13 @@ export const useTimerStore = defineStore(StoreName.Timer, () => {
 
 			timer.value = undefined
 		}
+	}
+
+	/** the reward is the party's setting, so it is read apart from the timer and is there without one */
+	const reward = ref<Reward>([])
+
+	const loadReward = async () => {
+		reward.value = await api.timer.reward()
 	}
 
 	/** the server has a timer only for a current game, so without a game there is nothing to ask for */
@@ -140,7 +147,9 @@ export const useTimerStore = defineStore(StoreName.Timer, () => {
 		remaining,
 		elapsed,
 		clock,
+		reward,
 		load,
+		loadReward,
 		clear,
 		toggle,
 		init,

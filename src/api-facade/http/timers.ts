@@ -12,15 +12,16 @@ type TimerDto = {
 	lastActionDate: string
 }
 
-const toTimer = async (dto: TimerDto): Promise<Timer> => ({
+const toTimer = (dto: TimerDto): Timer => ({
 	state: dto.state,
 	remainingTime: toSeconds(dto.remainingTime),
 	duration: toSeconds(dto.duration),
 	lastActionDate: dto.lastActionDate,
-	reward: await getReward('timer'),
 })
 
 export const timer: Api['timer'] = {
+	reward: () => getReward('timer'),
+
 	get: async () =>
 		toTimer(
 			(await http.get<{ response: TimerDto }>(`${await partyPath()}/timer`))

@@ -5,6 +5,7 @@ import type { Login, PartyMember, Rewards } from '../api-facade/contracts'
 import type { HttpErrorResponse } from '../api-facade/http'
 import { StoreName } from '../enums/storeName'
 import { useCurrentGameStore } from './currentGameStore'
+import { useTimerStore } from './timerStore'
 import { useToastStore } from './toastStore'
 
 const codeOf = (e: unknown) => (e as Partial<HttpErrorResponse>).body?.code
@@ -36,7 +37,11 @@ export const useAdminSettingsStore = defineStore(
 				toast.show(title, text, tone)
 
 				// the popovers of the current game and of the timer show these rewards
-				await Promise.all([loadRewards(), useCurrentGameStore().load()])
+				await Promise.all([
+					loadRewards(),
+					useCurrentGameStore().load(),
+					useTimerStore().loadReward(),
+				])
 			} catch (e) {
 				toast.error(e)
 			}

@@ -178,7 +178,6 @@ const onCancel = () => {
 				<span class="current-game__label-row">
 					<span class="label">Таймер</span>
 					<button
-						v-if="game"
 						class="info-button"
 						aria-label="Награда за таймер"
 						title="Награда за таймер"
@@ -209,7 +208,7 @@ const onCancel = () => {
 				v-if="timerInfoOpen"
 				class="popover popover--timer"
 				title="Награда за таймер"
-				:rows="timerStore.timer?.reward ?? []"
+				:rows="timerStore.reward"
 			/>
 
 			<div class="timer__spacer"></div>
