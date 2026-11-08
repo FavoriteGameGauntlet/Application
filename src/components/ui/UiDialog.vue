@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { onBeforeUnmount, watch } from 'vue'
+
 import UiIconButton from './UiIconButton.vue'
 
 type Props = {
@@ -10,11 +12,26 @@ type Props = {
 const { open = true, width = 480 } = defineProps<Props>()
 
 const emit = defineEmits<{ close: [] }>()
+
+function onKeydown(event: KeyboardEvent) {
+	if (event.key === 'Escape') emit('close')
+}
+
+watch(
+	() => open,
+	(isOpen) => {
+		if (isOpen) window.addEventListener('keydown', onKeydown)
+		else window.removeEventListener('keydown', onKeydown)
+	},
+	{ immediate: true },
+)
+
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
 	<Teleport to="body">
-		<div v-if="open" class="ui-dialog-overlay" @click.self="emit('close')">
+		<div v-if="open" class="ui-dialog-overlay">
 			<div
 				class="ui-dialog"
 				role="dialog"
