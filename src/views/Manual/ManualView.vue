@@ -40,6 +40,31 @@ const toastStore = useToastStore()
 
 const draft = computed(() => manualStore.draft)
 
+const parentLabel = computed(() => {
+	switch (draft.value?.kind) {
+		case 'fix':
+			return 'История'
+		case 'free':
+			return 'Панель админа'
+		default:
+			return 'Колесо'
+	}
+})
+
+const currentLabel = computed(() => {
+	const current = draft.value
+
+	if (current?.kind === 'fix') return 'Исправление'
+
+	return current?.kind === 'wheel' ? current.name : 'Ручное изменение'
+})
+
+const note = computed(() =>
+	draft.value?.kind === 'fix'
+		? 'Исходная запись не меняется: исправление попадёт в журнал новой записью, и следующие события останутся корректными. Форма ничего не подставляет и не отменяет сама.'
+		: '«Было → станет» считается по текущим ресурсам игрока. Все изменения попадут в журнал одной записью с меткой «вручную».',
+)
+
 const rows = ref<Row[]>([])
 const panelUser = ref(sessionStore.login)
 
@@ -278,18 +303,16 @@ onMounted(async () => {
 		resourcesStore.loadCatalog('effects'),
 	])
 
-	if (current.kind === 'wheel') rows.value = [newRow(sessionStore.login)]
+	if (current.kind !== 'fix') rows.value = [newRow(sessionStore.login)]
 })
 </script>
 
 <template>
 	<div v-if="draft" class="manual">
 		<div class="crumbs">
-			<a @click="manualStore.close()">{{ draft.kind === 'fix' ? 'История' : 'Колесо' }}</a>
+			<a @click="manualStore.close()">{{ parentLabel }}</a>
 			<span>/</span>
-			<span class="crumbs__current">
-				{{ draft.kind === 'fix' ? 'Исправление' : draft.name }}
-			</span>
+			<span class="crumbs__current">{{ currentLabel }}</span>
 		</div>
 
 		<UiPageTitle>
@@ -324,7 +347,7 @@ onMounted(async () => {
 					</div>
 				</div>
 
-				<div v-else class="hero">
+				<div v-else-if="draft.kind === 'wheel'" class="hero">
 					<span class="hero__accent"></span>
 					<span class="card__label">Выпало на колесе · {{ draft.group }}</span>
 					<span class="hero__name">{{ draft.name }}</span>
@@ -417,11 +440,7 @@ onMounted(async () => {
 				</div>
 
 				<span class="note">
-					{{
-						draft.kind === 'fix'
-							? 'Исходная запись не меняется: исправление попадёт в журнал новой записью, и следующие события останутся корректными. Форма ничего не подставляет и не отменяет сама.'
-							: '«Было → станет» считается по текущим ресурсам игрока. Все изменения попадут в журнал одной записью с меткой «вручную».'
-					}}
+					{{ note }}
 				</span>
 			</div>
 

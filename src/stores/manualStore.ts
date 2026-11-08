@@ -26,8 +26,13 @@ type WheelDraft = {
 	description: string
 }
 
+/** an admin changes the resources of the party with no reason from the wheel or the journal */
+type FreeDraft = {
+	kind: 'free'
+}
+
 /** what the manual change form is opened for */
-export type ManualDraft = FixDraft | WheelDraft
+export type ManualDraft = FixDraft | WheelDraft | FreeDraft
 
 export const useManualStore = defineStore(StoreName.Manual, () => {
 	const draft = ref<ManualDraft | null>(null)
@@ -52,15 +57,28 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 		await router.push({ name: RouteName.Manual })
 	}
 
+	const startFree = async () => {
+		draft.value = { kind: 'free' }
+
+		await router.push({ name: RouteName.Manual })
+	}
+
 	/** goes back to where the form was opened from */
 	const close = async () => {
 		const kind = draft.value?.kind
 
 		draft.value = null
 
-		await (kind === 'fix'
-			? router.push({ name: RouteName.Resources, params: { tab: 'history' } })
-			: router.push({ name: RouteName.Wheel }))
+		switch (kind) {
+			case 'fix':
+				await router.push({ name: RouteName.Resources, params: { tab: 'history' } })
+				break
+			case 'free':
+				await router.push({ name: RouteName.AdminExchanges })
+				break
+			default:
+				await router.push({ name: RouteName.Wheel })
+		}
 	}
 
 	const apply = async (changes: ManualChange[]) => {
@@ -88,5 +106,5 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 		}
 	}
 
-	return { draft, startFix, startWheel, close, apply }
+	return { draft, startFix, startWheel, startFree, close, apply }
 })
