@@ -164,7 +164,7 @@ const onCancel = () => {
 					</button>
 				</span>
 				<span class="timer__time">
-					<span class="timer__elapsed">{{ formatClock(timerStore.elapsed) }}</span>
+					<span class="timer__elapsed">{{ formatClock(timerStore.remaining) }}</span>
 					<span class="timer__goal">/ {{ formatClock(timerStore.goal).slice(1) }}</span>
 				</span>
 			</div>

@@ -84,7 +84,7 @@ const ring = computed(
 					/>
 				</svg>
 
-				<span class="mini__elapsed">{{ formatClock(timerStore.elapsed) }}</span>
+				<span class="mini__elapsed">{{ formatClock(timerStore.remaining) }}</span>
 				<span class="mini__goal">/ {{ formatClock(timerStore.goal).slice(1) }}</span>
 			</div>
 

@@ -68,7 +68,7 @@ export type CurrentGame = {
 
 export type Timer = {
 	state: TimerState
-	/** left at lastActionDate; a running timer keeps counting down from there */
+	/** left at the moment of the response; a running timer keeps counting down from there */
 	remainingTime: Seconds
 	duration: Seconds
 	/** the last start or pause */
