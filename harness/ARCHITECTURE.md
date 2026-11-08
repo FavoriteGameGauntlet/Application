@@ -6,13 +6,13 @@
 
 - `api-facade/contracts.ts` — типы и интерфейс `Api`, единственный источник правды о форме данных. Даты ISO 8601, длительности в секундах, любое форматирование (`"2 ч"`, `"сегодня 14:20"`) делает клиент.
 - `api-facade/http/*.ts` — реализация `Api` по доменам, собирается в `http/httpApi.ts`. `api-facade/api.ts` экспортирует `api`. Код вне фасада ходит только через `api`, не через `fetch` напрямую.
-- `api-facade/http.ts` — HTTP-клиент на `@tauri-apps/plugin-http`; `unauthorizedInterceptor` разбирается с 401. `http.web.ts` — заглушка.
+- `api-facade/http.ts` — HTTP-клиент поверх Tauri-команды `http_request` (`src-tauri/src/http.rs`); `unauthorizedInterceptor` разбирается с 401. `http.web.ts` — заглушка.
 - `stores/*Store.ts` — Pinia, setup-синтаксис. Имя стора берётся из `enums/storeName.ts` (`StoreName`). Новый стор: добавить значение в `StoreName`; если ему нужна инициализация, вызвать её из `stores/initStores.ts`.
 - `views/<Раздел>/<Раздел>View.vue` — страницы, их подкомпоненты лежат в `views/<Раздел>/components/`. Маршруты в `router/routes.ts`, имена в `router/routeNames.ts`.
 - `components/` — общие компоненты, `components/ui/Ui*.vue` — базовый набор (кнопки, поля, диалоги). Прежде чем верстать своё, ищи там.
 - `composables/`, `utils/`, `services/`, `constants/` — как обычно. `services/persistentStorage.ts` — локальное хранилище (tauri-plugin-store), новые ключи добавляются в `StoreKey` и `StoredData`.
 - `styles/` — CSS-переменные (`colors.css`, `spacing.css`, `typography.css`), цвета пользователей `--user-N`. Значения берём из переменных, не хардкодим.
-- `src-tauri/src/` — минимум Rust: плагины, single-instance, фиксация пропорций окна на Windows (`aspect_ratio.rs`).
+- `src-tauri/src/` — минимум Rust: плагины, single-instance, фиксация пропорций окна на Windows (`aspect_ratio.rs`), HTTP-клиент с общим пулом соединений и cookie-jar (`http.rs`).
 
 ## Предметная область
 
@@ -44,7 +44,7 @@
 
 **Таймер.** `timerStore` хранит ответ сервера и момент его получения и считает остаток на клиенте от них (тик раз в секунду). Когда остаток доходит до нуля, стор запрашивает у сервера новое состояние, потому что сервер сам завершает таймер и запускает следующий.
 
-**HTTP-слой.** `api-facade/http.ts` логирует запросы и ответы в консоль (`[Request]`, `[Response]`), на ошибке бросает `HttpErrorResponse` (`status`, `body.code`, `body.message`). Бэкенд возвращает длительности в ISO 8601 (`PT2h10m5s`), а многие create/use-эндпоинты отвечают пустым телом. Поэтому реализации в `api-facade/http/*.ts` преобразуют длительности (`toSeconds`) и при необходимости перечитывают данные. Цвет пользователя (`colorIndex` 1–8) на бэкенде не хранится, его считает клиент по порядку вступления (`toUserRefs`).
+**HTTP-слой.** `api-facade/http.ts` вызывает команду `http_request`, а запрос выполняет Rust (`src-tauri/src/http.rs`) через один общий `reqwest::Client`: соединение и TLS-сессия живут между запросами (`plugin-http` создавал клиент на каждый запрос и платил рукопожатием каждый раз). Там же cookie-jar: сессионная кука сохраняется в файл в кэше приложения при каждом `Set-Cookie`. Rust пускает только `https://api.fgg-challenge.com` и не следует редиректам на другие хосты. `http.ts` логирует запросы и ответы в консоль (`[Request]`, `[Response]`), на ошибке бросает `HttpErrorResponse` (`status`, `body.code`, `body.message`). Бэкенд возвращает длительности в ISO 8601 (`PT2h10m5s`), а многие create/use-эндпоинты отвечают пустым телом. Поэтому реализации в `api-facade/http/*.ts` преобразуют длительности (`toSeconds`) и при необходимости перечитывают данные. Цвет пользователя (`colorIndex` 1–8) на бэкенде не хранится, его считает клиент по порядку вступления (`toUserRefs`).
 
 **Диалоги и формы.** `ui/UiDialog` — базовое окно (закрывается по Esc и кнопке, не по клику вне), `ConfirmDialog` — подтверждение удаления, `FormDialog` — универсальная форма по описанию полей (`components/formDialog.ts`: `line`, `area`, `tags`, `check`, `select`, `rows`, `note`). Строки `rows` (ресурс + количество) редактирует `RowsEditor`, а `utils/formRows.ts` переводит их в запрос и обратно. Типовая админская форма собирается из `FormDialog`, а не новой разметки.
 

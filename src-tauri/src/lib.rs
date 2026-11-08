@@ -1,4 +1,5 @@
 mod aspect_ratio;
+mod http;
 
 use tauri::Manager;
 
@@ -24,17 +25,22 @@ pub fn run() {
     builder
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
-        .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
-        .setup(|_app| {
+        .setup(|app| {
+            app.manage(http::Http::new(app.handle())?);
+
             #[cfg(windows)]
-            aspect_ratio::install(&_app.get_webview_window("main").expect("no main window"))?;
+            aspect_ratio::install(&app.get_webview_window("main").expect("no main window"))?;
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![greet, aspect_ratio::set_aspect_ratio])
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            aspect_ratio::set_aspect_ratio,
+            http::http_request
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
