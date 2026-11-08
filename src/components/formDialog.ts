@@ -2,7 +2,7 @@ export type FormField = {
 	key: string
 	label: string
 	/** a single line by default */
-	type?: 'line' | 'area' | 'tags' | 'check' | 'select' | 'rows'
+	type?: 'line' | 'area' | 'tags' | 'check' | 'select' | 'rows' | 'note'
 	placeholder?: string
 	hint?: string
 	/** for `select` */

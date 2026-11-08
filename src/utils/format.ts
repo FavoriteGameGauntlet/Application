@@ -1,5 +1,4 @@
 import type { ISODate, JournalSource, Seconds } from '../api-facade/contracts'
-import { plural } from './plural'
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
@@ -77,19 +76,31 @@ export const formatJournalSource = (
 	}
 }
 
-/** 6000 → «1 ч 40 м», 79200 → «22 ч», 86400 → «1 день» */
+/** 6000 → «1 ч 40 м», 79200 → «22 ч», 86400 → «24 ч»; hours at most, so no time is lost to rounding */
 export const formatSpan = (seconds: Seconds) => {
 	const minutes = Math.max(0, Math.round(seconds / 60))
-	const days = Math.floor(minutes / 1440)
-
-	if (days >= 1) return `${days} ${plural(days, ['день', 'дня', 'дней'])}`
-
 	const hours = Math.floor(minutes / 60)
 	const rest = minutes % 60
 
 	if (hours === 0) return `${rest} м`
 
 	return rest ? `${hours} ч ${rest} м` : `${hours} ч`
+}
+
+/** 129630 → «36 ч 30 с»; every second is kept, so `parseSpan` gives the same value back */
+export const formatSpanExact = (seconds: Seconds) => {
+	const total = Math.max(0, Math.round(seconds))
+	const parts = [
+		[Math.floor(total / 3600), 'ч'],
+		[Math.floor((total % 3600) / 60), 'м'],
+		[total % 60, 'с'],
+	] as const
+	const text = parts
+		.filter(([amount]) => amount > 0)
+		.map(([amount, unit]) => `${amount} ${unit}`)
+		.join(' ')
+
+	return text || '0 с'
 }
 
 /** «от 0 до 1000», «от −20», «до 100», «без границ» */
@@ -101,7 +112,7 @@ export const formatBounds = (minimum: number | null, maximum: number | null) => 
 	return 'без границ'
 }
 
-/** «1 ч 40 м», «22 ч», «1 день» */
+/** «1 ч 40 м», «22 ч», «36 ч» */
 export const formatRemaining =(iso: ISODate) =>
 	formatSpan((Date.parse(iso) - Date.now()) / 1000)
 

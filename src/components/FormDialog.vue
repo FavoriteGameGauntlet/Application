@@ -96,6 +96,11 @@ const onSubmit = () => {
 						<span class="note check__hint">{{ field.hint }}</span>
 					</div>
 
+					<div v-else-if="field.type === 'note'" class="tags">
+						<span class="tags__label">{{ field.label }}</span>
+						<span class="note">{{ field.hint }}</span>
+					</div>
+
 					<RowsEditor
 						v-else-if="field.type === 'rows'"
 						v-model="rowLists[field.key]"
@@ -183,10 +188,17 @@ const onSubmit = () => {
 	gap: 16px;
 }
 
+/* a long form scrolls under the buttons, they stay in reach */
 .form__actions {
+	position: sticky;
+	bottom: -24px;
+	z-index: 1;
 	display: flex;
 	gap: 8px;
 	justify-content: flex-end;
+	margin: 0 -24px -24px;
+	padding: 12px 24px 24px;
+	background: var(--surface-card);
 }
 
 .check {

@@ -58,7 +58,7 @@ export const useAdminSettingsStore = defineStore(StoreName.AdminSettings, () => 
 			await loadMembers()
 			return true
 		} catch (e) {
-			if (codeOf(e) === 'ALREADY_MEMBER') {
+			if (codeOf(e) === 'MEMBER_ALREADY_EXISTS') {
 				toast.show('Уже в пати', login, 'info')
 			} else {
 				toast.error(e)

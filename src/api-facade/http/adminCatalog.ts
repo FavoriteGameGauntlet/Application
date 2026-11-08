@@ -190,6 +190,10 @@ export const adminCatalog: Pick<
 
 		delete body.ability
 
+		// a field left out keeps its value, so clearing one is sent explicitly
+		if (kind === 'effects' || kind === 'perks') body.modifiers = body.modifiers ?? []
+		if (kind === 'effects') body.durationInSeconds = input.duration ?? null
+
 		const [{ body: dto }, pointTypes] = await Promise.all([
 			http.patch<{ response: CatalogDto[ResourceKind] }>(path, { body }),
 			getPointTypes(),

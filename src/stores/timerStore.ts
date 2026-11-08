@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { api } from '../api-facade/api'
 import type { Timer } from '../api-facade/contracts'
+import type { HttpErrorResponse } from '../api-facade/http'
 import { StoreName } from '../enums/storeName'
 import { useCurrentGameStore } from './currentGameStore'
 import { useJournalStore } from './journalStore'
@@ -40,8 +41,15 @@ export const useTimerStore = defineStore(StoreName.Timer, () => {
 		receivedAt.value = now.value = Date.now()
 	}
 
+	/** the server deletes the timer with its game, so «no timer» is an answer, not a failure */
 	const load = async () => {
-		set(await api.timer.get())
+		try {
+			set(await api.timer.get())
+		} catch (e) {
+			if ((e as Partial<HttpErrorResponse>).body?.code !== 'CURRENT_TIMER_NOT_FOUND') throw e
+
+			timer.value = undefined
+		}
 	}
 
 	const toggle = async () => {
