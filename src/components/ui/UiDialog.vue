@@ -64,7 +64,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 }
 
 .ui-dialog {
+	display: flex;
+	flex-direction: column;
 	max-width: 100%;
+	max-height: 100%;
 	overflow: hidden;
 	background: var(--surface-card);
 	border: 1px solid var(--border-subtle);
@@ -73,6 +76,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 }
 
 .ui-dialog__head {
+	flex: none;
 	display: flex;
 	align-items: flex-start;
 	gap: 12px;
@@ -86,6 +90,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 }
 
 .ui-dialog__body {
+	min-height: 0;
+	overflow-y: auto;
 	padding: 12px 24px 24px;
 	font: var(--type-body);
 	color: var(--text-body);

@@ -5,7 +5,7 @@ import type { FormField, FormRow, FormValues } from '../../../components/formDia
 import FormDialog from '../../../components/FormDialog.vue'
 import { useAdminCatalogStore } from '../../../stores/adminCatalogStore'
 import { useToastStore } from '../../../stores/toastStore'
-import { formatSpan, parseSpan } from '../../../utils/format'
+import { formatSpanExact, parseSpan } from '../../../utils/format'
 import {
 	itemEntriesToForm,
 	modifiersToForm,
@@ -69,7 +69,7 @@ const fields = computed<FormField[]>(() => {
 			label: 'Описание',
 			type: 'area',
 			placeholder: 'Что это и зачем — так увидят игроки',
-			hint: 'Показывается игрокам в подсказках и в ресурсах.',
+			hint: 'Необязательно. Показывается игрокам в подсказках и в ресурсах.',
 		},
 	]
 
@@ -155,16 +155,32 @@ const fields = computed<FormField[]>(() => {
 					hint: 'Пусто — без срока.',
 				},
 			]
-		default:
+		default: {
+			const modifiers: FormField = {
+				key: 'modifiers',
+				label: 'Пока перк у игрока',
+				type: 'rows',
+				variant: 'modifier',
+				hint: 'Очки, которые меняются сами, пока перк есть. Пусто — перк только описание.',
+			}
+
+			// the backend refuses to change the ability: the state of every holder depends on it
+			if (entry) {
+				return [
+					...common,
+					modifiers,
+					{
+						key: 'abilityNote',
+						type: 'note',
+						label: 'Способность',
+						hint: 'Тип, способность, использования, заряды и обновление после создания не меняются: от них зависит состояние у всех владельцев. Чтобы получить другую способность, создай новый перк.',
+					},
+				]
+			}
+
 			return [
 				...common,
-				{
-					key: 'modifiers',
-					label: 'Пока перк у игрока',
-					type: 'rows',
-					variant: 'modifier',
-					hint: 'Очки, которые меняются сами, пока перк есть. Пусто — перк только описание.',
-				},
+				modifiers,
 				{
 					key: 'perkKind',
 					label: 'Тип',
@@ -205,6 +221,7 @@ const fields = computed<FormField[]>(() => {
 					hint: 'Через это время после последнего изменения использования возвращаются к максимуму. Пусто — не обновляются.',
 				},
 			]
+		}
 	}
 })
 
@@ -220,14 +237,14 @@ const initial = computed<FormValues>(() => ({
 	abilityUsesMax: entry?.ability?.uses ? String(entry.ability.uses.max) : '',
 	abilityUsesStart: entry?.ability?.uses ? String(entry.ability.uses.start) : '',
 	abilityCharges: entry?.ability ? String(entry.ability.chargesMax) : '',
-	abilityRenewal: entry?.ability?.renewalPeriod ? formatSpan(entry.ability.renewalPeriod) : '',
+	abilityRenewal: entry?.ability?.renewalPeriod ? formatSpanExact(entry.ability.renewalPeriod) : '',
 	...Object.fromEntries(
 		(Object.keys(conditionLabels) as ItemCondition[]).map((c) => [
 			`condition_${c}`,
 			entry?.conditions?.includes(c) ?? false,
 		]),
 	),
-	duration: entry?.duration ? formatSpan(entry.duration) : '',
+	duration: entry?.duration ? formatSpanExact(entry.duration) : '',
 	usesMax: entry?.usesMax != null ? String(entry.usesMax) : '',
 	perkKind: entry?.perkKind ?? 'active',
 	startValue: entry?.startValue != null ? String(entry.startValue) : '',
@@ -294,8 +311,6 @@ const onSave = async (values: FormValues) => {
 	if (kind === 'point-types' && !(text('unit1') && text('unit2') && text('unit5'))) {
 		return invalid('Впиши единицы', 'Нужны все три формы: 1, 2–4 и 5 и больше.')
 	}
-
-	if (!description) return invalid('Добавь описание', 'Игроки увидят его в подсказках.')
 
 	const input: CatalogEntryInput = { name, description }
 
@@ -383,9 +398,11 @@ const onSave = async (values: FormValues) => {
 		if ('error' in modifiers) return invalid('Проверь изменения', modifiers.error)
 
 		input.modifiers = modifiers.value
-		input.perkKind = text('perkKind') === 'passive' ? 'passive' : 'active'
 
-		if (input.perkKind === 'active') {
+		// the ability of an existing perk is not in the form and the backend does not change it
+		if (!entry) input.perkKind = text('perkKind') === 'passive' ? 'passive' : 'active'
+
+		if (!entry && input.perkKind === 'active') {
 			const entries = parseItemEntries(values.abilityEntries as FormRow[])
 
 			if ('error' in entries) return invalid('Проверь способность', entries.error)

@@ -20,4 +20,5 @@ export const enum StoreName {
 	AdminCatalog = 'admin-catalog',
 	AdminWheel = 'admin-wheel',
 	AdminSettings = 'admin-settings',
+	AdminParameters = 'admin-parameters',
 }

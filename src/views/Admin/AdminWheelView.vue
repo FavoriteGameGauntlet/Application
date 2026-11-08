@@ -91,7 +91,7 @@ const fields = computed<FormField[]>(() => {
 			label: 'Описание',
 			type: 'area',
 			placeholder: 'Что произойдёт — так увидят игроки',
-			hint: 'Показывается игроку, когда пункт выпал.',
+			hint: 'Необязательно. Показывается игроку, когда пункт выпал.',
 		},
 		{
 			key: 'entries',
@@ -159,11 +159,6 @@ const onSave = async (values: FormValues) => {
 			: await store.addGroup(name)
 
 		if (ok) dialog.value = undefined
-		return
-	}
-
-	if (isChanges.value && !description) {
-		toastStore.show('Добавь описание', 'Игрок увидит его, когда пункт выпадет.', 'danger')
 		return
 	}
 

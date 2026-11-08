@@ -19,14 +19,23 @@ export const useAdminWheelStore = defineStore(StoreName.AdminWheel, () => {
 	)
 
 	const load = async () => {
-		groups.value = await api.admin.wheel.groups(kind.value)
+		const requested = kind.value
+		const loaded = await api.admin.wheel.groups(requested)
+
+		// the tab may have been switched while the groups were loading
+		if (requested === kind.value) groups.value = loaded
 	}
 
 	const setKind = async (value: AdminWheelGroup['kind']) => {
 		kind.value = value
 		groupId.value = undefined
+		groups.value = []
 
-		await load()
+		try {
+			await load()
+		} catch (e) {
+			useToastStore().error(e)
+		}
 	}
 
 	/** runs the request, shows the toast and refreshes the groups */

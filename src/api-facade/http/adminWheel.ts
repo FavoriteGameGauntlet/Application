@@ -119,6 +119,9 @@ export const adminWheel: Pick<
 			groups
 				.filter((g) => (g.kind === 'changes') === (kind === 'changes'))
 				.map(async (group) => {
+					// the wishlist is the player's own, the catalogue has no rows of it (404)
+					if (group.kind === 'wishlist') return toAdminGroup(group, [], pointTypes)
+
 					const { body: rows } = await http.get<{
 						response: WheelGroupRowDto[]
 					}>(`${path}/wheel/groups/${group.id}/rows`)

@@ -519,6 +519,15 @@ export type RewardRow = ChangeRow
 
 export type Rewards = { timer: RewardRow[]; game: RewardRow[] }
 
+/** a setting of the party; the values are text, the backend does not check them */
+export type SystemParameter = {
+	name: string
+	value: string
+	defaultValue: string
+	/** the party has no value of its own */
+	isDefault: boolean
+}
+
 export type SpinCostRow = {
 	kind: SpinCostRef['kind']
 	/** id of the point type, item, perk or effect */
@@ -880,9 +889,15 @@ export type Api = {
 			/** only affects the timers and games that start after it */
 			save: (rewards: Rewards) => Promise<void>
 		}
+		parameters: {
+			list: () => Promise<SystemParameter[]>
+			save: (name: string, value: string) => Promise<void>
+			/** the party goes back to the default value */
+			reset: (name: string) => Promise<void>
+		}
 		members: {
 			list: () => Promise<PartyMember[]>
-			/** 404 USER_NOT_FOUND, 409 ALREADY_MEMBER */
+			/** 404 USER_NOT_FOUND, 409 MEMBER_ALREADY_EXISTS */
 			add: (login: Login) => Promise<PartyMember>
 			/** 409 LAST_ADMIN when the last admin is demoted */
 			update: (
