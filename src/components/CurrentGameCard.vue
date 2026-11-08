@@ -72,22 +72,20 @@ const onCancel = () => {
 				<span class="current-game__label-row">
 					<span class="label">Текущая игра</span>
 
-					<template v-if="game">
-						<button
-							class="info-button"
-							aria-label="Награда за прохождение"
-							title="Награда за прохождение"
-							:aria-expanded="gameInfoOpen"
-							@click="gameInfoOpen = !gameInfoOpen"
-						>
-							<UiIcon name="info" :size="16" />
-						</button>
+					<button
+						class="info-button"
+						aria-label="Награда за прохождение"
+						title="Награда за прохождение"
+						:aria-expanded="gameInfoOpen"
+						@click="gameInfoOpen = !gameInfoOpen"
+					>
+						<UiIcon name="info" :size="16" />
+					</button>
 
-						<UiBadge>
-							Сыграно:
-							{{ formatHours(currentGameStore.current?.playedSeconds ?? 0) }}
-						</UiBadge>
-					</template>
+					<UiBadge v-if="game">
+						Сыграно:
+						{{ formatHours(currentGameStore.current?.playedSeconds ?? 0) }}
+					</UiBadge>
 
 					<RewardPopover
 						v-if="gameInfoOpen"
@@ -215,6 +213,8 @@ const onCancel = () => {
 			<UiButton
 				class="timer__toggle"
 				:icon="timerStore.isRunning ? 'pause' : 'play'"
+				:disabled="!game"
+				:title="game ? undefined : 'Нет текущей игры'"
 				@click="timerStore.toggle()"
 			>
 				{{ timerStore.isRunning ? 'Пауза' : 'Старт' }}
