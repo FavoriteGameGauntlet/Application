@@ -162,6 +162,7 @@ const onCancel = () => {
 					stroke-width="6"
 				/>
 				<circle
+					v-if="timerStore.clock"
 					cx="22"
 					cy="22"
 					r="18"

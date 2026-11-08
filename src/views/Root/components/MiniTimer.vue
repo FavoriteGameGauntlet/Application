@@ -72,6 +72,7 @@ const ring = computed(
 						stroke-width="12"
 					/>
 					<circle
+						v-if="timerStore.clock"
 						cx="88"
 						cy="88"
 						r="80"
