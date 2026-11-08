@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 import type { UserResources } from '../api-facade/contracts'
+import { useFitCount } from '../composables/useFitCount'
 import { RouteName } from '../router/routeNames'
 import { useResourcesStore } from '../stores/resourcesStore'
 import { formatRemaining } from '../utils/format'
@@ -18,13 +19,20 @@ const { resources, mine } = defineProps<Props>()
 
 const resourcesStore = useResourcesStore()
 
-const MAIN_POINTS_COUNT = 3
+const pointsList = useTemplateRef('pointsList')
 
 const points = computed(() =>
-	resourcesStore.personalTypes
-		.slice(0, MAIN_POINTS_COUNT)
-		.map((type) => ({ id: type.id, name: type.name, value: resources?.points[type.id] ?? 0 })),
+	resourcesStore.personalTypes.map((type) => ({
+		id: type.id,
+		name: type.name,
+		value: resources?.points[type.id] ?? 0,
+	})),
 )
+
+const fitCount = useFitCount(pointsList, () => points.value.length)
+
+// the rest is behind the «Все» link
+const visiblePoints = computed(() => points.value.slice(0, fitCount.value))
 
 const items = computed(() => groupItems(resources?.items ?? []))
 
@@ -42,9 +50,11 @@ const linkTo = (tab: string): RouteLocationRaw => ({
 				<span class="tile__title">{{ mine ? 'Мои очки' : 'Очки' }}</span>
 				<RouterLink class="tile__link" :to="linkTo('points')">Все</RouterLink>
 			</div>
-			<div v-for="point in points" :key="point.id" class="row">
-				<span class="row__name" :title="point.name">{{ point.name }}</span>
-				<span class="row__value">{{ point.value }}</span>
+			<div ref="pointsList" class="tile__rows">
+				<div v-for="point in visiblePoints" :key="point.id" class="row">
+					<span class="row__name" :title="point.name">{{ point.name }}</span>
+					<span class="row__value">{{ point.value }}</span>
+				</div>
 			</div>
 		</div>
 
@@ -65,7 +75,12 @@ const linkTo = (tab: string): RouteLocationRaw => ({
 				<span class="tile__title">Перки</span>
 				<RouterLink class="tile__link" :to="linkTo('perks')">Все</RouterLink>
 			</div>
-			<span v-for="perk in resources?.perks" :key="perk.id" class="row__text" :title="perk.name">
+			<span
+				v-for="perk in resources?.perks"
+				:key="perk.id"
+				class="row__text"
+				:title="perk.name"
+			>
 				{{ perk.name }}
 			</span>
 			<span v-if="!resources?.perks.length" class="tile__empty">Пусто</span>
@@ -76,10 +91,16 @@ const linkTo = (tab: string): RouteLocationRaw => ({
 				<span class="tile__title">Эффекты</span>
 				<RouterLink class="tile__link" :to="linkTo('effects')">Все</RouterLink>
 			</div>
-			<div v-for="effect in resources?.effects" :key="effect.id" class="row row--effects">
+			<div
+				v-for="effect in resources?.effects"
+				:key="effect.id"
+				class="row row--effects"
+			>
 				<span class="row__name" :title="effect.name">{{ effect.name }}</span>
 				<span class="row__badge">
-					<UiBadge>{{ effect.expiresAt ? formatRemaining(effect.expiresAt) : '∞' }}</UiBadge>
+					<UiBadge>{{
+						effect.expiresAt ? formatRemaining(effect.expiresAt) : '∞'
+					}}</UiBadge>
 				</span>
 			</div>
 			<span v-if="!resources?.effects.length" class="tile__empty">Пусто</span>
@@ -123,6 +144,18 @@ const linkTo = (tab: string): RouteLocationRaw => ({
 	font: var(--type-label);
 	letter-spacing: var(--tracking-label);
 	text-transform: uppercase;
+}
+
+/* the size ignores the rows, so the height left in the tile decides how many fit */
+.tile__rows {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 12px;
+	min-height: 1lh;
+	overflow: hidden;
+	font: var(--type-body-sm);
+	contain: size;
 }
 
 .tile__empty {
