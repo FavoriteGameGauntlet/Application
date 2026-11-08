@@ -15,4 +15,5 @@ export const enum RouteName {
 	AdminWheel = 'admin-wheel',
 	AdminRewards = 'admin-rewards',
 	AdminMembers = 'admin-members',
+	AdminParameters = 'admin-parameters',
 }

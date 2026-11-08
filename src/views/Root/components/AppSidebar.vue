@@ -46,6 +46,7 @@ const adminCatalogs: NavItem[] = [
 
 const adminSystem: NavItem[] = [
 	{ label: 'Участники и права', icon: 'users', name: RouteName.AdminMembers },
+	{ label: 'Системные параметры', icon: 'sliders-horizontal', name: RouteName.AdminParameters },
 ]
 
 const isAdminArea = computed(() => route.matched.some((r) => r.meta.admin))
