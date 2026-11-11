@@ -182,7 +182,6 @@ const sections = computed<FormSection[]>(() => {
 							label: 'При использовании',
 							type: 'rows',
 							variant: 'item-entry',
-							required: 'действие',
 							empty:
 								'Что произойдёт, когда игрок применит предмет. Например: владелец получает 10 золота.',
 							addLabel: 'Действие',
