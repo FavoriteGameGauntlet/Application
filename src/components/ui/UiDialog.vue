@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, watch } from 'vue'
+import { onBeforeUnmount, useTemplateRef, watch } from 'vue'
 
 import UiIconButton from './UiIconButton.vue'
 
@@ -8,7 +8,7 @@ type Props = {
 	title?: string
 	subtitle?: string
 	width?: number
-	/** the dialog is a form: the footer buttons submit it, and so does Enter in a field */
+	/** the dialog is a form: the footer buttons submit it, and so does Enter */
 	asForm?: boolean
 }
 
@@ -16,8 +16,31 @@ const { open = true, width = 480, asForm } = defineProps<Props>()
 
 const emit = defineEmits<{ close: []; submit: [] }>()
 
+const dialog = useTemplateRef<HTMLElement>('dialog')
+
+/** Enter keeps its own meaning on a button, a link and in a textarea of the dialog */
+function keepsEnter(target: EventTarget | null) {
+	return (
+		target instanceof Element &&
+		!!dialog.value?.contains(target) &&
+		!!target.closest('button, a, textarea')
+	)
+}
+
 function onKeydown(event: KeyboardEvent) {
-	if (event.key === 'Escape') emit('close')
+	if (event.key === 'Escape') {
+		emit('close')
+	} else if (
+		event.key === 'Enter' &&
+		asForm &&
+		!event.isComposing &&
+		!keepsEnter(event.target)
+	) {
+		// a focused field would submit the form itself, but right after opening the
+		// focus is still on the button that opened the dialog
+		event.preventDefault()
+		emit('submit')
+	}
 }
 
 watch(
@@ -37,6 +60,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 		<div v-if="open" class="ui-dialog-overlay">
 			<component
 				:is="asForm ? 'form' : 'div'"
+				ref="dialog"
 				class="ui-dialog"
 				role="dialog"
 				aria-modal="true"
