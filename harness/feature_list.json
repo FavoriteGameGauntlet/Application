@@ -41,6 +41,13 @@
 			"priority": 6,
 			"status": "todo",
 			"evidence": ""
+		},
+		{
+			"id": "system-parameters-data-format",
+			"title": "Change the system parameters form (views/Admin/AdminParametersView.vue): add a data format to every parameter. The user's words: add a data format for each parameter. Today the texts of a parameter (label, hint, check) live in the descriptions map by name, and every value is checked as an integer. ASK THE USER BEFORE STARTING what the format is (a type, a unit, an example shown to the admin) and where it comes from (the client or a backend field; check https://api.fgg-challenge.com/scalar before touching the Api contract), and change nothing until the answer.",
+			"priority": 7,
+			"status": "todo",
+			"evidence": ""
 		}
 	]
 }
