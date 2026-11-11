@@ -110,7 +110,7 @@ export type RowsVariant = 'change' | 'cost' | 'item-entry' | 'modifier'
 
 /** a row of a `rows` field as the user types it */
 export type FormRow = {
-	/** `points`, `item`, `perk`, `effect` or `user-item` */
+	/** `points`, `item`, `perk`, `effect`, `user-item` or `user-item-transfer` */
 	kind: string
 	/** the id of the point type, item, perk or effect */
 	targetId: string

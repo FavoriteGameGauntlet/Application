@@ -64,8 +64,9 @@ export const toResourceRef = (entry: NamedChangeEntryDto): ResourceRef => {
 
 /** NamedItemEntry: a NamedChangeEntry that also says whom it acts on */
 export type NamedItemEntryDto = NamedChangeEntryDto & {
-	/** the copies the entry acts on are picked when the item is used */
-	userItem: boolean
+	/** `catalog` names a target; the other kinds have none, their copies are picked when the item is used */
+	kind: 'catalog' | 'user_item' | 'user_item_transfer'
+	/** for a transfer, the side that loses the copies */
 	target: 'self' | 'chosen'
 }
 
@@ -94,9 +95,18 @@ export const toItemEntryText = (
 	entry: NamedItemEntryDto,
 	pointTypes: PointType[],
 ) => {
-	const text = entry.userItem
-		? `${signOf(entry.amount)}выбранный предмет${Math.abs(entry.amount) > 1 ? ` ×${Math.abs(entry.amount)}` : ''}`
-		: toChangeText(entry, pointTypes)
+	const count = Math.abs(entry.amount) > 1 ? ` ×${Math.abs(entry.amount)}` : ''
+
+	if (entry.kind === 'user_item_transfer') {
+		return entry.target === 'chosen'
+			? `забрать у выбранных игроков выбранный предмет${count}`
+			: `передать выбранным игрокам выбранный предмет${count}`
+	}
+
+	const text =
+		entry.kind === 'user_item'
+			? `${signOf(entry.amount)}выбранный предмет${count}`
+			: toChangeText(entry, pointTypes)
 
 	return entry.target === 'chosen' ? `${text} (выбранным игрокам)` : text
 }

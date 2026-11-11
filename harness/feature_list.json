@@ -16,10 +16,10 @@
 		},
 		{
 			"id": "item-transfer",
-			"title": "Implement the transfer of an item between players. The user's words, translated: «implement the item transfer». Today the Api can only remove a copy from a chosen player (an entry with a negative amount of a user item) or duplicate a copy (a positive amount), and the backend refuses one copy named twice in userItemIds («Picked user items must not repeat»), so a transfer cannot be built from the two entries. The user implements the backend side themself and will forbid the copying of a copy that is being used on the backend later; this feature waits for it and for the shape of the new entry. Client side: the item use window (views/Resources/components/UseDialog.vue, slots from utils/itemUse.ts useSlots; today a slot takes copies from a chosen player, a slot copies from a player picked in «У кого скопировать», sections are ordered «На кого», takes, copies, players with no copy are shown disabled), the contract (ItemEntryRow, ItemUse in api-facade/contracts.ts and the implementation in api-facade/http/), and the entry forms of the catalogue (views/Catalog/components/CatalogEntryDialog.vue). Open: the shape of the backend (a new entry kind or a flag), how the admin sets it, what the use window shows (the player to take from and the copy), and what happens with the copy that is being used. Check the contract against https://api.fgg-challenge.com/scalar before changing contracts.ts.",
+			"title": "Implement the transfer of an item between players",
 			"priority": 3,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-12. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "screens-wheel-members",
@@ -88,6 +88,13 @@
 			"id": "auth-password-eye",
 			"title": "Fix the eye in the login and registration forms. The user's words, translated: «fix the eye in the authorization and registration forms». It is unclear what is broken. Known: views/Auth/AuthView.vue has the password and the repeat password as plain type=\"password\" fields of UiInput, there is no show-password button of our own and no eye icon in assets/icons, so the eye in question is most likely the one the WebView draws itself in a password field (WebView2 on Windows). Open: what exactly is wrong with it (it does not show, it looks out of place, it is doubled, it hides the field error), on which system, and whether to keep the native eye or replace it with our own button.",
 			"priority": 13,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "item-entry-form-special-actions",
+			"title": "Rework the form of the item entry rows to account for the special actions: transfer, copy and delete. The user's words, translated: «rework the form with the special actions in mind (transfer, copy, delete)». The form is components/RowsEditor.vue (the item-entry variant), used by views/Catalog/components/CatalogEntryDialog.vue for the entries of an item and of a perk ability, with the rows parsed in utils/formRows.ts (FormRow in components/formDialog.ts). Today a row is «Кто» (Владелец or Цель), «Действие» (Получает or Теряет, which is the sign of the amount), «Кол-во» and «Ресурс». The special actions are not actions of the form: they hide in the resource list as «Предмет на выбор» (a `user-item` entry: with the action «Получает» it copies the picked copies, with «Теряет» it takes them away, so «copy» and «delete» are the two signs of one resource) and as «Передать выбранный предмет» (a `user-item-transfer` entry: its action is fixed to «Передаёт», the amount has no sign, and «Кто» is the side that loses the copies). In the entry kinds of the backend (items.yaml and perks.yaml of https://api.fgg-challenge.com/scalar) these are `user_item` with a positive amount (copy), `user_item` with a negative amount (take away) and `user_item_transfer`. The use window (views/Resources/components/UseDialog.vue, slots in utils/itemUse.ts) already treats the three differently. Check the form against the documentation of the entry kinds and amounts.",
+			"priority": 14,
 			"status": "todo",
 			"evidence": ""
 		}

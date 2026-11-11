@@ -19,9 +19,12 @@ export type ChangeEntryDto = {
 	amount: number
 }
 
-/** ItemEntry: a change entry that also says whom it acts on, or `userItem` instead of a target */
+/** what an item entry names: a catalogue target, or the copies picked at the use (taken, copied or moved) */
+export type ItemEntryKindDto = 'catalog' | 'user_item' | 'user_item_transfer'
+
+/** ItemEntry: a change entry that also says whom it acts on, or a `kind` without a target */
 export type ItemEntryDto = ChangeEntryDto & {
-	userItem?: boolean
+	kind: ItemEntryKindDto
 	target: 'self' | 'chosen'
 }
 
@@ -56,8 +59,12 @@ export const toItemEntryRow = (entry: NamedItemEntryDto): ItemEntryRow => {
 	const who = entry.target
 	const entryId = entry.entryId === undefined ? {} : { entryId: entry.entryId }
 
-	if (entry.userItem) {
+	if (entry.kind === 'user_item') {
 		return { kind: 'user-item', amount: entry.amount, who, ...entryId }
+	}
+
+	if (entry.kind === 'user_item_transfer') {
+		return { kind: 'user-item-transfer', amount: entry.amount, who, ...entryId }
 	}
 
 	return { ...toChangeRow(entry), who, ...entryId }
@@ -78,7 +85,11 @@ export const fromChangeRow = ({
 
 export const fromItemEntryRow = (row: ItemEntryRow): ItemEntryDto => {
 	if (row.kind === 'user-item') {
-		return { userItem: true, target: row.who, amount: row.amount }
+		return { kind: 'user_item', target: row.who, amount: row.amount }
+	}
+
+	if (row.kind === 'user-item-transfer') {
+		return { kind: 'user_item_transfer', target: row.who, amount: row.amount }
 	}
 
 	if (row.targetId === undefined) throw new Error('An item entry has no target')
@@ -89,6 +100,7 @@ export const fromItemEntryRow = (row: ItemEntryRow): ItemEntryDto => {
 			targetId: row.targetId,
 			amount: row.amount,
 		}),
+		kind: 'catalog',
 		target: row.who,
 	}
 }

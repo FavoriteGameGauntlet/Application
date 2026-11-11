@@ -349,9 +349,10 @@ export type ManualRequest = {
 
 /**
  * What the user adds to the use of an item or of a perk ability. `targetLogins`
- * are required exactly when an entry acts on the `chosen` users; `userItemIds`
- * are the copies picked for the entries that take or duplicate user items, in
- * the order of the entries.
+ * are required exactly when an entry acts on the `chosen` users or transfers
+ * copies (none of them the holder); `userItemIds` are the copies picked for the
+ * entries that take, duplicate or transfer user items, in the order of the
+ * entries.
  */
 export type ItemUse = {
 	/** the `entryId`s to apply; required when `shouldApplyToAll` is false, not accepted otherwise */
@@ -435,13 +436,21 @@ export type ItemEntryRow = {
 	entryId?: number
 	/** the entry as text («+50 золота»), set on the entries of a held item or perk so a user can pick among them */
 	text?: string
-	/** `user-item`: no target in the catalogue, the copies are picked when the item is used */
-	kind: ChangeRow['kind'] | 'user-item'
-	/** not set for `user-item` */
+	/**
+	 * `user-item`: no target in the catalogue, the copies are picked when the item
+	 * is used. `user-item-transfer`: the picked copies move from one player to
+	 * another and stay as they are.
+	 */
+	kind: ChangeRow['kind'] | 'user-item' | 'user-item-transfer'
+	/** not set for `user-item` and `user-item-transfer` */
 	targetId?: number
-	/** keeps the sign, a negative amount takes */
+	/** keeps the sign, a negative amount takes; a transfer is always positive and counts the copies moved for each chosen player */
 	amount: number
-	/** `chosen` = the users named when the item is used */
+	/**
+	 * `chosen` = the users named when the item is used. For a transfer it is the
+	 * side that loses the copies: `self` gives them to the chosen players, `chosen`
+	 * hands them to the holder.
+	 */
 	who: ItemEntryWho
 }
 
