@@ -172,7 +172,13 @@ const missingIn = (inSections: FormSection[]) =>
 	inSections
 		.filter(inShownTab)
 		.flatMap((s) => (s.aside ? [s.aside, ...s.fields] : s.fields))
-		.filter((f) => f.required && isShown(f) && !isFilled(f))
+		.filter(
+			(f) =>
+				f.required &&
+				isShown(f) &&
+				!isFilled(f) &&
+				!(f.requiredUnless && holds(f.requiredUnless)),
+		)
 		.map((f) => f.required as string)
 
 const missing = computed(() => missingIn(sections))

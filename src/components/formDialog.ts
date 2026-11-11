@@ -40,6 +40,8 @@ export type FormField = {
 	optional?: boolean
 	/** the form does not save without it; the noun that the footer names ("название") */
 	required?: string
+	/** `required` does not count while the `check` field `key` is `is`: the field is one of two ways to fill the form */
+	requiredUnless?: { key: string; is: string | boolean }
 	/** a digits-only line in the mono face */
 	numeric?: boolean
 	/** the width of the field in px; the field takes the whole line by default */

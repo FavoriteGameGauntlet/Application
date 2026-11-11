@@ -122,6 +122,8 @@ const fields = computed<FormField[]>(() => {
 		{
 			key: 'entries',
 			label: 'Когда выпал',
+			required: 'действие',
+			requiredUnless: { key: 'isManualChange', is: true },
 			type: 'rows',
 			variant: 'change',
 			addLabel: 'Действие',
@@ -219,15 +221,6 @@ const onSave = async (values: FormValues) => {
 	}
 
 	const isManualChange = isChanges.value && values.isManualChange === true
-
-	if (isChanges.value && !entries.value.length && !isManualChange) {
-		toastStore.show(
-			'Добавь изменение',
-			'Или отметь, что игрок вносит его вручную.',
-			'danger',
-		)
-		return
-	}
 
 	const input = {
 		name,
