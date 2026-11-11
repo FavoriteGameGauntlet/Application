@@ -77,12 +77,24 @@ const note = computed(() =>
 
 const fields = computed<FormField[]>(() => {
 	if (dialog.value?.kind === 'group') {
-		return [{ key: 'name', label: 'Название', placeholder: 'Бонусы' }]
+		return [
+			{
+				key: 'name',
+				label: 'Название',
+				required: 'название',
+				placeholder: 'Бонусы',
+			},
+		]
 	}
 
 	if (!isChanges.value) {
 		return [
-			{ key: 'name', label: 'Игра', placeholder: 'Hades' },
+			{
+				key: 'name',
+				label: 'Игра',
+				required: 'название',
+				placeholder: 'Hades',
+			},
 			{
 				key: 'description',
 				label: 'Описание',
@@ -94,7 +106,12 @@ const fields = computed<FormField[]>(() => {
 	}
 
 	return [
-		{ key: 'name', label: 'Пункт', placeholder: '+50 золота' },
+		{
+			key: 'name',
+			label: 'Пункт',
+			required: 'название',
+			placeholder: '+50 золота',
+		},
 		{
 			key: 'description',
 			label: 'Описание',
@@ -165,11 +182,6 @@ const onSave = async (values: FormValues) => {
 	const current = dialog.value
 	const name = String(values.name).trim()
 	const description = String(values.description ?? '').trim()
-
-	if (!name) {
-		toastStore.show('Впиши название', 'Без него не сохранится.', 'danger')
-		return
-	}
 
 	if (current?.kind === 'group') {
 		const ok = current.group

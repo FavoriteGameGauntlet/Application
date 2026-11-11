@@ -46,7 +46,12 @@ const items = computed(() =>
 const editing = ref<{ party?: Party }>()
 
 const fields = computed<FormField[]>(() => [
-	{ key: 'name', label: 'Название', placeholder: 'Осенний сезон' },
+	{
+		key: 'name',
+		label: 'Название',
+		required: 'название',
+		placeholder: 'Осенний сезон',
+	},
 	{
 		key: 'startsAt',
 		label: 'Начало',
@@ -87,11 +92,6 @@ const onSave = async (values: FormValues) => {
 	const name = String(values.name).trim()
 	const startsAt = parseDateInput(String(values.startsAt))
 	const endsAt = parseDateInput(String(values.endsAt), true)
-
-	if (!name) {
-		toastStore.show('Впиши название', 'Без него не сохранится.', 'danger')
-		return
-	}
 
 	if (!startsAt || !endsAt) {
 		toastStore.show('Не понял дату', 'Напиши в виде 01.09.2026.', 'danger')

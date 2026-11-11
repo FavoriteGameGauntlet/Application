@@ -25,7 +25,12 @@ const toastStore = useToastStore()
 const editing = ref<{ exchange?: AdminExchange }>()
 
 const fields: FormField[] = [
-	{ key: 'name', label: 'Название', placeholder: 'Набор для рерола' },
+	{
+		key: 'name',
+		label: 'Название',
+		required: 'название',
+		placeholder: 'Набор для рерола',
+	},
 	{
 		key: 'description',
 		label: 'Описание',
@@ -107,12 +112,6 @@ const rows = computed(() =>
 
 const onSave = async (values: FormValues) => {
 	const name = String(values.name).trim()
-
-	if (!name) {
-		toastStore.show('Впиши название', 'Без него не сохранится.', 'danger')
-		return
-	}
-
 	const sourceEntries = parseCostRows(values.sourceEntries as FormRow[])
 	const targetEntries = parseCostRows(values.targetEntries as FormRow[])
 
