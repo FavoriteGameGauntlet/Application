@@ -29,7 +29,8 @@ const model = defineModel<boolean>({ default: false })
 <style scoped>
 .ui-switch {
 	display: inline-flex;
-	align-items: center;
+	/* a label that wraps keeps the switch at its first line */
+	align-items: flex-start;
 	gap: 10px;
 	font: var(--type-body);
 	color: var(--text-body);
