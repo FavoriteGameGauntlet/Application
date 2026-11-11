@@ -55,6 +55,20 @@
 			"priority": 8,
 			"status": "todo",
 			"evidence": ""
+		},
+		{
+			"id": "player-color-form",
+			"title": "Add a form for a player to choose their own color. The user's words: add a color choice form for the player. Today ColorPicker is reached only through FormDialog (type 'color'), in the party creation form and in the admin member edit form (AdminMembersView), so a player has no way to change their own color. ASK THE USER BEFORE STARTING where the form lives (which screen or menu) and whether the admin can still change it, and change nothing until the answer. Check the endpoint for it against https://api.fgg-challenge.com/scalar before touching the Api contract.",
+			"priority": 9,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "save-buttons-without-text",
+			"title": "Remove the text from the «Сохранить» buttons. The user's words: remove the text from the Save buttons. The text is set in FormDialog (the default submitLabel), ReviewDialog, WishlistTab, AdminParametersView, AdminRewardsView, AdminSpinCost, and by submit-label in AdminExchangesView, AdminWheelView, CatalogEntryDialog and PartiesView. ASK THE USER BEFORE STARTING what stays on the button (an icon only, such as the check icon AdminSpinCost already uses), which buttons count (every «Сохранить», or also «Создать пати», «Добавить пункт» and the like) and how a screen reader gets the name (aria-label), and change nothing until the answer.",
+			"priority": 10,
+			"status": "todo",
+			"evidence": ""
 		}
 	]
 }
