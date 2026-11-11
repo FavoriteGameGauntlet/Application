@@ -5,9 +5,11 @@ import RowsEditor from './RowsEditor.vue'
 import UiAddLink from './ui/UiAddLink.vue'
 import UiButton from './ui/UiButton.vue'
 import UiChoiceChips from './ui/UiChoiceChips.vue'
+import UiDateRange from './ui/UiDateRange.vue'
 import UiDialog from './ui/UiDialog.vue'
 import UiField from './ui/UiField.vue'
 import UiFormSection from './ui/UiFormSection.vue'
+import UiIcon from './ui/UiIcon.vue'
 import UiIconButton from './ui/UiIconButton.vue'
 import UiInput from './ui/UiInput.vue'
 import UiPickChips from './ui/UiPickChips.vue'
@@ -29,12 +31,18 @@ import type {
 type Props = {
 	open: boolean
 	title: string
+	/** the line under the title */
+	subtitle?: string
+	/** the title is a name that keeps its case, not a heading in capitals */
+	plainTitle?: boolean
 	sections: FormSection[]
 	tabs?: FormTab[]
 	/** values that the form opens with */
 	initial: FormValues
 	/** the text of the main button */
 	submitLabel?: string
+	/** the width in px; by default the rows and the columns get more room than a single line */
+	width?: number
 }
 
 const {
@@ -43,6 +51,7 @@ const {
 	tabs = [],
 	initial,
 	submitLabel = 'Сохранить',
+	width: fixedWidth,
 } = defineProps<Props>()
 
 const emit = defineEmits<{ close: []; save: [values: FormValues] }>()
@@ -62,11 +71,13 @@ const allFields = computed(() =>
 )
 
 /** the rows and the columns need more room than a single line */
-const width = computed(() =>
-	allFields.value.some((f) => f.type === 'rows') ||
-	sections.some((s) => s.columns)
-		? 620
-		: 440,
+const dialogWidth = computed(
+	() =>
+		fixedWidth ??
+		(allFields.value.some((f) => f.type === 'rows') ||
+		sections.some((s) => s.columns)
+			? 620
+			: 440),
 )
 
 const isListType = (field: FormField) =>
@@ -80,6 +91,8 @@ watch(
 		chosenTab.value = ''
 
 		for (const field of allFields.value) {
+			if (field.type === 'arrow') continue
+
 			const value = initial[field.key]
 
 			if (isListType(field)) {
@@ -187,6 +200,8 @@ const onSubmit = () => {
 	const values: FormValues = {}
 
 	for (const field of allFields.value) {
+		if (field.type === 'arrow') continue
+
 		if (field.type === 'tags') {
 			addTag(field.key)
 			values[field.key] = [...lists[field.key]]
@@ -211,11 +226,17 @@ const groupsOf = (field: FormField) => [{ options: field.options ?? [] }]
 	<UiDialog
 		:open
 		:title
-		:width="width"
+		:subtitle
+		:plain-title
+		:width="dialogWidth"
 		as-form
 		@close="emit('close')"
 		@submit="onSubmit"
 	>
+		<template v-if="$slots.lead" #lead>
+			<slot name="lead" />
+		</template>
+
 		<template v-if="visibleTabs.length > 1" #tabs>
 			<UiTabs
 				:model-value="currentTab"
@@ -242,9 +263,25 @@ const groupsOf = (field: FormField) => [{ options: field.options ?? [] }]
 						:style="{ gridTemplateColumns: section.columns }"
 					>
 						<template v-for="field in section.fields" :key="field.key">
-							<template v-if="isShown(field)">
+							<div
+								v-if="isShown(field)"
+								class="form__cell"
+								:class="{ 'form__cell--placed': field.column }"
+								:style="{ gridColumn: field.column }"
+							>
+								<div v-if="field.type === 'arrow'" class="form__arrow">
+									<UiIcon name="arrow-left-right" :size="18" />
+								</div>
+
+								<UiDateRange
+									v-else-if="field.type === 'dates'"
+									v-model="texts[field.key]"
+									:label="field.label"
+									:hint="field.hint"
+								/>
+
 								<div
-									v-if="field.type === 'check'"
+									v-else-if="field.type === 'check'"
 									class="form__check"
 									:style="{ width: field.width && `${field.width}px` }"
 								>
@@ -395,7 +432,7 @@ const groupsOf = (field: FormField) => [{ options: field.options ?? [] }]
 										:hint="field.hint"
 									/>
 								</div>
-							</template>
+							</div>
 						</template>
 					</div>
 				</UiFormSection>
@@ -431,6 +468,24 @@ const groupsOf = (field: FormField) => [{ options: field.options ?? [] }]
 	display: grid;
 	align-items: start;
 	gap: 16px;
+}
+
+/* a cell is no box of its own, unless the field asks for a column */
+.form__cell {
+	display: contents;
+}
+
+.form__cell--placed {
+	display: block;
+	min-width: 0;
+}
+
+/* level with the first row of the rows next to it, under their title */
+.form__arrow {
+	display: flex;
+	justify-content: center;
+	padding-top: 54px;
+	color: var(--text-muted);
 }
 
 /* the link takes the place of a field: the gap above it is for fields */

@@ -108,13 +108,20 @@ const confirmRows = computed(() => {
 		).map((ref) => ({ ref, sign: 1 })),
 	].map(({ ref, sign }) => {
 		if (ref.kind === 'perk') {
-			return { name: `Перк «${ref.name}»`, was: 'нет', now: 'есть', gain: true }
+			return {
+				name: `Перк «${ref.name}»`,
+				delta: '+1',
+				was: 'нет',
+				now: 'есть',
+				gain: true,
+			}
 		}
 
 		const was = have(ref)
 
 		return {
 			name: ref.name,
+			delta: `${sign > 0 ? '+' : '−'}${amountOf(ref)}`,
 			was,
 			now: was + sign * amountOf(ref),
 			gain: sign > 0,
@@ -221,8 +228,9 @@ onMounted(() => exchangesStore.load())
 
 	<UiDialog
 		:open="!!confirming"
-		:title="confirming ? `Обмен «${confirming.name}»` : ''"
-		:width="460"
+		title="Обменять?"
+		:subtitle="confirming?.name"
+		:width="480"
 		@close="confirming = undefined"
 	>
 		<div class="dialog">
@@ -248,23 +256,22 @@ onMounted(() => exchangesStore.load())
 				/>
 			</div>
 
-			<div class="dialog__table">
-				<div class="dialog__row dialog__row--head">
-					<span>Ресурс</span>
-					<span class="dialog__right">Было</span>
-					<span></span>
-					<span class="dialog__right">Станет</span>
-				</div>
-				<div v-for="row in confirmRows" :key="row.name" class="dialog__row">
+			<div class="dialog__table" role="table" aria-label="Что изменится">
+				<span class="label">Ресурс</span>
+				<span class="label dialog__right">Изменится</span>
+				<span class="label dialog__right">У тебя</span>
+				<template v-for="row in confirmRows" :key="row.name">
 					<span class="dialog__name">{{ row.name }}</span>
-					<span class="dialog__was">{{ row.was }}</span>
-					<span class="dialog__arrow">→</span>
 					<span
-						class="dialog__now"
-						:class="{ 'dialog__now--gain': row.gain }"
-						>{{ row.now }}</span
+						class="dialog__right dialog__delta"
+						:class="row.gain ? 'dialog__delta--gain' : 'dialog__delta--loss'"
+						>{{ row.delta }}</span
 					>
-				</div>
+					<span class="dialog__right dialog__was"
+						>{{ row.was }} →
+						<span class="dialog__now">{{ row.now }}</span></span
+					>
+				</template>
 			</div>
 		</div>
 
@@ -416,55 +423,58 @@ onMounted(() => exchangesStore.load())
 }
 
 .dialog__table {
-	display: flex;
-	flex-direction: column;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto auto;
+	align-items: center;
 }
 
-.dialog__row {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) 72px 24px 72px;
-	gap: 8px;
+.dialog__table > * {
+	display: flex;
 	align-items: center;
-	min-height: 36px;
-	font: var(--type-body-sm);
+	min-height: 44px;
 	border-bottom: 1px solid var(--border-subtle);
 }
 
-.dialog__row--head {
-	min-height: 0;
-	padding-bottom: 8px;
-	font: var(--type-label);
-	letter-spacing: var(--tracking-label);
-	text-transform: uppercase;
-	color: var(--text-muted);
+/* the last row has nothing under it */
+.dialog__table > :nth-last-child(-n + 3) {
+	border-bottom: 0;
 }
 
 .dialog__right {
-	text-align: right;
+	justify-content: flex-end;
+	padding-left: 24px;
+	white-space: nowrap;
 }
 
 .dialog__name {
+	font-weight: 600;
 	color: var(--text-strong);
+}
+
+.dialog__delta,
+.dialog__was {
+	font: 500 14px / 1 var(--font-mono);
+	font-variant-numeric: tabular-nums;
+}
+
+.dialog__delta {
+	font-weight: 600;
+}
+
+.dialog__delta--gain {
+	color: var(--success-text);
+}
+
+.dialog__delta--loss {
+	color: var(--danger-text);
 }
 
 .dialog__was {
-	text-align: right;
-	font: var(--type-mono);
 	color: var(--text-muted);
 }
 
-.dialog__arrow {
-	text-align: center;
-	color: var(--text-subtle);
-}
-
 .dialog__now {
-	text-align: right;
-	font: 600 14px / 1 var(--font-mono);
+	margin-left: 6px;
 	color: var(--text-strong);
-}
-
-.dialog__now--gain {
-	color: var(--success-text);
 }
 </style>

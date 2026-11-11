@@ -66,13 +66,13 @@ const fields = computed<FormField[]>(() =>
 					key: 'displayName',
 					label: 'Имя в пати',
 					placeholder: dialog.value.member.login,
-					hint: 'Пустое — показывается логин.',
+					hint: 'Пустое — покажем логин.',
 				},
 				{
 					key: 'isAdmin',
 					label: 'Админ пати',
 					type: 'check',
-					hint: 'Может менять каталоги, колесо, награды и участников.',
+					hint: 'Меняет каталоги, колесо, награды и участников.',
 				},
 				colorField,
 			]
@@ -234,21 +234,28 @@ onMounted(() => store.loadMembers())
 
 	<FormDialog
 		:open="!!dialog"
-		:title="
-			dialog?.member
-				? `Участник · ${dialog.member.login}`
-				: 'Добавить участника'
-		"
+		:title="dialog?.member ? dialog.member.login : 'Добавить участника'"
+		:plain-title="!!dialog?.member"
 		:sections="[{ fields }]"
 		:initial
 		@close="dialog = undefined"
 		@save="onSave"
-	/>
+	>
+		<template v-if="dialog?.member" #lead>
+			<UiUserAvatar
+				:name="dialog.member.login"
+				:color="dialog.member.color"
+				:size="36"
+			/>
+		</template>
+	</FormDialog>
 
 	<ConfirmDialog
 		:open="!!removing"
 		:title="removing ? `Удалить ${removing.login} из пати?` : ''"
-		text="Игрок пропадёт из участников. Записи в журнале останутся."
+		text="Игрок пропадёт из участников. Его записи в журнале останутся."
+		ok-label="Удалить из пати"
+		cancel-label="Оставить"
 		@close="removing = undefined"
 		@confirm="onRemove"
 	/>

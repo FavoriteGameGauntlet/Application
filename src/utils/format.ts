@@ -174,39 +174,3 @@ export const parseSpan = (text: string): Seconds | undefined => {
 
 	return total
 }
-
-const pad2 = (n: number) => String(n).padStart(2, '0')
-
-/** «01.09.2026» */
-export const formatDateInput = (iso: ISODate) => {
-	const d = new Date(iso)
-
-	return `${pad2(d.getDate())}.${pad2(d.getMonth() + 1)}.${d.getFullYear()}`
-}
-
-/**
- * «01.09.2026» as a moment in the local time zone: the start of that day, or
- * its last second when `endOfDay` is set. undefined when the text is not a date.
- */
-export const parseDateInput = (
-	text: string,
-	endOfDay = false,
-): ISODate | undefined => {
-	const match = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(text.trim())
-
-	if (!match) return undefined
-
-	const [day, month, year] = [
-		Number(match[1]),
-		Number(match[2]),
-		Number(match[3]),
-	]
-	const d = endOfDay
-		? new Date(year, month - 1, day, 23, 59, 59)
-		: new Date(year, month - 1, day)
-
-	// 31.02 would roll over into March
-	if (d.getDate() !== day || d.getMonth() !== month - 1) return undefined
-
-	return d.toISOString()
-}

@@ -6,7 +6,9 @@ export type FormField = {
 	 * `options` through a "+" link, `choice` picks one of `options` as a chip,
 	 * `segment` picks one of `options` in a segmented control (for the `aside`
 	 * of a section), `span` is a length as a number and a unit (its value is
-	 * the seconds), `locked` shows `lines` that cannot be edited
+	 * the seconds), `dates` is a period of days (its value is «2026-11-01/2026-11-30»,
+	 * both days included), `locked` shows `lines` that cannot be edited, `arrow` is
+	 * a sign between two columns and holds no value
 	 */
 	type?:
 		| 'line'
@@ -21,7 +23,9 @@ export type FormField = {
 		| 'choice'
 		| 'segment'
 		| 'span'
+		| 'dates'
 		| 'locked'
+		| 'arrow'
 	placeholder?: string
 	hint?: string
 	/** for `select`, `chips` and `choice`; `hint` of an option is the line under it in the menu */
@@ -40,6 +44,8 @@ export type FormField = {
 	numeric?: boolean
 	/** the width of the field in px; the field takes the whole line by default */
 	width?: number
+	/** in a section with `columns`: the column the field sits in, counted from 1; the next free one by default */
+	column?: number
 	/** for `locked` */
 	lines?: string[]
 	/** the field is shown only while the `check` field `key` is `is`, or the `line`, `select`, `choice` or `segment` field holds `is` */
@@ -91,5 +97,5 @@ export type FormRow = {
 	who: 'self' | 'chosen'
 }
 
-/** `line`, `area`, `select`, `choice`, `segment`, `span` and `color` give a string, `tags` and `chips` a list, `check` a flag, `rows` a list of rows */
+/** `line`, `area`, `select`, `choice`, `segment`, `span`, `dates` and `color` give a string, `tags` and `chips` a list, `check` a flag, `rows` a list of rows */
 export type FormValues = Record<string, string | string[] | boolean | FormRow[]>
