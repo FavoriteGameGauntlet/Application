@@ -34,6 +34,13 @@
 			"priority": 5,
 			"status": "todo",
 			"evidence": ""
+		},
+		{
+			"id": "recent-events-redesign",
+			"title": "Rework the «Недавние события» form. The user gave no details yet: ASK THE USER FOR THEM BEFORE STARTING and change nothing until the answer.",
+			"priority": 6,
+			"status": "todo",
+			"evidence": ""
 		}
 	]
 }
