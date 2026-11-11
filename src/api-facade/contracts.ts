@@ -464,6 +464,8 @@ export type PerkAbility = {
 	/** false: the user picks which of the entries to apply, each time */
 	shouldApplyToAll: boolean
 	entries: ItemEntryRow[]
+	/** read only: the text of `entries`, built by the facade from the resource names in the response */
+	changes?: string[]
 	/** how often it can be used; not set = without limit, then no charges and no renewal */
 	uses?: { max: number; start: number }
 	/** events that charge the ability: this many give one use; 0 = no charges */

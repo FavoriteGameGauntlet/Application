@@ -81,14 +81,15 @@ export const toCatalogEntry = <K extends ResourceKind>(
 		case 'perks': {
 			const perk = dto as PerkDto
 			const { ability } = perk
+			const abilityChanges = (ability?.entries ?? []).map((e) =>
+				toItemEntryText(e, pointTypes),
+			)
 
 			return {
 				...base,
 				changes: [
 					...perk.modifiers.map((m) => toModifierText(m, pointTypes)),
-					...(ability?.entries ?? []).map((e) =>
-						toItemEntryText(e, pointTypes),
-					),
+					...abilityChanges,
 				],
 				modifiers: perk.modifiers.map(toModifierRow),
 				perkKind: ability ? 'active' : 'passive',
@@ -96,6 +97,7 @@ export const toCatalogEntry = <K extends ResourceKind>(
 					ability: {
 						shouldApplyToAll: ability.shouldApplyToAll,
 						entries: ability.entries.map(toItemEntryRow),
+						changes: abilityChanges,
 						...(ability.uses && { uses: ability.uses }),
 						chargesMax: ability.chargesMax,
 						...(ability.renewalPeriod && {

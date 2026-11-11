@@ -9,6 +9,7 @@ import type {
 	FormField,
 	FormRow,
 	FormSection,
+	FormTab,
 	FormValues,
 } from '../../../components/formDialog'
 import FormDialog from '../../../components/FormDialog.vue'
@@ -251,44 +252,79 @@ const sections = computed<FormSection[]>(() => {
 				addLabel: 'Изменение очков',
 			}
 
+			const perkFields = [...common, modifiers]
+
 			// the backend refuses to change the ability: the state of every holder depends on it
 			if (entry) {
+				const { ability } = entry
+
+				// a perk without an ability has nothing to show on a second tab
+				if (!ability) return [{ fields: perkFields }]
+
 				return [
+					{ tab: 'perk', fields: perkFields },
 					{
+						tab: 'ability',
+						title: 'Когда игрок применяет',
 						fields: [
-							...common,
-							modifiers,
+							{
+								key: 'abilityEntriesText',
+								type: 'locked',
+								label: 'Когда игрок применяет',
+								lines: ability.changes ?? [],
+							},
+						],
+					},
+					{
+						tab: 'ability',
+						title: 'Сколько раз',
+						fields: [
+							{
+								key: 'abilityLimitsText',
+								type: 'locked',
+								label: 'Сколько раз',
+								lines: abilityLimitLines(ability),
+							},
+						],
+					},
+					{
+						tab: 'ability',
+						fields: [
 							{
 								key: 'abilityNote',
 								type: 'note',
-								label: 'Способность',
-								hint: 'Тип, способность, использования, заряды и обновление после создания не меняются: от них зависит состояние у всех владельцев. Чтобы получить другую способность, создай новый перк.',
+								label: '',
+								hint: 'Способность не меняется после создания: от неё зависит состояние у всех владельцев. Нужна другая — создай новый перк.',
 							},
 						],
 					},
 				]
 			}
 
+			const limited = { key: 'abilityLimit', is: 'limited' }
+
 			return [
 				{
+					tab: 'perk',
 					fields: [
-						...common,
-						modifiers,
+						...perkFields,
 						{
-							key: 'perkKind',
-							label: 'Тип',
-							type: 'select',
-							options: [
-								{ value: 'active', label: 'активный' },
-								{ value: 'passive', label: 'пассивный' },
-							],
+							key: 'abilityOn',
+							type: 'check',
+							label: 'Игрок применяет перк сам',
 						},
+					],
+				},
+				{
+					tab: 'ability',
+					fields: [
 						{
 							key: 'abilityEntries',
-							label: 'Что делает способность (активный перк)',
+							label: 'Когда игрок применяет',
 							type: 'rows',
 							variant: 'item-entry',
-							hint: 'Применяется, когда игрок использует способность, как у предмета.',
+							required: 'действие способности',
+							addLabel: 'Действие',
 						},
 						{
 							key: 'abilityChooseEntries',
@@ -296,28 +332,56 @@ const sections = computed<FormSection[]>(() => {
 							label: 'Игрок выбирает, что применить',
 							hint: 'При использовании способности он отметит строки, которые сработают.',
 						},
+					],
+				},
+				{
+					tab: 'ability',
+					title: 'Сколько раз',
+					columns: '96px 156px minmax(0, 1fr)',
+					aside: {
+						key: 'abilityLimit',
+						type: 'segment',
+						label: 'Сколько раз',
+						options: [
+							{ value: 'unlimited', label: 'Сколько угодно' },
+							{ value: 'limited', label: 'С лимитом' },
+						],
+					},
+					fields: [
 						{
 							key: 'abilityUsesMax',
-							label: 'Использований: максимум',
-							placeholder: '3',
-							hint: 'Пусто — без ограничения. Тогда зарядов и обновления нет.',
+							label: 'Максимум',
+							numeric: true,
+							required: 'максимум использований',
+							when: limited,
 						},
 						{
 							key: 'abilityUsesStart',
-							label: 'Использований: сколько у нового владельца',
-							placeholder: '1',
-						},
-						{
-							key: 'abilityCharges',
-							label: 'Зарядов на одно использование',
-							placeholder: '0',
-							hint: 'Столько событий, заряжающих способность, дают одно использование. 0 — зарядов нет.',
+							label: 'У нового владельца',
+							numeric: true,
+							required: 'использования у нового владельца',
+							when: limited,
 						},
 						{
 							key: 'abilityRenewal',
-							label: 'Обновление использований',
-							placeholder: '1 день',
-							hint: 'Через это время после последнего изменения использования возвращаются к максимуму. Пусто — не обновляются.',
+							label: 'Полное восстановление раз в',
+							type: 'span',
+							when: limited,
+						},
+					],
+				},
+				{
+					tab: 'ability',
+					fields: [
+						{
+							key: 'abilityCharges',
+							label: 'Зарядов на одно использование',
+							numeric: true,
+							optional: true,
+							width: 120,
+							placeholder: '0',
+							hint: 'Столько событий, заряжающих способность, дают одно использование. 0 — зарядов нет.',
+							when: limited,
 						},
 					],
 				},
@@ -325,6 +389,48 @@ const sections = computed<FormSection[]>(() => {
 		}
 	}
 })
+
+const tabs = computed<FormTab[] | undefined>(() => {
+	if (kind !== 'perks') return undefined
+
+	const perk = { key: 'perk', label: 'Перк' }
+
+	if (entry) {
+		return entry.ability
+			? [perk, { key: 'ability', label: 'Способность', locked: true }]
+			: undefined
+	}
+
+	return [
+		perk,
+		{
+			key: 'ability',
+			label: 'Способность',
+			when: { key: 'abilityOn', is: true },
+		},
+	]
+})
+
+/** what the ability of an existing perk allows, as the lines of the locked tab */
+const abilityLimitLines = (ability: PerkAbility) => {
+	if (!ability.uses) return ['Сколько угодно.']
+
+	const lines = [
+		`До ${ability.uses.max} раз, новый владелец начинает с ${ability.uses.start}.`,
+	]
+
+	if (ability.chargesMax > 0) {
+		lines.push(`Зарядов на одно использование: ${ability.chargesMax}.`)
+	}
+
+	if (ability.renewalPeriod) {
+		lines.push(
+			`Раз в ${formatSpanExact(ability.renewalPeriod)} возвращается к максимуму.`,
+		)
+	}
+
+	return lines
+}
 
 /** the preset that holds the length of the effect, or `custom` for a length without a chip */
 const durationPresetOf = (duration: number | null | undefined) => {
@@ -353,12 +459,13 @@ const initial = computed<FormValues>(() => ({
 		: '',
 	abilityCharges: entry?.ability ? String(entry.ability.chargesMax) : '',
 	abilityRenewal: entry?.ability?.renewalPeriod
-		? formatSpanExact(entry.ability.renewalPeriod)
+		? String(entry.ability.renewalPeriod)
 		: '',
+	abilityOn: entry ? !!entry.ability : false,
+	abilityLimit: entry?.ability?.uses ? 'limited' : 'unlimited',
 	durationPreset: durationPresetOf(entry?.duration),
 	duration: entry?.duration ? formatSpanExact(entry.duration) : '',
 	usesMax: entry?.usesMax != null ? String(entry.usesMax) : entry ? '' : '1',
-	perkKind: entry?.perkKind ?? 'active',
 	startValue: entry?.startValue != null ? String(entry.startValue) : '',
 	minimum: entry?.minimum != null ? String(entry.minimum) : '',
 	maximum: entry?.maximum != null ? String(entry.maximum) : '',
@@ -380,42 +487,41 @@ const readAbility = (
 	entries: ItemEntryRow[],
 	shouldApplyToAll: boolean,
 ): PerkAbility | string => {
-	const usesMax = text('abilityUsesMax')
-	const usesStart = text('abilityUsesStart')
+	// without a limit there are no charges and no renewal
+	if (text('abilityLimit') !== 'limited') {
+		return { shouldApplyToAll, entries, chargesMax: 0 }
+	}
+
 	const charges = text('abilityCharges')
 	const renewal = text('abilityRenewal')
 	const chargesMax = charges ? Number(charges) : 0
-	const renewalPeriod = renewal ? parseSpan(renewal) : undefined
+	const renewalPeriod = renewal ? Number(renewal) : undefined
 
 	if (!Number.isInteger(chargesMax) || chargesMax < 0) {
 		return 'Зарядов — целое число, не меньше нуля.'
 	}
 
 	if (
-		renewal &&
-		(renewalPeriod == null || renewalPeriod < 1 || renewalPeriod > 315_360_000)
+		renewalPeriod !== undefined &&
+		!(
+			Number.isInteger(renewalPeriod) &&
+			renewalPeriod >= 1 &&
+			renewalPeriod <= 315_360_000
+		)
 	) {
-		return 'Обновление: напиши, например, «2 ч» или «1 день», не дольше 10 лет.'
+		return 'Восстановление: целое число, не больше 10 лет. Или убери его крестиком.'
 	}
 
-	if (!usesMax && !usesStart) {
-		return chargesMax > 0 || renewal
-			? 'Заряды и обновление нужны, только когда использования ограничены.'
-			: { shouldApplyToAll, entries, chargesMax: 0 }
-	}
-
-	const max = Number(usesMax)
-	const start = Number(usesStart)
+	const max = Number(text('abilityUsesMax'))
+	const start = Number(text('abilityUsesStart'))
 
 	if (
-		!usesMax ||
-		!usesStart ||
 		!Number.isInteger(max) ||
 		max < 1 ||
 		!Number.isInteger(start) ||
 		start < 0
 	) {
-		return 'Использования: максимум — целое число от 1, у нового владельца — целое число от 0. Или оставь оба пустыми.'
+		return 'Использования: максимум — целое число от 1, у нового владельца — целое число от 0.'
 	}
 
 	return {
@@ -559,21 +665,13 @@ const onSave = async (values: FormValues) => {
 
 		input.modifiers = modifiers.value
 
-		// the ability of an existing perk is not in the form and the backend does not change it
-		if (!entry)
-			input.perkKind = text('perkKind') === 'passive' ? 'passive' : 'active'
-
-		if (!entry && input.perkKind === 'active') {
+		// the ability of an existing perk is locked and the backend does not change it;
+		// a new perk is active when the player may use it, otherwise passive
+		if (!entry && values.abilityOn === true) {
 			const entries = parseItemEntries(values.abilityEntries as FormRow[])
 
 			if ('error' in entries)
 				return invalid('Проверь способность', entries.error)
-			if (!entries.value.length) {
-				return invalid(
-					'Добавь изменение',
-					'Активному перку нужна хотя бы одна строка способности.',
-				)
-			}
 
 			const ability = readAbility(
 				text,
@@ -597,6 +695,7 @@ const onSave = async (values: FormValues) => {
 		:open
 		:title
 		:sections
+		:tabs
 		:initial
 		:submit-label
 		@close="emit('close')"

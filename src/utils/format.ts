@@ -139,6 +139,23 @@ const SPAN_UNITS: [prefix: string, seconds: number][] = [
 	['с', 1],
 ]
 
+/** the units of a length typed as a number and a unit, the largest first */
+export const SPAN_STEPS: { seconds: Seconds; label: string }[] = [
+	{ seconds: 86_400, label: 'День' },
+	{ seconds: 3_600, label: 'Час' },
+	{ seconds: 60, label: 'Минута' },
+	{ seconds: 1, label: 'Секунда' },
+]
+
+/** 7200 → 2 hours, 90 → 90 seconds: the largest unit that keeps every second */
+export const splitSpan = (seconds: Seconds) => {
+	const step =
+		SPAN_STEPS.find((s) => seconds % s.seconds === 0) ??
+		SPAN_STEPS[SPAN_STEPS.length - 1]
+
+	return { amount: seconds / step.seconds, unit: step.seconds }
+}
+
 /** «1 день», «2 ч», «1 ч 40 м» → seconds; undefined when it isn't a duration */
 export const parseSpan = (text: string): Seconds | undefined => {
 	const value = text.trim().toLowerCase()

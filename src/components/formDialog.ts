@@ -3,7 +3,10 @@ export type FormField = {
 	label: string
 	/**
 	 * a single line by default; `check` is a switch, `chips` picks several of
-	 * `options` through a "+" link, `choice` picks one of `options` as a chip
+	 * `options` through a "+" link, `choice` picks one of `options` as a chip,
+	 * `segment` picks one of `options` in a segmented control (for the `aside`
+	 * of a section), `span` is a length as a number and a unit (its value is
+	 * the seconds), `locked` shows `lines` that cannot be edited
 	 */
 	type?:
 		| 'line'
@@ -16,6 +19,9 @@ export type FormField = {
 		| 'color'
 		| 'chips'
 		| 'choice'
+		| 'segment'
+		| 'span'
+		| 'locked'
 	placeholder?: string
 	hint?: string
 	/** for `select`, `chips` and `choice`; `hint` of an option is the line under it in the menu */
@@ -34,18 +40,37 @@ export type FormField = {
 	numeric?: boolean
 	/** the width of the field in px; the field takes the whole line by default */
 	width?: number
-	/** the field is shown only while the `line`, `select` or `choice` field `key` holds `is` */
-	when?: { key: string; is: string }
+	/** for `locked` */
+	lines?: string[]
+	/** the field is shown only while the `check` field `key` is `is`, or the `line`, `select`, `choice` or `segment` field holds `is` */
+	when?: { key: string; is: string | boolean }
 }
 
 /**
  * A titled group of fields. In a group with `columns` (a CSS grid template) the
- * fields sit side by side and their labels are quiet.
+ * fields sit side by side and their labels are quiet. `aside` sits at the end
+ * of the title line. A section with no shown field and no `aside` is hidden.
+ * With `FormDialog.tabs` the section belongs to the tab `tab`, the first by default.
  */
 export type FormSection = {
 	title?: string
 	columns?: string
+	aside?: FormField
+	tab?: string
 	fields: FormField[]
+}
+
+/**
+ * A tab of a form. The tab is shown while its `when` holds; the bar is shown
+ * while there is more than one tab. A red dot on the tab means that a shown
+ * field of it with `required` is empty.
+ */
+export type FormTab = {
+	key: string
+	label: string
+	/** the tab can be read, not edited */
+	locked?: boolean
+	when?: { key: string; is: string | boolean }
 }
 
 /**
@@ -66,5 +91,5 @@ export type FormRow = {
 	who: 'self' | 'chosen'
 }
 
-/** `line`, `area`, `select`, `choice` and `color` give a string, `tags` and `chips` a list, `check` a flag, `rows` a list of rows */
+/** `line`, `area`, `select`, `choice`, `segment`, `span` and `color` give a string, `tags` and `chips` a list, `check` a flag, `rows` a list of rows */
 export type FormValues = Record<string, string | string[] | boolean | FormRow[]>

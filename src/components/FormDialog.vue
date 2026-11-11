@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, reactive, watch } from 'vue'
+import { computed, nextTick, reactive, ref, watch } from 'vue'
 import ColorPicker from './ColorPicker.vue'
 import RowsEditor from './RowsEditor.vue'
 import UiAddLink from './ui/UiAddLink.vue'
@@ -12,15 +12,25 @@ import UiIconButton from './ui/UiIconButton.vue'
 import UiInput from './ui/UiInput.vue'
 import UiPickChips from './ui/UiPickChips.vue'
 import UiPicker from './ui/UiPicker.vue'
+import UiSegmented from './ui/UiSegmented.vue'
+import UiSpanInput from './ui/UiSpanInput.vue'
 import UiSwitch from './ui/UiSwitch.vue'
+import UiTabs from './ui/UiTabs.vue'
 import UiTag from './ui/UiTag.vue'
 import UiTextarea from './ui/UiTextarea.vue'
-import type { FormField, FormRow, FormSection, FormValues } from './formDialog'
+import type {
+	FormField,
+	FormRow,
+	FormSection,
+	FormTab,
+	FormValues,
+} from './formDialog'
 
 type Props = {
 	open: boolean
 	title: string
 	sections: FormSection[]
+	tabs?: FormTab[]
 	/** values that the form opens with */
 	initial: FormValues
 	/** the text of the main button */
@@ -30,6 +40,7 @@ type Props = {
 const {
 	open,
 	sections,
+	tabs = [],
 	initial,
 	submitLabel = 'Сохранить',
 } = defineProps<Props>()
@@ -46,7 +57,9 @@ const unfolded = reactive<Record<string, boolean>>({})
 /** the elements of the unfolded fields, to put the focus into the one just asked for */
 const fieldEls: Record<string, HTMLElement | null> = {}
 
-const allFields = computed(() => sections.flatMap((s) => s.fields))
+const allFields = computed(() =>
+	sections.flatMap((s) => (s.aside ? [s.aside, ...s.fields] : s.fields)),
+)
 
 /** the rows and the columns need more room than a single line */
 const width = computed(() =>
@@ -63,6 +76,8 @@ watch(
 	() => open,
 	(isOpen) => {
 		if (!isOpen) return
+
+		chosenTab.value = ''
 
 		for (const field of allFields.value) {
 			const value = initial[field.key]
@@ -100,8 +115,32 @@ const addTag = (key: string) => {
 	drafts[key] = ''
 }
 
-const isShown = (field: FormField) =>
-	!field.when || texts[field.when.key] === field.when.is
+/** a `check` field holds a flag, any other field holds a string */
+const holds = (when: NonNullable<FormField['when']>) =>
+	(when.key in flags ? flags[when.key] : texts[when.key]) === when.is
+
+const isShown = (field: FormField) => !field.when || holds(field.when)
+
+const visibleTabs = computed(() => tabs.filter((t) => !t.when || holds(t.when)))
+
+const chosenTab = ref('')
+
+/** the tab that is open; the first one when the chosen one is gone */
+const currentTab = computed(() =>
+	visibleTabs.value.some((t) => t.key === chosenTab.value)
+		? chosenTab.value
+		: visibleTabs.value[0]?.key,
+)
+
+const tabOf = (section: FormSection) => section.tab ?? tabs[0]?.key
+
+/** the sections of a tab that is not shown count as absent */
+const inShownTab = (section: FormSection) =>
+	!tabs.length || visibleTabs.value.some((t) => t.key === tabOf(section))
+
+const isSectionShown = (section: FormSection) =>
+	(!tabs.length || tabOf(section) === currentTab.value) &&
+	(!!section.aside || section.fields.some(isShown))
 
 const isFilled = (field: FormField) => {
 	if (field.type === 'rows') return !!rowLists[field.key]?.length
@@ -116,10 +155,23 @@ const joinNouns = (nouns: string[]) =>
 		? `${nouns.slice(0, -1).join(', ')} и ${nouns[nouns.length - 1]}`
 		: nouns[0]
 
-const missing = computed(() =>
-	allFields.value
+const missingIn = (inSections: FormSection[]) =>
+	inSections
+		.filter(inShownTab)
+		.flatMap((s) => (s.aside ? [s.aside, ...s.fields] : s.fields))
 		.filter((f) => f.required && isShown(f) && !isFilled(f))
-		.map((f) => f.required as string),
+		.map((f) => f.required as string)
+
+const missing = computed(() => missingIn(sections))
+
+/** the tabs with something still to fill, as the bar shows them */
+const tabItems = computed(() =>
+	visibleTabs.value.map((t) => ({
+		value: t.key,
+		label: t.label,
+		locked: t.locked,
+		mark: missingIn(sections.filter((s) => tabOf(s) === t.key)).length > 0,
+	})),
 )
 
 const why = computed(() =>
@@ -164,154 +216,190 @@ const groupsOf = (field: FormField) => [{ options: field.options ?? [] }]
 		@close="emit('close')"
 		@submit="onSubmit"
 	>
+		<template v-if="visibleTabs.length > 1" #tabs>
+			<UiTabs
+				:model-value="currentTab"
+				:items="tabItems"
+				compact
+				@update:model-value="chosenTab = $event ?? ''"
+			/>
+		</template>
+
 		<div class="form__sections">
-			<UiFormSection
-				v-for="(section, i) in sections"
-				:key="i"
-				:title="section.title"
-			>
-				<div
-					class="form__fields"
-					:class="{ 'form__fields--columns': section.columns }"
-					:style="{ gridTemplateColumns: section.columns }"
-				>
-					<template v-for="field in section.fields" :key="field.key">
-						<template v-if="isShown(field)">
-							<div
-								v-if="field.type === 'check'"
-								class="form__check"
-								:style="{ width: field.width && `${field.width}px` }"
-							>
-								<UiSwitch v-model="flags[field.key]" :label="field.label" />
-								<span v-if="field.hint" class="form__note form__check-hint">{{
-									field.hint
-								}}</span>
-							</div>
-
-							<div v-else-if="field.type === 'note'" class="form__tags">
-								<span class="form__label">{{ field.label }}</span>
-								<span class="form__note">{{ field.hint }}</span>
-							</div>
-
-							<ColorPicker
-								v-else-if="field.type === 'color'"
-								v-model="texts[field.key]"
-								:label="field.label"
-								:hint="field.hint"
-							/>
-
-							<RowsEditor
-								v-else-if="field.type === 'rows'"
-								v-model="rowLists[field.key]"
-								:variant="field.variant ?? 'change'"
-								:label="field.label"
-								:hint="field.hint"
-								:empty="field.empty"
-								:add-label="field.addLabel"
-							/>
-
-							<UiField
-								v-else-if="field.type === 'chips'"
-								group
-								:label="field.label"
-								:hint="field.hint"
-							>
-								<UiPickChips
-									v-model="lists[field.key]"
-									:options="field.options ?? []"
-									:add-label="field.addLabel ?? 'Добавить'"
-									:label="field.label"
-								/>
-							</UiField>
-
-							<UiField
-								v-else-if="field.type === 'choice'"
-								group
-								:label="field.label"
-								:hint="field.hint"
-							>
-								<UiChoiceChips
-									v-model="texts[field.key]"
-									:options="field.options ?? []"
-									:label="field.label"
-								/>
-							</UiField>
-
-							<div v-else-if="field.type === 'tags'" class="form__tags">
-								<span class="form__label">{{ field.label }}</span>
-								<div v-if="lists[field.key]?.length" class="form__chips">
-									<UiTag
-										v-for="(tag, j) in lists[field.key]"
-										:key="j"
-										removable
-										@remove="lists[field.key].splice(j, 1)"
-									>
-										{{ tag }}
-									</UiTag>
-								</div>
-								<div class="form__draft">
-									<UiInput
-										v-model="drafts[field.key]"
-										:placeholder="field.placeholder"
-										@keydown.enter.prevent="addTag(field.key)"
-									/>
-									<UiIconButton
-										type="button"
-										icon="plus"
-										variant="outline"
-										size="lg"
-										label="Добавить изменение"
-										style="--ui-icon-button-d: 44px"
-										@click="addTag(field.key)"
-									/>
-								</div>
-								<span class="form__note">{{ field.hint }}</span>
-							</div>
-
-							<UiAddLink
-								v-else-if="!unfolded[field.key]"
-								class="form__fold"
-								@click="unfold(field)"
-								>{{ field.label }}</UiAddLink
-							>
-
-							<div
-								v-else
-								:ref="(el) => (fieldEls[field.key] = el as HTMLElement | null)"
-								class="form__field"
-								:style="{ width: field.width && `${field.width}px` }"
-							>
-								<UiTextarea
-									v-if="field.type === 'area'"
-									v-model="texts[field.key]"
-									:label="field.label"
-									:placeholder="field.placeholder"
-									:hint="field.hint"
-								/>
-
-								<UiPicker
-									v-else-if="field.type === 'select'"
-									v-model="texts[field.key]"
-									:label="field.label"
-									:sub="!!section.columns"
-									:groups="groupsOf(field)"
-									:hint="field.hint"
-								/>
-
-								<UiInput
-									v-else
-									v-model="texts[field.key]"
-									:label="field.label"
-									:sub="!!section.columns"
-									:numeric="field.numeric"
-									:placeholder="field.placeholder"
-									:hint="field.hint"
-								/>
-							</div>
-						</template>
+			<template v-for="(section, i) in sections" :key="i">
+				<UiFormSection v-if="isSectionShown(section)" :title="section.title">
+					<template v-if="section.aside" #aside>
+						<UiSegmented
+							v-model="texts[section.aside.key]"
+							:options="section.aside.options ?? []"
+							:label="section.aside.label"
+						/>
 					</template>
-				</div>
-			</UiFormSection>
+
+					<div
+						class="form__fields"
+						:class="{ 'form__fields--columns': section.columns }"
+						:style="{ gridTemplateColumns: section.columns }"
+					>
+						<template v-for="field in section.fields" :key="field.key">
+							<template v-if="isShown(field)">
+								<div
+									v-if="field.type === 'check'"
+									class="form__check"
+									:style="{ width: field.width && `${field.width}px` }"
+								>
+									<UiSwitch v-model="flags[field.key]" :label="field.label" />
+									<span v-if="field.hint" class="form__note form__check-hint">{{
+										field.hint
+									}}</span>
+								</div>
+
+								<div v-else-if="field.type === 'note'" class="form__tags">
+									<span v-if="field.label" class="form__label">{{
+										field.label
+									}}</span>
+									<span class="form__note">{{ field.hint }}</span>
+								</div>
+
+								<div v-else-if="field.type === 'locked'" class="form__locked">
+									<p v-for="(line, j) in field.lines" :key="j">{{ line }}</p>
+								</div>
+
+								<UiField
+									v-else-if="field.type === 'span'"
+									group
+									:label="field.label"
+									:sub="!!section.columns"
+									:hint="field.hint"
+								>
+									<UiSpanInput
+										v-model="texts[field.key]"
+										:label="field.label"
+									/>
+								</UiField>
+
+								<ColorPicker
+									v-else-if="field.type === 'color'"
+									v-model="texts[field.key]"
+									:label="field.label"
+									:hint="field.hint"
+								/>
+
+								<RowsEditor
+									v-else-if="field.type === 'rows'"
+									v-model="rowLists[field.key]"
+									:variant="field.variant ?? 'change'"
+									:label="field.label"
+									:hint="field.hint"
+									:empty="field.empty"
+									:add-label="field.addLabel"
+								/>
+
+								<UiField
+									v-else-if="field.type === 'chips'"
+									group
+									:label="field.label"
+									:hint="field.hint"
+								>
+									<UiPickChips
+										v-model="lists[field.key]"
+										:options="field.options ?? []"
+										:add-label="field.addLabel ?? 'Добавить'"
+										:label="field.label"
+									/>
+								</UiField>
+
+								<UiField
+									v-else-if="field.type === 'choice'"
+									group
+									:label="field.label"
+									:hint="field.hint"
+								>
+									<UiChoiceChips
+										v-model="texts[field.key]"
+										:options="field.options ?? []"
+										:label="field.label"
+									/>
+								</UiField>
+
+								<div v-else-if="field.type === 'tags'" class="form__tags">
+									<span class="form__label">{{ field.label }}</span>
+									<div v-if="lists[field.key]?.length" class="form__chips">
+										<UiTag
+											v-for="(tag, j) in lists[field.key]"
+											:key="j"
+											removable
+											@remove="lists[field.key].splice(j, 1)"
+										>
+											{{ tag }}
+										</UiTag>
+									</div>
+									<div class="form__draft">
+										<UiInput
+											v-model="drafts[field.key]"
+											:placeholder="field.placeholder"
+											@keydown.enter.prevent="addTag(field.key)"
+										/>
+										<UiIconButton
+											type="button"
+											icon="plus"
+											variant="outline"
+											size="lg"
+											label="Добавить изменение"
+											style="--ui-icon-button-d: 44px"
+											@click="addTag(field.key)"
+										/>
+									</div>
+									<span class="form__note">{{ field.hint }}</span>
+								</div>
+
+								<UiAddLink
+									v-else-if="!unfolded[field.key]"
+									class="form__fold"
+									@click="unfold(field)"
+									>{{ field.label }}</UiAddLink
+								>
+
+								<div
+									v-else
+									:ref="
+										(el) => (fieldEls[field.key] = el as HTMLElement | null)
+									"
+									class="form__field"
+									:style="{ width: field.width && `${field.width}px` }"
+								>
+									<UiTextarea
+										v-if="field.type === 'area'"
+										v-model="texts[field.key]"
+										:label="field.label"
+										:placeholder="field.placeholder"
+										:hint="field.hint"
+									/>
+
+									<UiPicker
+										v-else-if="field.type === 'select'"
+										v-model="texts[field.key]"
+										:label="field.label"
+										:sub="!!section.columns"
+										:groups="groupsOf(field)"
+										:hint="field.hint"
+									/>
+
+									<UiInput
+										v-else
+										v-model="texts[field.key]"
+										:label="field.label"
+										:sub="!!section.columns"
+										:numeric="field.numeric"
+										:placeholder="field.placeholder"
+										:hint="field.hint"
+									/>
+								</div>
+							</template>
+						</template>
+					</div>
+				</UiFormSection>
+			</template>
 		</div>
 
 		<template #footer>
@@ -375,6 +463,18 @@ const groupsOf = (field: FormField) => [{ options: field.options ?? [] }]
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
+}
+
+.form__locked {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font: var(--type-body);
+	color: var(--text-body);
+}
+
+.form__locked p {
+	margin: 0;
 }
 
 .form__label {

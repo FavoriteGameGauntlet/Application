@@ -18,7 +18,12 @@ const emit = defineEmits<{ add: [] }>()
 
 <template>
 	<section class="ui-form-section">
-		<h3 v-if="title" class="ui-form-section__title">{{ title }}</h3>
+		<div v-if="title || $slots.aside" class="ui-form-section__head">
+			<h3 v-if="title" class="ui-form-section__title">{{ title }}</h3>
+			<div v-if="$slots.aside" class="ui-form-section__aside">
+				<slot name="aside" />
+			</div>
+		</div>
 
 		<p v-if="empty && isEmpty" class="ui-form-section__note">{{ empty }}</p>
 
@@ -36,6 +41,17 @@ const emit = defineEmits<{ add: [] }>()
 	flex-direction: column;
 	gap: 10px;
 	min-width: 0;
+}
+
+.ui-form-section__head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-height: 24px;
+}
+
+.ui-form-section__aside {
+	margin-left: auto;
 }
 
 .ui-form-section__title {
