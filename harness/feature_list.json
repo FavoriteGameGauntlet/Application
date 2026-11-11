@@ -76,6 +76,13 @@
 			"priority": 11,
 			"status": "todo",
 			"evidence": ""
+		},
+		{
+			"id": "auth-password-eye",
+			"title": "Fix the eye in the login and registration forms. The user's words, translated: «fix the eye in the authorization and registration forms». It is unclear what is broken. Known: views/Auth/AuthView.vue has the password and the repeat password as plain type=\"password\" fields of UiInput, there is no show-password button of our own and no eye icon in assets/icons, so the eye in question is most likely the one the WebView draws itself in a password field (WebView2 on Windows). Open: what exactly is wrong with it (it does not show, it looks out of place, it is doubled, it hides the field error), on which system, and whether to keep the native eye or replace it with our own button.",
+			"priority": 12,
+			"status": "todo",
+			"evidence": ""
 		}
 	]
 }
