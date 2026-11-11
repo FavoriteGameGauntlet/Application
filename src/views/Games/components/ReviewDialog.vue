@@ -49,6 +49,12 @@ watch(
 	},
 )
 
+/** back to the review it was opened on; opened straight in editing, there is none to go back to */
+const cancelEdit = () => {
+	if (startEditing) emit('close')
+	else editing.value = false
+}
+
 const onSave = async () => {
 	const target = game
 
@@ -132,7 +138,7 @@ const onSave = async () => {
 
 		<template v-if="game && (editing || own)" #footer>
 			<template v-if="editing">
-				<UiButton variant="ghost" @click="emit('close')">Отмена</UiButton>
+				<UiButton variant="ghost" @click="cancelEdit">Отмена</UiButton>
 				<UiButton @click="onSave">Сохранить</UiButton>
 			</template>
 			<UiButton v-else variant="outline" icon="pencil" @click="startEdit"
