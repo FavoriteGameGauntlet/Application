@@ -1,105 +1,115 @@
 # Favorite Game Gauntlet (fgg-application)
 
-Десктопный клиент на Tauri 2 (Rust) + Vue 3 + TypeScript + Pinia. Общается с бэкендом по HTTP, своей серверной части в репозитории нет. Интерфейс на русском.
+Desktop client on Tauri 2 (Rust) + Vue 3 + TypeScript + Pinia. It talks to the backend over HTTP; there is no server code in this repository. The interface is in Russian.
 
-Цель: оставить репозиторий в состоянии, с которого следующая сессия продолжит без догадок.
+Goal: leave the repository in a state the next session can continue from without guessing.
 
-## Рамки
+## Scope
 
-Работай только в `fgg-application`. Не трогай, не изучай и не предлагай изменения в других репозиториях (например, `fgg-server`, `fgg-database`, `fgg-brand`) без явной команды пользователя. Подробности про бэкенд (эндпоинты, поля, коды ошибок, авторизация) смотри в документации API: https://api.fgg-challenge.com/scalar. Не угадывай их по соседнему коду и не выдумывай поля.
+Work only in `fgg-application`. Don't touch, inspect or propose changes to other repositories (for example `fgg-server`, `fgg-database`, `fgg-brand`) without an explicit command from the user. For backend details (endpoints, fields, error codes, authorization) use the API documentation: https://api.fgg-challenge.com/scalar. Don't guess them from neighbouring code and don't invent fields.
 
-## Архитектура
+## Architecture
 
-Структура `src/`, предметная область (пати, колесо, ресурсы, журнал, админка) и сквозные потоки (вход, загрузка данных, таймер, HTTP-слой, формы, стили) описаны в [harness/ARCHITECTURE.md](harness/ARCHITECTURE.md). Прочитай его перед планированием изменений, прежде чем искать ответы в коде. Если после изменения документ перестал соответствовать коду, обнови его.
+The structure of `src/`, the domain (parties, wheel, resources, journal, admin) and the cross-cutting flows (login, data loading, timer, HTTP layer, forms, styles) are described in [harness/ARCHITECTURE.md](harness/ARCHITECTURE.md). Read it before planning changes, before looking for answers in the code. If a change makes the document disagree with the code, update it.
 
-## Начало работы
+## Starting work
 
-1. Переключись на `master`, обнови его (`git pull`) и создай от него новую ветку; работай только в ней. Историю коммитов не читай.
-2. Прогони проверки из раздела «Проверки». Если они не проходят, сначала почини это.
+1. Switch to `master`, update it (`git pull`) and create a new branch from it; work only there. Don't read the commit history.
+2. Read `harness/feature_list.json` and pick the unfinished feature with the lowest `priority`. Skip a feature whose only remaining step waits for the user and say so in the reply. If the user names a task themselves, work on it and add it to the list following "Required artifacts".
+3. Run the checks from "Checks". If they fail, fix that first.
 
-## Проверки
+## Required artifacts
 
-Тестов в проекте нет. Перед тем как считать работу готовой, прогоняй:
+`harness/feature_list.json` is the source of truth for feature state. Format: `{"features": [{"id", "title", "priority", "status", "evidence"}]}`. `status` is `todo`, `in_progress` or `done`. `evidence` is empty until the feature is verified.
+
+`harness/archive/features-done.json` holds the full entries of done features and is not read at startup. When a feature is done, move its full entry there and leave in `feature_list.json` the `id`, a one-line `title`, the `priority`, `done` and an `evidence` like "Done <date>. Full record: harness/archive/features-done.json". Create the `archive/` folder with the first done feature.
+
+## Checks
+
+The project has no tests. Before treating work as finished, run:
 
 ```bash
 npm run lint            # eslint ./src
-npx vue-tsc --noEmit    # типы, в том числе .vue
-npx prettier -w <файлы> # форматирование только изменённых файлов
+npx vue-tsc --noEmit    # types, .vue files included
+npx prettier -w <files> # format only the changed files
 ```
 
-`npm run build` = `vue-tsc --noEmit && vite build`. Для проверки Rust: `cargo check` в `src-tauri/`. Запускать приложение целиком (`npm run tauri dev`) нужно только для изменений в `src-tauri/` или поведения окна.
+`npm run build` = `vue-tsc --noEmit && vite build`. To check Rust, run `cargo check` in `src-tauri/`. Run the whole app (`npm run tauri dev`) only for changes in `src-tauri/` or window behaviour.
 
-## План до правок
+## Plan before edits
 
-После шагов запуска и перед первой правкой любого файла напиши в ответе план изменений и дождись, пока пользователь его прочтёт и ответит. До этого только читай, без правок.
+After the startup steps and before the first edit of any file, write a plan of changes in the reply and wait until the user has read it and answered. Until then only read, no edits.
 
-- Перечисли, что добавляется, меняется и удаляется: экраны, компоненты, сторы, методы `Api`, поля контракта, маршруты, ключи `StoreKey`. Затем шаги проверки. Одна строка на пункт.
-- Каждый пункт, который пользователь не назвал буквально, пометь как «моё» и объясни причину. Помечай каждое удаление. Рабочий экран, поле или метод удаляются только по слову пользователя.
-- Ничего не добавляй в план «для совместимости».
-- Назови каждый хелпер, тип или проверку, которыми пользуются два и больше раздела, и положи их туда, где живёт понятие, с которым они работают, а не в одного из пользователей, чтобы другой вызывал оттуда.
-- Если план приходится менять по ходу работы (новое поле, метод, удаление), остановись, скажи, что меняется и почему, и дождись ответа. Исправление внутри плана нового ответа не требует.
-- Правка в одну строку получает план в одну строку.
+- List what is added, changed and removed: screens, components, stores, `Api` methods, contract fields, routes, `StoreKey` keys. Then the verification steps. One line per item.
+- Mark every item that the user did not name literally as "mine" and give the reason. Mark every removal. A working screen, field or method is removed only on the user's word.
+- Put nothing into the plan "for compatibility".
+- Name every helper, type or check that two or more sections use and put it where the concept it works on lives, not in one of its users for the other to call.
+- If the plan has to change during the work (a new field, method or removal), stop, say what changes and why, and wait for an answer. A fix inside the plan needs no new answer.
+- A one-line fix gets a one-line plan.
 
-## Правила работы
+## Working rules
 
-- Одна фича за раз.
-- Написанный код не делает фичу готовой, готовой её делает проверка.
-- Не выходи за рамки фичи, кроме узкого исправления, без которого нельзя двигаться дальше.
-- Не меняй молча правила проверки (`eslint.config.ts`, `tsconfig.json`, `.prettierrc`, раздел «Проверки», Definition of Done).
-- Предпочитай файлы в репозитории пересказам в чате.
-- После правок форматируй только изменённые файлы, не всё дерево.
-- Не коммить в `master`, работай в ветке. В названиях веток нет слэшей (`admin-free-manual-change`, а не `feature/admin-free-manual-change`).
-- В заголовках коммитов нет ссылок на issue и PR.
-- `AGENTS.md`, `CLAUDE.md` и файлы `harness/` лежат в репозитории как остальной код: их изменение идёт через ветку и PR.
-- Ничего про проект не пиши в память агента. Что нужно следующей сессии, идёт в этот файл или в `harness/ARCHITECTURE.md`.
-- Если инструмента нет в PATH или не запущен демон, скажи об этом и остановись. Не ищи его по системе и не запускай сервисы сам.
-- **Варианты ранжируются по дизайну, а не по размеру диффа.** Если в плане или вопросе есть альтернативы, сначала перечисли их и порекомендуй ту, что ставит код на его место, как бы велик ни был дифф. Назови цену каждого варианта. Малый дифф — цена, которую нужно назвать, но не причина рекомендовать вариант. Нельзя отбрасывать правильный вариант только потому, что он затрагивает больше файлов: это дешёвая правка.
+- One feature at a time.
+- Written code does not make a feature complete; verification does.
+- Stay within the feature's scope unless a blocker requires a narrow fix.
+- Don't silently change the verification rules (`eslint.config.ts`, `tsconfig.json`, `.prettierrc`, "Checks", "Definition of Done").
+- Prefer files in the repository to summaries in chat.
+- After edits, format only the changed files, not the whole tree.
+- Never commit to `master`; work in a branch. Branch names contain no slashes (`admin-free-manual-change`, not `feature/admin-free-manual-change`).
+- Commit titles carry no issue or PR links.
+- `AGENTS.md`, `CLAUDE.md` and the `harness/` files are tracked like the rest of the code: a change to them goes through a branch and a PR.
+- Don't write anything about the project to the agent's memory. What a later session needs goes into this file or `harness/ARCHITECTURE.md`.
+- Think in English; reply to the user in Russian.
+- If a tool is missing from PATH or a daemon is not running, say so and stop. Don't search the system for it and don't start services yourself.
+- **Options are ranked by design, not by diff size.** When the plan or a question offers alternatives, list them first and recommend the one that puts the code in its proper place, however large its diff. State what each option costs. A smaller diff is a cost to state, never the reason to recommend an option. Never drop the proper option only because it touches more files: that is a cheap change.
 
-## Конвенции кода
+## Code conventions
 
-- Импорты относительные (`../../stores/x`). Алиас `@` настроен в Vite, но в коде не используется.
-- Компоненты: `<script setup lang="ts">`, props через `defineProps` с деструктуризацией.
-- Ошибки API показываем через `useToastStore().error(e)`, сообщение берётся из `body.message` ответа. Свои сообщения пользователю: `toast.show(title, text, tone)`.
-- Для календарной логики и форматирования используется `@js-temporal/polyfill` (см. `api-facade/http.ts`, `api-facade/http/games.ts`). Простые отметки времени и таймер работают на `Date.now()`, это нормально. Новую календарную логику пиши на Temporal.
-- Тексты интерфейса и сообщения пользователю на русском. Комментарии и сообщения коммитов на английском, комментарий объясняет «почему», а не пересказывает код.
-- `src/assets/` (иконки, шрифты) из линтера исключён, руками не правь.
+- Imports are relative (`../../stores/x`). The `@` alias is configured in Vite but not used in the code.
+- Components use `<script setup lang="ts">`, with props through `defineProps` and destructuring.
+- Show API errors through `useToastStore().error(e)`; the message comes from `body.message` of the response. Own messages to the user go through `toast.show(title, text, tone)`.
+- Calendar logic and formatting use `@js-temporal/polyfill` (see `api-facade/http.ts`, `api-facade/http/games.ts`). Plain timestamps and the timer run on `Date.now()`, which is fine. Write new calendar logic with Temporal.
+- UI texts and messages to the user are in Russian. Code comments and commit messages are in English; a comment explains why, not what the code does.
+- `src/assets/` (icons, fonts) is excluded from the linter; don't edit it by hand.
 
-## Git и релиз
+## Git and release
 
-- В `master` изменения попадают через PR (мерж-коммит `Merge pull request #N …`).
-- Сообщения коммитов: английский, повелительное наклонение (`Add the free manual change to the admin sidebar`), заголовок без точки. Коммит — это заголовок и не больше двух строк тела; дифф уже показывает, что изменилось.
-- Версия живёт в трёх местах: `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` (+ `Cargo.lock`). Менять только через `npm version <x>`: скрипт `scripts/bump-version.mjs` синхронизирует остальные и делает `cargo update -p fgg`. Руками версию не правь.
-- Релиз собирает `.github/workflows/release.yml` по тегу `v*` (Windows NSIS, Linux AppImage). Теги не создавай и не пушь без явной просьбы.
-- Автообновление проверяет подпись (`plugins.updater.pubkey` в `tauri.conf.json`). Ключ и этот блок не трогай.
+- Changes reach `master` through a PR (merge commit `Merge pull request #N …`).
+- Commit messages: English, imperative mood (`Add the free manual change to the admin sidebar`), no full stop in the title. A commit is a title and at most two lines of body; the diff already shows what changed.
+- The version lives in three places: `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` (+ `Cargo.lock`). Change it only with `npm version <x>`: the `scripts/bump-version.mjs` script syncs the others and runs `cargo update -p fgg`. Don't edit the version by hand.
+- `.github/workflows/release.yml` builds a release on a `v*` tag (Windows NSIS, Linux AppImage). Don't create or push tags without an explicit request.
+- The auto-updater verifies a signature (`plugins.updater.pubkey` in `tauri.conf.json`). Don't touch the key or that block.
 
-## Pull Requests
+## Pull requests
 
-- Описание пишется на английском.
-- Коммиты и описания PR короткие. PR состоит из разделов «What changed» (2–4 предложения), «Order» (только когда важен порядок слияния: одно предложение с порядком, который работает, и ничего о других порядках), «What was checked» (одна строка на реальную проверку) и «Not checked». Без истории того, как шла работа, без повторов доказательств и без списка по функциям. Перед написанием коммита или PR загрузи `antislop:antislop-copywriting` и следуй ему: без длинных тире, воды и модных слов. Если описание больше примерно 250 слов, сократи.
-- Не пиши голое `#123` для PR другого репозитория: GitHub свяжет его с issue 123 того репозитория, где лежит этот PR. Пиши `FavoriteGameGauntlet/Server#123` или `FavoriteGameGauntlet/Database#123`. После `gh pr create` или `gh pr edit` найди в теле `#` с цифрой и проверь каждое совпадение. В коммитах ссылок нет вообще.
-- В описании есть «What was checked» и нет тест-плана. Там перечислено, что агент реально сделал и что получилось: действия в интерфейсе, видимые результаты, ответы бэкенда. Пиши только проверки, которые правда выполнены, и скажи, что не проверено.
-- Если для проверки понадобилось временное изменение (отладочный маршрут, подставленное значение), скажи об этом и скажи, что его нет в PR.
-- Не пиши «запусти `npm run lint`», «проверь, что проверки проходят» или «просмотри код» как проверку. Линтер и типы можно упомянуть только как то, что они покрывают.
+- The description is written in English.
+- Commits and PR descriptions are short. A PR consists of "What changed" (2 to 4 sentences), "Order" (only when the merge order matters: one sentence with the order that works, nothing about other orders), "What was checked" (one line per real check) and "Not checked". No story of how the work went, no repeated evidence, no function-by-function list. Load `antislop:antislop-copywriting` before writing a commit or a PR and follow it: no em dashes, filler or buzzwords. If a description passes about 250 words, cut it.
+- Never write a bare `#123` for a PR of another repository: GitHub links it to issue 123 of the repository this PR is in. Write `FavoriteGameGauntlet/Server#123` or `FavoriteGameGauntlet/Database#123`. After `gh pr create` or `gh pr edit`, grep the body for `#` followed by a digit and check each hit. Commits carry no links at all.
+- The description has a "What was checked" section and no test plan. It lists what the agent actually did and what came back: UI actions, visible results, backend responses. Write only checks that were really run, and say what was not checked.
+- If a check needed a temporary change (a debug route, a patched value), say so and say that it is not in the PR.
+- Never write "run `npm run lint`", "check that the checks pass" or "review the code" as a check. The linter and the types may be mentioned only as what they cover.
 
 ## Definition of Done
 
-- Целевое поведение реализовано.
-- `npm run lint` и `npx vue-tsc --noEmit` проходят.
-- Если менялся `src-tauri/`: `cargo check` проходит, а поведение окна проверено запуском приложения.
-- Если изменение нарушило правило из `harness/ARCHITECTURE.md`, файл обновлён. Большинству изменений это не нужно.
-- Если менялся контракт `Api`: он сверен с документацией бэкенда, реализация в `api-facade/http/` и все места использования обновлены.
-- Репозиторий по-прежнему можно запустить стандартным путём.
+- The target behaviour is implemented.
+- `npm run lint` and `npx vue-tsc --noEmit` pass.
+- If `src-tauri/` changed: `cargo check` passes and the window behaviour was checked by running the app.
+- If the change broke a rule written in `harness/ARCHITECTURE.md`, that file is updated. Most changes don't need it.
+- If the `Api` contract changed: it is checked against the backend documentation, the implementation in `api-facade/http/` and every place that uses it are updated.
+- What was checked and what came back is recorded in the feature's `evidence` in `harness/feature_list.json`.
+- The repository can still be started the standard way.
 
-## Конец сессии
+## End of session
 
-1. Запиши нерешённые риски и блокеры в ответ.
-2. Закоммить в ветке с понятным сообщением, когда работа в безопасном состоянии.
-3. Запушь ветку и открой PR в `master` через `gh pr create` по разделу «Pull Requests». Делай это, когда выполнен Definition of Done, чтобы «What was checked» перечислял реальные проверки. Сообщи ссылку на PR. Не мерж его.
-4. Оставь репозиторий в состоянии, из которого сразу можно прогнать проверки.
+1. Update `harness/feature_list.json`: the status and `evidence` of the feature.
+2. Write unresolved risks and blockers in the reply.
+3. Commit on a branch with a clear message once the work is in a safe state.
+4. Push the branch and open a PR against `master` with `gh pr create`, following "Pull requests". Do it once the Definition of Done is met, so "What was checked" lists real checks. Report the PR link. Don't merge it.
+5. Leave the repository in a state where the checks can be run immediately.
 
-## Осторожно
+## Watch out
 
-- `.env` и `src/constants/apiUrl.ts` содержат адрес бэкенда; секретов в репозитории быть не должно. Не читай `.env` без необходимости и не копируй его содержимое в ответы и коммиты.
-- Сетевой доступ ограничен в двух местах: CSP (`connect-src`) в `tauri.conf.json` и `ALLOWED_HOST` в `src-tauri/src/http.rs`, оба сейчас пускают только `https://api.fgg-challenge.com`. Новый внешний адрес нужно добавлять в оба.
-- Контракт `Api` должен совпадать с реальным бэкендом. Если меняешь `contracts.ts`, сверься с документацией API, проверь реализацию в `api-facade/http/` и все места использования, а не только то, что подсвечивает `vue-tsc`.
-- `README.md` — шаблон Tauri, не описание проекта. Не опирайся на него.
+- `.env` and `src/constants/apiUrl.ts` hold the backend address; there must be no secrets in the repository. Don't read `.env` without need and don't copy its contents into replies or commits.
+- Network access is restricted in two places: the CSP (`connect-src`) in `tauri.conf.json` and `ALLOWED_HOST` in `src-tauri/src/http.rs`; both currently allow only `https://api.fgg-challenge.com`. A new external address must be added to both.
+- The `Api` contract must match the real backend. If you change `contracts.ts`, check it against the API documentation, check the implementation in `api-facade/http/` and every place that uses it, not only what `vue-tsc` highlights.
+- `README.md` is the Tauri template, not a description of the project. Don't rely on it.
