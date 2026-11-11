@@ -2,6 +2,11 @@
 
 Newest entry on top. Record only what was actually verified.
 
+## 2026-11-12 release-0.6.0
+
+- Bumped the version to 0.6.0 with `npm version 0.6.0 --no-git-tag-version` (package.json, package-lock.json, tauri.conf.json, Cargo.toml, Cargo.lock). The tag `v0.6.0` is created on `master` after the merge, and the release is not a prerelease.
+- Verified: `bash harness/scripts/init.sh` and `cargo check` in `src-tauri/` pass. The app was not run.
+
 ## 2026-11-11 item-transfer
 
 - Done in code: the entry kind `user-item-transfer` (contract, rows, text of the entry, journal event `item_transferred` with `receiverLogin` shown as «Щит → bob»), the slots and the use window for a transfer («Кому передать», «Что передать: …», the holder never among the targets), the row in the catalogue form («Передаёт», a positive amount). The entry facade now sends and reads `kind` instead of the `userItem` flag, which the documentation no longer has.
