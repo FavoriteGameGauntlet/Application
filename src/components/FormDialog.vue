@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, useId, watch } from 'vue'
 import ColorPicker from './ColorPicker.vue'
 import RowsEditor from './RowsEditor.vue'
 import UiButton from './ui/UiButton.vue'
@@ -23,6 +23,9 @@ type Props = {
 const { open, fields, initial } = defineProps<Props>()
 
 const emit = defineEmits<{ close: []; save: [values: FormValues] }>()
+
+/** the buttons sit in the dialog footer, outside the form, and submit it by this id */
+const formId = useId()
 
 const texts = reactive<Record<string, string>>({})
 const lists = reactive<Record<string, string[]>>({})
@@ -91,7 +94,7 @@ const onSubmit = () => {
 
 <template>
 	<UiDialog :open :title :width="width" @close="emit('close')">
-		<form class="form" @submit.prevent="onSubmit">
+		<form :id="formId" class="form" @submit.prevent="onSubmit">
 			<div class="form__fields">
 				<template v-for="field in fields" :key="field.key">
 					<div v-if="field.type === 'check'" class="check">
@@ -175,14 +178,14 @@ const onSubmit = () => {
 					/>
 				</template>
 			</div>
-
-			<div class="form__actions">
-				<UiButton type="button" variant="outline" @click="emit('close')"
-					>Отмена</UiButton
-				>
-				<UiButton type="submit" icon="check">Сохранить</UiButton>
-			</div>
 		</form>
+
+		<template #footer>
+			<UiButton type="button" variant="ghost" @click="emit('close')"
+				>Отмена</UiButton
+			>
+			<UiButton type="submit" :form="formId">Сохранить</UiButton>
+		</template>
 	</UiDialog>
 </template>
 
@@ -198,19 +201,6 @@ const onSubmit = () => {
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
-}
-
-/* a long form scrolls under the buttons, they stay in reach */
-.form__actions {
-	position: sticky;
-	bottom: -24px;
-	z-index: 1;
-	display: flex;
-	gap: 8px;
-	justify-content: flex-end;
-	margin: 0 -24px -24px;
-	padding: 12px 24px 24px;
-	background: var(--surface-card);
 }
 
 .check {

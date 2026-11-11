@@ -51,18 +51,14 @@ watch(
 					@update:model-value="toggle(entry.entryId!, $event)"
 				/>
 			</div>
-
-			<div class="dialog__actions">
-				<UiButton variant="outline" @click="emit('close')">Отмена</UiButton>
-				<UiButton
-					icon="check"
-					:disabled="!canConfirm"
-					@click="emit('confirm', [...picked])"
-				>
-					Применить
-				</UiButton>
-			</div>
 		</div>
+
+		<template #footer>
+			<UiButton variant="ghost" @click="emit('close')">Отмена</UiButton>
+			<UiButton :disabled="!canConfirm" @click="emit('confirm', [...picked])">
+				Применить
+			</UiButton>
+		</template>
 	</UiDialog>
 </template>
 
@@ -84,11 +80,5 @@ watch(
 	letter-spacing: var(--tracking-label);
 	text-transform: uppercase;
 	color: var(--text-muted);
-}
-
-.dialog__actions {
-	display: flex;
-	gap: 8px;
-	justify-content: flex-end;
 }
 </style>

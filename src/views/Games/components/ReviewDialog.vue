@@ -55,7 +55,11 @@ const onSave = async () => {
 	if (!target) return
 
 	if (!rating.value) {
-		toastStore.show('Поставь оценку', 'Без оценки отзыв не сохранится.', 'danger')
+		toastStore.show(
+			'Поставь оценку',
+			'Без оценки отзыв не сохранится.',
+			'danger',
+		)
 		return
 	}
 
@@ -68,13 +72,22 @@ const onSave = async () => {
 </script>
 
 <template>
-	<UiDialog :open="!!game" :title="game?.name" :width="480" @close="emit('close')">
+	<UiDialog
+		:open="!!game"
+		:title="game?.name"
+		:width="480"
+		@close="emit('close')"
+	>
 		<div v-if="game && !editing" class="view">
 			<div class="view__grid">
 				<div class="view__cell">
 					<span class="label">Игрок</span>
 					<span class="view__value">
-						<UiUserAvatar :name="login" :color="membersStore.colorOf(login)" :size="24" />
+						<UiUserAvatar
+							:name="login"
+							:color="membersStore.colorOf(login)"
+							:size="24"
+						/>
 						{{ login }}
 					</span>
 				</div>
@@ -90,17 +103,17 @@ const onSave = async () => {
 				</div>
 				<div class="view__cell">
 					<span class="label">Начало → конец</span>
-					<span class="view__value">{{ formatPeriod(game.startedDate, game.endedDate) }}</span>
+					<span class="view__value">{{
+						formatPeriod(game.startedDate, game.endedDate)
+					}}</span>
 				</div>
 			</div>
 
 			<div class="view__cell">
 				<span class="label">Отзыв</span>
-				<span class="view__review">{{ game.reviewComment || 'Отзыв не написан.' }}</span>
-			</div>
-
-			<div v-if="own" class="actions">
-				<UiButton variant="outline" icon="pencil" @click="startEdit">Изменить</UiButton>
+				<span class="view__review">{{
+					game.reviewComment || 'Отзыв не написан.'
+				}}</span>
 			</div>
 		</div>
 
@@ -108,14 +121,24 @@ const onSave = async () => {
 			<UiRating v-model="rating" label="Оценка" />
 
 			<UiField label="Отзыв">
-				<textarea v-model="draft" class="edit__text" placeholder="Что зашло, что нет…" rows="5"></textarea>
+				<textarea
+					v-model="draft"
+					class="edit__text"
+					placeholder="Что зашло, что нет…"
+					rows="5"
+				></textarea>
 			</UiField>
-
-			<div class="actions">
-				<UiButton variant="outline" @click="emit('close')">Отмена</UiButton>
-				<UiButton icon="check" @click="onSave">Сохранить</UiButton>
-			</div>
 		</div>
+
+		<template v-if="game && (editing || own)" #footer>
+			<template v-if="editing">
+				<UiButton variant="ghost" @click="emit('close')">Отмена</UiButton>
+				<UiButton @click="onSave">Сохранить</UiButton>
+			</template>
+			<UiButton v-else variant="outline" icon="pencil" @click="startEdit"
+				>Изменить</UiButton
+			>
+		</template>
 	</UiDialog>
 </template>
 
@@ -167,12 +190,6 @@ const onSave = async () => {
 	font: var(--type-body);
 	color: var(--text-body);
 	text-wrap: pretty;
-}
-
-.actions {
-	display: flex;
-	gap: 8px;
-	justify-content: flex-end;
 }
 
 .edit__text {
