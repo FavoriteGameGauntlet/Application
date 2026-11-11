@@ -11,7 +11,12 @@ export const journalSourceGroups: JournalSourceGroup[] = [
 	{
 		value: 'item',
 		label: 'предмет',
-		kinds: ['item_added', 'item_uses_changed', 'item_removed'],
+		kinds: [
+			'item_added',
+			'item_uses_changed',
+			'item_removed',
+			'item_transferred',
+		],
 	},
 	{
 		value: 'perk',

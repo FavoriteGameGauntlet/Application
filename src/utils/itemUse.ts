@@ -11,19 +11,26 @@ export type UseSlot = {
 	owner: Login | 'party'
 	/** a catalogue item the copies have to be of; undefined = a copy of any item */
 	itemId?: number
-	/** how many copies the entry takes or duplicates */
+	/** how many copies the entry takes, duplicates or moves */
 	count: number
+	/** the player the copies are moved to; set on a transfer only */
+	receiver?: Login
 }
 
-/** an entry that acts on the chosen users needs them named */
+export const isTransfer = (entry: ItemEntryRow) =>
+	entry.kind === 'user-item-transfer'
+
+/** an entry that acts on the chosen users, or a transfer, needs them named */
 export const needsTargets = (entries: ItemEntryRow[]) =>
-	entries.some((e) => e.who === 'chosen')
+	entries.some((e) => e.who === 'chosen' || isTransfer(e))
 
 /**
- * The copies the entries take or duplicate, in the order of the entries. An
- * entry with a negative amount takes its copies from each user it acts on in
- * turn, in the order of `targets`; a positive amount of a user item duplicates
- * copies taken from any inventory of the party.
+ * The copies the entries take, duplicate or move, in the order of the entries.
+ * An entry with a negative amount, or a transfer, takes its copies for each
+ * chosen user in turn, in the order of `targets`; a positive amount of a user
+ * item duplicates copies taken from any inventory of the party. A transfer
+ * takes from the holder (`self`) and gives to the chosen players, or takes from
+ * the chosen players and gives to the holder.
  */
 export const useSlots = (
 	entries: ItemEntryRow[],
@@ -32,6 +39,14 @@ export const useSlots = (
 ): UseSlot[] =>
 	entries.flatMap<UseSlot>((entry) => {
 		const count = Math.abs(entry.amount)
+
+		if (isTransfer(entry)) {
+			return targets.map((target) =>
+				entry.who === 'chosen'
+					? { owner: target, count, receiver: holder }
+					: { owner: holder, count, receiver: target },
+			)
+		}
 
 		if (entry.kind === 'user-item' && entry.amount > 0) {
 			return [{ owner: 'party', count }]
@@ -74,14 +89,18 @@ export const appliedEntries = (
 				(e) => e.entryId !== undefined && pickedIds.includes(e.entryId),
 			)
 
-/** whom the holder may name, by the conditions of the item */
+/** whom the holder may name, by the conditions of the item; a transfer never names the holder */
 export const allowedTargets = (
 	members: Member[],
 	holder: Login,
 	conditions: ItemCondition[] = [],
+	transfers = false,
 ) =>
 	members.filter((m) => {
-		if (conditions.includes('target_not_self') && m.user.login === holder)
+		if (
+			(transfers || conditions.includes('target_not_self')) &&
+			m.user.login === holder
+		)
 			return false
 		if (conditions.includes('target_online') && m.status === 'offline')
 			return false

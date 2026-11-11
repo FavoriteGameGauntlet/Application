@@ -82,9 +82,11 @@ const parseRows = <T>(
 			return { error: 'В строке не выбран ресурс.' }
 		}
 
-		const amount = readAmount(row, signed)
+		// a transfer moves copies, so its amount is a plain count
+		const rowSigned = signed && row.kind !== 'user-item-transfer'
+		const amount = readAmount(row, rowSigned)
 
-		if (amount === undefined) return { error: amountError(row, signed) }
+		if (amount === undefined) return { error: amountError(row, rowSigned) }
 
 		value.push(build(row, targetId, amount))
 	}
@@ -93,6 +95,12 @@ const parseRows = <T>(
 }
 
 const resourceKind = (row: FormRow) => row.kind as ChangeRow['kind']
+
+/** the copies are picked when the item is used, so the row names no resource */
+const isPickedCopies = (
+	row: FormRow,
+): row is FormRow & { kind: 'user-item' | 'user-item-transfer' } =>
+	row.kind === 'user-item' || row.kind === 'user-item-transfer'
 
 export const parseChangeRows = (rows: FormRow[]): Parsed<ChangeRow> =>
 	parseRows(rows, true, (row, targetId, amount) => ({
@@ -113,15 +121,15 @@ export const parseItemEntries = (rows: FormRow[]): Parsed<ItemEntryRow> =>
 		rows,
 		true,
 		(row, targetId, amount): ItemEntryRow =>
-			row.kind === 'user-item'
-				? { kind: 'user-item', amount, who: row.who }
+			isPickedCopies(row)
+				? { kind: row.kind, amount, who: row.who }
 				: {
 						kind: resourceKind(row),
 						targetId: targetId ?? 0,
 						amount,
 						who: row.who,
 					},
-		(row) => row.kind !== 'user-item',
+		(row) => !isPickedCopies(row),
 	)
 
 export const parseModifiers = (rows: FormRow[]): Parsed<PointModifierRow> =>

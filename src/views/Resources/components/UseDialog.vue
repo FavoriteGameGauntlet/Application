@@ -19,6 +19,7 @@ import { formatUsesLeft } from '../../../utils/formatResource'
 import {
 	allowedTargets,
 	appliedEntries,
+	isTransfer,
 	needsTargets,
 	useSlots,
 } from '../../../utils/itemUse'
@@ -72,7 +73,19 @@ const entries = computed(() =>
 const withTargets = computed(() => needsTargets(entries.value))
 
 const candidates = computed(() =>
-	allowedTargets(membersStore.list, sessionStore.login, subject?.conditions),
+	allowedTargets(
+		membersStore.list,
+		sessionStore.login,
+		subject?.conditions,
+		entries.value.some(isTransfer),
+	),
+)
+
+/** the targets only receive copies, nothing is taken from them or done to them */
+const onlyReceive = computed(() =>
+	entries.value
+		.filter((e) => e.who === 'chosen' || isTransfer(e))
+		.every((e) => isTransfer(e) && e.who === 'self'),
 )
 
 const nameOf = (login: Login) =>
@@ -106,17 +119,18 @@ const holdsUsedCopy = (login: Login, itemId?: number) =>
 	)
 
 /** the owner is in the key, so the copies picked for one player never carry over to another */
-const slotKey = (index: number, owner: Login) => `slot-${index}-${owner}`
+const slotKey = (index: number, owner: Login, receiver?: Login) =>
+	`slot-${index}-${owner}${receiver ? `-${receiver}` : ''}`
 
 const fromKey = (index: number) => `from-${index}`
 
-/** the entries that take copies away from each chosen player */
+/** the entries that take copies away from each chosen player, or hand them to the holder */
 const takesFromTargets = computed(() =>
 	entries.value.filter(
 		(e) =>
 			e.who === 'chosen' &&
-			e.amount < 0 &&
-			(e.kind === 'user-item' || e.kind === 'item'),
+			(isTransfer(e) ||
+				(e.amount < 0 && (e.kind === 'user-item' || e.kind === 'item'))),
 	),
 )
 
@@ -151,7 +165,7 @@ const rows = computed(() => {
 			? listOf(current.value, fromKey(index))[0]
 			: undefined
 		const owner = isParty ? source : slot.owner
-		const key = slotKey(index, owner ?? 'party')
+		const key = slotKey(index, owner ?? 'party', slot.receiver)
 		const pickedElsewhere = new Set(
 			Object.entries(current.value)
 				.filter(([k]) => k.startsWith('slot-') && k !== key)
@@ -192,10 +206,12 @@ const rows = computed(() => {
 	return byIndex.sort((a, b) => a.index - b.index).map(({ row }) => row)
 })
 
-const heading = (owner: Login, isParty: boolean) =>
+const heading = (owner: Login, isParty: boolean, receiver?: Login) =>
 	isParty
 		? `Какой предмет скопировать у ${nameOf(owner)}`
-		: `Что забрать у ${nameOf(owner)}`
+		: receiver && owner === sessionStore.login
+			? `Что передать: ${nameOf(receiver)}`
+			: `Что забрать у ${nameOf(owner)}`
 
 const sections = computed<FormSection[]>(() => {
 	const result: FormSection[] = []
@@ -219,12 +235,14 @@ const sections = computed<FormSection[]>(() => {
 	}
 
 	if (withTargets.value) {
+		const label = onlyReceive.value ? 'Кому передать' : 'На кого'
+
 		result.push({
-			title: 'На кого',
+			title: label,
 			fields: [
 				{
 					key: 'targets',
-					label: 'На кого',
+					label,
 					type: 'pick',
 					required: 'цель',
 					options: candidates.value.map((m) => ({
@@ -288,7 +306,7 @@ const sections = computed<FormSection[]>(() => {
 
 		const field: FormField = {
 			key: row.key,
-			label: heading(row.owner, row.isParty),
+			label: heading(row.owner, row.isParty, row.slot.receiver),
 			type: 'pick',
 			limit: row.slot.count,
 			required: 'предмет',

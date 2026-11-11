@@ -44,6 +44,13 @@ const actionGroups: OptionGroup[] = [
 	},
 ]
 
+/** a transfer only moves copies, so its action is fixed and its amount has no sign */
+const transferActionGroups: OptionGroup[] = [
+	{ options: [{ value: 'give', label: 'Передаёт' }] },
+]
+
+const isTransfer = (row: FormRow) => row.kind === 'user-item-transfer'
+
 const resourceOption = (kind: TargetKind, target: CatalogOption) => ({
 	value: `${kind}:${target.id}`,
 	label: target.name,
@@ -73,6 +80,11 @@ const resourceGroups = computed<OptionGroup[]>(() => {
 								label: 'Предмет на выбор',
 								hint: 'Игрок укажет сам, когда применит',
 							},
+							{
+								value: 'user-item-transfer',
+								label: 'Передать выбранный предмет',
+								hint: 'Копия переходит к другому игроку как есть',
+							},
 						]
 					: []),
 			],
@@ -95,8 +107,8 @@ const isLose = (row: FormRow) => /^[-−]/.test(row.amount.trim())
 const absolute = (row: FormRow) => row.amount.trim().replace(/^[-−]/, '')
 
 const resourceOf = (row: FormRow) =>
-	row.kind === 'user-item'
-		? 'user-item'
+	row.kind === 'user-item' || isTransfer(row)
+		? row.kind
 		: row.targetId
 			? `${row.kind}:${row.targetId}`
 			: ''
@@ -116,9 +128,11 @@ const addRow = () => {
 }
 
 const setResource = (row: FormRow, value: string) => {
-	if (value === 'user-item') {
-		row.kind = 'user-item'
+	if (value === 'user-item' || value === 'user-item-transfer') {
+		row.kind = value
 		row.targetId = ''
+
+		if (isTransfer(row)) row.amount = absolute(row)
 	} else {
 		const [kind, id] = value.split(':')
 
@@ -142,7 +156,8 @@ const setAmount = (row: FormRow, event: Event) => {
 	const digits = input.value.replace(/^[-−+\s]+/, '')
 
 	input.value = digits
-	row.amount = (hasAction.value && isLose(row) ? '-' : '') + digits
+	row.amount =
+		(hasAction.value && !isTransfer(row) && isLose(row) ? '-' : '') + digits
 }
 
 onMounted(() => store.loadTargets())
@@ -176,7 +191,14 @@ onMounted(() => store.loadTargets())
 					@update:model-value="row.who = $event as FormRow['who']"
 				/>
 				<UiPicker
-					v-if="hasAction"
+					v-if="hasAction && isTransfer(row)"
+					compact
+					:groups="transferActionGroups"
+					model-value="give"
+					aria-label="Действие"
+				/>
+				<UiPicker
+					v-else-if="hasAction"
 					compact
 					:groups="actionGroups"
 					:tone="isLose(row) ? 'lose' : 'get'"

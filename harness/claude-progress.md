@@ -2,6 +2,14 @@
 
 Newest entry on top. Record only what was actually verified.
 
+## 2026-11-11 item-transfer
+
+- Done in code: the entry kind `user-item-transfer` (contract, rows, text of the entry, journal event `item_transferred` with `receiverLogin` shown as «Щит → bob»), the slots and the use window for a transfer («Кому передать», «Что передать: …», the holder never among the targets), the row in the catalogue form («Передаёт», a positive amount). The entry facade now sends and reads `kind` instead of the `userItem` flag, which the documentation no longer has.
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. `useSlots`, `needsTargets`, `needsUseForm` and `allowedTargets` were run in Node for a give and a take transfer (slots per target, owner and receiver as expected, holder dropped from the targets). The contract was compared with `items.yaml`, `perks.yaml` and `history.yaml` of the API documentation; the live backend was not called.
+- Not verified: the app was not run. The use window with a transfer, the catalogue form row and the journal text were not looked at. The `kind` sent for the old `user-item` entry and the new one was not tried against the backend.
+- Next step: the user adds an item with a transfer entry in the catalogue, uses it and looks at the journal; then set `item-transfer` to done with "Checked by the user".
+- Open: a target condition (`target_*`) with a transfer to `self` is still refused by the catalogue form, because the documentation names only `chosen` entries.
+
 ## 2026-11-11 windows-player
 
 - The user tried the use window on their own item. Fixed: one copy named twice in `userItemIds`, an old inventory of another player, slots with a single copy that were hidden, unclear hints. The copy that is being used stays excluded from every slot (the user's rule; the specs are silent). Copying now asks for a player first, players with no copy to take or copy are shown disabled, and the sections are ordered «На кого», takes, copies. Checked: `init.sh` passes; `UseDialog` was server-rendered in Node for one case without targets. Not checked: the flow with targets and the player to copy from, in the real app.

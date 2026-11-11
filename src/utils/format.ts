@@ -54,6 +54,7 @@ export const formatJournalSource = (
 		case 'item_added':
 		case 'item_uses_changed':
 		case 'item_removed':
+		case 'item_transferred':
 			return `предмет «${name}»`
 		case 'perk_added':
 		case 'perk_uses_changed':

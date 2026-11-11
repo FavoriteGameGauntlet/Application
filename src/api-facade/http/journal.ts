@@ -16,6 +16,8 @@ type ResourceKindDto = 'point' | 'item' | 'perk' | 'effect'
 type HistoryChangeDto = {
 	/** absent for the points of the party */
 	login?: Login | null
+	/** set only on `item_transferred`: `login` lost the copy, this user received it */
+	receiverLogin?: Login | null
 	resource: { kind: ResourceKindDto; id: number; name: string }
 	eventKind: HistoryEventKind
 	desiredChangeValue?: number | null
@@ -74,15 +76,16 @@ const toChange = (
 		kind === 'item' ? { kind, id, name, amount: 1 } : { kind, id, name }
 	const label = formatResource(resource, pointTypes)
 
-	return {
-		login,
-		text: change.eventKind.endsWith('_added')
-			? `+${label}`
-			: change.eventKind.endsWith('_removed')
-				? `−${label}`
-				: `${label} (использование)`,
-		resource,
-	}
+	const text =
+		change.eventKind === 'item_transferred'
+			? `${label} → ${change.receiverLogin ?? '?'}`
+			: change.eventKind.endsWith('_added')
+				? `+${label}`
+				: change.eventKind.endsWith('_removed')
+					? `−${label}`
+					: `${label} (использование)`
+
+	return { login, text, resource }
 }
 
 const toJournalEntry = (
