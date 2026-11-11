@@ -8,11 +8,13 @@ type Props = {
 	title?: string
 	subtitle?: string
 	width?: number
+	/** the dialog is a form: the footer buttons submit it, and so does Enter in a field */
+	asForm?: boolean
 }
 
-const { open = true, width = 480 } = defineProps<Props>()
+const { open = true, width = 480, asForm } = defineProps<Props>()
 
-const emit = defineEmits<{ close: [] }>()
+const emit = defineEmits<{ close: []; submit: [] }>()
 
 function onKeydown(event: KeyboardEvent) {
 	if (event.key === 'Escape') emit('close')
@@ -33,11 +35,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 <template>
 	<Teleport to="body">
 		<div v-if="open" class="ui-dialog-overlay">
-			<div
+			<component
+				:is="asForm ? 'form' : 'div'"
 				class="ui-dialog"
 				role="dialog"
 				aria-modal="true"
 				:style="{ width: `${width}px` }"
+				@submit.prevent="emit('submit')"
 			>
 				<div class="ui-dialog__head">
 					<div class="ui-dialog__titles">
@@ -47,6 +51,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 						</div>
 					</div>
 					<UiIconButton
+						type="button"
 						icon="x"
 						label="Закрыть"
 						size="sm"
@@ -60,7 +65,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 				<div v-if="$slots.footer" class="ui-dialog__foot">
 					<slot name="footer" />
 				</div>
-			</div>
+			</component>
 		</div>
 	</Teleport>
 </template>

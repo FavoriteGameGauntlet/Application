@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, useId, watch } from 'vue'
+import { computed, reactive, watch } from 'vue'
 import ColorPicker from './ColorPicker.vue'
 import RowsEditor from './RowsEditor.vue'
 import UiButton from './ui/UiButton.vue'
@@ -23,9 +23,6 @@ type Props = {
 const { open, fields, initial } = defineProps<Props>()
 
 const emit = defineEmits<{ close: []; save: [values: FormValues] }>()
-
-/** the buttons sit in the dialog footer, outside the form, and submit it by this id */
-const formId = useId()
 
 const texts = reactive<Record<string, string>>({})
 const lists = reactive<Record<string, string[]>>({})
@@ -93,110 +90,108 @@ const onSubmit = () => {
 </script>
 
 <template>
-	<UiDialog :open :title :width="width" @close="emit('close')">
-		<form :id="formId" class="form" @submit.prevent="onSubmit">
-			<div class="form__fields">
-				<template v-for="field in fields" :key="field.key">
-					<div v-if="field.type === 'check'" class="check">
-						<UiCheckbox v-model="flags[field.key]" :label="field.label" />
-						<span class="note check__hint">{{ field.hint }}</span>
+	<UiDialog
+		:open
+		:title
+		:width="width"
+		as-form
+		@close="emit('close')"
+		@submit="onSubmit"
+	>
+		<div class="form__fields">
+			<template v-for="field in fields" :key="field.key">
+				<div v-if="field.type === 'check'" class="check">
+					<UiCheckbox v-model="flags[field.key]" :label="field.label" />
+					<span class="note check__hint">{{ field.hint }}</span>
+				</div>
+
+				<div v-else-if="field.type === 'note'" class="tags">
+					<span class="tags__label">{{ field.label }}</span>
+					<span class="note">{{ field.hint }}</span>
+				</div>
+
+				<ColorPicker
+					v-else-if="field.type === 'color'"
+					v-model="texts[field.key]"
+					:label="field.label"
+					:hint="field.hint"
+				/>
+
+				<RowsEditor
+					v-else-if="field.type === 'rows'"
+					v-model="rowLists[field.key]"
+					:variant="field.variant ?? 'change'"
+					:label="field.label"
+					:hint="field.hint"
+				/>
+
+				<div v-else-if="field.type === 'tags'" class="tags">
+					<span class="tags__label">{{ field.label }}</span>
+					<div v-if="lists[field.key]?.length" class="tags__chips">
+						<UiTag
+							v-for="(tag, i) in lists[field.key]"
+							:key="i"
+							removable
+							@remove="lists[field.key].splice(i, 1)"
+						>
+							{{ tag }}
+						</UiTag>
 					</div>
-
-					<div v-else-if="field.type === 'note'" class="tags">
-						<span class="tags__label">{{ field.label }}</span>
-						<span class="note">{{ field.hint }}</span>
+					<div class="tags__draft">
+						<UiInput
+							v-model="drafts[field.key]"
+							:placeholder="field.placeholder"
+							@keydown.enter.prevent="addTag(field.key)"
+						/>
+						<UiIconButton
+							type="button"
+							icon="plus"
+							variant="outline"
+							size="lg"
+							label="Добавить изменение"
+							style="--ui-icon-button-d: 44px"
+							@click="addTag(field.key)"
+						/>
 					</div>
+					<span class="note">{{ field.hint }}</span>
+				</div>
 
-					<ColorPicker
-						v-else-if="field.type === 'color'"
-						v-model="texts[field.key]"
-						:label="field.label"
-						:hint="field.hint"
-					/>
+				<UiTextarea
+					v-else-if="field.type === 'area'"
+					v-model="texts[field.key]"
+					:label="field.label"
+					:placeholder="field.placeholder"
+					:hint="field.hint"
+				/>
 
-					<RowsEditor
-						v-else-if="field.type === 'rows'"
-						v-model="rowLists[field.key]"
-						:variant="field.variant ?? 'change'"
-						:label="field.label"
-						:hint="field.hint"
-					/>
+				<UiSelect
+					v-else-if="field.type === 'select'"
+					v-model="texts[field.key]"
+					:label="field.label"
+					:options="field.options"
+					:hint="field.hint"
+				/>
 
-					<div v-else-if="field.type === 'tags'" class="tags">
-						<span class="tags__label">{{ field.label }}</span>
-						<div v-if="lists[field.key]?.length" class="tags__chips">
-							<UiTag
-								v-for="(tag, i) in lists[field.key]"
-								:key="i"
-								removable
-								@remove="lists[field.key].splice(i, 1)"
-							>
-								{{ tag }}
-							</UiTag>
-						</div>
-						<div class="tags__draft">
-							<UiInput
-								v-model="drafts[field.key]"
-								:placeholder="field.placeholder"
-								@keydown.enter.prevent="addTag(field.key)"
-							/>
-							<UiIconButton
-								type="button"
-								icon="plus"
-								variant="outline"
-								size="lg"
-								label="Добавить изменение"
-								style="--ui-icon-button-d: 44px"
-								@click="addTag(field.key)"
-							/>
-						</div>
-						<span class="note">{{ field.hint }}</span>
-					</div>
-
-					<UiTextarea
-						v-else-if="field.type === 'area'"
-						v-model="texts[field.key]"
-						:label="field.label"
-						:placeholder="field.placeholder"
-						:hint="field.hint"
-					/>
-
-					<UiSelect
-						v-else-if="field.type === 'select'"
-						v-model="texts[field.key]"
-						:label="field.label"
-						:options="field.options"
-						:hint="field.hint"
-					/>
-
-					<UiInput
-						v-else
-						v-model="texts[field.key]"
-						:label="field.label"
-						:placeholder="field.placeholder"
-						:hint="field.hint"
-					/>
-				</template>
-			</div>
-		</form>
+				<UiInput
+					v-else
+					v-model="texts[field.key]"
+					:label="field.label"
+					:placeholder="field.placeholder"
+					:hint="field.hint"
+				/>
+			</template>
+		</div>
 
 		<template #footer>
 			<UiButton type="button" variant="ghost" @click="emit('close')"
 				>Отмена</UiButton
 			>
-			<UiButton type="submit" :form="formId">Сохранить</UiButton>
+			<UiButton type="submit">Сохранить</UiButton>
 		</template>
 	</UiDialog>
 </template>
 
 <style scoped>
-.form {
-	display: flex;
-	flex-direction: column;
-	gap: 20px;
-	margin: 0;
-}
-
 .form__fields {
 	display: flex;
 	flex-direction: column;
