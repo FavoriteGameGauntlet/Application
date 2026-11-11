@@ -24,7 +24,9 @@ const deleting = ref<WishlistEntry>()
 const rows = computed(() => {
 	const q = query.value.trim().toLowerCase()
 
-	return wishlistStore.mine.filter((g) => !q || g.name.toLowerCase().includes(q))
+	return wishlistStore.mine.filter(
+		(g) => !q || g.name.toLowerCase().includes(q),
+	)
 })
 
 const emptyText = computed(() =>
@@ -92,7 +94,13 @@ const confirmDelete = async () => {
 				@keydown.enter="onAdd"
 			/>
 		</div>
-		<UiButton class="add__button" variant="secondary" size="lg" icon="plus" @click="onAdd">
+		<UiButton
+			class="add__button"
+			variant="secondary"
+			size="lg"
+			icon="plus"
+			@click="onAdd"
+		>
 			Добавить игру
 		</UiButton>
 	</div>
@@ -104,13 +112,13 @@ const confirmDelete = async () => {
 			<span></span>
 		</div>
 
-		<div v-for="game in rows" :key="game.id" class="table__row table__row--body">
+		<div
+			v-for="game in rows"
+			:key="game.id"
+			class="table__row table__row--body"
+		>
 			<template v-if="editingId === game.id">
-				<UiInput
-					v-model="editingName"
-					auto-focus
-					@keydown="onEditKeydown"
-				/>
+				<UiInput v-model="editingName" auto-focus @keydown="onEditKeydown" />
 			</template>
 			<span v-else class="table__name">{{ game.name }}</span>
 
@@ -118,11 +126,26 @@ const confirmDelete = async () => {
 
 			<span class="table__actions">
 				<template v-if="editingId === game.id">
-					<UiIconButton icon="check" size="sm" label="Сохранить" @click="saveEdit" />
-					<UiIconButton icon="x" size="sm" label="Отмена" @click="editingId = undefined" />
+					<UiIconButton
+						icon="check"
+						size="sm"
+						label="Сохранить"
+						@click="saveEdit"
+					/>
+					<UiIconButton
+						icon="x"
+						size="sm"
+						label="Отмена"
+						@click="editingId = undefined"
+					/>
 				</template>
 				<template v-else>
-					<UiIconButton icon="pencil" size="sm" label="Переименовать" @click="startEdit(game)" />
+					<UiIconButton
+						icon="pencil"
+						size="sm"
+						label="Переименовать"
+						@click="startEdit(game)"
+					/>
 					<UiIconButton
 						class="table__delete"
 						icon="trash-2"
@@ -137,14 +160,24 @@ const confirmDelete = async () => {
 		<div v-if="!rows.length" class="table__empty">{{ emptyText }}</div>
 	</div>
 
-	<UiDialog :open="!!deleting" title="Удалить игру?" :width="420" @close="deleting = undefined">
+	<UiDialog
+		:open="!!deleting"
+		title="Удалить игру?"
+		:width="420"
+		@close="deleting = undefined"
+	>
 		<div class="dialog">
-			<span>«{{ deleting?.name }}» пропадёт из твоего вишлиста и с колеса.</span>
-			<div class="dialog__actions">
-				<UiButton variant="outline" @click="deleting = undefined">Оставить</UiButton>
-				<UiButton variant="danger" icon="trash-2" @click="confirmDelete">Удалить</UiButton>
-			</div>
+			<span
+				>«{{ deleting?.name }}» пропадёт из твоего вишлиста и с колеса.</span
+			>
 		</div>
+
+		<template #footer>
+			<UiButton variant="ghost" @click="deleting = undefined"
+				>Оставить</UiButton
+			>
+			<UiButton variant="danger" @click="confirmDelete">Удалить</UiButton>
+		</template>
 	</UiDialog>
 </template>
 
@@ -228,11 +261,5 @@ const confirmDelete = async () => {
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
-}
-
-.dialog__actions {
-	display: flex;
-	gap: 8px;
-	justify-content: flex-end;
 }
 </style>

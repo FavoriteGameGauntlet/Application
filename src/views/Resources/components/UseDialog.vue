@@ -260,14 +260,14 @@ watch(
 						: `У ${nameOf(row.slot.owner)} не хватает предметов.`
 				}}
 			</span>
-
-			<div class="dialog__actions">
-				<UiButton variant="outline" @click="emit('close')">Отмена</UiButton>
-				<UiButton icon="check" :disabled="!canConfirm" @click="onConfirm">
-					Использовать
-				</UiButton>
-			</div>
 		</div>
+
+		<template #footer>
+			<UiButton variant="ghost" @click="emit('close')">Отмена</UiButton>
+			<UiButton :disabled="!canConfirm" @click="onConfirm">
+				Использовать
+			</UiButton>
+		</template>
 	</UiDialog>
 </template>
 
@@ -303,11 +303,5 @@ watch(
 
 .dialog__note--danger {
 	color: var(--danger-text);
-}
-
-.dialog__actions {
-	display: flex;
-	gap: 8px;
-	justify-content: flex-end;
 }
 </style>

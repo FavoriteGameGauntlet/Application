@@ -90,127 +90,112 @@ const onSubmit = () => {
 </script>
 
 <template>
-	<UiDialog :open :title :width="width" @close="emit('close')">
-		<form class="form" @submit.prevent="onSubmit">
-			<div class="form__fields">
-				<template v-for="field in fields" :key="field.key">
-					<div v-if="field.type === 'check'" class="check">
-						<UiCheckbox v-model="flags[field.key]" :label="field.label" />
-						<span class="note check__hint">{{ field.hint }}</span>
+	<UiDialog
+		:open
+		:title
+		:width="width"
+		as-form
+		@close="emit('close')"
+		@submit="onSubmit"
+	>
+		<div class="form__fields">
+			<template v-for="field in fields" :key="field.key">
+				<div v-if="field.type === 'check'" class="check">
+					<UiCheckbox v-model="flags[field.key]" :label="field.label" />
+					<span class="note check__hint">{{ field.hint }}</span>
+				</div>
+
+				<div v-else-if="field.type === 'note'" class="tags">
+					<span class="tags__label">{{ field.label }}</span>
+					<span class="note">{{ field.hint }}</span>
+				</div>
+
+				<ColorPicker
+					v-else-if="field.type === 'color'"
+					v-model="texts[field.key]"
+					:label="field.label"
+					:hint="field.hint"
+				/>
+
+				<RowsEditor
+					v-else-if="field.type === 'rows'"
+					v-model="rowLists[field.key]"
+					:variant="field.variant ?? 'change'"
+					:label="field.label"
+					:hint="field.hint"
+				/>
+
+				<div v-else-if="field.type === 'tags'" class="tags">
+					<span class="tags__label">{{ field.label }}</span>
+					<div v-if="lists[field.key]?.length" class="tags__chips">
+						<UiTag
+							v-for="(tag, i) in lists[field.key]"
+							:key="i"
+							removable
+							@remove="lists[field.key].splice(i, 1)"
+						>
+							{{ tag }}
+						</UiTag>
 					</div>
-
-					<div v-else-if="field.type === 'note'" class="tags">
-						<span class="tags__label">{{ field.label }}</span>
-						<span class="note">{{ field.hint }}</span>
+					<div class="tags__draft">
+						<UiInput
+							v-model="drafts[field.key]"
+							:placeholder="field.placeholder"
+							@keydown.enter.prevent="addTag(field.key)"
+						/>
+						<UiIconButton
+							type="button"
+							icon="plus"
+							variant="outline"
+							size="lg"
+							label="Добавить изменение"
+							style="--ui-icon-button-d: 44px"
+							@click="addTag(field.key)"
+						/>
 					</div>
+					<span class="note">{{ field.hint }}</span>
+				</div>
 
-					<ColorPicker
-						v-else-if="field.type === 'color'"
-						v-model="texts[field.key]"
-						:label="field.label"
-						:hint="field.hint"
-					/>
+				<UiTextarea
+					v-else-if="field.type === 'area'"
+					v-model="texts[field.key]"
+					:label="field.label"
+					:placeholder="field.placeholder"
+					:hint="field.hint"
+				/>
 
-					<RowsEditor
-						v-else-if="field.type === 'rows'"
-						v-model="rowLists[field.key]"
-						:variant="field.variant ?? 'change'"
-						:label="field.label"
-						:hint="field.hint"
-					/>
+				<UiSelect
+					v-else-if="field.type === 'select'"
+					v-model="texts[field.key]"
+					:label="field.label"
+					:options="field.options"
+					:hint="field.hint"
+				/>
 
-					<div v-else-if="field.type === 'tags'" class="tags">
-						<span class="tags__label">{{ field.label }}</span>
-						<div v-if="lists[field.key]?.length" class="tags__chips">
-							<UiTag
-								v-for="(tag, i) in lists[field.key]"
-								:key="i"
-								removable
-								@remove="lists[field.key].splice(i, 1)"
-							>
-								{{ tag }}
-							</UiTag>
-						</div>
-						<div class="tags__draft">
-							<UiInput
-								v-model="drafts[field.key]"
-								:placeholder="field.placeholder"
-								@keydown.enter.prevent="addTag(field.key)"
-							/>
-							<UiIconButton
-								type="button"
-								icon="plus"
-								variant="outline"
-								size="lg"
-								label="Добавить изменение"
-								style="--ui-icon-button-d: 44px"
-								@click="addTag(field.key)"
-							/>
-						</div>
-						<span class="note">{{ field.hint }}</span>
-					</div>
+				<UiInput
+					v-else
+					v-model="texts[field.key]"
+					:label="field.label"
+					:placeholder="field.placeholder"
+					:hint="field.hint"
+				/>
+			</template>
+		</div>
 
-					<UiTextarea
-						v-else-if="field.type === 'area'"
-						v-model="texts[field.key]"
-						:label="field.label"
-						:placeholder="field.placeholder"
-						:hint="field.hint"
-					/>
-
-					<UiSelect
-						v-else-if="field.type === 'select'"
-						v-model="texts[field.key]"
-						:label="field.label"
-						:options="field.options"
-						:hint="field.hint"
-					/>
-
-					<UiInput
-						v-else
-						v-model="texts[field.key]"
-						:label="field.label"
-						:placeholder="field.placeholder"
-						:hint="field.hint"
-					/>
-				</template>
-			</div>
-
-			<div class="form__actions">
-				<UiButton type="button" variant="outline" @click="emit('close')"
-					>Отмена</UiButton
-				>
-				<UiButton type="submit" icon="check">Сохранить</UiButton>
-			</div>
-		</form>
+		<template #footer>
+			<UiButton type="button" variant="ghost" @click="emit('close')"
+				>Отмена</UiButton
+			>
+			<UiButton type="submit">Сохранить</UiButton>
+		</template>
 	</UiDialog>
 </template>
 
 <style scoped>
-.form {
-	display: flex;
-	flex-direction: column;
-	gap: 20px;
-	margin: 0;
-}
-
 .form__fields {
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
-}
-
-/* a long form scrolls under the buttons, they stay in reach */
-.form__actions {
-	position: sticky;
-	bottom: -24px;
-	z-index: 1;
-	display: flex;
-	gap: 8px;
-	justify-content: flex-end;
-	margin: 0 -24px -24px;
-	padding: 12px 24px 24px;
-	background: var(--surface-card);
 }
 
 .check {

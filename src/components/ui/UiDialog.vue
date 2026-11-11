@@ -1,20 +1,46 @@
 <script setup lang="ts">
-import { onBeforeUnmount, watch } from 'vue'
+import { onBeforeUnmount, useTemplateRef, watch } from 'vue'
 
 import UiIconButton from './UiIconButton.vue'
 
 type Props = {
 	open?: boolean
 	title?: string
+	subtitle?: string
 	width?: number
+	/** the dialog is a form: the footer buttons submit it, and so does Enter */
+	asForm?: boolean
 }
 
-const { open = true, width = 480 } = defineProps<Props>()
+const { open = true, width = 480, asForm } = defineProps<Props>()
 
-const emit = defineEmits<{ close: [] }>()
+const emit = defineEmits<{ close: []; submit: [] }>()
+
+const dialog = useTemplateRef<HTMLElement>('dialog')
+
+/** Enter keeps its own meaning on a button, a link and in a textarea of the dialog */
+function keepsEnter(target: EventTarget | null) {
+	return (
+		target instanceof Element &&
+		!!dialog.value?.contains(target) &&
+		!!target.closest('button, a, textarea')
+	)
+}
 
 function onKeydown(event: KeyboardEvent) {
-	if (event.key === 'Escape') emit('close')
+	if (event.key === 'Escape') {
+		emit('close')
+	} else if (
+		event.key === 'Enter' &&
+		asForm &&
+		!event.isComposing &&
+		!keepsEnter(event.target)
+	) {
+		// a focused field would submit the form itself, but right after opening the
+		// focus is still on the button that opened the dialog
+		event.preventDefault()
+		emit('submit')
+	}
 }
 
 watch(
@@ -32,20 +58,38 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 <template>
 	<Teleport to="body">
 		<div v-if="open" class="ui-dialog-overlay">
-			<div
+			<component
+				:is="asForm ? 'form' : 'div'"
+				ref="dialog"
 				class="ui-dialog"
 				role="dialog"
 				aria-modal="true"
 				:style="{ width: `${width}px` }"
+				@submit.prevent="emit('submit')"
 			>
 				<div class="ui-dialog__head">
-					<div class="ui-dialog__title">{{ title }}</div>
-					<UiIconButton icon="x" label="Закрыть" size="sm" @click="emit('close')" />
+					<div class="ui-dialog__titles">
+						<div class="ui-dialog__title">{{ title }}</div>
+						<div v-if="subtitle" class="ui-dialog__subtitle">
+							{{ subtitle }}
+						</div>
+					</div>
+					<UiIconButton
+						type="button"
+						icon="x"
+						label="Закрыть"
+						size="sm"
+						@click="emit('close')"
+					/>
 				</div>
 				<div class="ui-dialog__body">
 					<slot />
 				</div>
-			</div>
+				<!-- outside the scrolling body, so the actions stay in reach -->
+				<div v-if="$slots.footer" class="ui-dialog__foot">
+					<slot name="footer" />
+				</div>
+			</component>
 		</div>
 	</Teleport>
 </template>
@@ -64,6 +108,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 }
 
 .ui-dialog {
+	position: relative;
 	display: flex;
 	flex-direction: column;
 	max-width: 100%;
@@ -75,25 +120,63 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 	box-shadow: var(--shadow-3);
 }
 
+/* the accent notch the title hangs from */
+.ui-dialog::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 28px;
+	width: 32px;
+	height: 4px;
+	background: var(--accent);
+	border-radius: 0 0 3px 3px;
+}
+
 .ui-dialog__head {
 	flex: none;
 	display: flex;
 	align-items: flex-start;
 	gap: 12px;
-	padding: 22px 22px 0 24px;
+	padding: 26px 18px 0 28px;
+}
+
+.ui-dialog__titles {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding-top: 3px;
 }
 
 .ui-dialog__title {
-	flex: 1;
-	font: var(--type-h3);
+	font: 800 var(--fs-20) / var(--lh-snug) var(--font-display);
+	letter-spacing: var(--tracking-display);
+	text-transform: uppercase;
 	color: var(--text-strong);
+	text-wrap: balance;
+}
+
+.ui-dialog__subtitle {
+	font: var(--type-body-sm);
+	color: var(--text-muted);
 }
 
 .ui-dialog__body {
 	min-height: 0;
 	overflow-y: auto;
-	padding: 12px 24px 24px;
+	padding: 18px 28px 26px;
 	font: var(--type-body);
 	color: var(--text-body);
+}
+
+.ui-dialog__foot {
+	flex: none;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 8px;
+	padding: 14px 20px 14px 28px;
+	border-top: 1px solid var(--border-subtle);
 }
 </style>

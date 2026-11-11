@@ -266,16 +266,14 @@ onMounted(() => exchangesStore.load())
 					>
 				</div>
 			</div>
-
-			<div class="dialog__actions">
-				<UiButton variant="outline" @click="confirming = undefined"
-					>Отмена</UiButton
-				>
-				<UiButton icon="check" :disabled="!canConfirm" @click="onConfirm"
-					>Обменять</UiButton
-				>
-			</div>
 		</div>
+
+		<template #footer>
+			<UiButton variant="ghost" @click="confirming = undefined"
+				>Отмена</UiButton
+			>
+			<UiButton :disabled="!canConfirm" @click="onConfirm">Обменять</UiButton>
+		</template>
 	</UiDialog>
 </template>
 
@@ -468,11 +466,5 @@ onMounted(() => exchangesStore.load())
 
 .dialog__now--gain {
 	color: var(--success-text);
-}
-
-.dialog__actions {
-	display: flex;
-	gap: 8px;
-	justify-content: flex-end;
 }
 </style>
