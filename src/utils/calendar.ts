@@ -18,8 +18,12 @@ export const PERIOD_PRESETS: {
 	{
 		key: 'month',
 		label: 'Месяц',
+		// Temporal refuses a duration with mixed signs, so the day is taken off apart
 		end: (start) =>
-			Temporal.PlainDate.from(start).add({ months: 1, days: -1 }).toString(),
+			Temporal.PlainDate.from(start)
+				.add({ months: 1 })
+				.subtract({ days: 1 })
+				.toString(),
 	},
 	{
 		key: 'fortnight',
