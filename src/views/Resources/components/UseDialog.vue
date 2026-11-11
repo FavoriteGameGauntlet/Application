@@ -111,15 +111,23 @@ const slotKey = (index: number, owner: Login | 'party') =>
  */
 const rows = computed(() => {
 	const takenWhole = new Set<string>()
+	/** the slots that name a player go first: the one that copies from the whole party takes what is left */
+	const order = slots.value
+		.map((slot, index) => ({ slot, index }))
+		.sort(
+			(a, b) =>
+				Number(a.slot.owner === 'party') - Number(b.slot.owner === 'party'),
+		)
 
-	return slots.value.map((slot, index) => {
+	const byIndex = order.map(({ slot, index }) => {
 		const key = slotKey(index, slot.owner)
 		const pickedElsewhere = new Set(
 			Object.entries(current.value)
 				.filter(([k]) => k.startsWith('slot-') && k !== key)
 				.flatMap(([, ids]) => ids as string[]),
 		)
-		const options = copiesOf(slot.owner, slot.itemId).filter(
+		const all = copiesOf(slot.owner, slot.itemId)
+		const options = all.filter(
 			(o) => !takenWhole.has(o.value) && !pickedElsewhere.has(o.value),
 		)
 		/** more copies than the entry takes, so the user picks which ones */
@@ -128,14 +136,21 @@ const rows = computed(() => {
 		if (!choose) options.forEach((o) => takenWhole.add(o.value))
 
 		return {
-			key,
-			slot,
-			options,
-			choose,
-			/** fewer copies than the entry takes */
-			short: options.length < slot.count,
+			index,
+			row: {
+				key,
+				slot,
+				options,
+				choose,
+				/** fewer copies than the entry takes */
+				short: options.length < slot.count,
+				/** the copies would be enough, but other slots take them */
+				taken: all.length >= slot.count && options.length < slot.count,
+			},
 		}
 	})
+
+	return byIndex.sort((a, b) => a.index - b.index).map(({ row }) => row)
 })
 
 const heading = (owner: Login | 'party') =>
@@ -196,8 +211,9 @@ const sections = computed<FormSection[]>(() => {
 			options: row.options,
 			...(row.short && {
 				invalid: true,
-				hint:
-					row.slot.owner === 'party'
+				hint: row.taken
+					? 'Эти предметы уже заняты другим пунктом.'
+					: row.slot.owner === 'party'
 						? 'В пати не хватает предметов.'
 						: `У ${nameOf(row.slot.owner)} не хватает предметов.`,
 			}),
