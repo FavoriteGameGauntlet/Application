@@ -37,7 +37,7 @@
 		},
 		{
 			"id": "recent-events-redesign",
-			"title": "Rework the «Недавние события» form. No details yet.",
+			"title": "Rework the «Недавние события» form. The block is components/PlayerEvents.vue (the title «Недавние события», a feed of the last day) on top of components/EventFeed.vue, shown in views/Home/HomeView.vue and views/Users/UserProfileView.vue. No details yet.",
 			"priority": 6,
 			"status": "todo",
 			"evidence": ""
