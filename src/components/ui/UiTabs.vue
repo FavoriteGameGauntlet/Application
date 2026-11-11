@@ -1,14 +1,27 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import UiIcon from './UiIcon.vue'
 
-type Item = string | { value: string; label: string; count?: number }
+type Item =
+	| string
+	| {
+			value: string
+			label: string
+			count?: number
+			/** a red dot: something in the tab still needs filling */
+			mark?: boolean
+			/** a lock: the tab can be read, not edited */
+			locked?: boolean
+	  }
 
 type Props = {
 	items?: Item[]
 	variant?: 'underline' | 'pill'
+	/** 40px high instead of 44, for the tabs of a dialog */
+	compact?: boolean
 }
 
-const { items = [], variant = 'underline' } = defineProps<Props>()
+const { items = [], variant = 'underline', compact } = defineProps<Props>()
 
 const model = defineModel<string>()
 
@@ -18,18 +31,39 @@ const normalizedItems = computed(() =>
 </script>
 
 <template>
-	<div class="ui-tabs" :class="`ui-tabs--${variant}`" role="tablist">
+	<div
+		class="ui-tabs"
+		:class="[`ui-tabs--${variant}`, { 'ui-tabs--compact': compact }]"
+		role="tablist"
+	>
 		<button
 			v-for="item in normalizedItems"
 			:key="item.value"
 			class="ui-tabs__tab"
 			:class="{ 'ui-tabs__tab--on': item.value === model }"
+			type="button"
 			role="tab"
 			:aria-selected="item.value === model"
 			@click="model = item.value"
 		>
 			{{ item.label }}
-			<span v-if="item.count != null" class="ui-tabs__count">{{ item.count }}</span>
+			<span v-if="item.count != null" class="ui-tabs__count">{{
+				item.count
+			}}</span>
+			<span
+				v-if="item.mark"
+				class="ui-tabs__mark"
+				role="img"
+				aria-label="Нужно заполнить"
+			></span>
+			<span
+				v-if="item.locked"
+				class="ui-tabs__lock"
+				role="img"
+				aria-label="Не редактируется"
+			>
+				<UiIcon name="lock" :size="15" />
+			</span>
 		</button>
 	</div>
 </template>
@@ -69,6 +103,21 @@ const normalizedItems = computed(() =>
 
 .ui-tabs--underline .ui-tabs__tab {
 	height: 44px;
+}
+
+.ui-tabs--compact.ui-tabs--underline .ui-tabs__tab {
+	height: 40px;
+}
+
+.ui-tabs__lock {
+	display: inline-flex;
+}
+
+.ui-tabs__mark {
+	width: 8px;
+	height: 8px;
+	background: var(--danger);
+	border-radius: 50%;
 }
 
 .ui-tabs--underline .ui-tabs__tab--on::after {

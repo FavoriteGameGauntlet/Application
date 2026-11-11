@@ -82,6 +82,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 						@click="emit('close')"
 					/>
 				</div>
+				<!-- outside the scrolling body, so the tabs stay under the title -->
+				<div v-if="$slots.tabs" class="ui-dialog__tabs">
+					<slot name="tabs" />
+				</div>
 				<div class="ui-dialog__body">
 					<slot />
 				</div>
@@ -160,6 +164,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 .ui-dialog__subtitle {
 	font: var(--type-body-sm);
 	color: var(--text-muted);
+}
+
+.ui-dialog__tabs {
+	flex: none;
+	margin-top: 14px;
+	padding: 0 28px;
 }
 
 .ui-dialog__body {
