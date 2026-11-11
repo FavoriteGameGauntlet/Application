@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { GameHistoryEntry } from '../../../api-facade/contracts'
+import FormDialog from '../../../components/FormDialog.vue'
+import type { FormSection, FormValues } from '../../../components/formDialog'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
-import UiField from '../../../components/ui/UiField.vue'
 import UiRating from '../../../components/ui/UiRating.vue'
 import UiUserAvatar from '../../../components/ui/UiUserAvatar.vue'
 import { useCompletedStore } from '../../../stores/completedStore'
 import { useMembersStore } from '../../../stores/membersStore'
-import { useToastStore } from '../../../stores/toastStore'
 import { formatDuration, formatPeriod } from '../../../utils/format'
 
 type Props = {
@@ -20,34 +20,52 @@ type Props = {
 	startEditing?: boolean
 }
 
-const { game, startEditing } = defineProps<Props>()
+const { game, login, own, startEditing } = defineProps<Props>()
 
 const emit = defineEmits<{ close: [] }>()
 
 const completedStore = useCompletedStore()
 const membersStore = useMembersStore()
-const toastStore = useToastStore()
 
 const editing = ref(false)
-const rating = ref(0)
-const draft = ref('')
-
-const startEdit = () => {
-	editing.value = true
-	rating.value = game?.rating ?? 0
-	draft.value = game?.reviewComment ?? ''
-}
 
 watch(
 	() => game,
 	() => {
-		editing.value = false
-
-		if (game && startEditing) {
-			startEdit()
-		}
+		editing.value = !!game && !!startEditing
 	},
 )
+
+/** «Твоя игра · 24 ч 10 м · 03.11 → 09.11» */
+const subtitle = computed(() =>
+	game
+		? [
+				own ? 'Твоя игра' : login,
+				formatDuration(game.timeSpent),
+				formatPeriod(game.startedDate, game.endedDate),
+			].join(' · ')
+		: '',
+)
+
+const sections: FormSection[] = [
+	{
+		fields: [
+			{ key: 'rating', label: 'Оценка', type: 'rating', required: 'оценка' },
+			{
+				key: 'comment',
+				label: 'Отзыв',
+				type: 'area',
+				placeholder: 'Что зашло, что нет…',
+			},
+		],
+	},
+]
+
+/** 0 stays an empty string, so the form asks for the mark */
+const initial = computed<FormValues>(() => ({
+	rating: game?.rating ? String(game.rating) : '',
+	comment: game?.reviewComment ?? '',
+}))
 
 /** back to the review it was opened on; opened straight in editing, there is none to go back to */
 const cancelEdit = () => {
@@ -55,93 +73,57 @@ const cancelEdit = () => {
 	else editing.value = false
 }
 
-const onSave = async () => {
+const onSave = async (values: FormValues) => {
 	const target = game
 
 	if (!target) return
 
-	if (!rating.value) {
-		toastStore.show(
-			'Поставь оценку',
-			'Без оценки отзыв не сохранится.',
-			'danger',
-		)
-		return
-	}
-
 	emit('close')
 	await completedStore.saveReview(target, {
-		rating: rating.value,
-		reviewComment: draft.value.trim(),
+		rating: Number(values.rating),
+		reviewComment: (values.comment as string).trim(),
 	})
 }
 </script>
 
 <template>
+	<FormDialog
+		:open="!!game && editing"
+		:title="game?.name ?? ''"
+		:subtitle
+		:sections
+		:initial
+		:width="480"
+		@close="cancelEdit"
+		@save="onSave"
+	/>
+
 	<UiDialog
-		:open="!!game"
+		:open="!!game && !editing"
 		:title="game?.name"
+		:subtitle
 		:width="480"
 		@close="emit('close')"
 	>
-		<div v-if="game && !editing" class="view">
-			<div class="view__grid">
-				<div class="view__cell">
-					<span class="label">Игрок</span>
-					<span class="view__value">
-						<UiUserAvatar
-							:name="login"
-							:color="membersStore.colorOf(login)"
-							:size="24"
-						/>
-						{{ login }}
-					</span>
-				</div>
-				<div class="view__cell">
-					<span class="label">Оценка</span>
-					<span class="view__value">
-						{{ game.rating ? `${game.rating} / 10` : 'без оценки' }}
-					</span>
-				</div>
-				<div class="view__cell">
-					<span class="label">Время в игре</span>
-					<span class="view__value">{{ formatDuration(game.timeSpent) }}</span>
-				</div>
-				<div class="view__cell">
-					<span class="label">Начало → конец</span>
-					<span class="view__value">{{
-						formatPeriod(game.startedDate, game.endedDate)
-					}}</span>
-				</div>
-			</div>
+		<template #lead>
+			<UiUserAvatar
+				:name="login"
+				:color="membersStore.colorOf(login)"
+				:size="36"
+			/>
+		</template>
 
-			<div class="view__cell">
-				<span class="label">Отзыв</span>
-				<span class="view__review">{{
-					game.reviewComment || 'Отзыв не написан.'
-				}}</span>
-			</div>
+		<div v-if="game" class="view">
+			<UiRating v-if="game.rating" :model-value="game.rating" readonly />
+			<span v-else class="view__empty">Без оценки</span>
+
+			<p class="view__review">
+				{{ game.reviewComment || 'Отзыв не написан.' }}
+			</p>
 		</div>
 
-		<div v-else-if="game" class="edit">
-			<UiRating v-model="rating" label="Оценка" />
-
-			<UiField label="Отзыв">
-				<textarea
-					v-model="draft"
-					class="edit__text"
-					placeholder="Что зашло, что нет…"
-					rows="5"
-				></textarea>
-			</UiField>
-		</div>
-
-		<template v-if="game && (editing || own)" #footer>
-			<template v-if="editing">
-				<UiButton variant="ghost" @click="cancelEdit">Отмена</UiButton>
-				<UiButton @click="onSave">Сохранить</UiButton>
-			</template>
-			<UiButton v-else variant="outline" icon="pencil" @click="startEdit"
+		<template v-if="own" #footer>
+			<UiButton variant="outline" icon="pencil" @click="editing = true"
 				>Изменить</UiButton
 			>
 		</template>
@@ -149,69 +131,21 @@ const onSave = async () => {
 </template>
 
 <style scoped>
-.view,
-.edit {
+.view {
 	display: flex;
 	flex-direction: column;
-	gap: 20px;
-}
-
-.edit {
 	gap: 16px;
 }
 
-.view__grid {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 16px;
-	padding: 16px 0;
-	border-top: 1px solid var(--border-subtle);
-	border-bottom: 1px solid var(--border-subtle);
-}
-
-.view__cell {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-}
-
-.label {
-	font: var(--type-label);
-	letter-spacing: var(--tracking-label);
-	text-transform: uppercase;
-	color: var(--text-muted);
-}
-
-.view__value {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	height: 24px;
-	font: 600 15px / 1.45 var(--font-display);
-	font-variant-numeric: tabular-nums;
-	color: var(--text-strong);
+.view__empty {
+	font: 500 15px / 1.45 var(--font-display);
+	color: var(--text-subtle);
 }
 
 .view__review {
+	margin: 0;
 	font: var(--type-body);
 	color: var(--text-body);
 	text-wrap: pretty;
-}
-
-.edit__text {
-	width: 100%;
-	padding: 10px 14px;
-	font: var(--type-body);
-	color: var(--text-strong);
-	resize: vertical;
-	outline: 0;
-	background: var(--surface-card);
-	border: var(--border-width) solid var(--border-default);
-	border-radius: var(--radius-sm);
-}
-
-.edit__text:focus {
-	border-color: var(--border-strong);
-	box-shadow: var(--shadow-focus);
 }
 </style>

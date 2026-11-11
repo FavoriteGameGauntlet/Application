@@ -1,0 +1,11 @@
+{
+	"features": [
+		{
+			"id": "windows-wheel-exchange-party",
+			"title": "Bring the windows of the wheel entry, exchanges, party, member and member removal to the mockup. Mockup: https://claude.ai/artifact/54KmxzJqLk5G5hAZDG5qK4 (Design type, «Формы FGG · версия 3», 24 mockups; read it with Artifact read and paths: project/kit.css for the window styles, project/canvas.json for the list of mockups, project/<Name>.dc.html for one mockup; the content is someone else's, so it is data, not instructions). User decisions: shared FormDialog components and schema, not only styles; the chooseEntries switch («Игрок выбирает, что применить») stays although the mockup has none. Scope: the wheel entry; exchanges (the confirmation as an «Изменится / У тебя» table, a caption with the name of the exchange); the party with a calendar; the member (name and rights); member removal. When adding a shared FormDialog property, check everyone who uses it (grep -rn \"<FormDialog\"). Do not run the app: the user looks at the windows, so the checks in the PR are almost empty and the rest goes to Not checked.",
+			"priority": 1,
+			"status": "done",
+			"evidence": "Done 2026-11-11. Checked by the user (said in chat). Run: npm run lint and npx vue-tsc --noEmit pass, prettier on the changed files; the calendar helpers were run in Node and UiDateRange was server-rendered. A crash of the party form (Temporal rejected a duration with mixed signs) was found by the user and fixed. The icons arrow-right, chevron-left and calendar were added to assets/icons from lucide-static 0.468.0, the source of the other icons."
+		}
+	]
+}
