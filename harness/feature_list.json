@@ -48,6 +48,13 @@
 			"priority": 7,
 			"status": "todo",
 			"evidence": ""
+		},
+		{
+			"id": "catalog-to-admin-panel",
+			"title": "Move the catalog editing into the admin panel. The user's words: move the catalog editing into the admin panel. Today the catalog is a route of its own (RouteName.Catalog, views/Catalog/CatalogView.vue, the «Каталог» item in AppSidebar and an entry in composables/useTabs.ts), and the admin panel (routes under admin with meta.admin, its own sidebar) holds exchanges, wheel, rewards, members and parameters. ASK THE USER BEFORE STARTING what happens to the «Каталог» item of the main sidebar and to the non-admin players (gone, or a read-only view), and change nothing until the answer.",
+			"priority": 8,
+			"status": "todo",
+			"evidence": ""
 		}
 	]
 }
