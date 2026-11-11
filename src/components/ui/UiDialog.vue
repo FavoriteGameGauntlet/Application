@@ -7,6 +7,8 @@ type Props = {
 	open?: boolean
 	title?: string
 	subtitle?: string
+	/** the title is a name that keeps its case, not a heading in capitals */
+	plainTitle?: boolean
 	width?: number
 	/** the dialog is a form: the footer buttons submit it, and so does Enter */
 	asForm?: boolean
@@ -68,8 +70,17 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 				@submit.prevent="emit('submit')"
 			>
 				<div class="ui-dialog__head">
-					<div class="ui-dialog__titles">
-						<div class="ui-dialog__title">{{ title }}</div>
+					<slot name="lead" />
+					<div
+						class="ui-dialog__titles"
+						:class="{ 'ui-dialog__titles--lead': $slots.lead }"
+					>
+						<div
+							class="ui-dialog__title"
+							:class="{ 'ui-dialog__title--plain': plainTitle }"
+						>
+							{{ title }}
+						</div>
 						<div v-if="subtitle" class="ui-dialog__subtitle">
 							{{ subtitle }}
 						</div>
@@ -159,6 +170,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 	text-transform: uppercase;
 	color: var(--text-strong);
 	text-wrap: balance;
+}
+
+/* a picture beside the title sits lower than the first line of text */
+.ui-dialog__titles--lead {
+	padding-top: 8px;
+}
+
+.ui-dialog__title--plain {
+	text-transform: none;
 }
 
 .ui-dialog__subtitle {

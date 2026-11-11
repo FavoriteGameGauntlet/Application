@@ -2,8 +2,8 @@
 import { computed, ref, watch } from 'vue'
 import type { AdminExchange, SpinCostRow } from '../../api-facade/contracts'
 import type {
-	FormField,
 	FormRow,
+	FormSection,
 	FormValues,
 } from '../../components/formDialog'
 import FormDialog from '../../components/FormDialog.vue'
@@ -24,43 +24,60 @@ const toastStore = useToastStore()
 /** the exchange that the dialog edits; `{}` is a new one, undefined means the dialog is closed */
 const editing = ref<{ exchange?: AdminExchange }>()
 
-const fields: FormField[] = [
+/** the two sides with a sign between them, and under each its own switch */
+const sides = 'minmax(0, 1fr) 40px minmax(0, 1fr)'
+
+const sections: FormSection[] = [
 	{
-		key: 'name',
-		label: 'Название',
-		required: 'название',
-		placeholder: 'Набор для рерола',
+		fields: [
+			{
+				key: 'name',
+				label: 'Название',
+				required: 'название',
+				placeholder: 'Набор для рерола',
+			},
+			{
+				key: 'description',
+				label: 'Описание',
+				optional: true,
+				placeholder: 'Что даёт и когда пригодится',
+			},
+		],
 	},
 	{
-		key: 'description',
-		label: 'Описание',
-		placeholder: 'Что даёт и когда пригодится',
-	},
-	{
-		key: 'sourceEntries',
-		label: 'Отдаёшь',
-		type: 'rows',
-		variant: 'cost',
-		hint: 'Что игрок отдаёт. Со списком целей отдают выбранные игроки.',
-	},
-	{
-		key: 'chooseSource',
-		type: 'check',
-		label: 'Игрок выбирает, что отдать',
-		hint: 'При обмене он отметит строки, которые отдаёт. Остальные не списываются.',
-	},
-	{
-		key: 'targetEntries',
-		label: 'Получаешь',
-		type: 'rows',
-		variant: 'cost',
-		hint: 'Что игрок получает.',
-	},
-	{
-		key: 'chooseTarget',
-		type: 'check',
-		label: 'Игрок выбирает, что получить',
-		hint: 'При обмене он отметит строки, которые получает. Остальные не выдаются.',
+		columns: sides,
+		fields: [
+			{
+				key: 'sourceEntries',
+				label: 'Игрок отдаёт',
+				required: 'отдаваемый ресурс',
+				type: 'rows',
+				variant: 'cost',
+				addLabel: 'Ресурс',
+			},
+			{ key: 'arrow', label: '', type: 'arrow' },
+			{
+				key: 'targetEntries',
+				label: 'Игрок получает',
+				required: 'получаемый ресурс',
+				type: 'rows',
+				variant: 'cost',
+				addLabel: 'Ресурс',
+			},
+			{
+				key: 'chooseSource',
+				type: 'check',
+				label: 'Игрок выбирает, что отдать',
+				hint: 'При обмене он отметит строки, которые отдаёт. Остальные не списываются.',
+			},
+			{
+				key: 'chooseTarget',
+				type: 'check',
+				label: 'Игрок выбирает, что получить',
+				hint: 'При обмене он отметит строки, которые получает. Остальные не выдаются.',
+				column: 3,
+			},
+		],
 	},
 ]
 
@@ -121,15 +138,6 @@ const onSave = async (values: FormValues) => {
 			'error' in sourceEntries
 				? sourceEntries.error
 				: (targetEntries as { error: string }).error,
-			'danger',
-		)
-		return
-	}
-
-	if (!sourceEntries.value.length && !targetEntries.value.length) {
-		toastStore.show(
-			'Добавь стороны',
-			'Хотя бы одна строка: что отдаёт или что получает игрок.',
 			'danger',
 		)
 		return
@@ -249,7 +257,9 @@ watch(
 		:title="
 			editing?.exchange ? `Изменить «${editing.exchange.name}»` : 'Новый обмен'
 		"
-		:sections="[{ fields }]"
+		:submit-label="editing?.exchange ? 'Сохранить' : 'Создать обмен'"
+		:width="840"
+		:sections
 		:initial
 		@close="editing = undefined"
 		@save="onSave"

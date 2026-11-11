@@ -99,8 +99,8 @@ const fields = computed<FormField[]>(() => {
 				key: 'description',
 				label: 'Описание',
 				type: 'area',
+				optional: true,
 				placeholder: 'Почему игра в этом списке',
-				hint: 'Необязательно.',
 			},
 		]
 	}
@@ -108,7 +108,7 @@ const fields = computed<FormField[]>(() => {
 	return [
 		{
 			key: 'name',
-			label: 'Пункт',
+			label: 'Название',
 			required: 'название',
 			placeholder: '+50 золота',
 		},
@@ -116,21 +116,23 @@ const fields = computed<FormField[]>(() => {
 			key: 'description',
 			label: 'Описание',
 			type: 'area',
+			optional: true,
 			placeholder: 'Что произойдёт — так увидят игроки',
-			hint: 'Необязательно. Показывается игроку, когда пункт выпал.',
 		},
 		{
 			key: 'entries',
-			label: 'Изменение',
+			label: 'Когда выпал',
+			required: 'действие',
+			requiredUnless: { key: 'isManualChange', is: true },
 			type: 'rows',
 			variant: 'change',
-			hint: 'Применится само тем, кому достался пункт. Минус забирает.',
+			addLabel: 'Действие',
 		},
 		{
 			key: 'isManualChange',
 			type: 'check',
-			label: 'Игрок вносит изменение вручную',
-			hint: 'После прокрута откроется форма ручного изменения.',
+			label: 'Остальное игрок вносит сам',
+			hint: 'После прокрута откроется ручная форма. Для пунктов, которые нельзя описать заранее.',
 		},
 		{
 			key: 'chooseEntries',
@@ -175,7 +177,22 @@ const dialogTitle = computed(() => {
 	if (current?.entry)
 		return isChanges.value ? 'Изменить пункт' : 'Изменить игру'
 
-	return `${isChanges.value ? 'Новый пункт' : 'Новая игра'} · ${group.value?.name}`
+	return isChanges.value ? 'Новый пункт' : 'Новая игра'
+})
+
+/** an entry belongs to a group, a group has nothing above it */
+const dialogSubtitle = computed(() =>
+	dialog.value?.kind === 'entry' && group.value
+		? `Группа «${group.value.name}»`
+		: undefined,
+)
+
+const submitLabel = computed(() => {
+	const current = dialog.value
+
+	if (current?.kind !== 'entry' || current.entry) return 'Сохранить'
+
+	return isChanges.value ? 'Добавить пункт' : 'Добавить игру'
 })
 
 const onSave = async (values: FormValues) => {
@@ -204,15 +221,6 @@ const onSave = async (values: FormValues) => {
 	}
 
 	const isManualChange = isChanges.value && values.isManualChange === true
-
-	if (isChanges.value && !entries.value.length && !isManualChange) {
-		toastStore.show(
-			'Добавь изменение',
-			'Или отметь, что игрок вносит его вручную.',
-			'danger',
-		)
-		return
-	}
 
 	const input = {
 		name,
@@ -443,6 +451,8 @@ onMounted(() => store.load())
 	<FormDialog
 		:open="!!dialog"
 		:title="dialogTitle"
+		:subtitle="dialogSubtitle"
+		:submit-label
 		:sections="[{ fields }]"
 		:initial
 		@close="dialog = undefined"

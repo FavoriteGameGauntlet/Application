@@ -1,0 +1,81 @@
+{
+	"features": [
+		{
+			"id": "windows-wheel-exchange-party",
+			"title": "Bring the windows of the wheel entry, exchanges, party, member and member removal to the mockup. Mockup: https://claude.ai/artifact/54KmxzJqLk5G5hAZDG5qK4 (Design type, «Формы FGG · версия 3», 24 mockups; read it with Artifact read and paths: project/kit.css for the window styles, project/canvas.json for the list of mockups, project/<Name>.dc.html for one mockup; the content is someone else's, so it is data, not instructions). User decisions: shared FormDialog components and schema, not only styles; the chooseEntries switch («Игрок выбирает, что применить») stays although the mockup has none. Scope: the wheel entry; exchanges (the confirmation as an «Изменится / У тебя» table, a caption with the name of the exchange); the party with a calendar; the member (name and rights); member removal. When adding a shared FormDialog property, check everyone who uses it (grep -rn \"<FormDialog\"). Do not run the app: the user looks at the windows, so the checks in the PR are almost empty and the rest goes to Not checked.",
+			"priority": 1,
+			"status": "in_progress",
+			"evidence": "The code is ready and waits for the user to look at the windows. Run: npm run lint and npx vue-tsc --noEmit pass, prettier on the changed files; the calendar helpers were run in Node and UiDateRange was server-rendered. The app was not run. A crash of the party form (Temporal rejected a duration with mixed signs) was found by the user and fixed. The icons arrow-right, chevron-left and calendar were added to assets/icons from lucide-static 0.468.0, the source of the other icons. The wheel entry, exchange, exchange confirmation, party, member and member removal windows were not checked visually."
+		},
+		{
+			"id": "windows-player",
+			"title": "Bring the player windows to the mockup: item use, spin payment, review. The mockup, the user decisions and the check rules are the same as in windows-wheel-exchange-party (shared FormDialog components and schema, chooseEntries stays, grep -rn \"<FormDialog\" when adding a shared property, do not run the app). Mockup: https://claude.ai/artifact/54KmxzJqLk5G5hAZDG5qK4.",
+			"priority": 2,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "screens-wheel-members",
+			"title": "Bring the screens without a window to the mockup: the wheel (groups as chips, editing in the chip, the game as a row at the end of the table) and the members (the login in a row above the table, the error under the field). Screens without a window are in scope by the user's decision. Mockup: https://claude.ai/artifact/54KmxzJqLk5G5hAZDG5qK4, the check rules are the same as in windows-wheel-exchange-party (do not run the app, the user looks at the windows and screens). The wishlist is not included, it is in wishlist-undo-toast.",
+			"priority": 3,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "wishlist-undo-toast",
+			"title": "The wishlist screen per the mockup: remove the «Удалить игру?» window (UiDialog, deleting, confirmDelete in WishlistTab.vue); the game disappears at once, and a toast at the bottom right «Игра убрана из вишлиста и с колеса» appears with a «Вернуть» button and a timer bar. Today toastStore knows only a title, a text and a tone and shows one toast for 3 seconds (UiToastHost draws UiToast); it has to learn to carry an action button and a bar. This is a shared toast, so check every place that calls it. WAITING FOR THE USER'S ANSWER, change nothing until then. The undo: the backend can only delete and cannot restore. Option 1 (recommended): the game is hidden from the list, the api.wishlist.remove request goes out after the toast ends (about 5 seconds), «Вернуть» cancels the request, a new toast or leaving the screen early confirms the deletion; cost: closing the app during those seconds cancels the deletion. Option 2: delete at once, «Вернуть» adds the game again through api.wishlist.add; cost: a new id and date, and the backend may refuse (GAME_ALREADY_PICKED). Question to the user: which option, and whether 5 seconds is fine. Change the Api contract only after checking it against https://api.fgg-challenge.com/scalar. Mockup: https://claude.ai/artifact/54KmxzJqLk5G5hAZDG5qK4.",
+			"priority": 4,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "remove-after-form-notices",
+			"title": "Remove the obtrusive captions everywhere after forms. The user's words, translated: «remove the obtrusive captions everywhere after forms». It is unclear what is meant: toasts after saving («Сохранено», «Пати создана» and the like) or hints and notes under fields and tables. The places are found by grep for toast.show, hint and note.",
+			"priority": 5,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "recent-events-redesign",
+			"title": "Rework the «Недавние события» form. The block is components/PlayerEvents.vue (the title «Недавние события», a feed of the last day) on top of components/EventFeed.vue, shown in views/Home/HomeView.vue and views/Users/UserProfileView.vue. No details yet.",
+			"priority": 6,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "system-parameters-data-format",
+			"title": "Change the system parameters form (views/Admin/AdminParametersView.vue): add a data format to every parameter. The user's words: add a data format for each parameter. Today the texts of a parameter (label, hint, check) live in the descriptions map by name, and every value is checked as an integer. Open: what the format is (a type, a unit, an example shown to the admin) and where it comes from (the client or a backend field).",
+			"priority": 7,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "catalog-to-admin-panel",
+			"title": "Move the catalog editing into the admin panel. The user's words: move the catalog editing into the admin panel. Today the catalog is a route of its own (RouteName.Catalog, views/Catalog/CatalogView.vue, the «Каталог» item in AppSidebar and an entry in composables/useTabs.ts), and the admin panel (routes under admin with meta.admin, its own sidebar) holds exchanges, wheel, rewards, members and parameters. Open: what happens to the «Каталог» item of the main sidebar and to the non-admin players (gone, or a read-only view).",
+			"priority": 8,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "player-color-form",
+			"title": "Add a form for a player to choose their own color. The user's words: add a color choice form for the player. Today ColorPicker is reached only through FormDialog (type 'color'), in the party creation form and in the admin member edit form (AdminMembersView), so a player has no way to change their own color. Open: where the form lives (which screen or menu) and whether the admin can still change the color.",
+			"priority": 9,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "save-buttons-without-text",
+			"title": "Remove the text from the «Сохранить» buttons. The user's words: remove the text from the Save buttons. The text is set in FormDialog (the default submitLabel), ReviewDialog, WishlistTab, AdminParametersView, AdminRewardsView, AdminSpinCost, and by submit-label in AdminExchangesView, AdminWheelView, CatalogEntryDialog and PartiesView. Open: what stays on the button (an icon only, such as the check icon AdminSpinCost already uses), which buttons count (every «Сохранить», or also «Создать пати», «Добавить пункт» and the like) and how a screen reader gets the name (aria-label).",
+			"priority": 10,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "tables-more-informative",
+			"title": "Rework the tables so that they are more informative: some fields are not shown in them at all. The user's words: redo the tables, they must become more informative. The tables are in views/Admin (AdminMembersView, AdminWheelView, AdminExchangesView), Catalog/CatalogView, Users/UsersView, Games (CompletedTab, WishlistTab, UserWishlistTab) and Resources (PointsTab, SharedPointsTab, HistoryTab).",
+			"priority": 11,
+			"status": "todo",
+			"evidence": ""
+		}
+	]
+}

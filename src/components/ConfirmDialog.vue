@@ -7,19 +7,22 @@ type Props = {
 	title: string
 	text: string
 	okLabel?: string
+	cancelLabel?: string
 }
 
-const { okLabel = 'Удалить' } = defineProps<Props>()
+const { okLabel = 'Удалить', cancelLabel = 'Отмена' } = defineProps<Props>()
 
 const emit = defineEmits<{ close: []; confirm: [] }>()
 </script>
 
 <template>
-	<UiDialog :open :title :width="420" @close="emit('close')">
+	<UiDialog :open :title :width="440" @close="emit('close')">
 		<span class="confirm__text">{{ text }}</span>
 
 		<template #footer>
-			<UiButton variant="ghost" @click="emit('close')">Отмена</UiButton>
+			<UiButton variant="ghost" @click="emit('close')">{{
+				cancelLabel
+			}}</UiButton>
 			<UiButton variant="danger" @click="emit('confirm')">
 				{{ okLabel }}
 			</UiButton>

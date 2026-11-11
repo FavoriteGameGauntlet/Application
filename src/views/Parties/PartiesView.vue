@@ -13,11 +13,15 @@ import { RouteName } from '../../router/routeNames'
 import { usePartiesStore } from '../../stores/partiesStore'
 import { useToastStore } from '../../stores/toastStore'
 import {
-	formatDate,
-	formatDateInput,
-	formatPeriod,
-	parseDateInput,
-} from '../../utils/format'
+	PERIOD_PRESETS,
+	dayOf,
+	endOfDayIso,
+	joinPeriod,
+	splitPeriod,
+	startOfDayIso,
+	today,
+} from '../../utils/calendar'
+import { formatDate, formatPeriod } from '../../utils/format'
 import { isMemberColor, nextMemberColor } from '../../utils/memberColor'
 import { plural } from '../../utils/plural'
 
@@ -53,16 +57,10 @@ const fields = computed<FormField[]>(() => [
 		placeholder: 'Осенний сезон',
 	},
 	{
-		key: 'startsAt',
-		label: 'Начало',
-		placeholder: '01.09.2026',
-		hint: 'День, число.месяц.год.',
-	},
-	{
-		key: 'endsAt',
-		label: 'Конец',
-		placeholder: '30.11.2026',
-		hint: 'Последний день включительно, позже начала. После него пати завершится.',
+		key: 'period',
+		label: 'Даты',
+		type: 'dates',
+		hint: 'Последний день входит в пати. После него она завершится.',
 	},
 	// the creator joins the new party as a member; an existing party keeps its members' colors
 	...(editing.value?.party
@@ -82,30 +80,25 @@ const initial = computed<FormValues>(() => {
 
 	return {
 		name: party?.name ?? '',
-		startsAt: party ? formatDateInput(party.startsAt) : '',
-		endsAt: party ? formatDateInput(party.endsAt) : '',
+		// a new party starts today and lasts a month
+		period: joinPeriod(
+			party
+				? { start: dayOf(party.startsAt), end: dayOf(party.endsAt) }
+				: { start: today(), end: PERIOD_PRESETS[0].end(today()) },
+		),
 		color: nextMemberColor([]),
 	}
 })
 
 const onSave = async (values: FormValues) => {
 	const name = String(values.name).trim()
-	const startsAt = parseDateInput(String(values.startsAt))
-	const endsAt = parseDateInput(String(values.endsAt), true)
+	const period = splitPeriod(String(values.period))
 
-	if (!startsAt || !endsAt) {
-		toastStore.show('Не понял дату', 'Напиши в виде 01.09.2026.', 'danger')
-		return
-	}
+	// the field keeps the end of the period from coming before its start
+	if (!period) return
 
-	if (Date.parse(endsAt) <= Date.parse(startsAt)) {
-		toastStore.show(
-			'Даты перепутаны',
-			'Конец должен быть позже начала.',
-			'danger',
-		)
-		return
-	}
+	const startsAt = startOfDayIso(period.start)
+	const endsAt = endOfDayIso(period.end)
 
 	const party = editing.value?.party
 	const creatorColor = String(values.color ?? '')
@@ -220,6 +213,8 @@ onMounted(async () => {
 			:title="
 				editing?.party ? `Изменить «${editing.party.name}»` : 'Новая пати'
 			"
+			:submit-label="editing?.party ? 'Сохранить' : 'Создать пати'"
+			:width="480"
 			:sections="[{ fields }]"
 			:initial
 			@close="editing = undefined"
