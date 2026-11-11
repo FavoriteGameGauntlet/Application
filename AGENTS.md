@@ -63,6 +63,8 @@ After the startup steps and before the first edit of any file, write a plan of c
 - Prefer files in the repository to summaries in chat.
 - After edits, format only the changed files, not the whole tree.
 - Never commit to `master`; work in a branch. Branch names contain no slashes (`admin-free-manual-change`, not `feature/admin-free-manual-change`).
+- When the user tells you to start a feature, create its branch yourself and don't ask about it. If the working tree already has uncommitted changes at that moment, do nothing at all: don't switch or create a branch, don't stash, don't edit files. Ask the user whether those changes are needed and wait for the answer.
+- Any other request in the middle of a session (a feature list entry, a text fix, a question) is done in the current branch. Don't create or switch a branch for it and don't open a separate PR; it goes into the PR of the current work.
 - Commit titles carry no issue or PR links.
 - `AGENTS.md`, `CLAUDE.md` and the `harness/` files are tracked like the rest of the code: a change to them goes through a branch and a PR.
 - Don't write anything about the project to the agent's memory. What a later session needs goes into this file or `harness/ARCHITECTURE.md`.
