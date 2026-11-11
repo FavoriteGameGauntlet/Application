@@ -45,6 +45,8 @@ export type FormField = {
 		hint?: string
 		meta?: string
 		color?: string
+		/** a `pick` row that is shown but cannot be picked */
+		disabled?: boolean
 	}[]
 	/** for `pick`: exactly this many are picked; 1 makes it a choice of one. Without it any number from one up */
 	limit?: number

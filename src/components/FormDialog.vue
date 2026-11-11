@@ -122,7 +122,7 @@ const isStarted = (field: FormField) =>
 /** what of a `pick` list the user can still see: a pick of an option that is gone does not count */
 const pickedOf = (field: FormField) =>
 	(lists[field.key] ?? []).filter((v) =>
-		field.options?.some((o) => o.value === v),
+		field.options?.some((o) => o.value === v && !o.disabled),
 	)
 
 watch(

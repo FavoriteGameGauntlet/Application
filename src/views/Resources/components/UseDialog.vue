@@ -31,7 +31,7 @@ export type UseSubject = {
 	/** false: the user picks which of the entries to apply */
 	shouldApplyToAll: boolean
 	conditions: ItemCondition[]
-	/** the copy that is being used can't be taken away by its own use (it can still be copied) */
+	/** the copy that is being used can be neither taken away nor copied by its own use */
 	excludeCopyId?: number
 }
 
@@ -82,28 +82,52 @@ const slots = computed(() =>
 	useSlots(entries.value, sessionStore.login, targets.value),
 )
 
-const copiesOf = (owner: Login | 'party', itemId?: number) =>
-	(owner === 'party'
-		? membersStore.list.map((m) => m.user.login)
-		: [owner]
-	).flatMap((login) =>
-		(resourcesStore.byUser[login]?.items ?? [])
-			.filter(
-				(i) =>
-					(itemId === undefined || i.itemId === itemId) &&
-					// the copy that is being used can be copied, but not taken away by its own use
-					(owner === 'party' || i.id !== subject?.excludeCopyId),
-			)
-			.map((i) => ({
-				value: String(i.id),
-				label: i.name,
-				meta: `${formatUsesLeft(i)}${owner === 'party' ? ` · ${nameOf(login)}` : ''}`,
-			})),
+/** the copies of `login` an entry can take or copy; the copy that is being used is never one of them */
+const copiesOf = (login: Login, itemId?: number) =>
+	(resourcesStore.byUser[login]?.items ?? [])
+		.filter(
+			(i) =>
+				(itemId === undefined || i.itemId === itemId) &&
+				i.id !== subject?.excludeCopyId,
+		)
+		.map((i) => ({
+			value: String(i.id),
+			label: i.name,
+			meta: formatUsesLeft(i),
+		}))
+
+/** `login` holds the copy that is being used, and an entry for `itemId` would offer it if it were allowed */
+const holdsUsedCopy = (login: Login, itemId?: number) =>
+	subject?.excludeCopyId !== undefined &&
+	(resourcesStore.byUser[login]?.items ?? []).some(
+		(i) =>
+			i.id === subject?.excludeCopyId &&
+			(itemId === undefined || i.itemId === itemId),
 	)
 
 /** the owner is in the key, so the copies picked for one player never carry over to another */
-const slotKey = (index: number, owner: Login | 'party') =>
-	`slot-${index}-${owner}`
+const slotKey = (index: number, owner: Login) => `slot-${index}-${owner}`
+
+const fromKey = (index: number) => `from-${index}`
+
+/** the entries that take copies away from each chosen player */
+const takesFromTargets = computed(() =>
+	entries.value.filter(
+		(e) =>
+			e.who === 'chosen' &&
+			e.amount < 0 &&
+			(e.kind === 'user-item' || e.kind === 'item'),
+	),
+)
+
+/** a player whose inventory is not read yet is not blocked: nothing is known about it */
+const lacksCopies = (login: Login, entries: ItemEntryRow[]) =>
+	!!resourcesStore.byUser[login] &&
+	entries.some(
+		(e) =>
+			copiesOf(login, e.kind === 'item' ? e.targetId : undefined).length <
+			Math.abs(e.amount),
+	)
 
 /**
  * The backend refuses a copy named twice, so a copy that another slot takes
@@ -121,32 +145,46 @@ const rows = computed(() => {
 		)
 
 	const byIndex = order.map(({ slot, index }) => {
-		const key = slotKey(index, slot.owner)
+		const isParty = slot.owner === 'party'
+		/** a slot that copies from the party asks whose copy first */
+		const source = isParty
+			? listOf(current.value, fromKey(index))[0]
+			: undefined
+		const owner = isParty ? source : slot.owner
+		const key = slotKey(index, owner ?? 'party')
 		const pickedElsewhere = new Set(
 			Object.entries(current.value)
 				.filter(([k]) => k.startsWith('slot-') && k !== key)
 				.flatMap(([, ids]) => ids as string[]),
 		)
-		const all = copiesOf(slot.owner, slot.itemId)
+		const all = owner ? copiesOf(owner, slot.itemId) : []
 		const options = all.filter(
 			(o) => !takenWhole.has(o.value) && !pickedElsewhere.has(o.value),
 		)
 		/** more copies than the entry takes, so the user picks which ones */
 		const choose = options.length > slot.count
 
-		if (!choose) options.forEach((o) => takenWhole.add(o.value))
+		if (owner && !choose) options.forEach((o) => takenWhole.add(o.value))
 
 		return {
 			index,
 			row: {
 				key,
+				index,
 				slot,
+				isParty,
+				/** the player the copy is taken from, once picked */
+				owner,
+				/** nobody is picked to copy from yet, so there are no copies to show */
+				pending: !owner,
 				options,
 				choose,
 				/** fewer copies than the entry takes */
-				short: options.length < slot.count,
+				short: !!owner && options.length < slot.count,
 				/** the copies would be enough, but other slots take them */
-				taken: all.length >= slot.count && options.length < slot.count,
+				taken:
+					!!owner && all.length >= slot.count && options.length < slot.count,
+				usedCopy: !!owner && holdsUsedCopy(owner, slot.itemId),
 			},
 		}
 	})
@@ -154,9 +192,9 @@ const rows = computed(() => {
 	return byIndex.sort((a, b) => a.index - b.index).map(({ row }) => row)
 })
 
-const heading = (owner: Login | 'party') =>
-	owner === 'party'
-		? 'Какой предмет скопировать'
+const heading = (owner: Login, isParty: boolean) =>
+	isParty
+		? `Какой предмет скопировать у ${nameOf(owner)}`
 		: `Что забрать у ${nameOf(owner)}`
 
 const sections = computed<FormSection[]>(() => {
@@ -193,6 +231,10 @@ const sections = computed<FormSection[]>(() => {
 						value: m.user.login,
 						label: m.displayName ?? m.user.login,
 						color: membersStore.colorOf(m.user.login),
+						...(lacksCopies(m.user.login, takesFromTargets.value) && {
+							disabled: true,
+							meta: 'нечего забрать',
+						}),
 					})),
 					...(!candidates.value.length && {
 						hint: 'Сейчас подходящих игроков нет.',
@@ -202,21 +244,62 @@ const sections = computed<FormSection[]>(() => {
 		})
 	}
 
-	for (const row of rows.value.filter((r) => r.choose || r.short)) {
+	// not in the order of the entries: what is taken from the chosen players follows «На кого», copying comes last
+	const ordered = [
+		...rows.value.filter((r) => !r.isParty),
+		...rows.value.filter((r) => r.isParty),
+	]
+
+	for (const row of ordered) {
+		if (row.isParty) {
+			result.push({
+				title: 'У кого скопировать',
+				fields: [
+					{
+						key: fromKey(row.index),
+						label: 'У кого скопировать',
+						type: 'pick',
+						limit: 1,
+						required: 'игрок',
+						options: membersStore.list.map((m) => {
+							const login = m.user.login
+							const blocked =
+								!!resourcesStore.byUser[login] &&
+								copiesOf(login, row.slot.itemId).length < row.slot.count
+
+							return {
+								value: login,
+								label: m.displayName ?? login,
+								color: membersStore.colorOf(login),
+								...(blocked && {
+									disabled: true,
+									meta: holdsUsedCopy(login, row.slot.itemId)
+										? 'используется'
+										: 'нечего копировать',
+								}),
+							}
+						}),
+					},
+				],
+			})
+		}
+
+		if (!row.owner) continue
+
 		const field: FormField = {
 			key: row.key,
-			label: heading(row.slot.owner),
+			label: heading(row.owner, row.isParty),
 			type: 'pick',
 			limit: row.slot.count,
 			required: 'предмет',
 			options: row.options,
 			...(row.short && {
 				invalid: true,
-				hint: row.taken
-					? 'Эти предметы уже заняты другим пунктом.'
-					: row.slot.owner === 'party'
-						? 'В пати не хватает предметов.'
-						: `У ${nameOf(row.slot.owner)} не хватает предметов.`,
+				hint: row.usedCopy
+					? 'Нельзя выбрать предмет, который используете. Предметов для выбора нет.'
+					: row.taken
+						? 'Предметов для выбора нет: подходящий уже забирает другой пункт.'
+						: `У ${nameOf(row.owner)} не хватает предметов.`,
 			}),
 		}
 
@@ -226,15 +309,22 @@ const sections = computed<FormSection[]>(() => {
 	return result
 })
 
+/** a slot with exactly as many copies as it takes has nothing to choose, so they are picked from the start */
+const initial = computed<FormValues>(() =>
+	Object.fromEntries(
+		rows.value
+			.filter((r) => !r.pending && !r.choose && !r.short)
+			.map((r) => [r.key, r.options.map((o) => o.value)]),
+	),
+)
+
 const onChange = (values: FormValues) => {
 	current.value = values
 }
 
 const onSave = (values: FormValues) => {
 	const userItemIds = rows.value.flatMap((r) =>
-		r.choose
-			? listOf(values, r.key).map(Number)
-			: r.options.map((o) => Number(o.value)),
+		listOf(values, r.key).map(Number),
 	)
 
 	emit('confirm', {
@@ -257,18 +347,23 @@ watch(
 	},
 )
 
-// the inventories the slots take from
-watch(
-	slots,
-	(list) => {
-		const logins = new Set(
-			list.flatMap((s) =>
-				s.owner === 'party'
-					? membersStore.list.map((m) => m.user.login)
-					: [s.owner],
-			),
-		)
+/** whose inventory the form reads: the owners of the slots, everyone to copy from, the players to take from */
+const inventoriesNeeded = computed(() => [
+	...new Set([
+		...slots.value.flatMap((s) =>
+			s.owner === 'party'
+				? membersStore.list.map((m) => m.user.login)
+				: [s.owner],
+		),
+		...(takesFromTargets.value.length
+			? candidates.value.map((m) => m.user.login)
+			: []),
+	]),
+])
 
+watch(
+	inventoriesNeeded,
+	(logins) => {
 		logins.forEach((login) => {
 			if (refreshed.has(login)) return
 
@@ -286,7 +381,7 @@ watch(
 		:title="subject?.title ?? ''"
 		:subtitle="subject?.text"
 		:sections
-		:initial="{}"
+		:initial
 		submit-label="Использовать"
 		:width="480"
 		@close="emit('close')"

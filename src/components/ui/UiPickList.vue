@@ -9,6 +9,8 @@ export type PickOption = {
 	meta?: string
 	/** a player: the row starts with an avatar of this color */
 	color?: string
+	/** the row is shown but cannot be picked; `meta` can say why */
+	disabled?: boolean
 }
 
 type Props = {
@@ -24,15 +26,18 @@ const model = defineModel<string[]>({ default: () => [] })
 
 const isOn = (value: string) => model.value.includes(value)
 
-/** the list is full, so only a picked row can still be changed */
-const isLocked = (value: string) =>
-	limit !== undefined &&
-	limit > 1 &&
-	model.value.length >= limit &&
-	!isOn(value)
+/** the row is off by itself, or the list is full and only a picked row can still be changed */
+const isLocked = (option: PickOption) =>
+	!!option.disabled ||
+	(limit !== undefined &&
+		limit > 1 &&
+		model.value.length >= limit &&
+		!isOn(option.value))
 
-const toggle = (value: string) => {
-	if (isLocked(value)) return
+const toggle = (option: PickOption) => {
+	if (isLocked(option)) return
+
+	const value = option.value
 
 	if (limit === 1) {
 		model.value = [value]
@@ -52,13 +57,13 @@ const toggle = (value: string) => {
 			class="ui-pick-list__row"
 			:class="{
 				'ui-pick-list__row--on': isOn(o.value),
-				'ui-pick-list__row--off': isLocked(o.value),
+				'ui-pick-list__row--off': isLocked(o),
 			}"
 			type="button"
 			:role="limit === 1 ? 'radio' : 'checkbox'"
 			:aria-checked="isOn(o.value)"
-			:disabled="isLocked(o.value)"
-			@click="toggle(o.value)"
+			:disabled="isLocked(o)"
+			@click="toggle(o)"
 		>
 			<span
 				class="ui-pick-list__mark"
