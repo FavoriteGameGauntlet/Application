@@ -1,24 +1,25 @@
 <script setup lang="ts">
 import { computed, ref, useId } from 'vue'
-import UiIcon from './UiIcon.vue'
 
 type Props = {
 	label?: string
 	max?: number
+	/** a rating that is shown, not edited */
+	readonly?: boolean
 }
 
-const { max = 10 } = defineProps<Props>()
+const { max = 10, readonly } = defineProps<Props>()
 
 /** 0 means no rating yet */
 const model = defineModel<number>({ default: 0 })
 
 const labelId = useId()
 const hovered = ref(0)
-const stars = ref<HTMLButtonElement[]>([])
+const cells = ref<HTMLButtonElement[]>([])
 
-const shown = computed(() => hovered.value || model.value)
+const shown = computed(() => (readonly ? 0 : hovered.value) || model.value)
 
-/** with no rating the group is entered at the first star */
+/** with no rating the group is entered at the first cell */
 const tabbable = (n: number) => n === (model.value || 1)
 
 const select = (n: number) => {
@@ -26,7 +27,9 @@ const select = (n: number) => {
 }
 
 const onKeydown = (event: KeyboardEvent) => {
-	const step = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[event.key]
+	const step = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[
+		event.key
+	]
 
 	if (!step) return
 
@@ -35,7 +38,7 @@ const onKeydown = (event: KeyboardEvent) => {
 	const next = Math.min(max, Math.max(1, (model.value || 0) + step))
 
 	select(next)
-	stars.value[next - 1]?.focus()
+	cells.value[next - 1]?.focus()
 }
 </script>
 
@@ -45,7 +48,22 @@ const onKeydown = (event: KeyboardEvent) => {
 
 		<div class="ui-rating__row">
 			<div
-				class="ui-rating__stars"
+				v-if="readonly"
+				class="ui-rating__cells"
+				role="img"
+				:aria-label="`Оценка ${model} из ${max}`"
+			>
+				<span
+					v-for="n in max"
+					:key="n"
+					class="ui-rating__cell"
+					:class="{ 'ui-rating__cell--on': n <= model }"
+				></span>
+			</div>
+
+			<div
+				v-else
+				class="ui-rating__cells"
 				role="radiogroup"
 				:aria-labelledby="label ? labelId : undefined"
 				@mouseleave="hovered = 0"
@@ -54,9 +72,9 @@ const onKeydown = (event: KeyboardEvent) => {
 				<button
 					v-for="n in max"
 					:key="n"
-					ref="stars"
-					class="ui-rating__star"
-					:class="{ 'ui-rating__star--on': n <= shown }"
+					ref="cells"
+					class="ui-rating__cell ui-rating__cell--button"
+					:class="{ 'ui-rating__cell--on': n <= shown }"
 					type="button"
 					role="radio"
 					:aria-checked="n === model"
@@ -64,14 +82,13 @@ const onKeydown = (event: KeyboardEvent) => {
 					:tabindex="tabbable(n) ? 0 : -1"
 					@mouseenter="hovered = n"
 					@click="select(n)"
-				>
-					<UiIcon :name="n <= shown ? 'star-filled' : 'star'" :size="26" />
-				</button>
+				></button>
 			</div>
 
-			<span class="ui-rating__value" :class="{ 'ui-rating__value--empty': !shown }">
-				{{ shown ? `${shown} / ${max}` : 'нет оценки' }}
-			</span>
+			<span v-if="shown" class="ui-rating__value"
+				>{{ shown }}<small> / {{ max }}</small></span
+			>
+			<span v-else class="ui-rating__empty">нет оценки</span>
 		</div>
 	</div>
 </template>
@@ -80,7 +97,7 @@ const onKeydown = (event: KeyboardEvent) => {
 .ui-rating {
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
+	gap: 8px;
 }
 
 .ui-rating__label {
@@ -93,58 +110,59 @@ const onKeydown = (event: KeyboardEvent) => {
 .ui-rating__row {
 	display: flex;
 	flex-wrap: wrap;
-	column-gap: 16px;
-	row-gap: 4px;
 	align-items: center;
+	column-gap: 10px;
+	row-gap: 4px;
 }
 
-.ui-rating__stars {
+.ui-rating__cells {
 	display: flex;
+	gap: 5px;
 }
 
-.ui-rating__star {
-	display: flex;
-	padding: 3px;
-	color: var(--border-strong);
+.ui-rating__cell {
+	flex: none;
+	width: 28px;
+	height: 32px;
+	padding: 0;
+	background: var(--border-default);
+	clip-path: var(--hex-clip);
+	transition: background var(--dur-base) var(--ease-out);
+}
+
+.ui-rating__cell--button {
 	cursor: pointer;
-	border-radius: var(--radius-sm);
 	outline: 0;
-	transition:
-		color var(--dur-base) var(--ease-out),
-		transform var(--dur-base) var(--ease-snap);
 }
 
-.ui-rating__star--on {
-	color: var(--accent);
+.ui-rating__cell--on {
+	background: var(--accent);
 }
 
-.ui-rating__star:hover {
-	transform: scale(1.12);
-}
-
-.ui-rating__star:focus-visible {
-	box-shadow: var(--shadow-focus);
+/* the focus ring would be cut by the clip, so the cell darkens instead */
+.ui-rating__cell--button:focus-visible {
+	background: var(--accent-hover);
 }
 
 .ui-rating__value {
-	min-width: 64px;
-	font: 600 15px / 1.45 var(--font-display);
+	font: 800 20px / 1 var(--font-display);
 	font-variant-numeric: tabular-nums;
 	color: var(--text-strong);
 }
 
-.ui-rating__value--empty {
-	font-weight: 500;
+.ui-rating__value small {
+	font: 600 14px / 1 var(--font-display);
+	color: var(--text-muted);
+}
+
+.ui-rating__empty {
+	font: 500 15px / 1.45 var(--font-display);
 	color: var(--text-subtle);
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.ui-rating__star {
+	.ui-rating__cell {
 		transition: none;
-	}
-
-	.ui-rating__star:hover {
-		transform: none;
 	}
 }
 </style>

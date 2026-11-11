@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue'
-import UiButton from '../../../components/ui/UiButton.vue'
-import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
-import UiDialog from '../../../components/ui/UiDialog.vue'
+import { computed } from 'vue'
+import FormDialog from '../../../components/FormDialog.vue'
+import type { FormSection, FormValues } from '../../../components/formDialog'
 import { useResourcesStore } from '../../../stores/resourcesStore'
 import { formatCost } from '../../../utils/formatResource'
 import { needsChoice, type PaymentChoice } from '../../../utils/spinPayment'
@@ -21,8 +20,7 @@ const emit = defineEmits<{
 
 const resourcesStore = useResourcesStore()
 
-/** the ids picked for the rows that need a choice, by the index of the row */
-const picked = reactive<Record<number, number[]>>({})
+const nounOf = { item: 'предмет', perk: 'перк', effect: 'эффект' } as const
 
 const rows = computed(() =>
 	(choices ?? []).map((choice, index) => ({
@@ -32,101 +30,70 @@ const rows = computed(() =>
 	})),
 )
 
-const chosenRows = computed(() => rows.value.filter((r) => r.choose))
+const costText = (choice: PaymentChoice) =>
+	formatCost(choice.cost, resourcesStore.pointTypes)
 
-const fixedText = computed(() =>
-	rows.value
+const subtitle = computed(() => {
+	const fixed = rows.value
 		.filter((r) => !r.choose)
-		.map((r) => formatCost(r.choice.cost, resourcesStore.pointTypes))
-		.join(', '),
+		.map((r) => costText(r.choice))
+		.join(', ')
+	const all = rows.value.map((r) => costText(r.choice)).join(', ')
+
+	return fixed
+		? `Прокрут стоит ${all}. Спишется само: ${fixed}.`
+		: `Прокрут стоит ${all}.`
+})
+
+/** the rows with copies to choose from; the rest is taken whole */
+const sections = computed<FormSection[]>(() =>
+	rows.value
+		.filter((r) => r.choose)
+		.map((r) => ({
+			title: `Отдать: ${costText(r.choice)}`,
+			fields: [
+				{
+					key: `row-${r.index}`,
+					label: costText(r.choice),
+					type: 'pick',
+					limit: r.choice.cost.amount,
+					required:
+						r.choice.cost.kind === 'points'
+							? 'выбор'
+							: nounOf[r.choice.cost.kind],
+					options: r.choice.options.map((o) => ({
+						value: String(o.id),
+						label: o.label,
+						meta: o.meta,
+					})),
+				},
+			],
+		})),
 )
 
-const isFull = (index: number, amount: number) =>
-	(picked[index]?.length ?? 0) >= amount
+const onSave = (values: FormValues) => {
+	const picked: Record<number, number[]> = {}
 
-const canConfirm = computed(() =>
-	chosenRows.value.every(
-		(r) => picked[r.index]?.length === r.choice.cost.amount,
-	),
-)
+	rows.value
+		.filter((r) => r.choose)
+		.forEach((r) => {
+			picked[r.index] = (values[`row-${r.index}`] as string[]).map(Number)
+		})
 
-const toggle = (index: number, id: number, on: boolean) => {
-	const ids = picked[index] ?? []
-
-	picked[index] = on ? [...ids, id] : ids.filter((x) => x !== id)
+	emit('confirm', picked)
 }
-
-watch(
-	() => choices,
-	() => {
-		Object.keys(picked).forEach((key) => delete picked[Number(key)])
-	},
-)
 </script>
 
 <template>
-	<UiDialog
+	<FormDialog
 		:open="!!choices"
-		title="Чем заплатить за прокрут"
-		:width="460"
+		title="Чем заплатить"
+		:subtitle
+		:sections
+		:initial="{}"
+		submit-label="Заплатить"
+		:width="480"
 		@close="emit('close')"
-	>
-		<div class="dialog">
-			<div v-for="row in chosenRows" :key="row.index" class="dialog__block">
-				<span class="label">
-					{{ formatCost(row.choice.cost, resourcesStore.pointTypes) }} · выбери
-					{{ row.choice.cost.amount }}
-				</span>
-
-				<UiCheckbox
-					v-for="option in row.choice.options"
-					:key="option.id"
-					:label="option.label"
-					:model-value="picked[row.index]?.includes(option.id) ?? false"
-					:disabled="
-						!picked[row.index]?.includes(option.id) &&
-						isFull(row.index, row.choice.cost.amount)
-					"
-					@update:model-value="toggle(row.index, option.id, $event)"
-				/>
-			</div>
-
-			<span v-if="fixedText" class="dialog__fixed"
-				>Также спишется: {{ fixedText }}</span
-			>
-		</div>
-
-		<template #footer>
-			<UiButton variant="ghost" @click="emit('close')">Отмена</UiButton>
-			<UiButton :disabled="!canConfirm" @click="emit('confirm', { ...picked })">
-				Применить
-			</UiButton>
-		</template>
-	</UiDialog>
+		@save="onSave"
+	/>
 </template>
-
-<style scoped>
-.dialog {
-	display: flex;
-	flex-direction: column;
-	gap: 16px;
-}
-
-.dialog__block {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-}
-
-.label {
-	font: var(--type-label);
-	letter-spacing: var(--tracking-label);
-	text-transform: uppercase;
-	color: var(--text-muted);
-}
-
-.dialog__fixed {
-	font: var(--type-body-sm);
-	color: var(--text-muted);
-}
-</style>

@@ -8,7 +8,9 @@ export type FormField = {
 	 * of a section), `span` is a length as a number and a unit (its value is
 	 * the seconds), `dates` is a period of days (its value is «2026-11-01/2026-11-30»,
 	 * both days included), `locked` shows `lines` that cannot be edited, `arrow` is
-	 * a sign between two columns and holds no value
+	 * a sign between two columns and holds no value, `pick` picks some of `options`
+	 * from a list of rows (the value is the picked `value`s), `rating` is a mark
+	 * from 1 to 10 (its value is the number as a string)
 	 */
 	type?:
 		| 'line'
@@ -26,10 +28,26 @@ export type FormField = {
 		| 'dates'
 		| 'locked'
 		| 'arrow'
+		| 'pick'
+		| 'rating'
 	placeholder?: string
 	hint?: string
-	/** for `select`, `chips` and `choice`; `hint` of an option is the line under it in the menu */
-	options?: { value: string; label: string; hint?: string }[]
+	/** the `hint` names why the form cannot be filled yet, so it is red */
+	invalid?: boolean
+	/**
+	 * for `select`, `chips`, `choice` and `pick`; `hint` of an option is the line
+	 * under it in the menu, `meta` is the quiet text at the end of a `pick` row,
+	 * `color` makes a `pick` row start with the avatar of a player
+	 */
+	options?: {
+		value: string
+		label: string
+		hint?: string
+		meta?: string
+		color?: string
+	}[]
+	/** for `pick`: exactly this many are picked; 1 makes it a choice of one. Without it any number from one up */
+	limit?: number
 	/** for `rows`: which resources a row names and what its amount means */
 	variant?: RowsVariant
 	/** for `rows`: what the rows are for, shown while there are none */
@@ -99,5 +117,5 @@ export type FormRow = {
 	who: 'self' | 'chosen'
 }
 
-/** `line`, `area`, `select`, `choice`, `segment`, `span`, `dates` and `color` give a string, `tags` and `chips` a list, `check` a flag, `rows` a list of rows */
+/** `line`, `area`, `select`, `choice`, `segment`, `span`, `dates`, `color` and `rating` give a string, `tags`, `chips` and `pick` a list, `check` a flag, `rows` a list of rows */
 export type FormValues = Record<string, string | string[] | boolean | FormRow[]>

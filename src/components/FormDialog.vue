@@ -13,7 +13,9 @@ import UiIcon from './ui/UiIcon.vue'
 import UiIconButton from './ui/UiIconButton.vue'
 import UiInput from './ui/UiInput.vue'
 import UiPickChips from './ui/UiPickChips.vue'
+import UiPickList from './ui/UiPickList.vue'
 import UiPicker from './ui/UiPicker.vue'
+import UiRating from './ui/UiRating.vue'
 import UiSegmented from './ui/UiSegmented.vue'
 import UiSpanInput from './ui/UiSpanInput.vue'
 import UiSwitch from './ui/UiSwitch.vue'
@@ -54,7 +56,12 @@ const {
 	width: fixedWidth,
 } = defineProps<Props>()
 
-const emit = defineEmits<{ close: []; save: [values: FormValues] }>()
+const emit = defineEmits<{
+	close: []
+	save: [values: FormValues]
+	/** the values after any edit, for a form whose sections depend on them */
+	change: [values: FormValues]
+}>()
 
 const texts = reactive<Record<string, string>>({})
 const lists = reactive<Record<string, string[]>>({})
@@ -81,7 +88,42 @@ const dialogWidth = computed(
 )
 
 const isListType = (field: FormField) =>
-	field.type === 'tags' || field.type === 'chips'
+	field.type === 'tags' || field.type === 'chips' || field.type === 'pick'
+
+const initField = (field: FormField) => {
+	if (field.type === 'arrow') return
+
+	const value = initial[field.key]
+
+	if (isListType(field)) {
+		lists[field.key] = Array.isArray(value) ? [...(value as string[])] : []
+		drafts[field.key] = ''
+	} else if (field.type === 'check') {
+		flags[field.key] = value === true
+	} else if (field.type === 'rows') {
+		rowLists[field.key] = Array.isArray(value)
+			? (value as FormRow[]).map((row) => ({ ...row }))
+			: []
+	} else {
+		texts[field.key] = typeof value === 'string' ? value : ''
+		unfolded[field.key] = !field.optional || texts[field.key] !== ''
+	}
+}
+
+const isStarted = (field: FormField) =>
+	isListType(field)
+		? field.key in lists
+		: field.type === 'check'
+			? field.key in flags
+			: field.type === 'rows'
+				? field.key in rowLists
+				: field.key in texts
+
+/** what of a `pick` list the user can still see: a pick of an option that is gone does not count */
+const pickedOf = (field: FormField) =>
+	(lists[field.key] ?? []).filter((v) =>
+		field.options?.some((o) => o.value === v),
+	)
 
 watch(
 	() => open,
@@ -90,28 +132,19 @@ watch(
 
 		chosenTab.value = ''
 
-		for (const field of allFields.value) {
-			if (field.type === 'arrow') continue
-
-			const value = initial[field.key]
-
-			if (isListType(field)) {
-				lists[field.key] = Array.isArray(value) ? [...(value as string[])] : []
-				drafts[field.key] = ''
-			} else if (field.type === 'check') {
-				flags[field.key] = value === true
-			} else if (field.type === 'rows') {
-				rowLists[field.key] = Array.isArray(value)
-					? (value as FormRow[]).map((row) => ({ ...row }))
-					: []
-			} else {
-				texts[field.key] = typeof value === 'string' ? value : ''
-				unfolded[field.key] = !field.optional || texts[field.key] !== ''
-			}
-		}
+		allFields.value.forEach(initField)
 	},
 	{ immediate: true },
 )
+
+// the sections can change while the form is open (the parent builds them from the values),
+// so a field that appears is started and a pick whose option is gone is dropped for good
+watch(allFields, (fields) => {
+	for (const field of fields) {
+		if (!isStarted(field)) initField(field)
+		else if (field.type === 'pick') lists[field.key] = pickedOf(field)
+	}
+})
 
 const unfold = async (field: FormField) => {
 	unfolded[field.key] = true
@@ -157,6 +190,11 @@ const isSectionShown = (section: FormSection) =>
 
 const isFilled = (field: FormField) => {
 	if (field.type === 'rows') return !!rowLists[field.key]?.length
+	if (field.type === 'pick') {
+		const picked = pickedOf(field).length
+
+		return field.limit === undefined ? picked > 0 : picked === field.limit
+	}
 	if (isListType(field)) return !!lists[field.key]?.length
 
 	return !!texts[field.key]?.trim()
@@ -168,18 +206,21 @@ const joinNouns = (nouns: string[]) =>
 		? `${nouns.slice(0, -1).join(', ')} и ${nouns[nouns.length - 1]}`
 		: nouns[0]
 
-const missingIn = (inSections: FormSection[]) =>
-	inSections
-		.filter(inShownTab)
-		.flatMap((s) => (s.aside ? [s.aside, ...s.fields] : s.fields))
-		.filter(
-			(f) =>
-				f.required &&
-				isShown(f) &&
-				!isFilled(f) &&
-				!(f.requiredUnless && holds(f.requiredUnless)),
-		)
-		.map((f) => f.required as string)
+const missingIn = (inSections: FormSection[]) => [
+	...new Set(
+		inSections
+			.filter(inShownTab)
+			.flatMap((s) => (s.aside ? [s.aside, ...s.fields] : s.fields))
+			.filter(
+				(f) =>
+					f.required &&
+					isShown(f) &&
+					!isFilled(f) &&
+					!(f.requiredUnless && holds(f.requiredUnless)),
+			)
+			.map((f) => f.required as string),
+	),
+]
 
 const missing = computed(() => missingIn(sections))
 
@@ -199,19 +240,16 @@ const why = computed(() =>
 		: '',
 )
 
-const onSubmit = () => {
-	// Enter submits the dialog as well, whatever the state of the button
-	if (missing.value.length) return
-
+/** a field that is not started yet (its section has just appeared) holds nothing */
+const valuesNow = () => {
 	const values: FormValues = {}
 
 	for (const field of allFields.value) {
-		if (field.type === 'arrow') continue
+		if (field.type === 'arrow' || !isStarted(field)) continue
 
-		if (field.type === 'tags') {
-			addTag(field.key)
-			values[field.key] = [...lists[field.key]]
-		} else if (field.type === 'chips') {
+		if (field.type === 'pick') {
+			values[field.key] = pickedOf(field)
+		} else if (isListType(field)) {
 			values[field.key] = [...lists[field.key]]
 		} else if (field.type === 'check') {
 			values[field.key] = flags[field.key]
@@ -222,10 +260,45 @@ const onSubmit = () => {
 		}
 	}
 
-	emit('save', values)
+	return values
 }
 
+const onSubmit = () => {
+	// Enter submits the dialog as well, whatever the state of the button
+	if (missing.value.length) return
+
+	for (const field of allFields.value) {
+		if (field.type === 'tags') addTag(field.key)
+	}
+
+	emit('save', valuesNow())
+}
+
+/** the parent that builds the sections from the values may answer a change with new sections, so only a real change is told */
+let lastTold = ''
+
+watch(
+	() => JSON.stringify(valuesNow()),
+	(json) => {
+		if (!open || json === lastTold) return
+
+		lastTold = json
+		emit('change', valuesNow())
+	},
+)
+
 const groupsOf = (field: FormField) => [{ options: field.options ?? [] }]
+
+/** «1 из 2» at the end of the title of a section whose list takes a set number of picks */
+const countOf = (section: FormSection) => {
+	const field = section.fields.find(
+		(f) => f.type === 'pick' && f.limit !== undefined && isShown(f),
+	)
+
+	return field ? `${pickedOf(field).length} из ${field.limit}` : ''
+}
+
+const ratingOf = (key: string) => Number(texts[key]) || 0
 </script>
 
 <template>
@@ -255,12 +328,14 @@ const groupsOf = (field: FormField) => [{ options: field.options ?? [] }]
 		<div class="form__sections">
 			<template v-for="(section, i) in sections" :key="i">
 				<UiFormSection v-if="isSectionShown(section)" :title="section.title">
-					<template v-if="section.aside" #aside>
+					<template v-if="section.aside || countOf(section)" #aside>
 						<UiSegmented
+							v-if="section.aside"
 							v-model="texts[section.aside.key]"
 							:options="section.aside.options ?? []"
 							:label="section.aside.label"
 						/>
+						<span v-else class="form__count">{{ countOf(section) }}</span>
 					</template>
 
 					<div
@@ -351,6 +426,28 @@ const groupsOf = (field: FormField) => [{ options: field.options ?? [] }]
 										:label="field.label"
 									/>
 								</UiField>
+
+								<div v-else-if="field.type === 'pick'" class="form__tags">
+									<UiPickList
+										v-model="lists[field.key]"
+										:options="field.options ?? []"
+										:limit="field.limit"
+										:label="field.label"
+									/>
+									<span
+										v-if="field.hint"
+										class="form__note"
+										:class="{ 'form__note--danger': field.invalid }"
+										>{{ field.hint }}</span
+									>
+								</div>
+
+								<UiRating
+									v-else-if="field.type === 'rating'"
+									:model-value="ratingOf(field.key)"
+									:label="field.label"
+									@update:model-value="texts[field.key] = String($event)"
+								/>
 
 								<UiField
 									v-else-if="field.type === 'choice'"
@@ -564,6 +661,15 @@ const groupsOf = (field: FormField) => [{ options: field.options ?? [] }]
 
 .form__note {
 	font: var(--type-caption);
+	color: var(--text-muted);
+}
+
+.form__note--danger {
+	color: var(--danger-text);
+}
+
+.form__count {
+	font: 500 13px / 1 var(--font-mono);
 	color: var(--text-muted);
 }
 </style>

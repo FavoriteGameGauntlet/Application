@@ -1,17 +1,21 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type {
 	ItemCondition,
 	ItemEntryRow,
 	ItemUse,
 	Login,
 } from '../../../api-facade/contracts'
-import UiButton from '../../../components/ui/UiButton.vue'
-import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
-import UiDialog from '../../../components/ui/UiDialog.vue'
+import FormDialog from '../../../components/FormDialog.vue'
+import type {
+	FormField,
+	FormSection,
+	FormValues,
+} from '../../../components/formDialog'
 import { useMembersStore } from '../../../stores/membersStore'
 import { useResourcesStore } from '../../../stores/resourcesStore'
 import { useSessionStore } from '../../../stores/sessionStore'
+import { formatUsesLeft } from '../../../utils/formatResource'
 import {
 	allowedTargets,
 	appliedEntries,
@@ -43,11 +47,10 @@ const membersStore = useMembersStore()
 const resourcesStore = useResourcesStore()
 const sessionStore = useSessionStore()
 
+/** what the form holds so far: the sections below are built from it */
 const targets = ref<Login[]>([])
 /** the `entryId`s picked when the subject doesn't apply all its entries */
 const pickedEntryIds = ref<number[]>([])
-/** the ids picked for the slots that need a choice, by the index of the slot */
-const picked = reactive<Record<number, number[]>>({})
 
 const choosesEntries = computed(() => subject?.shouldApplyToAll === false)
 
@@ -84,8 +87,9 @@ const copiesOf = (owner: Login | 'party', itemId?: number) =>
 					i.id !== subject?.excludeCopyId,
 			)
 			.map((i) => ({
-				id: i.id,
-				label: `${i.name} · осталось ${i.usesLeft} из ${i.usesMax}${owner === 'party' ? ` · ${nameOf(login)}` : ''}`,
+				value: String(i.id),
+				label: i.name,
+				meta: `${formatUsesLeft(i)}${owner === 'party' ? ` · ${nameOf(login)}` : ''}`,
 			})),
 	)
 
@@ -105,46 +109,94 @@ const rows = computed(() =>
 	}),
 )
 
-const chosenRows = computed(() => rows.value.filter((r) => r.choose))
-const shortRows = computed(() => rows.value.filter((r) => r.short))
-
-const heading = (owner: Login | 'party', count: number) =>
+const heading = (owner: Login | 'party') =>
 	owner === 'party'
-		? `Какой предмет скопировать · выбери ${count}`
-		: `Что забрать у ${nameOf(owner)} · выбери ${count}`
+		? 'Какой предмет скопировать'
+		: `Что забрать у ${nameOf(owner)}`
 
-const canConfirm = computed(
-	() =>
-		(!choosesEntries.value || pickedEntryIds.value.length > 0) &&
-		(!withTargets.value || targets.value.length > 0) &&
-		shortRows.value.length === 0 &&
-		chosenRows.value.every((r) => picked[r.index]?.length === r.slot.count),
-)
+/** the owner is in the key, so the copies picked for one player never carry over to another */
+const slotKey = (row: (typeof rows.value)[number]) =>
+	`slot-${row.index}-${row.slot.owner}`
 
-const isFull = (index: number, count: number) =>
-	(picked[index]?.length ?? 0) >= count
+const sections = computed<FormSection[]>(() => {
+	const result: FormSection[] = []
 
-const toggle = (index: number, id: number, on: boolean) => {
-	const ids = picked[index] ?? []
+	if (choosesEntries.value) {
+		result.push({
+			title: 'Что применить',
+			fields: [
+				{
+					key: 'entries',
+					label: 'Что применить',
+					type: 'pick',
+					required: 'пункт',
+					options: (subject?.entries ?? []).map((e) => ({
+						value: String(e.entryId),
+						label: e.text ?? '',
+					})),
+				},
+			],
+		})
+	}
 
-	picked[index] = on ? [...ids, id] : ids.filter((x) => x !== id)
+	if (withTargets.value) {
+		result.push({
+			title: 'На кого',
+			fields: [
+				{
+					key: 'targets',
+					label: 'На кого',
+					type: 'pick',
+					required: 'цель',
+					options: candidates.value.map((m) => ({
+						value: m.user.login,
+						label: m.displayName ?? m.user.login,
+						color: membersStore.colorOf(m.user.login),
+					})),
+					...(!candidates.value.length && {
+						hint: 'Сейчас подходящих игроков нет.',
+					}),
+				},
+			],
+		})
+	}
+
+	for (const row of rows.value.filter((r) => r.choose || r.short)) {
+		const field: FormField = {
+			key: slotKey(row),
+			label: heading(row.slot.owner),
+			type: 'pick',
+			limit: row.slot.count,
+			required: 'предмет',
+			options: row.options,
+			...(row.short && {
+				invalid: true,
+				hint:
+					row.slot.owner === 'party'
+						? 'В пати не хватает предметов.'
+						: `У ${nameOf(row.slot.owner)} не хватает предметов.`,
+			}),
+		}
+
+		result.push({ title: field.label, fields: [field] })
+	}
+
+	return result
+})
+
+const listOf = (values: FormValues, key: string) =>
+	(values[key] as string[] | undefined) ?? []
+
+const onChange = (values: FormValues) => {
+	targets.value = listOf(values, 'targets')
+	pickedEntryIds.value = listOf(values, 'entries').map(Number)
 }
 
-const toggleEntry = (entryId: number, on: boolean) => {
-	pickedEntryIds.value = on
-		? [...pickedEntryIds.value, entryId]
-		: pickedEntryIds.value.filter((x) => x !== entryId)
-}
-
-const toggleTarget = (login: Login, on: boolean) => {
-	targets.value = on
-		? [...targets.value, login]
-		: targets.value.filter((l) => l !== login)
-}
-
-const onConfirm = () => {
+const onSave = (values: FormValues) => {
 	const userItemIds = rows.value.flatMap((r) =>
-		r.choose ? (picked[r.index] ?? []) : r.options.map((o) => o.id),
+		r.choose
+			? listOf(values, slotKey(r)).map(Number)
+			: r.options.map((o) => Number(o.value)),
 	)
 
 	emit('confirm', {
@@ -154,21 +206,13 @@ const onConfirm = () => {
 	})
 }
 
-const resetPicks = () => {
-	Object.keys(picked).forEach((key) => delete picked[Number(key)])
-}
-
 watch(
 	() => subject,
 	() => {
 		targets.value = []
 		pickedEntryIds.value = []
-		resetPicks()
 	},
 )
-
-// the slots follow the named users and the applied entries, so the copies picked for the old ones are dropped
-watch([targets, pickedEntryIds], resetPicks)
 
 // the inventories the slots take from
 watch(
@@ -191,117 +235,16 @@ watch(
 </script>
 
 <template>
-	<UiDialog
+	<FormDialog
 		:open="!!subject"
 		:title="subject?.title ?? ''"
-		:width="460"
+		:subtitle="subject?.text"
+		:sections
+		:initial="{}"
+		submit-label="Использовать"
+		:width="480"
 		@close="emit('close')"
-	>
-		<div class="dialog">
-			<div class="dialog__block">
-				<span class="label">Что произойдёт</span>
-				<span class="dialog__text">{{ subject?.text }}</span>
-			</div>
-
-			<div v-if="choosesEntries" class="dialog__block">
-				<span class="label">Что применить</span>
-
-				<UiCheckbox
-					v-for="entry in subject?.entries"
-					:key="entry.entryId"
-					:label="entry.text ?? ''"
-					:model-value="pickedEntryIds.includes(entry.entryId!)"
-					@update:model-value="toggleEntry(entry.entryId!, $event)"
-				/>
-			</div>
-
-			<div v-if="withTargets" class="dialog__block">
-				<span class="label">Кому</span>
-
-				<UiCheckbox
-					v-for="member in candidates"
-					:key="member.user.login"
-					:label="member.displayName ?? member.user.login"
-					:model-value="targets.includes(member.user.login)"
-					@update:model-value="toggleTarget(member.user.login, $event)"
-				/>
-
-				<span v-if="!candidates.length" class="dialog__note">
-					Сейчас подходящих игроков нет.
-				</span>
-			</div>
-
-			<div v-for="row in chosenRows" :key="row.index" class="dialog__block">
-				<span class="label">
-					{{ heading(row.slot.owner, row.slot.count) }}
-				</span>
-
-				<UiCheckbox
-					v-for="option in row.options"
-					:key="option.id"
-					:label="option.label"
-					:model-value="picked[row.index]?.includes(option.id) ?? false"
-					:disabled="
-						!picked[row.index]?.includes(option.id) &&
-						isFull(row.index, row.slot.count)
-					"
-					@update:model-value="toggle(row.index, option.id, $event)"
-				/>
-			</div>
-
-			<span
-				v-for="row in shortRows"
-				:key="`short-${row.index}`"
-				class="dialog__note dialog__note--danger"
-			>
-				{{
-					row.slot.owner === 'party'
-						? 'В пати не хватает предметов.'
-						: `У ${nameOf(row.slot.owner)} не хватает предметов.`
-				}}
-			</span>
-		</div>
-
-		<template #footer>
-			<UiButton variant="ghost" @click="emit('close')">Отмена</UiButton>
-			<UiButton :disabled="!canConfirm" @click="onConfirm">
-				Использовать
-			</UiButton>
-		</template>
-	</UiDialog>
+		@save="onSave"
+		@change="onChange"
+	/>
 </template>
-
-<style scoped>
-.dialog {
-	display: flex;
-	flex-direction: column;
-	gap: 16px;
-}
-
-.dialog__block {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-}
-
-.label {
-	font: var(--type-label);
-	letter-spacing: var(--tracking-label);
-	text-transform: uppercase;
-	color: var(--text-muted);
-}
-
-.dialog__text {
-	font: var(--type-body);
-	color: var(--text-body);
-}
-
-.dialog__note {
-	font: var(--type-body-sm);
-	color: var(--text-muted);
-}
-
-.dialog__note--danger {
-	color: var(--danger-text);
-}
-</style>
