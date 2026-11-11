@@ -30,43 +30,50 @@
 		},
 		{
 			"id": "remove-after-form-notices",
-			"title": "Remove the obtrusive captions everywhere after forms. The user's words, translated: «remove the obtrusive captions everywhere after forms». It is unclear what is meant: toasts after saving («Сохранено», «Пати создана» and the like) or hints and notes under fields and tables. ASK THE USER WHICH CAPTIONS TO REMOVE BEFORE STARTING, and change nothing until the answer. After the answer, list the places (grep for toast.show, hint, note) and remove only what the user named.",
+			"title": "Remove the obtrusive captions everywhere after forms. The user's words, translated: «remove the obtrusive captions everywhere after forms». It is unclear what is meant: toasts after saving («Сохранено», «Пати создана» and the like) or hints and notes under fields and tables. The places are found by grep for toast.show, hint and note.",
 			"priority": 5,
 			"status": "todo",
 			"evidence": ""
 		},
 		{
 			"id": "recent-events-redesign",
-			"title": "Rework the «Недавние события» form. The user gave no details yet: ASK THE USER FOR THEM BEFORE STARTING and change nothing until the answer.",
+			"title": "Rework the «Недавние события» form. No details yet.",
 			"priority": 6,
 			"status": "todo",
 			"evidence": ""
 		},
 		{
 			"id": "system-parameters-data-format",
-			"title": "Change the system parameters form (views/Admin/AdminParametersView.vue): add a data format to every parameter. The user's words: add a data format for each parameter. Today the texts of a parameter (label, hint, check) live in the descriptions map by name, and every value is checked as an integer. ASK THE USER BEFORE STARTING what the format is (a type, a unit, an example shown to the admin) and where it comes from (the client or a backend field; check https://api.fgg-challenge.com/scalar before touching the Api contract), and change nothing until the answer.",
+			"title": "Change the system parameters form (views/Admin/AdminParametersView.vue): add a data format to every parameter. The user's words: add a data format for each parameter. Today the texts of a parameter (label, hint, check) live in the descriptions map by name, and every value is checked as an integer. Open: what the format is (a type, a unit, an example shown to the admin) and where it comes from (the client or a backend field).",
 			"priority": 7,
 			"status": "todo",
 			"evidence": ""
 		},
 		{
 			"id": "catalog-to-admin-panel",
-			"title": "Move the catalog editing into the admin panel. The user's words: move the catalog editing into the admin panel. Today the catalog is a route of its own (RouteName.Catalog, views/Catalog/CatalogView.vue, the «Каталог» item in AppSidebar and an entry in composables/useTabs.ts), and the admin panel (routes under admin with meta.admin, its own sidebar) holds exchanges, wheel, rewards, members and parameters. ASK THE USER BEFORE STARTING what happens to the «Каталог» item of the main sidebar and to the non-admin players (gone, or a read-only view), and change nothing until the answer.",
+			"title": "Move the catalog editing into the admin panel. The user's words: move the catalog editing into the admin panel. Today the catalog is a route of its own (RouteName.Catalog, views/Catalog/CatalogView.vue, the «Каталог» item in AppSidebar and an entry in composables/useTabs.ts), and the admin panel (routes under admin with meta.admin, its own sidebar) holds exchanges, wheel, rewards, members and parameters. Open: what happens to the «Каталог» item of the main sidebar and to the non-admin players (gone, or a read-only view).",
 			"priority": 8,
 			"status": "todo",
 			"evidence": ""
 		},
 		{
 			"id": "player-color-form",
-			"title": "Add a form for a player to choose their own color. The user's words: add a color choice form for the player. Today ColorPicker is reached only through FormDialog (type 'color'), in the party creation form and in the admin member edit form (AdminMembersView), so a player has no way to change their own color. ASK THE USER BEFORE STARTING where the form lives (which screen or menu) and whether the admin can still change it, and change nothing until the answer. Check the endpoint for it against https://api.fgg-challenge.com/scalar before touching the Api contract.",
+			"title": "Add a form for a player to choose their own color. The user's words: add a color choice form for the player. Today ColorPicker is reached only through FormDialog (type 'color'), in the party creation form and in the admin member edit form (AdminMembersView), so a player has no way to change their own color. Open: where the form lives (which screen or menu) and whether the admin can still change the color.",
 			"priority": 9,
 			"status": "todo",
 			"evidence": ""
 		},
 		{
 			"id": "save-buttons-without-text",
-			"title": "Remove the text from the «Сохранить» buttons. The user's words: remove the text from the Save buttons. The text is set in FormDialog (the default submitLabel), ReviewDialog, WishlistTab, AdminParametersView, AdminRewardsView, AdminSpinCost, and by submit-label in AdminExchangesView, AdminWheelView, CatalogEntryDialog and PartiesView. ASK THE USER BEFORE STARTING what stays on the button (an icon only, such as the check icon AdminSpinCost already uses), which buttons count (every «Сохранить», or also «Создать пати», «Добавить пункт» and the like) and how a screen reader gets the name (aria-label), and change nothing until the answer.",
+			"title": "Remove the text from the «Сохранить» buttons. The user's words: remove the text from the Save buttons. The text is set in FormDialog (the default submitLabel), ReviewDialog, WishlistTab, AdminParametersView, AdminRewardsView, AdminSpinCost, and by submit-label in AdminExchangesView, AdminWheelView, CatalogEntryDialog and PartiesView. Open: what stays on the button (an icon only, such as the check icon AdminSpinCost already uses), which buttons count (every «Сохранить», or also «Создать пати», «Добавить пункт» and the like) and how a screen reader gets the name (aria-label).",
 			"priority": 10,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "tables-more-informative",
+			"title": "Rework the tables so that they are more informative: some fields are not shown in them at all. The user's words: redo the tables, they must become more informative. The tables are in views/Admin (AdminMembersView, AdminWheelView, AdminExchangesView), Catalog/CatalogView, Users/UsersView, Games (CompletedTab, WishlistTab, UserWishlistTab) and Resources (PointsTab, SharedPointsTab, HistoryTab).",
+			"priority": 11,
 			"status": "todo",
 			"evidence": ""
 		}
