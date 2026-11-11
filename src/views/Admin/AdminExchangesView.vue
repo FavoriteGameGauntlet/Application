@@ -258,7 +258,7 @@ watch(
 			editing?.exchange ? `Изменить «${editing.exchange.name}»` : 'Новый обмен'
 		"
 		:submit-label="editing?.exchange ? 'Сохранить' : 'Создать обмен'"
-		:width="680"
+		:width="840"
 		:sections
 		:initial
 		@close="editing = undefined"
