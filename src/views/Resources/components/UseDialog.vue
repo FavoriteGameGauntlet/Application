@@ -48,9 +48,16 @@ const resourcesStore = useResourcesStore()
 const sessionStore = useSessionStore()
 
 /** what the form holds so far: the sections below are built from it */
-const targets = ref<Login[]>([])
+const current = ref<FormValues>({})
+
+const listOf = (values: FormValues, key: string) =>
+	(values[key] as string[] | undefined) ?? []
+
+const targets = computed(() => listOf(current.value, 'targets'))
 /** the `entryId`s picked when the subject doesn't apply all its entries */
-const pickedEntryIds = ref<number[]>([])
+const pickedEntryIds = computed(() =>
+	listOf(current.value, 'entries').map(Number),
+)
 
 const choosesEntries = computed(() => subject?.shouldApplyToAll === false)
 
@@ -93,30 +100,48 @@ const copiesOf = (owner: Login | 'party', itemId?: number) =>
 			})),
 	)
 
-const rows = computed(() =>
-	slots.value.map((slot, index) => {
-		const options = copiesOf(slot.owner, slot.itemId)
+/** the owner is in the key, so the copies picked for one player never carry over to another */
+const slotKey = (index: number, owner: Login | 'party') =>
+	`slot-${index}-${owner}`
+
+/**
+ * The backend refuses a copy named twice, so a copy that another slot takes
+ * (whole, or by a pick) is not offered to this one: stealing the only item of
+ * a player leaves nothing to duplicate.
+ */
+const rows = computed(() => {
+	const takenWhole = new Set<string>()
+
+	return slots.value.map((slot, index) => {
+		const key = slotKey(index, slot.owner)
+		const pickedElsewhere = new Set(
+			Object.entries(current.value)
+				.filter(([k]) => k.startsWith('slot-') && k !== key)
+				.flatMap(([, ids]) => ids as string[]),
+		)
+		const options = copiesOf(slot.owner, slot.itemId).filter(
+			(o) => !takenWhole.has(o.value) && !pickedElsewhere.has(o.value),
+		)
+		/** more copies than the entry takes, so the user picks which ones */
+		const choose = options.length > slot.count
+
+		if (!choose) options.forEach((o) => takenWhole.add(o.value))
 
 		return {
-			index,
+			key,
 			slot,
 			options,
-			/** more copies than the entry takes, so the user picks which ones */
-			choose: options.length > slot.count,
+			choose,
 			/** fewer copies than the entry takes */
 			short: options.length < slot.count,
 		}
-	}),
-)
+	})
+})
 
 const heading = (owner: Login | 'party') =>
 	owner === 'party'
 		? 'Какой предмет скопировать'
 		: `Что забрать у ${nameOf(owner)}`
-
-/** the owner is in the key, so the copies picked for one player never carry over to another */
-const slotKey = (row: (typeof rows.value)[number]) =>
-	`slot-${row.index}-${row.slot.owner}`
 
 const sections = computed<FormSection[]>(() => {
 	const result: FormSection[] = []
@@ -163,7 +188,7 @@ const sections = computed<FormSection[]>(() => {
 
 	for (const row of rows.value.filter((r) => r.choose || r.short)) {
 		const field: FormField = {
-			key: slotKey(row),
+			key: row.key,
 			label: heading(row.slot.owner),
 			type: 'pick',
 			limit: row.slot.count,
@@ -184,18 +209,14 @@ const sections = computed<FormSection[]>(() => {
 	return result
 })
 
-const listOf = (values: FormValues, key: string) =>
-	(values[key] as string[] | undefined) ?? []
-
 const onChange = (values: FormValues) => {
-	targets.value = listOf(values, 'targets')
-	pickedEntryIds.value = listOf(values, 'entries').map(Number)
+	current.value = values
 }
 
 const onSave = (values: FormValues) => {
 	const userItemIds = rows.value.flatMap((r) =>
 		r.choose
-			? listOf(values, slotKey(r)).map(Number)
+			? listOf(values, r.key).map(Number)
 			: r.options.map((o) => Number(o.value)),
 	)
 
@@ -214,8 +235,7 @@ const refreshed = new Set<Login>()
 watch(
 	() => subject,
 	() => {
-		targets.value = []
-		pickedEntryIds.value = []
+		current.value = {}
 		refreshed.clear()
 	},
 )
