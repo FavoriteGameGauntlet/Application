@@ -31,7 +31,7 @@ export type UseSubject = {
 	/** false: the user picks which of the entries to apply */
 	shouldApplyToAll: boolean
 	conditions: ItemCondition[]
-	/** the copy that is being used can't pay for its own use */
+	/** the copy that is being used can't be taken away by its own use (it can still be copied) */
 	excludeCopyId?: number
 }
 
@@ -91,7 +91,8 @@ const copiesOf = (owner: Login | 'party', itemId?: number) =>
 			.filter(
 				(i) =>
 					(itemId === undefined || i.itemId === itemId) &&
-					i.id !== subject?.excludeCopyId,
+					// the copy that is being used can be copied, but not taken away by its own use
+					(owner === 'party' || i.id !== subject?.excludeCopyId),
 			)
 			.map((i) => ({
 				value: String(i.id),
