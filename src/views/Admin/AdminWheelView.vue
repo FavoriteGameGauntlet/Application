@@ -431,7 +431,7 @@ onMounted(() => store.load())
 	<FormDialog
 		:open="!!dialog"
 		:title="dialogTitle"
-		:fields
+		:sections="[{ fields }]"
 		:initial
 		@close="dialog = undefined"
 		@save="onSave"

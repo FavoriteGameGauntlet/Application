@@ -250,7 +250,7 @@ watch(
 		:title="
 			editing?.exchange ? `Изменить «${editing.exchange.name}»` : 'Новый обмен'
 		"
-		:fields
+		:sections="[{ fields }]"
 		:initial
 		@close="editing = undefined"
 		@save="onSave"
@@ -274,10 +274,9 @@ watch(
 
 .table__row {
 	display: grid;
-	grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr) 24px minmax(
-			0,
-			1.4fr
-		) 76px;
+	grid-template-columns:
+		minmax(0, 1.2fr) minmax(0, 1.4fr) 24px minmax(0, 1.4fr)
+		76px;
 	gap: 12px;
 	align-items: center;
 	padding: 12px 16px;

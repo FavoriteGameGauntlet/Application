@@ -243,7 +243,7 @@ onMounted(() => store.loadMembers())
 				? `Участник · ${dialog.member.login}`
 				: 'Добавить участника'
 		"
-		:fields
+		:sections="[{ fields }]"
 		:initial
 		@close="dialog = undefined"
 		@save="onSave"

@@ -220,7 +220,7 @@ onMounted(async () => {
 			:title="
 				editing?.party ? `Изменить «${editing.party.name}»` : 'Новая пати'
 			"
-			:fields
+			:sections="[{ fields }]"
 			:initial
 			@close="editing = undefined"
 			@save="onSave"

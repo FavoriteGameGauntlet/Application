@@ -8,6 +8,7 @@ import type {
 import type {
 	FormField,
 	FormRow,
+	FormSection,
 	FormValues,
 } from '../../../components/formDialog'
 import FormDialog from '../../../components/FormDialog.vue'
@@ -49,31 +50,49 @@ const adds: Record<CatalogKind, string> = {
 	perks: 'Новый перк',
 }
 
-const conditionLabels: Record<ItemCondition, string> = {
-	target_not_self: 'Цель — не тот, кто использует',
-	target_online: 'Все цели в сети',
-	target_offline: 'Все цели не в сети',
-	holder_not_playing: 'У того, кто использует, нет текущей игры',
+const creates: Record<CatalogKind, string> = {
+	'point-types': 'Создать тип очков',
+	items: 'Создать предмет',
+	effects: 'Создать эффект',
+	perks: 'Создать перк',
 }
 
-const conditionFields: FormField[] = (
-	Object.keys(conditionLabels) as ItemCondition[]
-).map((condition) => ({
-	key: `condition_${condition}`,
-	type: 'check' as const,
-	label: conditionLabels[condition],
-	hint: '',
-}))
+const conditionLabels: Record<ItemCondition, { label: string; hint: string }> =
+	{
+		target_not_self: {
+			label: 'Не на себя',
+			hint: 'Цель — не тот, кто использует',
+		},
+		target_online: { label: 'Цель в сети', hint: 'Все цели в сети' },
+		target_offline: { label: 'Цель не в сети', hint: 'Все цели не в сети' },
+		holder_not_playing: {
+			label: 'Нет текущей игры',
+			hint: 'У того, кто использует, нет текущей игры',
+		},
+	}
 
-const fields = computed<FormField[]>(() => {
+/** a chip per length that is asked for most; `custom` opens a line for the rest */
+const durationPresets = [
+	{ value: 'none', label: 'Пока не снимут' },
+	{ value: '3600', label: '1 час' },
+	{ value: '86400', label: '1 день' },
+	{ value: '259200', label: '3 дня' },
+	{ value: '604800', label: 'Неделя' },
+	{ value: 'custom', label: 'Своё' },
+]
+
+const columns = (count: number) => `repeat(${count}, minmax(0, 1fr))`
+
+const sections = computed<FormSection[]>(() => {
 	const common: FormField[] = [
 		{
 			key: 'name',
 			label: 'Название',
+			required: 'название',
 			placeholder: {
-				'point-types': 'Золото',
+				'point-types': 'Билеты',
 				items: 'Свиток удачи',
-				effects: 'Щит',
+				effects: 'Проклятие',
 				perks: 'Везунчик',
 			}[kind],
 		},
@@ -81,105 +100,145 @@ const fields = computed<FormField[]>(() => {
 			key: 'description',
 			label: 'Описание',
 			type: 'area',
+			optional: true,
 			placeholder: 'Что это и зачем — так увидят игроки',
-			hint: 'Необязательно. Показывается игрокам в подсказках и в ресурсах.',
 		},
 	]
 
 	switch (kind) {
 		case 'point-types':
 			return [
-				...common,
+				{ fields: common },
 				{
-					key: 'unit1',
-					label: 'Единица в журнале · 1',
-					placeholder: 'билет',
-					hint: 'Как пишется в журнале: 1 билет, 2 билета, 5 билетов.',
+					title: 'Как писать в журнале',
+					columns: columns(3),
+					fields: [
+						{ key: 'unit1', label: 'Для 1', placeholder: 'билет' },
+						{ key: 'unit2', label: 'Для 2–4', placeholder: 'билета' },
+						{ key: 'unit5', label: 'Для 5 и больше', placeholder: 'билетов' },
+					],
 				},
 				{
-					key: 'unit2',
-					label: 'Единица в журнале · 2–4',
-					placeholder: 'билета',
+					title: 'Правила',
+					columns: columns(2),
+					fields: [
+						...(entry
+							? []
+							: [
+									{
+										key: 'scope',
+										label: 'Считаются',
+										type: 'select' as const,
+										options: [
+											{ value: 'own', label: 'У каждого игрока свои' },
+											{ value: 'shared', label: 'Общие на пати' },
+										],
+										hint: 'Свои или общие на пати — выбирается один раз, потом не изменить.',
+									},
+								]),
+						{
+							key: 'visibility',
+							label: 'Кто видит',
+							type: 'select',
+							options: [
+								{ value: 'all', label: 'Все игроки' },
+								{ value: 'admins', label: 'Только админы' },
+							],
+						},
+					],
 				},
 				{
-					key: 'unit5',
-					label: 'Единица в журнале · 5 и больше',
-					placeholder: 'билетов',
+					columns: columns(3),
+					fields: [
+						{
+							key: 'startValue',
+							label: 'Начальное значение',
+							numeric: true,
+							placeholder: '0',
+						},
+						{
+							key: 'minimum',
+							label: 'Минимум',
+							numeric: true,
+							placeholder: 'Без лимита',
+						},
+						{
+							key: 'maximum',
+							label: 'Максимум',
+							numeric: true,
+							placeholder: 'Без лимита',
+						},
+					],
 				},
-				{
-					key: 'startValue',
-					label: 'Стартовое значение',
-					placeholder: '0',
-					hint: 'С чем начинает каждый игрок (или вся пати для общих очков).',
-				},
-				{
-					key: 'minimum',
-					label: 'Минимум',
-					placeholder: '0',
-					hint: 'Пусто — без нижней границы.',
-				},
-				{
-					key: 'maximum',
-					label: 'Максимум',
-					placeholder: '100',
-					hint: 'Пусто — без верхней границы.',
-				},
-				{
-					key: 'isPublic',
-					type: 'check',
-					label: 'Видят все игроки',
-					hint: 'Выключено: тип и его значения видят только админы пати.',
-				},
-				...(entry
-					? []
-					: [
-							{
-								key: 'isShared',
-								type: 'check' as const,
-								label: 'Общие очки пати',
-								hint: 'Одно значение на всю пати, меняется ручной формой. Потом это не изменить.',
-							},
-						]),
 			]
 		case 'items':
 			return [
-				...common,
 				{
-					key: 'entries',
-					label: 'Что делает предмет',
-					type: 'rows',
-					variant: 'item-entry',
-					hint: 'Каждая строка — одно изменение. Минус забирает, «Выбранный предмет» игрок указывает при использовании.',
+					fields: [
+						...common,
+						{
+							key: 'entries',
+							label: 'При использовании',
+							type: 'rows',
+							variant: 'item-entry',
+							required: 'действие',
+							empty:
+								'Что произойдёт, когда игрок применит предмет. Например: владелец получает 10 золота.',
+							addLabel: 'Действие',
+							hint: 'Цель игрок выберет сам, когда применит предмет.',
+						},
+						{
+							key: 'chooseEntries',
+							type: 'check',
+							label: 'Игрок выбирает, что применить',
+							hint: 'При использовании он отметит строки, которые сработают.',
+						},
+						{
+							key: 'usesMax',
+							label: 'Количество использований',
+							numeric: true,
+							width: 120,
+							placeholder: '1',
+						},
+						{
+							key: 'conditions',
+							label: 'Условия',
+							type: 'chips',
+							options: (Object.keys(conditionLabels) as ItemCondition[]).map(
+								(c) => ({ value: c, ...conditionLabels[c] }),
+							),
+							addLabel: 'Условие',
+						},
+					],
 				},
-				{
-					key: 'chooseEntries',
-					type: 'check',
-					label: 'Игрок выбирает, что применить',
-					hint: 'При использовании он отметит строки, которые сработают. Остальные пропустятся.',
-				},
-				{
-					key: 'usesMax',
-					label: 'Использований',
-					placeholder: '1',
-					hint: 'Сколько раз можно использовать одну копию предмета.',
-				},
-				...conditionFields,
 			]
 		case 'effects':
 			return [
-				...common,
 				{
-					key: 'modifiers',
-					label: 'Пока эффект действует',
-					type: 'rows',
-					variant: 'modifier',
-					hint: 'Очки, которые меняются сами, пока эффект активен. Пусто — эффект только описание.',
-				},
-				{
-					key: 'duration',
-					label: 'Длительность',
-					placeholder: '1 день',
-					hint: 'Пусто — без срока.',
+					fields: [
+						...common,
+						{
+							key: 'modifiers',
+							label: 'Пока действует',
+							type: 'rows',
+							variant: 'modifier',
+							empty:
+								'Очки, которые меняются сами, пока эффект активен. Можно оставить пустым.',
+							addLabel: 'Изменение очков',
+						},
+						{
+							key: 'durationPreset',
+							label: 'Сколько действует',
+							type: 'choice',
+							options: durationPresets,
+						},
+						{
+							key: 'duration',
+							label: 'Длительность',
+							placeholder: '2 ч 30 м',
+							when: { key: 'durationPreset', is: 'custom' },
+						},
+					],
 				},
 			]
 		default: {
@@ -188,75 +247,93 @@ const fields = computed<FormField[]>(() => {
 				label: 'Пока перк у игрока',
 				type: 'rows',
 				variant: 'modifier',
-				hint: 'Очки, которые меняются сами, пока перк есть. Пусто — перк только описание.',
+				empty: 'Очки, которые перк меняет сам. Можно оставить пустым.',
+				addLabel: 'Изменение очков',
 			}
 
 			// the backend refuses to change the ability: the state of every holder depends on it
 			if (entry) {
 				return [
-					...common,
-					modifiers,
 					{
-						key: 'abilityNote',
-						type: 'note',
-						label: 'Способность',
-						hint: 'Тип, способность, использования, заряды и обновление после создания не меняются: от них зависит состояние у всех владельцев. Чтобы получить другую способность, создай новый перк.',
+						fields: [
+							...common,
+							modifiers,
+							{
+								key: 'abilityNote',
+								type: 'note',
+								label: 'Способность',
+								hint: 'Тип, способность, использования, заряды и обновление после создания не меняются: от них зависит состояние у всех владельцев. Чтобы получить другую способность, создай новый перк.',
+							},
+						],
 					},
 				]
 			}
 
 			return [
-				...common,
-				modifiers,
 				{
-					key: 'perkKind',
-					label: 'Тип',
-					type: 'select',
-					options: [
-						{ value: 'active', label: 'активный' },
-						{ value: 'passive', label: 'пассивный' },
+					fields: [
+						...common,
+						modifiers,
+						{
+							key: 'perkKind',
+							label: 'Тип',
+							type: 'select',
+							options: [
+								{ value: 'active', label: 'активный' },
+								{ value: 'passive', label: 'пассивный' },
+							],
+						},
+						{
+							key: 'abilityEntries',
+							label: 'Что делает способность (активный перк)',
+							type: 'rows',
+							variant: 'item-entry',
+							hint: 'Применяется, когда игрок использует способность, как у предмета.',
+						},
+						{
+							key: 'abilityChooseEntries',
+							type: 'check',
+							label: 'Игрок выбирает, что применить',
+							hint: 'При использовании способности он отметит строки, которые сработают.',
+						},
+						{
+							key: 'abilityUsesMax',
+							label: 'Использований: максимум',
+							placeholder: '3',
+							hint: 'Пусто — без ограничения. Тогда зарядов и обновления нет.',
+						},
+						{
+							key: 'abilityUsesStart',
+							label: 'Использований: сколько у нового владельца',
+							placeholder: '1',
+						},
+						{
+							key: 'abilityCharges',
+							label: 'Зарядов на одно использование',
+							placeholder: '0',
+							hint: 'Столько событий, заряжающих способность, дают одно использование. 0 — зарядов нет.',
+						},
+						{
+							key: 'abilityRenewal',
+							label: 'Обновление использований',
+							placeholder: '1 день',
+							hint: 'Через это время после последнего изменения использования возвращаются к максимуму. Пусто — не обновляются.',
+						},
 					],
-				},
-				{
-					key: 'abilityEntries',
-					label: 'Что делает способность (активный перк)',
-					type: 'rows',
-					variant: 'item-entry',
-					hint: 'Применяется, когда игрок использует способность, как у предмета.',
-				},
-				{
-					key: 'abilityChooseEntries',
-					type: 'check',
-					label: 'Игрок выбирает, что применить',
-					hint: 'При использовании способности он отметит строки, которые сработают.',
-				},
-				{
-					key: 'abilityUsesMax',
-					label: 'Использований: максимум',
-					placeholder: '3',
-					hint: 'Пусто — без ограничения. Тогда зарядов и обновления нет.',
-				},
-				{
-					key: 'abilityUsesStart',
-					label: 'Использований: сколько у нового владельца',
-					placeholder: '1',
-				},
-				{
-					key: 'abilityCharges',
-					label: 'Зарядов на одно использование',
-					placeholder: '0',
-					hint: 'Столько событий, заряжающих способность, дают одно использование. 0 — зарядов нет.',
-				},
-				{
-					key: 'abilityRenewal',
-					label: 'Обновление использований',
-					placeholder: '1 день',
-					hint: 'Через это время после последнего изменения использования возвращаются к максимуму. Пусто — не обновляются.',
 				},
 			]
 		}
 	}
 })
+
+/** the preset that holds the length of the effect, or `custom` for a length without a chip */
+const durationPresetOf = (duration: number | null | undefined) => {
+	if (duration == null) return 'none'
+
+	return durationPresets.some((p) => p.value === String(duration))
+		? String(duration)
+		: 'custom'
+}
 
 const initial = computed<FormValues>(() => ({
 	name: entry?.name ?? '',
@@ -266,6 +343,7 @@ const initial = computed<FormValues>(() => ({
 	unit5: entry?.unitForms?.many ?? '',
 	entries: itemEntriesToForm(entry?.entries ?? []),
 	chooseEntries: entry?.shouldApplyToAll === false,
+	conditions: [...(entry?.conditions ?? [])],
 	modifiers: modifiersToForm(entry?.modifiers ?? []),
 	abilityEntries: itemEntriesToForm(entry?.ability?.entries ?? []),
 	abilityChooseEntries: entry?.ability?.shouldApplyToAll === false,
@@ -277,23 +355,20 @@ const initial = computed<FormValues>(() => ({
 	abilityRenewal: entry?.ability?.renewalPeriod
 		? formatSpanExact(entry.ability.renewalPeriod)
 		: '',
-	...Object.fromEntries(
-		(Object.keys(conditionLabels) as ItemCondition[]).map((c) => [
-			`condition_${c}`,
-			entry?.conditions?.includes(c) ?? false,
-		]),
-	),
+	durationPreset: durationPresetOf(entry?.duration),
 	duration: entry?.duration ? formatSpanExact(entry.duration) : '',
-	usesMax: entry?.usesMax != null ? String(entry.usesMax) : '',
+	usesMax: entry?.usesMax != null ? String(entry.usesMax) : entry ? '' : '1',
 	perkKind: entry?.perkKind ?? 'active',
 	startValue: entry?.startValue != null ? String(entry.startValue) : '',
 	minimum: entry?.minimum != null ? String(entry.minimum) : '',
 	maximum: entry?.maximum != null ? String(entry.maximum) : '',
-	isPublic: entry?.isPublic ?? true,
-	isShared: shared,
+	visibility: entry?.isPublic === false ? 'admins' : 'all',
+	scope: shared ? 'shared' : 'own',
 }))
 
 const title = computed(() => (entry ? `Изменить «${entry.name}»` : adds[kind]))
+
+const submitLabel = computed(() => (entry ? 'Сохранить' : creates[kind]))
 
 const invalid = (title: string, text: string) => {
 	toastStore.show(title, text, 'danger')
@@ -357,8 +432,6 @@ const onSave = async (values: FormValues) => {
 	const name = text('name')
 	const description = text('description')
 
-	if (!name) return invalid('Впиши название', 'Без него не сохранится.')
-
 	if (
 		kind === 'point-types' &&
 		!(text('unit1') && text('unit2') && text('unit5'))
@@ -409,21 +482,15 @@ const onSave = async (values: FormValues) => {
 		input.startValue = startValue
 		input.minimum = minimum
 		input.maximum = maximum
-		input.isPublic = values.isPublic === true
+		input.isPublic = text('visibility') !== 'admins'
 
-		if (!entry) input.isShared = values.isShared === true
+		if (!entry) input.isShared = text('scope') === 'shared'
 	}
 
 	if (kind === 'items') {
 		const entries = parseItemEntries(values.entries as FormRow[])
 
 		if ('error' in entries) return invalid('Проверь изменения', entries.error)
-		if (!entries.value.length) {
-			return invalid(
-				'Добавь изменение',
-				'Хотя бы одно: что произойдёт при использовании.',
-			)
-		}
 
 		const usesMax = Number(text('usesMax'))
 
@@ -434,9 +501,7 @@ const onSave = async (values: FormValues) => {
 			)
 		}
 
-		const conditions = (Object.keys(conditionLabels) as ItemCondition[]).filter(
-			(c) => values[`condition_${c}`] === true,
-		)
+		const conditions = values.conditions as ItemCondition[]
 
 		if (
 			conditions.includes('target_online') &&
@@ -453,7 +518,7 @@ const onSave = async (values: FormValues) => {
 		if (needsTargets && !entries.value.some((e) => e.who === 'chosen')) {
 			return invalid(
 				'Нужна выбранная цель',
-				'Условия про цели работают, когда есть строка «Выбранным игрокам».',
+				'Условия про цели работают, когда есть строка с целью.',
 			)
 		}
 
@@ -471,9 +536,12 @@ const onSave = async (values: FormValues) => {
 
 		input.modifiers = modifiers.value
 
-		const duration = text('duration')
+		const preset = text('durationPreset')
 
-		input.duration = duration ? (parseSpan(duration) ?? NaN) : null
+		if (preset === 'none') input.duration = null
+		else if (preset === 'custom')
+			input.duration = parseSpan(text('duration')) ?? NaN
+		else input.duration = Number(preset)
 
 		if (Number.isNaN(input.duration)) {
 			return invalid(
@@ -528,8 +596,9 @@ const onSave = async (values: FormValues) => {
 	<FormDialog
 		:open
 		:title
-		:fields
+		:sections
 		:initial
+		:submit-label
 		@close="emit('close')"
 		@save="onSave"
 	/>
