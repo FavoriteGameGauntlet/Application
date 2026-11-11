@@ -50,6 +50,7 @@ const sections: FormSection[] = [
 			{
 				key: 'sourceEntries',
 				label: 'Игрок отдаёт',
+				required: 'отдаваемый ресурс',
 				type: 'rows',
 				variant: 'cost',
 				addLabel: 'Ресурс',
@@ -58,6 +59,7 @@ const sections: FormSection[] = [
 			{
 				key: 'targetEntries',
 				label: 'Игрок получает',
+				required: 'получаемый ресурс',
 				type: 'rows',
 				variant: 'cost',
 				addLabel: 'Ресурс',
@@ -136,15 +138,6 @@ const onSave = async (values: FormValues) => {
 			'error' in sourceEntries
 				? sourceEntries.error
 				: (targetEntries as { error: string }).error,
-			'danger',
-		)
-		return
-	}
-
-	if (!sourceEntries.value.length && !targetEntries.value.length) {
-		toastStore.show(
-			'Добавь стороны',
-			'Хотя бы одна строка: что отдаёт или что получает игрок.',
 			'danger',
 		)
 		return
