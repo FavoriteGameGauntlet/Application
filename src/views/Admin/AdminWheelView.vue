@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import type { AdminWheelEntry, AdminWheelGroup } from '../../api-facade/contracts'
+import type {
+	AdminWheelEntry,
+	AdminWheelGroup,
+} from '../../api-facade/contracts'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
-import type { FormField, FormRow, FormValues } from '../../components/formDialog'
+import type {
+	FormField,
+	FormRow,
+	FormValues,
+} from '../../components/formDialog'
 import { changeRowsToForm, parseChangeRows } from '../../utils/formRows'
 import FormDialog from '../../components/FormDialog.vue'
 import UiButton from '../../components/ui/UiButton.vue'
@@ -47,7 +54,9 @@ const foundEntries = computed(() => {
 	return (group.value?.entries ?? []).filter(
 		(e) =>
 			!q ||
-			[e.name, e.description ?? '', ...e.changes].some((s) => s.toLowerCase().includes(q)),
+			[e.name, e.description ?? '', ...e.changes].some((s) =>
+				s.toLowerCase().includes(q),
+			),
 	)
 })
 
@@ -106,6 +115,12 @@ const fields = computed<FormField[]>(() => {
 			label: 'Игрок вносит изменение вручную',
 			hint: 'После прокрута откроется форма ручного изменения.',
 		},
+		{
+			key: 'chooseEntries',
+			type: 'check',
+			label: 'Игрок выбирает, что применить',
+			hint: 'Когда пункт выпадет, игрок отметит изменения, которые сработают. Остальные пропустятся.',
+		},
 	]
 })
 
@@ -117,6 +132,7 @@ const initial = computed<FormValues>(() => {
 		description: '',
 		entries: [],
 		isManualChange: false,
+		chooseEntries: false,
 	}
 
 	if (current?.kind === 'group') {
@@ -126,6 +142,7 @@ const initial = computed<FormValues>(() => {
 		values.description = current.entry.description ?? ''
 		values.entries = changeRowsToForm(current.entry.entries)
 		values.isManualChange = current.entry.isManualChange
+		values.chooseEntries = !current.entry.shouldApplyToAll
 	}
 
 	return values
@@ -138,7 +155,8 @@ const dialogTitle = computed(() => {
 		return current.group ? 'Переименовать группу' : 'Новая группа'
 	}
 
-	if (current?.entry) return isChanges.value ? 'Изменить пункт' : 'Изменить игру'
+	if (current?.entry)
+		return isChanges.value ? 'Изменить пункт' : 'Изменить игру'
 
 	return `${isChanges.value ? 'Новый пункт' : 'Новая игра'} · ${group.value?.name}`
 })
@@ -184,9 +202,16 @@ const onSave = async (values: FormValues) => {
 		return
 	}
 
-	const input = { name, description, entries: entries.value, isManualChange }
+	const input = {
+		name,
+		description,
+		entries: entries.value,
+		isManualChange,
+		shouldApplyToAll: values.chooseEntries !== true,
+	}
 
-	if (await store.saveEntry(group.value, current?.entry, input)) dialog.value = undefined
+	if (await store.saveEntry(group.value, current?.entry, input))
+		dialog.value = undefined
 }
 
 const askRemoveGroup = (target: AdminWheelGroup) => {
@@ -231,13 +256,22 @@ onMounted(() => store.load())
 	<div class="wheel">
 		<UiPageTitle>Колесо</UiPageTitle>
 
-		<UiTabs :model-value="store.kind" :items="tabs" @update:model-value="setKind($event!)" />
+		<UiTabs
+			:model-value="store.kind"
+			:items="tabs"
+			@update:model-value="setKind($event!)"
+		/>
 
 		<div class="layout">
 			<div class="groups">
 				<div class="groups__head">
 					<span class="groups__title">Группы</span>
-					<UiButton variant="ghost" size="sm" icon="plus" @click="dialog = { kind: 'group' }">
+					<UiButton
+						variant="ghost"
+						size="sm"
+						icon="plus"
+						@click="dialog = { kind: 'group' }"
+					>
 						Группа
 					</UiButton>
 				</div>
@@ -301,13 +335,18 @@ onMounted(() => store.load())
 				<AdminSpinCost v-if="isChanges" :key="group.id" :group />
 
 				<div v-if="group.system" class="card card--text">
-					Вишлист у каждого игрока свой. Игры в него добавляют сами игроки на экране «Игры»,
-					здесь список не редактируется.
+					Вишлист у каждого игрока свой. Игры в него добавляют сами игроки на
+					экране «Игры», здесь список не редактируется.
 				</div>
 
 				<div v-else class="table">
-					<div class="table__row table__row--head" :class="{ 'table__row--wide': isChanges }">
-						<span class="table__name-head">{{ isChanges ? 'Пункт' : 'Игра' }}</span>
+					<div
+						class="table__row table__row--head"
+						:class="{ 'table__row--wide': isChanges }"
+					>
+						<span class="table__name-head">{{
+							isChanges ? 'Пункт' : 'Игра'
+						}}</span>
 						<span v-if="isChanges">Изменение</span>
 						<span></span>
 					</div>
@@ -321,12 +360,18 @@ onMounted(() => store.load())
 						<div
 							class="table__row table__row--body"
 							:class="{ 'table__row--wide': isChanges }"
-							@click="openEntryId = openEntryId === entry.id ? undefined : entry.id"
+							@click="
+								openEntryId = openEntryId === entry.id ? undefined : entry.id
+							"
 						>
 							<div class="cell cell--name">
 								<span class="cell__chevron">
 									<UiIcon
-										:name="openEntryId === entry.id ? 'chevron-down' : 'chevron-right'"
+										:name="
+											openEntryId === entry.id
+												? 'chevron-down'
+												: 'chevron-right'
+										"
 										:size="16"
 									/>
 								</span>
@@ -335,7 +380,12 @@ onMounted(() => store.load())
 
 							<div v-if="isChanges" class="cell cell--tags">
 								<UiTag v-for="tag in entry.changes" :key="tag">{{ tag }}</UiTag>
-								<span v-if="entry.isManualChange" class="cell__manual">вручную</span>
+								<span v-if="entry.isManualChange" class="cell__manual"
+									>вручную</span
+								>
+								<span v-if="!entry.shouldApplyToAll" class="cell__manual"
+									>на выбор</span
+								>
 							</div>
 
 							<span class="table__actions">
@@ -356,7 +406,9 @@ onMounted(() => store.load())
 
 						<div v-if="openEntryId === entry.id" class="item__desc">
 							<span class="item__label">Описание</span>
-							<span class="item__text">{{ entry.description || 'Без описания' }}</span>
+							<span class="item__text">{{
+								entry.description || 'Без описания'
+							}}</span>
 						</div>
 					</div>
 

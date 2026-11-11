@@ -3,6 +3,8 @@ import { formatResource } from '../../utils/formatResource'
 
 /** NamedChangeEntry: exactly one target is set, the name is left out when the target is gone */
 export type NamedChangeEntryDto = {
+	/** names the entry in the `entryIds` of a use */
+	entryId?: number
 	pointTypeId?: number | null
 	pointTypeName?: string | null
 	itemId?: number | null
@@ -17,6 +19,7 @@ export type NamedChangeEntryDto = {
 /** the backend keeps a cost negative, the client shows the amount without the sign */
 export const toResourceRef = (entry: NamedChangeEntryDto): ResourceRef => {
 	const amount = Math.abs(entry.amount)
+	const entryId = entry.entryId === undefined ? {} : { entryId: entry.entryId }
 
 	if (entry.pointTypeId != null) {
 		return {
@@ -24,19 +27,36 @@ export const toResourceRef = (entry: NamedChangeEntryDto): ResourceRef => {
 			id: entry.pointTypeId,
 			name: entry.pointTypeName ?? '',
 			amount,
+			...entryId,
 		}
 	}
 
 	if (entry.itemId != null) {
-		return { kind: 'item', id: entry.itemId, name: entry.itemName ?? '', amount }
+		return {
+			kind: 'item',
+			id: entry.itemId,
+			name: entry.itemName ?? '',
+			amount,
+			...entryId,
+		}
 	}
 
 	if (entry.perkId != null) {
-		return { kind: 'perk', id: entry.perkId, name: entry.perkName ?? '' }
+		return {
+			kind: 'perk',
+			id: entry.perkId,
+			name: entry.perkName ?? '',
+			...entryId,
+		}
 	}
 
 	if (entry.effectId != null) {
-		return { kind: 'effect', id: entry.effectId, name: entry.effectName ?? '' }
+		return {
+			kind: 'effect',
+			id: entry.effectId,
+			name: entry.effectName ?? '',
+			...entryId,
+		}
 	}
 
 	throw new Error('A change entry has no target')
@@ -66,7 +86,8 @@ export const signedAmount = (amount: number) =>
 export const toChangeText = (
 	entry: NamedChangeEntryDto,
 	pointTypes: PointType[],
-) => `${signOf(entry.amount)}${formatResource(toResourceRef(entry), pointTypes)}`
+) =>
+	`${signOf(entry.amount)}${formatResource(toResourceRef(entry), pointTypes)}`
 
 /** an entry of an item or of a perk ability, which may act on the chosen users */
 export const toItemEntryText = (

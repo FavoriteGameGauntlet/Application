@@ -10,7 +10,9 @@ type ExchangeDto = {
 	id: number
 	name: string
 	description: string
+	sourceShouldApplyToAll: boolean
 	sourceEntries: NamedChangeEntryDto[]
+	targetShouldApplyToAll: boolean
 	targetEntries: NamedChangeEntryDto[]
 }
 
@@ -28,11 +30,15 @@ const toBody = ({
 	name,
 	description,
 	sourceEntries,
+	sourceShouldApplyToAll,
 	targetEntries,
+	targetShouldApplyToAll,
 }: AdminExchangeInput) => ({
 	name,
 	description,
+	sourceShouldApplyToAll,
 	sourceEntries: sourceEntries.map(fromCostRow),
+	targetShouldApplyToAll,
 	targetEntries: targetEntries.map(fromGainRow),
 })
 
@@ -44,9 +50,9 @@ export const exchanges: Api['exchanges'] = {
 			)
 		).body.map((e) => ({ ...e, ...toSides(e) })),
 
-	execute: async (id, targetLogins) => {
+	execute: async (id, use) => {
 		await http.post(`${await partyPath()}/exchanges/catalog/${id}/use`, {
-			body: targetLogins ? { targetLogins } : {},
+			body: use ?? {},
 		})
 
 		return {
@@ -88,13 +94,19 @@ export const adminExchanges: Api['admin']['exchanges'] = {
 		const [active, removed] = await Promise.all([
 			http.get<{ response: ExchangeDto[] }>(`${path}/exchanges/catalog`),
 			includeDeleted
-				? http.get<{ response: ExchangeDto[] }>(`${path}/exchanges/catalog/removed`)
+				? http.get<{ response: ExchangeDto[] }>(
+						`${path}/exchanges/catalog/removed`,
+					)
 				: undefined,
 		])
 
 		return [
 			...active.body.map((e) => ({ ...e, ...toSides(e), deleted: false })),
-			...(removed?.body ?? []).map((e) => ({ ...e, ...toSides(e), deleted: true })),
+			...(removed?.body ?? []).map((e) => ({
+				...e,
+				...toSides(e),
+				deleted: true,
+			})),
 		]
 	},
 

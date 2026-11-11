@@ -1,4 +1,5 @@
 import { Temporal } from '@js-temporal/polyfill'
+import { MEMBER_COLORS } from '../../constants/memberColors'
 import { persistentStorage, StoreKey } from '../../services/persistentStorage'
 import type {
 	ISODate,
@@ -10,8 +11,8 @@ import type {
 } from '../contracts'
 import { http } from '../http'
 
-/** the number of `--user-N` colors in the theme */
-const USER_COLORS = 8
+/** shown for a login that is not in the member list */
+const FALLBACK_COLOR = MEMBER_COLORS[0]
 
 export const currentLogin = async () => {
 	const login = await persistentStorage.get(StoreKey.Login)
@@ -39,6 +40,10 @@ export type MemberDto = {
 	displayName?: string
 	isAdmin: boolean
 	joinedDate: ISODate
+	/** null for a current member */
+	leftDate: ISODate | null
+	/** lowercase hex */
+	color: string
 	status: UserStatus
 	/** the name of the current game */
 	currentGame: string | null
@@ -48,24 +53,23 @@ export type MemberDto = {
 	spinsCount: number
 }
 
+/** the members of the party with those who left, the admins restore them from here */
+export const getAllMembers = async () =>
+	(await http.get<{ response: MemberDto[] }>(`${await partyPath()}/members`))
+		.body
+
+/** the current members: the backend lists the ones who left too */
 export const getMembers = async () =>
-	(await http.get<{ response: MemberDto[] }>(`${await partyPath()}/members`)).body
+	(await getAllMembers()).filter((m) => !m.leftDate)
 
-/** the color follows the order the users joined the party, the backend has none */
-export const toUserRefs = (members: MemberDto[]) => {
-	const sorted = [...members].sort(
-		(a, b) =>
-			a.joinedDate.localeCompare(b.joinedDate) || a.login.localeCompare(b.login),
-	)
-
-	return new Map<Login, UserRef>(
-		sorted.map((m, i) => [m.login, { login: m.login, colorIndex: (i % USER_COLORS) + 1 }]),
-	)
-}
-
-export const userRefOf = (refs: Map<Login, UserRef>, login: Login): UserRef =>
-	refs.get(login) ?? { login, colorIndex: 1 }
+export const userRefOf = (members: MemberDto[], login: Login): UserRef => ({
+	login,
+	color: members.find((m) => m.login === login)?.color ?? FALLBACK_COLOR,
+})
 
 export const getPointTypes = async () =>
-	(await http.get<{ response: PointType[] }>(`${await partyPath()}/points/types`))
-		.body
+	(
+		await http.get<{ response: PointType[] }>(
+			`${await partyPath()}/points/types`,
+		)
+	).body

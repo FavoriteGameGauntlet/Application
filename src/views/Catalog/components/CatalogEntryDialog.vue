@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { CatalogEntry, CatalogEntryInput, CatalogKind } from '../../../api-facade/contracts'
-import type { FormField, FormRow, FormValues } from '../../../components/formDialog'
+import type {
+	CatalogEntry,
+	CatalogEntryInput,
+	CatalogKind,
+} from '../../../api-facade/contracts'
+import type {
+	FormField,
+	FormRow,
+	FormValues,
+} from '../../../components/formDialog'
 import FormDialog from '../../../components/FormDialog.vue'
 import { useAdminCatalogStore } from '../../../stores/adminCatalogStore'
 import { useToastStore } from '../../../stores/toastStore'
@@ -48,21 +56,26 @@ const conditionLabels: Record<ItemCondition, string> = {
 	holder_not_playing: 'У того, кто использует, нет текущей игры',
 }
 
-const conditionFields: FormField[] = (Object.keys(conditionLabels) as ItemCondition[]).map(
-	(condition) => ({
-		key: `condition_${condition}`,
-		type: 'check' as const,
-		label: conditionLabels[condition],
-		hint: '',
-	}),
-)
+const conditionFields: FormField[] = (
+	Object.keys(conditionLabels) as ItemCondition[]
+).map((condition) => ({
+	key: `condition_${condition}`,
+	type: 'check' as const,
+	label: conditionLabels[condition],
+	hint: '',
+}))
 
 const fields = computed<FormField[]>(() => {
 	const common: FormField[] = [
 		{
 			key: 'name',
 			label: 'Название',
-			placeholder: { 'point-types': 'Золото', items: 'Свиток удачи', effects: 'Щит', perks: 'Везунчик' }[kind],
+			placeholder: {
+				'point-types': 'Золото',
+				items: 'Свиток удачи',
+				effects: 'Щит',
+				perks: 'Везунчик',
+			}[kind],
 		},
 		{
 			key: 'description',
@@ -83,8 +96,16 @@ const fields = computed<FormField[]>(() => {
 					placeholder: 'билет',
 					hint: 'Как пишется в журнале: 1 билет, 2 билета, 5 билетов.',
 				},
-				{ key: 'unit2', label: 'Единица в журнале · 2–4', placeholder: 'билета' },
-				{ key: 'unit5', label: 'Единица в журнале · 5 и больше', placeholder: 'билетов' },
+				{
+					key: 'unit2',
+					label: 'Единица в журнале · 2–4',
+					placeholder: 'билета',
+				},
+				{
+					key: 'unit5',
+					label: 'Единица в журнале · 5 и больше',
+					placeholder: 'билетов',
+				},
 				{
 					key: 'startValue',
 					label: 'Стартовое значение',
@@ -129,6 +150,12 @@ const fields = computed<FormField[]>(() => {
 					type: 'rows',
 					variant: 'item-entry',
 					hint: 'Каждая строка — одно изменение. Минус забирает, «Выбранный предмет» игрок указывает при использовании.',
+				},
+				{
+					key: 'chooseEntries',
+					type: 'check',
+					label: 'Игрок выбирает, что применить',
+					hint: 'При использовании он отметит строки, которые сработают. Остальные пропустятся.',
 				},
 				{
 					key: 'usesMax',
@@ -198,6 +225,12 @@ const fields = computed<FormField[]>(() => {
 					hint: 'Применяется, когда игрок использует способность, как у предмета.',
 				},
 				{
+					key: 'abilityChooseEntries',
+					type: 'check',
+					label: 'Игрок выбирает, что применить',
+					hint: 'При использовании способности он отметит строки, которые сработают.',
+				},
+				{
 					key: 'abilityUsesMax',
 					label: 'Использований: максимум',
 					placeholder: '3',
@@ -232,12 +265,18 @@ const initial = computed<FormValues>(() => ({
 	unit2: entry?.unitForms?.several ?? '',
 	unit5: entry?.unitForms?.many ?? '',
 	entries: itemEntriesToForm(entry?.entries ?? []),
+	chooseEntries: entry?.shouldApplyToAll === false,
 	modifiers: modifiersToForm(entry?.modifiers ?? []),
 	abilityEntries: itemEntriesToForm(entry?.ability?.entries ?? []),
+	abilityChooseEntries: entry?.ability?.shouldApplyToAll === false,
 	abilityUsesMax: entry?.ability?.uses ? String(entry.ability.uses.max) : '',
-	abilityUsesStart: entry?.ability?.uses ? String(entry.ability.uses.start) : '',
+	abilityUsesStart: entry?.ability?.uses
+		? String(entry.ability.uses.start)
+		: '',
 	abilityCharges: entry?.ability ? String(entry.ability.chargesMax) : '',
-	abilityRenewal: entry?.ability?.renewalPeriod ? formatSpanExact(entry.ability.renewalPeriod) : '',
+	abilityRenewal: entry?.ability?.renewalPeriod
+		? formatSpanExact(entry.ability.renewalPeriod)
+		: '',
 	...Object.fromEntries(
 		(Object.keys(conditionLabels) as ItemCondition[]).map((c) => [
 			`condition_${c}`,
@@ -264,6 +303,7 @@ const invalid = (title: string, text: string) => {
 const readAbility = (
 	text: (key: string) => string,
 	entries: ItemEntryRow[],
+	shouldApplyToAll: boolean,
 ): PerkAbility | string => {
 	const usesMax = text('abilityUsesMax')
 	const usesStart = text('abilityUsesStart')
@@ -276,24 +316,35 @@ const readAbility = (
 		return 'Зарядов — целое число, не меньше нуля.'
 	}
 
-	if (renewal && (renewalPeriod == null || renewalPeriod < 1 || renewalPeriod > 315_360_000)) {
+	if (
+		renewal &&
+		(renewalPeriod == null || renewalPeriod < 1 || renewalPeriod > 315_360_000)
+	) {
 		return 'Обновление: напиши, например, «2 ч» или «1 день», не дольше 10 лет.'
 	}
 
 	if (!usesMax && !usesStart) {
 		return chargesMax > 0 || renewal
 			? 'Заряды и обновление нужны, только когда использования ограничены.'
-			: { entries, chargesMax: 0 }
+			: { shouldApplyToAll, entries, chargesMax: 0 }
 	}
 
 	const max = Number(usesMax)
 	const start = Number(usesStart)
 
-	if (!usesMax || !usesStart || !Number.isInteger(max) || max < 1 || !Number.isInteger(start) || start < 0) {
+	if (
+		!usesMax ||
+		!usesStart ||
+		!Number.isInteger(max) ||
+		max < 1 ||
+		!Number.isInteger(start) ||
+		start < 0
+	) {
 		return 'Использования: максимум — целое число от 1, у нового владельца — целое число от 0. Или оставь оба пустыми.'
 	}
 
 	return {
+		shouldApplyToAll,
 		entries,
 		uses: { max, start },
 		chargesMax,
@@ -308,7 +359,10 @@ const onSave = async (values: FormValues) => {
 
 	if (!name) return invalid('Впиши название', 'Без него не сохранится.')
 
-	if (kind === 'point-types' && !(text('unit1') && text('unit2') && text('unit5'))) {
+	if (
+		kind === 'point-types' &&
+		!(text('unit1') && text('unit2') && text('unit5'))
+	) {
 		return invalid('Впиши единицы', 'Нужны все три формы: 1, 2–4 и 5 и больше.')
 	}
 
@@ -319,22 +373,39 @@ const onSave = async (values: FormValues) => {
 		const minimum = text('minimum') ? Number(text('minimum')) : null
 		const maximum = text('maximum') ? Number(text('maximum')) : null
 
-		if (![startValue, minimum, maximum].every((n) => n === null || Number.isInteger(n))) {
-			return invalid('Не понял число', 'Стартовое значение и границы — целые числа.')
+		if (
+			![startValue, minimum, maximum].every(
+				(n) => n === null || Number.isInteger(n),
+			)
+		) {
+			return invalid(
+				'Не понял число',
+				'Стартовое значение и границы — целые числа.',
+			)
 		}
 
 		if (minimum !== null && maximum !== null && minimum > maximum) {
-			return invalid('Границы перепутаны', 'Минимум не может быть больше максимума.')
+			return invalid(
+				'Границы перепутаны',
+				'Минимум не может быть больше максимума.',
+			)
 		}
 
 		if (
 			(minimum !== null && startValue < minimum) ||
 			(maximum !== null && startValue > maximum)
 		) {
-			return invalid('Старт вне границ', 'Стартовое значение должно быть между минимумом и максимумом.')
+			return invalid(
+				'Старт вне границ',
+				'Стартовое значение должно быть между минимумом и максимумом.',
+			)
 		}
 
-		input.unitForms = { one: text('unit1'), several: text('unit2'), many: text('unit5') }
+		input.unitForms = {
+			one: text('unit1'),
+			several: text('unit2'),
+			many: text('unit5'),
+		}
 		input.startValue = startValue
 		input.minimum = minimum
 		input.maximum = maximum
@@ -348,30 +419,46 @@ const onSave = async (values: FormValues) => {
 
 		if ('error' in entries) return invalid('Проверь изменения', entries.error)
 		if (!entries.value.length) {
-			return invalid('Добавь изменение', 'Хотя бы одно: что произойдёт при использовании.')
+			return invalid(
+				'Добавь изменение',
+				'Хотя бы одно: что произойдёт при использовании.',
+			)
 		}
 
 		const usesMax = Number(text('usesMax'))
 
 		if (!(Number.isInteger(usesMax) && usesMax > 0)) {
-			return invalid('Не понял число использований', 'Нужно целое число больше нуля.')
+			return invalid(
+				'Не понял число использований',
+				'Нужно целое число больше нуля.',
+			)
 		}
 
 		const conditions = (Object.keys(conditionLabels) as ItemCondition[]).filter(
 			(c) => values[`condition_${c}`] === true,
 		)
 
-		if (conditions.includes('target_online') && conditions.includes('target_offline')) {
-			return invalid('Условия не сочетаются', 'Цели не могут быть и в сети, и не в сети.')
+		if (
+			conditions.includes('target_online') &&
+			conditions.includes('target_offline')
+		) {
+			return invalid(
+				'Условия не сочетаются',
+				'Цели не могут быть и в сети, и не в сети.',
+			)
 		}
 
 		const needsTargets = conditions.some((c) => c.startsWith('target_'))
 
 		if (needsTargets && !entries.value.some((e) => e.who === 'chosen')) {
-			return invalid('Нужна выбранная цель', 'Условия про цели работают, когда есть строка «Выбранным игрокам».')
+			return invalid(
+				'Нужна выбранная цель',
+				'Условия про цели работают, когда есть строка «Выбранным игрокам».',
+			)
 		}
 
 		input.entries = entries.value
+		input.shouldApplyToAll = values.chooseEntries !== true
 		input.usesMax = usesMax
 		input.conditions = conditions
 	}
@@ -379,7 +466,8 @@ const onSave = async (values: FormValues) => {
 	if (kind === 'effects') {
 		const modifiers = parseModifiers(values.modifiers as FormRow[])
 
-		if ('error' in modifiers) return invalid('Проверь изменения', modifiers.error)
+		if ('error' in modifiers)
+			return invalid('Проверь изменения', modifiers.error)
 
 		input.modifiers = modifiers.value
 
@@ -388,31 +476,45 @@ const onSave = async (values: FormValues) => {
 		input.duration = duration ? (parseSpan(duration) ?? NaN) : null
 
 		if (Number.isNaN(input.duration)) {
-			return invalid('Не понял длительность', 'Напиши, например, «2 ч» или «1 день».')
+			return invalid(
+				'Не понял длительность',
+				'Напиши, например, «2 ч» или «1 день».',
+			)
 		}
 	}
 
 	if (kind === 'perks') {
 		const modifiers = parseModifiers(values.modifiers as FormRow[])
 
-		if ('error' in modifiers) return invalid('Проверь изменения', modifiers.error)
+		if ('error' in modifiers)
+			return invalid('Проверь изменения', modifiers.error)
 
 		input.modifiers = modifiers.value
 
 		// the ability of an existing perk is not in the form and the backend does not change it
-		if (!entry) input.perkKind = text('perkKind') === 'passive' ? 'passive' : 'active'
+		if (!entry)
+			input.perkKind = text('perkKind') === 'passive' ? 'passive' : 'active'
 
 		if (!entry && input.perkKind === 'active') {
 			const entries = parseItemEntries(values.abilityEntries as FormRow[])
 
-			if ('error' in entries) return invalid('Проверь способность', entries.error)
+			if ('error' in entries)
+				return invalid('Проверь способность', entries.error)
 			if (!entries.value.length) {
-				return invalid('Добавь изменение', 'Активному перку нужна хотя бы одна строка способности.')
+				return invalid(
+					'Добавь изменение',
+					'Активному перку нужна хотя бы одна строка способности.',
+				)
 			}
 
-			const ability = readAbility(text, entries.value)
+			const ability = readAbility(
+				text,
+				entries.value,
+				values.abilityChooseEntries !== true,
+			)
 
-			if (typeof ability === 'string') return invalid('Проверь способность', ability)
+			if (typeof ability === 'string')
+				return invalid('Проверь способность', ability)
 
 			input.ability = ability
 		}
@@ -423,5 +525,12 @@ const onSave = async (values: FormValues) => {
 </script>
 
 <template>
-	<FormDialog :open :title :fields :initial @close="emit('close')" @save="onSave" />
+	<FormDialog
+		:open
+		:title
+		:fields
+		:initial
+		@close="emit('close')"
+		@save="onSave"
+	/>
 </template>

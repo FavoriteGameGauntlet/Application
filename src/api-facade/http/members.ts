@@ -1,16 +1,15 @@
-import type { Api, Login, Member, UserRef } from '../contracts'
+import type { Api, Login, Member } from '../contracts'
 import { http } from '../http'
 import {
 	getMembers,
 	type MemberDto,
 	partyPath,
 	toSeconds,
-	toUserRefs,
 	userRefOf,
 } from './context'
 
-const toMember = (m: MemberDto, user: UserRef): Member => ({
-	user,
+const toMember = (m: MemberDto, all: MemberDto[]): Member => ({
+	user: userRefOf(all, m.login),
 	displayName: m.displayName ?? null,
 	status: m.status,
 	currentGame: m.currentGame,
@@ -22,19 +21,15 @@ const toMember = (m: MemberDto, user: UserRef): Member => ({
 export const members: Api['members'] = {
 	list: async () => {
 		const all = await getMembers()
-		const refs = toUserRefs(all)
 
-		return all.map((m) => toMember(m, userRefOf(refs, m.login)))
+		return all.map((m) => toMember(m, all))
 	},
 
 	get: async (login: Login) => {
-		const [{ body }, all] = await Promise.all([
-			partyPath().then((path) =>
-				http.get<{ response: MemberDto }>(`${path}/members/${login}`),
-			),
-			getMembers(),
-		])
+		const { body } = await http.get<{ response: MemberDto }>(
+			`${await partyPath()}/members/${login}`,
+		)
 
-		return toMember(body, userRefOf(toUserRefs(all), login))
+		return toMember(body, [body])
 	},
 }

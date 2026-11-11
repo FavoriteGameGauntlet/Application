@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import type { AdminExchange, SpinCostRow } from '../../api-facade/contracts'
-import type { FormField, FormRow, FormValues } from '../../components/formDialog'
+import type {
+	FormField,
+	FormRow,
+	FormValues,
+} from '../../components/formDialog'
 import FormDialog from '../../components/FormDialog.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
 import UiIcon from '../../components/ui/UiIcon.vue'
@@ -22,7 +26,11 @@ const editing = ref<{ exchange?: AdminExchange }>()
 
 const fields: FormField[] = [
 	{ key: 'name', label: 'Название', placeholder: 'Набор для рерола' },
-	{ key: 'description', label: 'Описание', placeholder: 'Что даёт и когда пригодится' },
+	{
+		key: 'description',
+		label: 'Описание',
+		placeholder: 'Что даёт и когда пригодится',
+	},
 	{
 		key: 'sourceEntries',
 		label: 'Отдаёшь',
@@ -31,11 +39,23 @@ const fields: FormField[] = [
 		hint: 'Что игрок отдаёт. Со списком целей отдают выбранные игроки.',
 	},
 	{
+		key: 'chooseSource',
+		type: 'check',
+		label: 'Игрок выбирает, что отдать',
+		hint: 'При обмене он отметит строки, которые отдаёт. Остальные не списываются.',
+	},
+	{
 		key: 'targetEntries',
 		label: 'Получаешь',
 		type: 'rows',
 		variant: 'cost',
 		hint: 'Что игрок получает.',
+	},
+	{
+		key: 'chooseTarget',
+		type: 'check',
+		label: 'Игрок выбирает, что получить',
+		hint: 'При обмене он отметит строки, которые получает. Остальные не выдаются.',
 	},
 ]
 
@@ -55,10 +75,14 @@ const initial = computed<FormValues>(() => ({
 	description: editing.value?.exchange?.description ?? '',
 	sourceEntries: sideRows(editing.value?.exchange?.sourceEntries ?? []),
 	targetEntries: sideRows(editing.value?.exchange?.targetEntries ?? []),
+	chooseSource: editing.value?.exchange?.sourceShouldApplyToAll === false,
+	chooseTarget: editing.value?.exchange?.targetShouldApplyToAll === false,
 }))
 
 const side = (refs: AdminExchange['sourceEntries']) =>
-	refs.length ? refs.map((r) => formatResource(r, resourcesStore.pointTypes)) : ['—']
+	refs.length
+		? refs.map((r) => formatResource(r, resourcesStore.pointTypes))
+		: ['—']
 
 const query = ref('')
 
@@ -66,7 +90,10 @@ const found = computed(() => {
 	const q = query.value.trim().toLowerCase()
 
 	return store.exchanges.filter(
-		(x) => !q || x.name.toLowerCase().includes(q) || x.description.toLowerCase().includes(q),
+		(x) =>
+			!q ||
+			x.name.toLowerCase().includes(q) ||
+			x.description.toLowerCase().includes(q),
 	)
 })
 
@@ -92,14 +119,20 @@ const onSave = async (values: FormValues) => {
 	if ('error' in sourceEntries || 'error' in targetEntries) {
 		toastStore.show(
 			'Проверь стороны обмена',
-			'error' in sourceEntries ? sourceEntries.error : (targetEntries as { error: string }).error,
+			'error' in sourceEntries
+				? sourceEntries.error
+				: (targetEntries as { error: string }).error,
 			'danger',
 		)
 		return
 	}
 
 	if (!sourceEntries.value.length && !targetEntries.value.length) {
-		toastStore.show('Добавь стороны', 'Хотя бы одна строка: что отдаёт или что получает игрок.', 'danger')
+		toastStore.show(
+			'Добавь стороны',
+			'Хотя бы одна строка: что отдаёт или что получает игрок.',
+			'danger',
+		)
 		return
 	}
 
@@ -107,7 +140,9 @@ const onSave = async (values: FormValues) => {
 		name,
 		description: String(values.description).trim(),
 		sourceEntries: sourceEntries.value,
+		sourceShouldApplyToAll: values.chooseSource !== true,
 		targetEntries: targetEntries.value,
+		targetShouldApplyToAll: values.chooseTarget !== true,
 	}
 
 	if (await store.saveExchange(editing.value?.exchange?.id, input)) {
@@ -117,7 +152,11 @@ const onSave = async (values: FormValues) => {
 
 store.showDeleted = false
 
-watch(() => store.showDeleted, () => store.loadExchanges(), { immediate: true })
+watch(
+	() => store.showDeleted,
+	() => store.loadExchanges(),
+	{ immediate: true },
+)
 </script>
 
 <template>
@@ -138,8 +177,15 @@ watch(() => store.showDeleted, () => store.loadExchanges(), { immediate: true })
 				<span></span>
 			</div>
 
-			<div v-for="row in rows" :key="row.exchange.id" class="table__row table__row--body">
-				<div class="cell cell--name" :class="{ 'cell--dead': row.exchange.deleted }">
+			<div
+				v-for="row in rows"
+				:key="row.exchange.id"
+				class="table__row table__row--body"
+			>
+				<div
+					class="cell cell--name"
+					:class="{ 'cell--dead': row.exchange.deleted }"
+				>
 					<span class="cell__head">
 						<span class="cell__title">{{ row.exchange.name }}</span>
 						<UiBadge v-if="row.exchange.deleted">удалён</UiBadge>
@@ -148,7 +194,9 @@ watch(() => store.showDeleted, () => store.loadExchanges(), { immediate: true })
 				</div>
 
 				<div class="pills" :class="{ 'cell--dead': row.exchange.deleted }">
-					<span v-for="(pill, i) in row.give" :key="i" class="pill">{{ pill }}</span>
+					<span v-for="(pill, i) in row.give" :key="i" class="pill">{{
+						pill
+					}}</span>
 				</div>
 
 				<span class="table__arrow">
@@ -156,7 +204,9 @@ watch(() => store.showDeleted, () => store.loadExchanges(), { immediate: true })
 				</span>
 
 				<div class="pills" :class="{ 'cell--dead': row.exchange.deleted }">
-					<span v-for="(pill, i) in row.get" :key="i" class="pill pill--get">{{ pill }}</span>
+					<span v-for="(pill, i) in row.get" :key="i" class="pill pill--get">{{
+						pill
+					}}</span>
 				</div>
 
 				<span class="table__actions">
@@ -184,18 +234,22 @@ watch(() => store.showDeleted, () => store.loadExchanges(), { immediate: true })
 				</span>
 			</div>
 
-			<div v-if="!rows.length" class="table__empty">Обменов нет. Нажми «Добавить».</div>
+			<div v-if="!rows.length" class="table__empty">
+				Обменов нет. Нажми «Добавить».
+			</div>
 		</div>
 
 		<span class="note">
-			Обе стороны — список изменений, как в «Выдать». Удалённый обмен скрывается у игроков,
-			история сохраняется.
+			Обе стороны — список изменений, как в «Выдать». Удалённый обмен скрывается
+			у игроков, история сохраняется.
 		</span>
 	</div>
 
 	<FormDialog
 		:open="!!editing"
-		:title="editing?.exchange ? `Изменить «${editing.exchange.name}»` : 'Новый обмен'"
+		:title="
+			editing?.exchange ? `Изменить «${editing.exchange.name}»` : 'Новый обмен'
+		"
 		:fields
 		:initial
 		@close="editing = undefined"
@@ -220,7 +274,10 @@ watch(() => store.showDeleted, () => store.loadExchanges(), { immediate: true })
 
 .table__row {
 	display: grid;
-	grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr) 24px minmax(0, 1.4fr) 76px;
+	grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr) 24px minmax(
+			0,
+			1.4fr
+		) 76px;
 	gap: 12px;
 	align-items: center;
 	padding: 12px 16px;

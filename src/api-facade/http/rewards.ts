@@ -1,4 +1,4 @@
-import type { Reward } from '../contracts'
+import type { Reward, RewardTrigger } from '../contracts'
 import { http } from '../http'
 import {
 	entryName,
@@ -6,9 +6,6 @@ import {
 	signedAmount,
 } from './changeEntry'
 import { partyPath } from './context'
-
-/** `timer`: a timer of a user ends; `game`: a user finishes their current game */
-type RewardTrigger = 'timer' | 'game'
 
 export const getReward = async (trigger: RewardTrigger): Promise<Reward> =>
 	(

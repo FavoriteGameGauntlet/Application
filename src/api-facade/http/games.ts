@@ -70,7 +70,7 @@ export const currentGame: Pick<
 					`${path}/games/users/${await currentLogin()}/current`,
 				),
 			),
-			getReward('game'),
+			getReward('game_completed'),
 		])
 
 		// 204: the user has no current game, the empty body is parsed as ''

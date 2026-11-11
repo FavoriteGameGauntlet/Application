@@ -26,7 +26,6 @@ import {
 	getPointTypes,
 	partyPath,
 	toSeconds,
-	toUserRefs,
 	userRefOf,
 } from './context'
 import { journal, latestOwnEntry } from './journal'
@@ -41,6 +40,7 @@ type UserItemDto = {
 	description: string
 	usesMax: number
 	usesLeft: number
+	shouldApplyToAll: boolean
 	entries: NamedItemEntryDto[]
 	conditions: ItemCondition[]
 }
@@ -51,6 +51,7 @@ type UserPerkDto = {
 	description: string
 	modifiers: NamedPointModifierDto[]
 	ability?: {
+		shouldApplyToAll: boolean
 		entries: NamedItemEntryDto[]
 		uses?: { max: number; start: number }
 		usesLeft?: number
@@ -67,6 +68,13 @@ type UserEffectDto = {
 	source: JournalSource
 }
 
+/** the entries of a held item or perk, with the text a user picks them by */
+const toUseEntries = (entries: NamedItemEntryDto[], pointTypes: PointType[]) =>
+	entries.map((e) => ({
+		...toItemEntryRow(e),
+		text: toItemEntryText(e, pointTypes),
+	}))
+
 const toUserItem = (dto: UserItemDto, pointTypes: PointType[]): UserItem => ({
 	id: dto.id,
 	itemId: dto.itemId,
@@ -76,7 +84,8 @@ const toUserItem = (dto: UserItemDto, pointTypes: PointType[]): UserItem => ({
 		dto.description,
 	usesLeft: dto.usesLeft,
 	usesMax: dto.usesMax,
-	entries: dto.entries.map(toItemEntryRow),
+	shouldApplyToAll: dto.shouldApplyToAll,
+	entries: toUseEntries(dto.entries, pointTypes),
 	conditions: dto.conditions,
 })
 
@@ -91,7 +100,10 @@ const toUserPerk = (dto: UserPerkDto, pointTypes: PointType[]): Perk => {
 		kind: ability ? 'active' : 'passive',
 		...(ability?.uses && { usesMax: ability.uses.max }),
 		...(ability?.usesLeft !== undefined && { usesLeft: ability.usesLeft }),
-		...(ability && { abilityEntries: ability.entries.map(toItemEntryRow) }),
+		...(ability && {
+			abilityEntries: toUseEntries(ability.entries, pointTypes),
+			abilityShouldApplyToAll: ability.shouldApplyToAll,
+		}),
 	}
 }
 
@@ -118,7 +130,9 @@ export const resources: Api['resources'] = {
 
 	sharedPoints: async () => {
 		const points = (
-			await http.get<{ response: PointValueDto[] }>(`${await partyPath()}/points/party`)
+			await http.get<{ response: PointValueDto[] }>(
+				`${await partyPath()}/points/party`,
+			)
 		).body
 
 		return Object.fromEntries(points.map((p) => [p.pointType.id, p.value]))
@@ -132,13 +146,12 @@ export const resources: Api['resources'] = {
 				`${path}/points/users`,
 			),
 		])
-		const refs = toUserRefs(members)
 
 		return {
 			typeId,
 			rows: users
 				.map(({ login, points }) => ({
-					user: userRefOf(refs, login),
+					user: userRefOf(members, login),
 					value: points.find((p) => p.pointType.id === typeId)?.value ?? 0,
 				}))
 				.sort((a, b) => b.value - a.value),
@@ -151,14 +164,16 @@ export const resources: Api['resources'] = {
 			await Promise.all([
 				getMembers(),
 				getPointTypes(),
-				http.get<{ response: PointValueDto[] }>(`${path}/points/users/${login}`),
+				http.get<{ response: PointValueDto[] }>(
+					`${path}/points/users/${login}`,
+				),
 				http.get<{ response: UserItemDto[] }>(`${path}/items/${login}`),
 				http.get<{ response: UserPerkDto[] }>(`${path}/perks/${login}`),
 				http.get<{ response: UserEffectDto[] }>(`${path}/effects/${login}`),
 			])
 
 		return {
-			user: userRefOf(toUserRefs(members), login),
+			user: userRefOf(members, login),
 			points: Object.fromEntries(
 				points.body.map((p) => [p.pointType.id, p.value]),
 			),
@@ -174,8 +189,9 @@ export const resources: Api['resources'] = {
 		return Promise.all(
 			(await getMembers()).map(async ({ login }) => ({
 				login,
-				count: (await http.get<{ response: unknown[] }>(`${path}/${kind}/${login}`)).body
-					.length,
+				count: (
+					await http.get<{ response: unknown[] }>(`${path}/${kind}/${login}`)
+				).body.length,
 			})),
 		)
 	},
@@ -190,7 +206,9 @@ export const resources: Api['resources'] = {
 	catalogEntries: async (kind) => {
 		const [{ body }, pointTypes, holders] = await Promise.all([
 			partyPath().then((path) =>
-				http.get<{ response: CatalogDto[typeof kind][] }>(`${path}/${kind}/catalog`),
+				http.get<{ response: CatalogDto[typeof kind][] }>(
+					`${path}/${kind}/catalog`,
+				),
 			),
 			getPointTypes(),
 			countHolders(kind),

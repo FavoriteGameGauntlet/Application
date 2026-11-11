@@ -5,6 +5,7 @@ import type { Login, PartyMember, Rewards } from '../api-facade/contracts'
 import type { HttpErrorResponse } from '../api-facade/http'
 import { StoreName } from '../enums/storeName'
 import { useCurrentGameStore } from './currentGameStore'
+import { useMembersStore } from './membersStore'
 import { useTimerStore } from './timerStore'
 import { useToastStore } from './toastStore'
 
@@ -13,7 +14,13 @@ const codeOf = (e: unknown) => (e as Partial<HttpErrorResponse>).body?.code
 export const useAdminSettingsStore = defineStore(
 	StoreName.AdminSettings,
 	() => {
-		const rewards = ref<Rewards>({ timer: [], game: [] })
+		const rewards = ref<Rewards>({
+			timer: [],
+			timer_created: [],
+			game_completed: [],
+			game_cancelled: [],
+			game_rerolled: [],
+		})
 		const members = ref<PartyMember[]>([])
 
 		const loadRewards = async () => {
@@ -47,11 +54,11 @@ export const useAdminSettingsStore = defineStore(
 			}
 		}
 
-		const addMember = async (login: Login) => {
+		const addMember = async (login: Login, color: string) => {
 			const toast = useToastStore()
 
 			try {
-				await api.admin.members.add(login)
+				await api.admin.members.add(login, color)
 				toast.show('Игрок добавлен', login)
 				await loadMembers()
 				return true
@@ -68,20 +75,20 @@ export const useAdminSettingsStore = defineStore(
 
 		const updateMember = async (
 			member: PartyMember,
-			input: { displayName: string | null; isAdmin: boolean },
+			input: { displayName: string | null; isAdmin: boolean; color: string },
 		) => {
 			const toast = useToastStore()
 
 			try {
 				await api.admin.members.update(member.login, input)
 				toast.show('Сохранено', member.login)
-				await loadMembers()
+				await Promise.all([loadMembers(), useMembersStore().load()])
 				return true
 			} catch (e) {
-				if (codeOf(e) === 'LAST_ADMIN') {
+				if (codeOf(e) === 'OWN_ADMIN_RIGHTS_REVOKE') {
 					toast.show(
 						'Нельзя снять админа',
-						'Это последний админ пати.',
+						'Права админа с себя снять нельзя.',
 						'danger',
 					)
 				} else {
@@ -98,13 +105,21 @@ export const useAdminSettingsStore = defineStore(
 			try {
 				await api.admin.members.remove(member.login)
 				toast.show('Удалён из пати', member.login, 'info')
-				await loadMembers()
+				await Promise.all([loadMembers(), useMembersStore().load()])
 			} catch (e) {
-				if (codeOf(e) === 'LAST_ADMIN') {
-					toast.show('Нельзя удалить', 'Это последний админ пати.', 'danger')
-				} else {
-					toast.error(e)
-				}
+				toast.error(e)
+			}
+		}
+
+		const restoreMember = async (member: PartyMember) => {
+			const toast = useToastStore()
+
+			try {
+				await api.admin.members.restore(member.login)
+				toast.show('Игрок вернулся в пати', member.login)
+				await Promise.all([loadMembers(), useMembersStore().load()])
+			} catch (e) {
+				toast.error(e)
 			}
 		}
 
@@ -117,6 +132,7 @@ export const useAdminSettingsStore = defineStore(
 			addMember,
 			updateMember,
 			removeMember,
+			restoreMember,
 		}
 	},
 )

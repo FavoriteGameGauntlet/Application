@@ -2,8 +2,8 @@ import { formatResource } from '../../utils/formatResource'
 import type {
 	Api,
 	GameEndState,
+	HistoryEventKind,
 	JournalEntry,
-	JournalSourceType,
 	Login,
 	PointType,
 	ResourceRef,
@@ -17,8 +17,7 @@ type HistoryChangeDto = {
 	/** absent for the points of the party */
 	login?: Login | null
 	resource: { kind: ResourceKindDto; id: number; name: string }
-	/** a resource other than points: `changed` when only its uses left changed */
-	action?: 'added' | 'removed' | 'changed' | null
+	eventKind: HistoryEventKind
 	desiredChangeValue?: number | null
 	actualChangeValue?: number | null
 	finalValue?: number | null
@@ -28,8 +27,11 @@ type HistoryEventDto = {
 	id: number
 	createdDate: string
 	actorLogin: Login
-	source: { type: JournalSourceType; id?: number | null; name?: string | null }
-	isManualChange: boolean
+	source: {
+		eventKind: HistoryEventKind
+		id?: number | null
+		name?: string | null
+	}
 	correctsEntryId?: number | null
 	/** set only on the event that ends a game */
 	endState?: GameEndState | null
@@ -74,12 +76,11 @@ const toChange = (
 
 	return {
 		login,
-		text:
-			change.action === 'added'
-				? `+${label}`
-				: change.action === 'removed'
-					? `−${label}`
-					: `${label} (использование)`,
+		text: change.eventKind.endsWith('_added')
+			? `+${label}`
+			: change.eventKind.endsWith('_removed')
+				? `−${label}`
+				: `${label} (использование)`,
 		resource,
 	}
 }
@@ -95,12 +96,11 @@ const toJournalEntry = (
 		at: event.createdDate,
 		actor: event.actorLogin,
 		source: {
-			type: source.type,
+			eventKind: source.eventKind,
 			...(source.id != null && { id: source.id }),
 			...(source.name != null && { name: source.name }),
-			...(source.type === 'game' && { event: event.endState ?? 'started' }),
+			...(event.endState != null && { endState: event.endState }),
 		},
-		manual: event.isManualChange,
 		...(event.correctsEntryId != null && {
 			correctsEntryId: event.correctsEntryId,
 		}),
@@ -119,7 +119,10 @@ export const journal: Api['journal'] = {
 				params.set('resource[id]', String(query.resource.id))
 			}
 		}
-		if (query.source) params.set('source', query.source)
+		// the array is sent as a repeated parameter (`form`, `explode: true`)
+		query.sourceEventKinds?.forEach((kind) =>
+			params.append('sourceEventKinds', kind),
+		)
 		if (query.from) params.set('from', query.from)
 		if (query.to) params.set('to', query.to)
 		if (query.limit !== undefined) params.set('limit', String(query.limit))

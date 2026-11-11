@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '../api-facade/api'
-import type { ExchangeOffer } from '../api-facade/contracts'
+import type { ExchangeOffer, ExchangeUse } from '../api-facade/contracts'
 import { StoreName } from '../enums/storeName'
 import { formatResource } from '../utils/formatResource'
 import { useJournalStore } from './journalStore'
@@ -15,16 +15,24 @@ export const useExchangesStore = defineStore(StoreName.Exchanges, () => {
 		list.value = await api.exchanges.list()
 	}
 
-	const execute = async (exchange: ExchangeOffer) => {
+	const execute = async (exchange: ExchangeOffer, use?: ExchangeUse) => {
 		const toast = useToastStore()
 		const resources = useResourcesStore()
 
+		// a side that doesn't apply all its entries gives only the picked ones
+		const received = use?.targetEntryIds
+			? exchange.targetEntries.filter(
+					(r) =>
+						r.entryId !== undefined && use.targetEntryIds?.includes(r.entryId),
+				)
+			: exchange.targetEntries
+
 		try {
-			await api.exchanges.execute(exchange.id)
+			await api.exchanges.execute(exchange.id, use)
 
 			toast.show(
 				'Обмен проведён',
-				exchange.targetEntries.map((r) => formatResource(r, resources.pointTypes)).join(', '),
+				received.map((r) => formatResource(r, resources.pointTypes)).join(', '),
 			)
 
 			await Promise.all([load(), resources.loadMine()])

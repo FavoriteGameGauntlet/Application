@@ -51,13 +51,28 @@ export const useSlots = (
 		}))
 	})
 
-/** the use needs a form when it needs targets or when the user picks copies */
+/** the use needs a form when the user picks the entries, names targets or picks copies */
 export const needsUseForm = (
 	entries: ItemEntryRow[] | undefined,
 	holder: Login,
+	shouldApplyToAll = true,
 ) =>
 	!!entries &&
-	(needsTargets(entries) || useSlots(entries, holder, []).length > 0)
+	(!shouldApplyToAll ||
+		needsTargets(entries) ||
+		useSlots(entries, holder, []).length > 0)
+
+/** the entries a use applies: all of them, or the ones the user picked by `entryId` */
+export const appliedEntries = (
+	entries: ItemEntryRow[],
+	shouldApplyToAll: boolean,
+	pickedIds: number[],
+) =>
+	shouldApplyToAll
+		? entries
+		: entries.filter(
+				(e) => e.entryId !== undefined && pickedIds.includes(e.entryId),
+			)
 
 /** whom the holder may name, by the conditions of the item */
 export const allowedTargets = (

@@ -11,6 +11,7 @@ import { useResourcesStore } from '../../stores/resourcesStore'
 import { useWheelStore, type WheelTab } from '../../stores/wheelStore'
 import { useWishlistStore } from '../../stores/wishlistStore'
 import { formatCost } from '../../utils/formatResource'
+import SpinEntriesDialog from './components/SpinEntriesDialog.vue'
 import SpinPaymentDialog from './components/SpinPaymentDialog.vue'
 
 const REEL_OFFSETS = [-3, -2, -1, 0, 1, 2, 3]
@@ -22,7 +23,9 @@ const wishlistStore = useWishlistStore()
 
 /** «Билет на колесо ×2, 50 золота»; empty when the spin of the group is free */
 const costText = (group?: WheelGroup) =>
-	(group?.cost ?? []).map((r) => formatCost(r, resourcesStore.pointTypes)).join(', ')
+	(group?.cost ?? [])
+		.map((r) => formatCost(r, resourcesStore.pointTypes))
+		.join(', ')
 
 /** the cost is charged when the result is applied */
 const resultCost = computed(() => {
@@ -85,12 +88,19 @@ const resultDescription = computed(() => {
 	const result = wheelStore.result
 
 	if (!result) return ''
-	if (wheelStore.resultStartsGame) return 'Станет текущей игрой, таймер начнётся с нуля.'
+	if (wheelStore.resultStartsGame)
+		return 'Станет текущей игрой, таймер начнётся с нуля.'
 
-	return result.result.description ?? `Эффект из группы «${wheelStore.resultSource}».`
+	return (
+		result.result.description ??
+		`Эффект из группы «${wheelStore.resultSource}».`
+	)
 })
 
-onMounted(() => wheelStore.load())
+onMounted(async () => {
+	await wheelStore.load()
+	await wheelStore.restore()
+})
 </script>
 
 <template>
@@ -145,7 +155,12 @@ onMounted(() => wheelStore.load())
 
 			<div class="main">
 				<div class="reel">
-					<div v-for="row in reel" :key="row.key" class="reel__row" :style="{ opacity: row.opacity }">
+					<div
+						v-for="row in reel"
+						:key="row.key"
+						class="reel__row"
+						:style="{ opacity: row.opacity }"
+					>
 						{{ row.text }}
 					</div>
 					<div class="reel__center">{{ reelCenter }}</div>
@@ -155,7 +170,9 @@ onMounted(() => wheelStore.load())
 					<UiButton
 						size="lg"
 						icon="refresh-cw"
-						:disabled="wheelStore.spinning || !wheelStore.pool.length || gameInProgress"
+						:disabled="
+							wheelStore.spinning || !wheelStore.pool.length || gameInProgress
+						"
 						@click="wheelStore.spin()"
 					>
 						{{ wheelStore.spinning ? 'Крутится…' : 'Крутить колесо' }}
@@ -170,12 +187,16 @@ onMounted(() => wheelStore.load())
 
 					<div class="result__head">
 						<div class="result__title">
-							<span class="result__name">{{ wheelStore.result.result.name }}</span>
+							<span class="result__name">{{
+								wheelStore.result.result.name
+							}}</span>
 						</div>
 						<UiButton variant="secondary" @click="wheelStore.apply()">
 							{{ wheelStore.resultStartsGame ? 'Взять игру' : 'Применить' }}
 						</UiButton>
-						<UiButton variant="outline" @click="wheelStore.clearResult()">Сбросить</UiButton>
+						<UiButton variant="outline" @click="wheelStore.discardResult()"
+							>Сбросить</UiButton
+						>
 					</div>
 
 					<div class="result__body">
@@ -183,7 +204,10 @@ onMounted(() => wheelStore.load())
 						<span v-if="resultCost" class="result__cost">
 							Спишется при применении: {{ resultCost }}
 						</span>
-						<div v-if="wheelStore.result.result.isManualChange" class="result__manual">
+						<div
+							v-if="wheelStore.result.result.isManualChange"
+							class="result__manual"
+						>
 							<UiBadge tone="info" dot>Вручную</UiBadge>
 							<span>после применения нужно внести изменение вручную</span>
 						</div>
@@ -192,6 +216,12 @@ onMounted(() => wheelStore.load())
 			</div>
 		</div>
 	</div>
+
+	<SpinEntriesDialog
+		:entries="wheelStore.pendingEntries"
+		@close="wheelStore.cancelEntries()"
+		@confirm="wheelStore.confirmEntries($event)"
+	/>
 
 	<SpinPaymentDialog
 		:choices="wheelStore.pendingChoices"

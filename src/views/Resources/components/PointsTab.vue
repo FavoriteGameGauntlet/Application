@@ -10,18 +10,25 @@ const resourcesStore = useResourcesStore()
 const sessionStore = useSessionStore()
 
 const query = ref('')
-const selectedType = ref<number | undefined>(resourcesStore.personalTypes[0]?.id)
-
-const selectedName = computed(
-	() => resourcesStore.personalTypes.find((t) => t.id === selectedType.value)?.name,
+const selectedType = ref<number | undefined>(
+	resourcesStore.personalTypes[0]?.id,
 )
 
-const myPoints = computed(() => resourcesStore.byUser[sessionStore.login]?.points ?? {})
+const selectedName = computed(
+	() =>
+		resourcesStore.personalTypes.find((t) => t.id === selectedType.value)?.name,
+)
+
+const myPoints = computed(
+	() => resourcesStore.byUser[sessionStore.login]?.points ?? {},
+)
 
 const types = computed(() => {
 	const q = query.value.trim().toLowerCase()
 
-	return resourcesStore.personalTypes.filter((t) => !q || t.name.toLowerCase().includes(q))
+	return resourcesStore.personalTypes.filter(
+		(t) => !q || t.name.toLowerCase().includes(q),
+	)
 })
 
 const rows = computed(() =>
@@ -63,7 +70,9 @@ watch(
 			<div class="table__row table__row--head">
 				<span>Игрок</span>
 				<span class="table__right table__sort">
-					<span class="table__name" :title="selectedName">{{ selectedName }}</span>
+					<span class="table__name" :title="selectedName">{{
+						selectedName
+					}}</span>
 					<span>↓</span>
 				</span>
 			</div>
@@ -77,11 +86,13 @@ watch(
 				<span class="user">
 					<UiUserAvatar
 						:name="row.user.login"
-						:color="`var(--user-${row.user.colorIndex})`"
+						:color="row.user.color"
 						:size="28"
 					/>
 					{{ row.user.login }}
-					<UiBadge v-if="row.user.login === sessionStore.login" tone="accent">ты</UiBadge>
+					<UiBadge v-if="row.user.login === sessionStore.login" tone="accent"
+						>ты</UiBadge
+					>
 				</span>
 				<span class="table__value">{{ row.value }}</span>
 			</div>

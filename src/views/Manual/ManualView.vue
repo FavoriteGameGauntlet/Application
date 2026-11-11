@@ -15,7 +15,12 @@ import { useMembersStore } from '../../stores/membersStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToastStore } from '../../stores/toastStore'
-import { formatJournalSource, formatMoment, parseSpan } from '../../utils/format'
+import {
+	formatJournalSource,
+	formatMoment,
+	parseSpan,
+} from '../../utils/format'
+import { isManualEntry } from '../../utils/journalSource'
 import { countItems } from '../../utils/userItems'
 
 type RowType = ManualChange['kind']
@@ -92,7 +97,9 @@ const userOptions = computed(() =>
 const resourceOptions = (type: RowType) => {
 	if (type === 'points' || type === 'shared-points') {
 		const types =
-			type === 'points' ? resourcesStore.personalTypes : resourcesStore.sharedTypes
+			type === 'points'
+				? resourcesStore.personalTypes
+				: resourcesStore.sharedTypes
 
 		return types.map((t) => ({ value: String(t.id), label: t.name }))
 	}
@@ -160,7 +167,8 @@ const outOfBounds = (row: Row, value: number) => {
 /** what the row does to the resources of the user and why it can't be applied */
 const calc = (row: Row) => {
 	const was = held(row)
-	const name = resourceOptions(row.type).find((o) => o.value === row.resId)?.label ?? ''
+	const name =
+		resourceOptions(row.type).find((o) => o.value === row.resId)?.label ?? ''
 
 	if (isNumeric(row.type)) {
 		const amount = Math.abs(parseInt(row.n, 10) || 0)
@@ -188,14 +196,18 @@ const calc = (row: Row) => {
 
 	return {
 		delta: 0,
-		duration: row.type === 'effect' && grant && span ? parseSpan(span) : undefined,
+		duration:
+			row.type === 'effect' && grant && span ? parseSpan(span) : undefined,
 		was: was ? 'есть' : 'нет',
 		now: grant ? 'есть' : 'нет',
 		changed: !!was !== grant,
 		error:
 			!grant && !was
 				? `У ${row.who} нет: ${name}`
-				: row.type === 'effect' && grant && span && parseSpan(span) === undefined
+				: row.type === 'effect' &&
+					  grant &&
+					  span &&
+					  parseSpan(span) === undefined
 					? 'Срок указан неверно'
 					: '',
 	}
@@ -248,7 +260,12 @@ const toChange = (row: Row): ManualChange => {
 		case 'item':
 			return { user: row.who, kind: 'item', id, delta: result.delta }
 		case 'perk':
-			return { user: row.who, kind: 'perk', id, op: row.act as 'grant' | 'revoke' }
+			return {
+				user: row.who,
+				kind: 'perk',
+				id,
+				op: row.act as 'grant' | 'revoke',
+			}
 		case 'effect':
 			return {
 				user: row.who,
@@ -332,14 +349,23 @@ onMounted(async () => {
 						<span class="entry__time">{{ formatMoment(draft.entry.at) }}</span>
 						<span class="entry__who">
 							<span class="entry__actor">{{ draft.entry.actor }}</span>
-							<span class="entry__source">{{ formatJournalSource(draft.entry.source, draft.entry.correctsEntryId) }}</span>
-							<UiBadge v-if="draft.entry.manual" tone="info" dot>вручную</UiBadge>
+							<span class="entry__source">{{
+								formatJournalSource(
+									draft.entry.source,
+									draft.entry.correctsEntryId,
+								)
+							}}</span>
+							<UiBadge v-if="isManualEntry(draft.entry)" tone="info" dot
+								>вручную</UiBadge
+							>
 						</span>
 						<span class="entry__changes">
 							<UiBadge
 								v-for="(change, i) in draft.entry.changes"
 								:key="i"
-								:tone="change.login === sessionStore.login ? 'accent' : 'neutral'"
+								:tone="
+									change.login === sessionStore.login ? 'accent' : 'neutral'
+								"
 							>
 								{{ change.login ? `${change.login}: ` : '' }}{{ change.text }}
 							</UiBadge>
@@ -406,10 +432,7 @@ onMounted(async () => {
 								<span class="row__values">
 									<span class="row__was">{{ view.result.was }}</span>
 									<span class="row__arrow">→</span>
-									<span
-										class="row__now"
-										:class="`row__now--${view.tone}`"
-									>
+									<span class="row__now" :class="`row__now--${view.tone}`">
 										{{ view.result.now }}
 									</span>
 								</span>
@@ -434,7 +457,9 @@ onMounted(async () => {
 							Добавить изменение
 						</UiButton>
 						<span class="card__spacer"></span>
-						<UiButton variant="outline" @click="manualStore.close()">Отмена</UiButton>
+						<UiButton variant="outline" @click="manualStore.close()"
+							>Отмена</UiButton
+						>
 						<UiButton icon="check" @click="onApply">Применить</UiButton>
 					</div>
 				</div>

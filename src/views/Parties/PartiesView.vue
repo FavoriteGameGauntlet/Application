@@ -18,6 +18,7 @@ import {
 	formatPeriod,
 	parseDateInput,
 } from '../../utils/format'
+import { isMemberColor, nextMemberColor } from '../../utils/memberColor'
 import { plural } from '../../utils/plural'
 
 const router = useRouter()
@@ -27,7 +28,8 @@ const toastStore = useToastStore()
 const meta = (party: Party) => {
 	const members = `${party.membersCount} ${plural(party.membersCount, ['участник', 'участника', 'участников'])}`
 
-	if (party.status === 'active') return `${members} · до ${formatDate(party.endsAt)}`
+	if (party.status === 'active')
+		return `${members} · до ${formatDate(party.endsAt)}`
 
 	return `${members} · ${formatPeriod(party.startsAt, party.endsAt)}.${new Date(party.endsAt).getFullYear()}`
 }
@@ -43,7 +45,7 @@ const items = computed(() =>
 /** the party that the dialog edits; `{}` is a new one, undefined means the dialog is closed */
 const editing = ref<{ party?: Party }>()
 
-const fields: FormField[] = [
+const fields = computed<FormField[]>(() => [
 	{ key: 'name', label: 'Название', placeholder: 'Осенний сезон' },
 	{
 		key: 'startsAt',
@@ -57,7 +59,18 @@ const fields: FormField[] = [
 		placeholder: '30.11.2026',
 		hint: 'Последний день включительно, позже начала. После него пати завершится.',
 	},
-]
+	// the creator joins the new party as a member; an existing party keeps its members' colors
+	...(editing.value?.party
+		? []
+		: [
+				{
+					key: 'color',
+					type: 'color' as const,
+					label: 'Твой цвет',
+					hint: 'Цвет твоего аватара в этой пати. Админ потом может его поменять.',
+				},
+			]),
+])
 
 const initial = computed<FormValues>(() => {
 	const party = editing.value?.party
@@ -66,6 +79,7 @@ const initial = computed<FormValues>(() => {
 		name: party?.name ?? '',
 		startsAt: party ? formatDateInput(party.startsAt) : '',
 		endsAt: party ? formatDateInput(party.endsAt) : '',
+		color: nextMemberColor([]),
 	}
 })
 
@@ -85,17 +99,33 @@ const onSave = async (values: FormValues) => {
 	}
 
 	if (Date.parse(endsAt) <= Date.parse(startsAt)) {
-		toastStore.show('Даты перепутаны', 'Конец должен быть позже начала.', 'danger')
+		toastStore.show(
+			'Даты перепутаны',
+			'Конец должен быть позже начала.',
+			'danger',
+		)
 		return
 	}
 
 	const party = editing.value?.party
+	const creatorColor = String(values.color ?? '')
+		.trim()
+		.toLowerCase()
+
+	if (!party && !isMemberColor(creatorColor)) {
+		toastStore.show(
+			'Проверь цвет',
+			'Нужен вид #ffb000: решётка и шесть цифр.',
+			'danger',
+		)
+		return
+	}
 
 	try {
 		if (party) {
 			await partiesStore.update(party.id, { name, startsAt, endsAt })
 		} else {
-			await partiesStore.create({ name, startsAt, endsAt })
+			await partiesStore.create({ name, startsAt, endsAt, creatorColor })
 		}
 
 		toastStore.show(party ? 'Сохранено' : 'Пати создана', name)
@@ -139,7 +169,9 @@ onMounted(async () => {
 			<div class="content">
 				<div class="head">
 					<UiPageTitle>Мои пати</UiPageTitle>
-					<UiButton variant="outline" icon="plus" @click="editing = {}">Новая пати</UiButton>
+					<UiButton variant="outline" icon="plus" @click="editing = {}"
+						>Новая пати</UiButton
+					>
 				</div>
 
 				<div v-for="item in items" :key="item.party.id" class="card">
@@ -185,7 +217,9 @@ onMounted(async () => {
 
 		<FormDialog
 			:open="editing !== undefined"
-			:title="editing?.party ? `Изменить «${editing.party.name}»` : 'Новая пати'"
+			:title="
+				editing?.party ? `Изменить «${editing.party.name}»` : 'Новая пати'
+			"
 			:fields
 			:initial
 			@close="editing = undefined"
