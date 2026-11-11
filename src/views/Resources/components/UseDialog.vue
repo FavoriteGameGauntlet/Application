@@ -200,17 +200,23 @@ const onSave = (values: FormValues) => {
 	)
 
 	emit('confirm', {
-		...(choosesEntries.value && { entryIds: pickedEntryIds.value }),
-		...(withTargets.value && { targetLogins: targets.value }),
+		...(choosesEntries.value && {
+			entryIds: listOf(values, 'entries').map(Number),
+		}),
+		...(withTargets.value && { targetLogins: listOf(values, 'targets') }),
 		...(userItemIds.length > 0 && { userItemIds }),
 	})
 }
+
+/** an inventory that is in the store may be old (it is read again only when someone looks at the player), so each one is read once per opening */
+const refreshed = new Set<Login>()
 
 watch(
 	() => subject,
 	() => {
 		targets.value = []
 		pickedEntryIds.value = []
+		refreshed.clear()
 	},
 )
 
@@ -227,7 +233,10 @@ watch(
 		)
 
 		logins.forEach((login) => {
-			if (!resourcesStore.byUser[login]) resourcesStore.loadUser(login)
+			if (refreshed.has(login)) return
+
+			refreshed.add(login)
+			resourcesStore.loadUser(login)
 		})
 	},
 	{ immediate: true },
