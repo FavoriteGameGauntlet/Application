@@ -270,7 +270,7 @@ const groupsOf = (field: FormField) => [{ options: field.options ?? [] }]
 								:style="{ gridColumn: field.column }"
 							>
 								<div v-if="field.type === 'arrow'" class="form__arrow">
-									<UiIcon name="arrow-left-right" :size="18" />
+									<UiIcon name="arrow-right" :size="18" />
 								</div>
 
 								<UiDateRange

@@ -123,6 +123,7 @@ const isPreset = (end: (start: Day) => Day) =>
 				aria-label="Начало"
 				@click="toggle('start')"
 			>
+				<UiIcon name="calendar" :size="18" color="var(--text-muted)" />
 				{{ formatDay(period.start) }}
 			</button>
 
@@ -137,6 +138,7 @@ const isPreset = (end: (start: Day) => Day) =>
 				aria-label="Конец"
 				@click="toggle('end')"
 			>
+				<UiIcon name="calendar" :size="18" color="var(--text-muted)" />
 				{{ formatDay(period.end) }}
 			</button>
 		</div>
@@ -178,12 +180,7 @@ const isPreset = (end: (start: Day) => Day) =>
 						aria-label="Прошлый месяц"
 						@click="month = shiftMonth(month, -1)"
 					>
-						<!-- there is no left chevron among the icons -->
-						<UiIcon
-							name="chevron-right"
-							:size="18"
-							style="transform: scaleX(-1)"
-						/>
+						<UiIcon name="chevron-left" :size="18" />
 					</button>
 					<span class="date-range__month">{{ formatMonth(month) }}</span>
 					<button
