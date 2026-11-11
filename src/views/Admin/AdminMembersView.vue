@@ -80,6 +80,7 @@ const fields = computed<FormField[]>(() =>
 				{
 					key: 'login',
 					label: 'Логин',
+					required: 'логин',
 					placeholder: 'dima',
 					hint: 'Игрок должен быть зарегистрирован.',
 				},
@@ -114,11 +115,6 @@ const onSave = async (values: FormValues) => {
 
 	if (!member) {
 		const login = String(values.login).trim()
-
-		if (!login) {
-			toastStore.show('Впиши название', 'Без него не сохранится.', 'danger')
-			return
-		}
 
 		if (await store.addMember(login, color)) dialog.value = undefined
 		return
@@ -243,7 +239,7 @@ onMounted(() => store.loadMembers())
 				? `Участник · ${dialog.member.login}`
 				: 'Добавить участника'
 		"
-		:fields
+		:sections="[{ fields }]"
 		:initial
 		@close="dialog = undefined"
 		@save="onSave"

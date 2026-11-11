@@ -14,6 +14,10 @@ type Props = {
 	autoFocus?: boolean
 	/** 40px high, for dense forms */
 	compact?: boolean
+	/** a quiet label for a field inside a titled group */
+	sub?: boolean
+	/** digits in the mono face, with the numeric keyboard */
+	numeric?: boolean
 }
 
 const { autoFocus } = defineProps<Props>()
@@ -30,17 +34,24 @@ onMounted(() => {
 </script>
 
 <template>
-	<UiField :label :hint :error>
+	<UiField :label :hint :error :sub>
 		<span
 			class="ui-input"
 			:class="{
 				'ui-input--error': error,
 				'ui-input--disabled': disabled,
 				'ui-input--compact': compact,
+				'ui-input--numeric': numeric,
 			}"
 		>
 			<UiIcon v-if="icon" :name="icon" :size="18" />
-			<input ref="input" v-model="model" v-bind="$attrs" :disabled />
+			<input
+				ref="input"
+				v-model="model"
+				v-bind="$attrs"
+				:inputmode="numeric ? 'numeric' : undefined"
+				:disabled
+			/>
 		</span>
 	</UiField>
 </template>
@@ -76,6 +87,11 @@ onMounted(() => {
 .ui-input--compact {
 	height: 40px;
 	padding: 0 10px;
+}
+
+.ui-input--numeric input {
+	font: 500 15px / 1 var(--font-mono);
+	font-variant-numeric: tabular-nums;
 }
 
 input {

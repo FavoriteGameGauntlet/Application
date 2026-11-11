@@ -1,20 +1,24 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import type { ChangeRow } from '../api-facade/contracts'
+import type { CatalogOption, ChangeRow } from '../api-facade/contracts'
 import { useAdminCatalogStore } from '../stores/adminCatalogStore'
 import type { FormRow, RowsVariant } from './formDialog'
-import UiButton from './ui/UiButton.vue'
+import UiFormSection from './ui/UiFormSection.vue'
 import UiIconButton from './ui/UiIconButton.vue'
-import UiInput from './ui/UiInput.vue'
-import UiSelect from './ui/UiSelect.vue'
+import type { OptionGroup } from './ui/UiOptionList.vue'
+import UiPicker from './ui/UiPicker.vue'
 
 type Props = {
 	variant: RowsVariant
 	label: string
 	hint?: string
+	/** what the rows are for, shown while there are none */
+	empty?: string
+	/** the text of the "+" link */
+	addLabel?: string
 }
 
-const { variant } = defineProps<Props>()
+const { variant, addLabel = 'Строка' } = defineProps<Props>()
 
 const rows = defineModel<FormRow[]>({ required: true })
 
@@ -22,35 +26,80 @@ const store = useAdminCatalogStore()
 
 type TargetKind = ChangeRow['kind']
 
-const kindLabels: Record<TargetKind, string> = {
-	points: 'Очки',
-	item: 'Предмет',
-	perk: 'Перк',
-	effect: 'Эффект',
-}
-
-const kindOptions = computed(() => [
-	...(variant === 'modifier'
-		? [{ value: 'points', label: kindLabels.points }]
-		: (Object.keys(kindLabels) as TargetKind[]).map((k) => ({
-				value: k,
-				label: kindLabels[k],
-			}))),
-	...(variant === 'item-entry'
-		? [{ value: 'user-item', label: 'Выбранный предмет' }]
-		: []),
-])
-
-const whoOptions = [
-	{ value: 'self', label: 'Тому, кто использует' },
-	{ value: 'chosen', label: 'Выбранным игрокам' },
+const whoGroups: OptionGroup[] = [
+	{
+		options: [
+			{ value: 'self', label: 'Владелец' },
+			{ value: 'chosen', label: 'Цель' },
+		],
+	},
 ]
 
-const targetOptions = (kind: string) =>
-	(store.targets[kind as TargetKind] ?? []).map((t) => ({
-		value: String(t.id),
-		label: t.name,
-	}))
+const actionGroups: OptionGroup[] = [
+	{
+		options: [
+			{ value: 'get', label: 'Получает' },
+			{ value: 'lose', label: 'Теряет' },
+		],
+	},
+]
+
+const resourceOption = (kind: TargetKind, target: CatalogOption) => ({
+	value: `${kind}:${target.id}`,
+	label: target.name,
+	meta: { perk: 'перк', effect: 'эффект' }[kind as string],
+})
+
+const resourceGroups = computed<OptionGroup[]>(() => {
+	const t = store.targets
+
+	if (variant === 'modifier') {
+		return [{ options: t.points.map((o) => resourceOption('points', o)) }]
+	}
+
+	return [
+		{
+			title: 'Очки',
+			options: t.points.map((o) => resourceOption('points', o)),
+		},
+		{
+			title: 'Предметы',
+			options: [
+				...t.item.map((o) => resourceOption('item', o)),
+				...(variant === 'item-entry'
+					? [
+							{
+								value: 'user-item',
+								label: 'Предмет на выбор',
+								hint: 'Игрок укажет сам, когда применит',
+							},
+						]
+					: []),
+			],
+		},
+		{
+			title: 'Перки и эффекты',
+			options: [
+				...t.perk.map((o) => resourceOption('perk', o)),
+				...t.effect.map((o) => resourceOption('effect', o)),
+			],
+		},
+	]
+})
+
+/** the sign of the amount is the action, so a cost has none */
+const hasAction = computed(() => variant !== 'cost')
+
+const isLose = (row: FormRow) => /^[-−]/.test(row.amount.trim())
+
+const absolute = (row: FormRow) => row.amount.trim().replace(/^[-−]/, '')
+
+const resourceOf = (row: FormRow) =>
+	row.kind === 'user-item'
+		? 'user-item'
+		: row.targetId
+			? `${row.kind}:${row.targetId}`
+			: ''
 
 const firstTarget = (kind: string) => store.targets[kind as TargetKind]?.[0]?.id
 
@@ -66,126 +115,145 @@ const addRow = () => {
 	})
 }
 
-const onKind = (row: FormRow, kind: string) => {
-	row.kind = kind
-	row.targetId = kind === 'user-item' ? '' : String(firstTarget(kind) ?? '')
-	// a perk or an effect is held once; a taken one keeps its minus
-	if (kind === 'perk' || kind === 'effect') {
-		row.amount = row.amount.trim().startsWith('-') ? '-1' : '1'
+const setResource = (row: FormRow, value: string) => {
+	if (value === 'user-item') {
+		row.kind = 'user-item'
+		row.targetId = ''
+	} else {
+		const [kind, id] = value.split(':')
+
+		row.kind = kind
+		row.targetId = id
+
+		// a perk or an effect is held once; a taken one keeps its minus
+		if (kind === 'perk' || kind === 'effect') {
+			row.amount = isLose(row) ? '-1' : '1'
+		}
 	}
 }
 
-const amountLabel = computed(() =>
-	variant === 'cost' ? 'Сколько' : 'Сколько (минус — забрать)',
-)
+const setAction = (row: FormRow, action: string) => {
+	row.amount = (action === 'lose' ? '-' : '') + absolute(row)
+}
+
+/** a typed sign is dropped: the sign belongs to the action */
+const setAmount = (row: FormRow, event: Event) => {
+	const input = event.target as HTMLInputElement
+	const digits = input.value.replace(/^[-−+\s]+/, '')
+
+	input.value = digits
+	row.amount = (hasAction.value && isLose(row) ? '-' : '') + digits
+}
 
 onMounted(() => store.loadTargets())
 </script>
 
 <template>
-	<div class="rows">
-		<span class="rows__label">{{ label }}</span>
+	<UiFormSection
+		:title="label"
+		:empty
+		:is-empty="!rows.length"
+		:add-label
+		:hint
+		@add="addRow"
+	>
+		<div v-if="rows.length" class="rows" :class="`rows--${variant}`">
+			<span v-if="variant === 'item-entry'" class="rows__sub">Кто</span>
+			<span v-if="hasAction" class="rows__sub">Действие</span>
+			<span class="rows__sub">Кол-во</span>
+			<span class="rows__sub">{{
+				variant === 'modifier' ? 'Очки' : 'Ресурс'
+			}}</span>
+			<span></span>
 
-		<div v-for="(row, i) in rows" :key="i" class="row">
-			<div
-				class="row__main"
-				:class="{ 'row__main--wide': row.kind === 'user-item' }"
-			>
-				<UiSelect
-					v-if="variant !== 'modifier'"
+			<template v-for="(row, i) in rows" :key="i">
+				<UiPicker
+					v-if="variant === 'item-entry'"
 					compact
-					:options="kindOptions"
-					:model-value="row.kind"
-					aria-label="Тип"
-					@update:model-value="onKind(row, $event)"
+					:groups="whoGroups"
+					:model-value="row.who"
+					aria-label="Кто"
+					@update:model-value="row.who = $event as FormRow['who']"
 				/>
-				<UiSelect
-					v-if="row.kind !== 'user-item'"
+				<UiPicker
+					v-if="hasAction"
 					compact
-					:options="targetOptions(row.kind)"
-					:model-value="row.targetId"
-					:placeholder="targetOptions(row.kind).length ? undefined : 'Пока нет'"
-					aria-label="Что"
-					@update:model-value="row.targetId = $event"
+					:groups="actionGroups"
+					:tone="isLose(row) ? 'lose' : 'get'"
+					:model-value="isLose(row) ? 'lose' : 'get'"
+					aria-label="Действие"
+					@update:model-value="setAction(row, $event)"
 				/>
-				<UiInput
-					v-model="row.amount"
-					compact
+				<input
+					class="rows__amount"
 					inputmode="numeric"
-					:aria-label="amountLabel"
+					:value="hasAction ? absolute(row) : row.amount"
+					aria-label="Количество"
+					@input="setAmount(row, $event)"
+				/>
+				<UiPicker
+					compact
+					search
+					:panel-width="260"
+					:groups="resourceGroups"
+					:model-value="resourceOf(row)"
+					placeholder="Выбери ресурс"
+					aria-label="Ресурс"
+					@update:model-value="setResource(row, $event)"
 				/>
 				<UiIconButton
 					type="button"
 					icon="x"
 					size="sm"
-					label="Убрать строку"
+					label="Убрать"
 					@click="rows.splice(i, 1)"
 				/>
-			</div>
-
-			<UiSelect
-				v-if="variant === 'item-entry'"
-				compact
-				:options="whoOptions"
-				:model-value="row.who"
-				aria-label="Кому"
-				@update:model-value="row.who = $event as FormRow['who']"
-			/>
+			</template>
 		</div>
-
-		<UiButton
-			type="button"
-			variant="ghost"
-			size="sm"
-			icon="plus"
-			@click="addRow"
-		>
-			Добавить строку
-		</UiButton>
-
-		<span v-if="hint" class="rows__hint">{{ hint }}</span>
-	</div>
+	</UiFormSection>
 </template>
 
 <style scoped>
 .rows {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	gap: 8px;
-}
-
-.rows__label {
-	font: var(--type-label);
-	color: var(--text-muted);
-}
-
-.rows__hint {
-	font: var(--type-body-sm);
-	color: var(--text-muted);
-	text-wrap: pretty;
-}
-
-.row {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-	align-self: stretch;
-}
-
-.row__main {
 	display: grid;
-	grid-template-columns: 110px minmax(0, 1fr) 76px 32px;
-	gap: 8px;
 	align-items: center;
+	gap: 8px;
 }
 
-/* no target select: a user item has no catalogue entry */
-.row__main--wide {
-	grid-template-columns: 150px minmax(0, 1fr) 76px 32px;
+.rows--item-entry {
+	grid-template-columns: 124px 124px 56px minmax(0, 1fr) 32px;
 }
 
-.row__main--wide > :nth-child(2) {
-	grid-column: 2;
+.rows--change,
+.rows--modifier {
+	grid-template-columns: 140px 64px minmax(0, 1fr) 32px;
+}
+
+.rows--cost {
+	grid-template-columns: 60px minmax(0, 1fr) 32px;
+}
+
+.rows__sub {
+	font: 600 13px / 1 var(--font-body);
+	color: var(--text-muted);
+	white-space: nowrap;
+}
+
+.rows__amount {
+	width: 100%;
+	height: 36px;
+	padding: 0 10px;
+	font: 500 14px / 1 var(--font-mono);
+	font-variant-numeric: tabular-nums;
+	color: var(--text-strong);
+	background: var(--surface-card);
+	border: var(--border-width) solid var(--border-default);
+	border-radius: var(--radius-sm);
+	outline: 0;
+}
+
+.rows__amount:focus {
+	border-color: var(--border-strong);
+	box-shadow: var(--shadow-focus);
 }
 </style>

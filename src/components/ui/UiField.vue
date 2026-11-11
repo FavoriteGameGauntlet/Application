@@ -3,14 +3,23 @@ type Props = {
 	label?: string
 	hint?: string
 	error?: string
+	/** a quiet label for a field inside a titled group */
+	sub?: boolean
+	/** the content is not one control (chips, buttons), so a click on the label must not reach it */
+	group?: boolean
 }
 
 defineProps<Props>()
 </script>
 
 <template>
-	<label class="ui-field">
-		<span v-if="label" class="ui-field__label">{{ label }}</span>
+	<component :is="group ? 'div' : 'label'" class="ui-field">
+		<span
+			v-if="label"
+			class="ui-field__label"
+			:class="{ 'ui-field__label--sub': sub }"
+			>{{ label }}</span
+		>
 		<slot />
 		<span
 			v-if="error || hint"
@@ -19,7 +28,7 @@ defineProps<Props>()
 		>
 			{{ error || hint }}
 		</span>
-	</label>
+	</component>
 </template>
 
 <style scoped>
@@ -27,6 +36,7 @@ defineProps<Props>()
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
+	min-width: 0;
 	font: var(--type-body-sm);
 }
 
@@ -35,6 +45,13 @@ defineProps<Props>()
 	letter-spacing: var(--tracking-label);
 	text-transform: uppercase;
 	color: var(--text-muted);
+}
+
+.ui-field__label--sub {
+	font: 600 13px / 1 var(--font-body);
+	letter-spacing: 0;
+	text-transform: none;
+	white-space: nowrap;
 }
 
 .ui-field__note {
