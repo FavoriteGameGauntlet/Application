@@ -59,9 +59,13 @@ const listPointTypes = async (includeDeleted: boolean) => {
 	const [types, removed, holders] = await Promise.all([
 		getPointTypes(),
 		includeDeleted
-			? partyPath().then(async (path) =>
-					(await http.get<{ response: PointType[] }>(`${path}/points/types/removed`))
-						.body,
+			? partyPath().then(
+					async (path) =>
+						(
+							await http.get<{ response: PointType[] }>(
+								`${path}/points/types/removed`,
+							)
+						).body,
 				)
 			: [],
 		countPointHolders(),
@@ -100,6 +104,7 @@ const resourceBody = (kind: ResourceCatalogKind, input: CatalogEntryInput) => {
 				name,
 				description,
 				usesMax: input.usesMax ?? 1,
+				shouldApplyToAll: input.shouldApplyToAll ?? true,
 				entries: (input.entries ?? []).map(fromItemEntryRow),
 				conditions: input.conditions ?? [],
 			}
@@ -129,6 +134,7 @@ const resourceBody = (kind: ResourceCatalogKind, input: CatalogEntryInput) => {
 				}),
 				...(ability && {
 					ability: {
+						shouldApplyToAll: ability.shouldApplyToAll,
 						entries: ability.entries.map(fromItemEntryRow),
 						...(ability.uses && { uses: ability.uses }),
 						chargesMax: ability.chargesMax,
@@ -191,7 +197,8 @@ export const adminCatalog: Pick<
 		delete body.ability
 
 		// a field left out keeps its value, so clearing one is sent explicitly
-		if (kind === 'effects' || kind === 'perks') body.modifiers = body.modifiers ?? []
+		if (kind === 'effects' || kind === 'perks')
+			body.modifiers = body.modifiers ?? []
 		if (kind === 'effects') body.durationInSeconds = input.duration ?? null
 
 		const [{ body: dto }, pointTypes] = await Promise.all([

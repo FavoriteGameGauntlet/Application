@@ -10,7 +10,7 @@
 --red-500:#E5484D;--red-100:#FCE3E4;--red-700:#A5262B;
 --blue-500:#3D7BFF;--blue-100:#E1EAFF;--blue-700:#2350B8;
 /* User / territory colours — used for map ownership, avatars, standings */
---user-1:#FFB000;--user-2:#3D7BFF;--user-3:#E5484D;--user-4:#22B07D;--user-5:#A35CFF;--user-6:#FF7A2F;--user-7:#1FC2D6;--user-8:#FF5CAE;
+--user-1:#FFB000;
 --territory-neutral:#D7D2EA;--territory-neutral-dark:#322B5E;
 
 /* Semantic aliases — light (default) */

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
+import ColorPicker from './ColorPicker.vue'
 import RowsEditor from './RowsEditor.vue'
 import UiButton from './ui/UiButton.vue'
 import UiCheckbox from './ui/UiCheckbox.vue'
@@ -30,7 +31,9 @@ const drafts = reactive<Record<string, string>>({})
 const rowLists = reactive<Record<string, FormRow[]>>({})
 
 /** the rows need more room than a single line */
-const width = computed(() => (fields.some((f) => f.type === 'rows') ? 560 : 440))
+const width = computed(() =>
+	fields.some((f) => f.type === 'rows') ? 560 : 440,
+)
 
 watch(
 	() => open,
@@ -101,6 +104,13 @@ const onSubmit = () => {
 						<span class="note">{{ field.hint }}</span>
 					</div>
 
+					<ColorPicker
+						v-else-if="field.type === 'color'"
+						v-model="texts[field.key]"
+						:label="field.label"
+						:hint="field.hint"
+					/>
+
 					<RowsEditor
 						v-else-if="field.type === 'rows'"
 						v-model="rowLists[field.key]"
@@ -167,7 +177,9 @@ const onSubmit = () => {
 			</div>
 
 			<div class="form__actions">
-				<UiButton type="button" variant="outline" @click="emit('close')">Отмена</UiButton>
+				<UiButton type="button" variant="outline" @click="emit('close')"
+					>Отмена</UiButton
+				>
 				<UiButton type="submit" icon="check">Сохранить</UiButton>
 			</div>
 		</form>

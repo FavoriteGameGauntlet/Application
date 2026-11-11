@@ -12,13 +12,20 @@ import UiDialog from '../../../components/ui/UiDialog.vue'
 import { useMembersStore } from '../../../stores/membersStore'
 import { useResourcesStore } from '../../../stores/resourcesStore'
 import { useSessionStore } from '../../../stores/sessionStore'
-import { allowedTargets, needsTargets, useSlots } from '../../../utils/itemUse'
+import {
+	allowedTargets,
+	appliedEntries,
+	needsTargets,
+	useSlots,
+} from '../../../utils/itemUse'
 
 /** what is being used: an item copy or the ability of a perk */
 export type UseSubject = {
 	title: string
 	text: string
 	entries: ItemEntryRow[]
+	/** false: the user picks which of the entries to apply */
+	shouldApplyToAll: boolean
 	conditions: ItemCondition[]
 	/** the copy that is being used can't pay for its own use */
 	excludeCopyId?: number
@@ -37,10 +44,21 @@ const resourcesStore = useResourcesStore()
 const sessionStore = useSessionStore()
 
 const targets = ref<Login[]>([])
+/** the `entryId`s picked when the subject doesn't apply all its entries */
+const pickedEntryIds = ref<number[]>([])
 /** the ids picked for the slots that need a choice, by the index of the slot */
 const picked = reactive<Record<number, number[]>>({})
 
-const entries = computed(() => subject?.entries ?? [])
+const choosesEntries = computed(() => subject?.shouldApplyToAll === false)
+
+/** targets and copies concern the applied entries only */
+const entries = computed(() =>
+	appliedEntries(
+		subject?.entries ?? [],
+		!choosesEntries.value,
+		pickedEntryIds.value,
+	),
+)
 const withTargets = computed(() => needsTargets(entries.value))
 
 const candidates = computed(() =>
@@ -97,6 +115,7 @@ const heading = (owner: Login | 'party', count: number) =>
 
 const canConfirm = computed(
 	() =>
+		(!choosesEntries.value || pickedEntryIds.value.length > 0) &&
 		(!withTargets.value || targets.value.length > 0) &&
 		shortRows.value.length === 0 &&
 		chosenRows.value.every((r) => picked[r.index]?.length === r.slot.count),
@@ -111,6 +130,12 @@ const toggle = (index: number, id: number, on: boolean) => {
 	picked[index] = on ? [...ids, id] : ids.filter((x) => x !== id)
 }
 
+const toggleEntry = (entryId: number, on: boolean) => {
+	pickedEntryIds.value = on
+		? [...pickedEntryIds.value, entryId]
+		: pickedEntryIds.value.filter((x) => x !== entryId)
+}
+
 const toggleTarget = (login: Login, on: boolean) => {
 	targets.value = on
 		? [...targets.value, login]
@@ -123,6 +148,7 @@ const onConfirm = () => {
 	)
 
 	emit('confirm', {
+		...(choosesEntries.value && { entryIds: pickedEntryIds.value }),
 		...(withTargets.value && { targetLogins: targets.value }),
 		...(userItemIds.length > 0 && { userItemIds }),
 	})
@@ -136,12 +162,13 @@ watch(
 	() => subject,
 	() => {
 		targets.value = []
+		pickedEntryIds.value = []
 		resetPicks()
 	},
 )
 
-// the slots follow the named users, so the copies picked for the old ones are dropped
-watch(targets, resetPicks)
+// the slots follow the named users and the applied entries, so the copies picked for the old ones are dropped
+watch([targets, pickedEntryIds], resetPicks)
 
 // the inventories the slots take from
 watch(
@@ -174,6 +201,18 @@ watch(
 			<div class="dialog__block">
 				<span class="label">Что произойдёт</span>
 				<span class="dialog__text">{{ subject?.text }}</span>
+			</div>
+
+			<div v-if="choosesEntries" class="dialog__block">
+				<span class="label">Что применить</span>
+
+				<UiCheckbox
+					v-for="entry in subject?.entries"
+					:key="entry.entryId"
+					:label="entry.text ?? ''"
+					:model-value="pickedEntryIds.includes(entry.entryId!)"
+					@update:model-value="toggleEntry(entry.entryId!, $event)"
+				/>
 			</div>
 
 			<div v-if="withTargets" class="dialog__block">

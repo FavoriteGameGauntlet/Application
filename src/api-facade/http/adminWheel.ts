@@ -1,9 +1,4 @@
-import type {
-	AdminWheelGroup,
-	Api,
-	PointType,
-	SpinCostRow,
-} from '../contracts'
+import type { AdminWheelGroup, Api, PointType, SpinCostRow } from '../contracts'
 import { http } from '../http'
 import { type NamedChangeEntryDto, toChangeText } from './changeEntry'
 import { getPointTypes, partyPath } from './context'
@@ -24,6 +19,7 @@ type WheelGroupRowDto = {
 	name: string
 	description?: string
 	isManualChange?: boolean
+	shouldApplyToAll?: boolean
 	entries?: NamedChangeEntryDto[]
 }
 
@@ -32,10 +28,11 @@ const groupKind = {
 	changes: 'changes',
 } as const satisfies Record<AdminWheelGroup['kind'], WheelGroupDto['kind']>
 
+/** the groups of games and of changes of the party, the wishlists are not in the catalogue */
 const listGroups = async () =>
 	(
 		await http.get<{ response: WheelGroupDto[] }>(
-			`${await partyPath()}/wheel/groups`,
+			`${await partyPath()}/wheel/catalog/groups`,
 		)
 	).body
 
@@ -64,6 +61,7 @@ const toAdminGroup = (
 		changes: (row.entries ?? []).map((e) => toChangeText(e, pointTypes)),
 		entries: (row.entries ?? []).map(toChangeRow),
 		isManualChange: row.isManualChange === true,
+		shouldApplyToAll: row.shouldApplyToAll !== false,
 	})),
 })
 
@@ -73,7 +71,7 @@ const changeGroup = async (
 ) => {
 	const { name, shouldCheckHistory } = await findGroup(groupId)
 
-	await http.put(`${await partyPath()}/wheel/groups/${groupId}`, {
+	await http.put(`${await partyPath()}/wheel/catalog/groups/${groupId}`, {
 		body: { name, shouldCheckHistory, ...patch },
 	})
 }
@@ -110,21 +108,27 @@ export const adminWheel: Pick<
 > = {
 	groups: async (kind) => {
 		const path = await partyPath()
-		const [groups, pointTypes] = await Promise.all([
+		const [catalog, mine, pointTypes] = await Promise.all([
 			listGroups(),
+			// the catalogue has no wishlists, the admin sees their own one as a group nobody edits
+			kind === 'games'
+				? http.get<{ response: WheelGroupDto[] }>(`${path}/wheel/groups`)
+				: undefined,
 			getPointTypes(),
 		])
+		const wishlists = (mine?.body ?? []).filter((g) => g.kind === 'wishlist')
 
 		return Promise.all(
-			groups
+			[...wishlists, ...catalog]
 				.filter((g) => (g.kind === 'changes') === (kind === 'changes'))
 				.map(async (group) => {
 					// the wishlist is the player's own, the catalogue has no rows of it (404)
-					if (group.kind === 'wishlist') return toAdminGroup(group, [], pointTypes)
+					if (group.kind === 'wishlist')
+						return toAdminGroup(group, [], pointTypes)
 
 					const { body: rows } = await http.get<{
 						response: WheelGroupRowDto[]
-					}>(`${path}/wheel/groups/${group.id}/rows`)
+					}>(`${path}/wheel/catalog/groups/${group.id}/rows`)
 
 					return toAdminGroup(group, rows, pointTypes)
 				}),
@@ -133,7 +137,7 @@ export const adminWheel: Pick<
 
 	createGroup: async (kind, name) => {
 		const { body } = await http.post<{ response: WheelGroupDto }>(
-			`${await partyPath()}/wheel/groups`,
+			`${await partyPath()}/wheel/catalog/groups`,
 			{
 				body: {
 					name,
@@ -153,36 +157,38 @@ export const adminWheel: Pick<
 		changeGroup(groupId, { shouldCheckHistory: noRepeat }),
 
 	removeGroup: async (groupId) => {
-		await http.delete(`${await partyPath()}/wheel/groups/${groupId}`)
+		await http.delete(`${await partyPath()}/wheel/catalog/groups/${groupId}`)
 	},
 
 	saveEntry: async (groupId, entryId, input) => {
-		if (entryId !== undefined) {
-			throw new Error(
-				'The backend cannot change a wheel item: remove it and add a new one',
-			)
-		}
-
 		const { kind } = await findGroup(groupId)
-		const { name, description, isManualChange, entries } = input
+		const { name, description, isManualChange, shouldApplyToAll, entries } =
+			input
+		const path = `${await partyPath()}/wheel/catalog/groups/${groupId}/rows`
 
-		await http.post(`${await partyPath()}/wheel/groups/${groupId}/rows`, {
-			// a group of games takes only the name of the game
-			body:
-				kind === 'changes'
-					? {
-							name,
-							...(description && { description }),
-							isManualChange,
-							entries: entries.map(fromChangeRow),
-						}
-					: { name },
-		})
+		// a group of games takes only the name of the game
+		const body =
+			kind === 'changes'
+				? {
+						name,
+						...(description && { description }),
+						isManualChange,
+						shouldApplyToAll,
+						entries: entries.map(fromChangeRow),
+					}
+				: { name }
+
+		if (entryId === undefined) {
+			await http.post(path, { body })
+		} else {
+			// the item is replaced as a whole, the same body as when it is added
+			await http.put(`${path}/${entryId}`, { body })
+		}
 	},
 
 	removeEntry: async (groupId, entryId) => {
 		await http.delete(
-			`${await partyPath()}/wheel/groups/${groupId}/rows/${entryId}`,
+			`${await partyPath()}/wheel/catalog/groups/${groupId}/rows/${entryId}`,
 		)
 	},
 
@@ -190,8 +196,9 @@ export const adminWheel: Pick<
 		(await findGroup(groupId)).cost.map(toSpinCostRow),
 
 	saveSpinCost: async (groupId, rows) => {
-		await http.put(`${await partyPath()}/wheel/groups/${groupId}/spin-cost`, {
-			body: { cost: rows.map(fromCostRow) },
-		})
+		await http.put(
+			`${await partyPath()}/wheel/catalog/groups/${groupId}/spin-cost`,
+			{ body: { cost: rows.map(fromCostRow) } },
+		)
 	},
 }

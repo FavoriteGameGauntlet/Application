@@ -1,39 +1,43 @@
-import type { Api, RewardRow } from '../contracts'
+import type { Api, RewardRow, Rewards, RewardTrigger } from '../contracts'
 import { http } from '../http'
 import type { NamedChangeEntryDto } from './changeEntry'
 import { partyPath } from './context'
 import { fromChangeRow, toChangeRow } from './rows'
 
-type Trigger = 'timer' | 'game'
+const triggers: RewardTrigger[] = [
+	'timer',
+	'timer_created',
+	'game_completed',
+	'game_cancelled',
+	'game_rerolled',
+]
 
-const triggers: Trigger[] = ['timer', 'game']
-
-const getRows = async (path: string, trigger: Trigger): Promise<RewardRow[]> =>
+const getRows = async (
+	path: string,
+	trigger: RewardTrigger,
+): Promise<RewardRow[]> =>
 	(
 		await http.get<{ response: { entries: NamedChangeEntryDto[] } }>(
 			`${path}/rewards/${trigger}`,
 		)
 	).body.entries.map(toChangeRow)
 
+const getAll = async (path: string) =>
+	Object.fromEntries(
+		await Promise.all(
+			triggers.map(async (t) => [t, await getRows(path, t)] as const),
+		),
+	) as Rewards
+
 const sameRows = (a: RewardRow[], b: RewardRow[]) =>
 	JSON.stringify(a) === JSON.stringify(b)
 
 export const adminRewards: Api['admin']['rewards'] = {
-	get: async () => {
-		const path = await partyPath()
-		const [timer, game] = await Promise.all(
-			triggers.map((t) => getRows(path, t)),
-		)
-
-		return { timer, game }
-	},
+	get: async () => getAll(await partyPath()),
 
 	save: async (rewards) => {
 		const path = await partyPath()
-		const [timer, game] = await Promise.all(
-			triggers.map((t) => getRows(path, t)),
-		)
-		const current = { timer, game }
+		const current = await getAll(path)
 
 		// setting a reward keeps the previous one as removed, so only a changed block is written
 		for (const trigger of triggers) {

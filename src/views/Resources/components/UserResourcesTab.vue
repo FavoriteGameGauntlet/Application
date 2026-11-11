@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { ItemUse, Perk, ResourceKind, UserItem } from '../../../api-facade/contracts'
+import type {
+	ItemUse,
+	Perk,
+	ResourceKind,
+	UserItem,
+} from '../../../api-facade/contracts'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiIcon from '../../../components/ui/UiIcon.vue'
@@ -36,7 +41,10 @@ const emptyHints = {
 const query = ref('')
 const selected = ref(user ?? sessionStore.login)
 /** what the open dialog uses and what happens when it is confirmed */
-const using = ref<{ subject: UseSubject; run: (use: ItemUse) => Promise<void> }>()
+const using = ref<{
+	subject: UseSubject
+	run: (use: ItemUse) => Promise<void>
+}>()
 
 const openItem = (item: UserItem) => {
 	using.value = {
@@ -44,6 +52,7 @@ const openItem = (item: UserItem) => {
 			title: `Использовать «${item.name}»`,
 			text: item.description,
 			entries: item.entries ?? [],
+			shouldApplyToAll: item.shouldApplyToAll,
 			conditions: item.conditions ?? [],
 			excludeCopyId: item.id,
 		},
@@ -53,7 +62,13 @@ const openItem = (item: UserItem) => {
 
 /** a perk with targets or copies to pick asks first, any other is used at once */
 const usePerk = (perk: Perk) => {
-	if (!needsUseForm(perk.abilityEntries, sessionStore.login)) {
+	if (
+		!needsUseForm(
+			perk.abilityEntries,
+			sessionStore.login,
+			perk.abilityShouldApplyToAll,
+		)
+	) {
 		return resourcesStore.usePerk(perk.id, perk.name)
 	}
 
@@ -62,6 +77,7 @@ const usePerk = (perk: Perk) => {
 			title: `Использовать «${perk.name}»`,
 			text: perk.description,
 			entries: perk.abilityEntries ?? [],
+			shouldApplyToAll: perk.abilityShouldApplyToAll ?? true,
 			conditions: [],
 		},
 		run: (use) => resourcesStore.usePerk(perk.id, perk.name, use),
@@ -94,7 +110,8 @@ const users = computed(() => {
 		.map((p) => ({
 			...p,
 			label: p.login === sessionStore.login ? `${p.login} (ты)` : p.login,
-			count: resourcesStore.summaries[kind]?.find((s) => s.login === p.login)?.count,
+			count: resourcesStore.summaries[kind]?.find((s) => s.login === p.login)
+				?.count,
 		}))
 })
 
@@ -134,7 +151,7 @@ const emptyText = computed(
 					:class="{ 'user--on': p.login === selected }"
 					@click="selected = p.login"
 				>
-					<UiUserAvatar :name="p.login" :color="`var(--user-${p.colorIndex})`" :size="22" />
+					<UiUserAvatar :name="p.login" :color="p.color" :size="22" />
 					<span class="user__name">{{ p.label }}</span>
 					<span class="user__count">{{ p.count }}</span>
 				</div>
@@ -143,7 +160,11 @@ const emptyText = computed(
 
 		<div class="content">
 			<div class="who">
-				<UiUserAvatar :name="selected" :color="membersStore.colorOf(selected)" :size="36" />
+				<UiUserAvatar
+					:name="selected"
+					:color="membersStore.colorOf(selected)"
+					:size="36"
+				/>
 				<span class="who__name">{{ selected }}</span>
 				<UiBadge v-if="isMine" tone="accent">ты</UiBadge>
 			</div>
@@ -156,7 +177,9 @@ const emptyText = computed(
 					<span class="card__text">{{ item.description }}</span>
 					<span class="card__meta">
 						<span>Использований</span>
-						<span class="card__meta-value">{{ item.usesLeft }} из {{ item.usesMax }}</span>
+						<span class="card__meta-value"
+							>{{ item.usesLeft }} из {{ item.usesMax }}</span
+						>
 					</span>
 					<UiButton
 						v-if="isMine"
@@ -186,12 +209,18 @@ const emptyText = computed(
 							</UiBadge>
 						</div>
 						<span class="effect__text">{{ perk.description }}</span>
-						<span v-for="modifier in perk.modifiers" :key="modifier" class="effect__text">
+						<span
+							v-for="modifier in perk.modifiers"
+							:key="modifier"
+							class="effect__text"
+						>
 							{{ modifier }}
 						</span>
 						<span v-if="perk.kind === 'active'" class="effect__uses">
 							<span>Использований</span>
-							<span class="card__meta-value">{{ perk.usesLeft }} из {{ perk.usesMax }}</span>
+							<span class="card__meta-value"
+								>{{ perk.usesLeft }} из {{ perk.usesMax }}</span
+							>
 						</span>
 					</div>
 
@@ -210,7 +239,9 @@ const emptyText = computed(
 
 			<div v-else class="cards">
 				<div v-for="effect in resources?.effects" :key="effect.id" class="card">
-					<span class="card__title" :title="effect.name">{{ effect.name }}</span>
+					<span class="card__title" :title="effect.name">{{
+						effect.name
+					}}</span>
 					<span class="card__desc">{{ effect.description }}</span>
 					<span class="card__source">{{ effect.source }}</span>
 
@@ -424,7 +455,6 @@ const emptyText = computed(
 	text-transform: uppercase;
 	color: var(--text-muted);
 }
-
 
 .effect__text {
 	font: var(--type-body-sm);

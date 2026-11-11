@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import type { ExchangeOffer, ResourceRef } from '../../api-facade/contracts'
 import UserResourcesPanel from '../../components/UserResourcesPanel.vue'
 import UiButton from '../../components/ui/UiButton.vue'
+import UiCheckbox from '../../components/ui/UiCheckbox.vue'
 import UiDialog from '../../components/ui/UiDialog.vue'
 import UiIcon from '../../components/ui/UiIcon.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
@@ -17,12 +18,49 @@ const resourcesStore = useResourcesStore()
 const sessionStore = useSessionStore()
 
 const confirming = ref<ExchangeOffer>()
+/** the `entryId`s the user picked on a side that doesn't apply all its entries */
+const pickedSource = ref<number[]>([])
+const pickedTarget = ref<number[]>([])
+
+const open = (exchange: ExchangeOffer) => {
+	pickedSource.value = []
+	pickedTarget.value = []
+	confirming.value = exchange
+}
+
+const toggle = (side: 'source' | 'target', entryId: number, on: boolean) => {
+	const picked = side === 'source' ? pickedSource : pickedTarget
+
+	picked.value = on
+		? [...picked.value, entryId]
+		: picked.value.filter((x) => x !== entryId)
+}
+
+/** the entries of a side that the exchange applies */
+const applied = (refs: ResourceRef[], all: boolean, picked: number[]) =>
+	all
+		? refs
+		: refs.filter((r) => r.entryId !== undefined && picked.includes(r.entryId))
+
+const choosesSource = computed(
+	() => confirming.value?.sourceShouldApplyToAll === false,
+)
+const choosesTarget = computed(
+	() => confirming.value?.targetShouldApplyToAll === false,
+)
+
+const canConfirm = computed(
+	() =>
+		(!choosesSource.value || pickedSource.value.length > 0) &&
+		(!choosesTarget.value || pickedTarget.value.length > 0),
+)
 
 const selectedUser = ref(sessionStore.login)
 
 const mine = computed(() => resourcesStore.byUser[sessionStore.login])
 
-const text = (ref: ResourceRef) => formatResource(ref, resourcesStore.pointTypes)
+const text = (ref: ResourceRef) =>
+	formatResource(ref, resourcesStore.pointTypes)
 
 /** how many of the resource the current user has */
 const have = (ref: ResourceRef) => {
@@ -43,7 +81,10 @@ const cards = computed(() =>
 		give: exchange.sourceEntries.map((ref) => {
 			const enough = have(ref) >= amountOf(ref)
 
-			return { text: enough ? text(ref) : `${text(ref)} (${have(ref)})`, enough }
+			return {
+				text: enough ? text(ref) : `${text(ref)} (${have(ref)})`,
+				enough,
+			}
 		}),
 		get: exchange.targetEntries.map(text),
 	})),
@@ -55,8 +96,16 @@ const confirmRows = computed(() => {
 	if (!exchange) return []
 
 	return [
-		...exchange.sourceEntries.map((ref) => ({ ref, sign: -1 })),
-		...exchange.targetEntries.map((ref) => ({ ref, sign: 1 })),
+		...applied(
+			exchange.sourceEntries,
+			exchange.sourceShouldApplyToAll,
+			pickedSource.value,
+		).map((ref) => ({ ref, sign: -1 })),
+		...applied(
+			exchange.targetEntries,
+			exchange.targetShouldApplyToAll,
+			pickedTarget.value,
+		).map((ref) => ({ ref, sign: 1 })),
 	].map(({ ref, sign }) => {
 		if (ref.kind === 'perk') {
 			return { name: `Перк «${ref.name}»`, was: 'нет', now: 'есть', gain: true }
@@ -79,7 +128,14 @@ const onConfirm = async () => {
 	confirming.value = undefined
 
 	if (exchange) {
-		await exchangesStore.execute(exchange)
+		await exchangesStore.execute(exchange, {
+			...(exchange.sourceShouldApplyToAll === false && {
+				sourceEntryIds: pickedSource.value,
+			}),
+			...(exchange.targetShouldApplyToAll === false && {
+				targetEntryIds: pickedTarget.value,
+			}),
+		})
 	}
 }
 
@@ -104,7 +160,7 @@ onMounted(() => exchangesStore.load())
 							variant="secondary"
 							icon="arrow-left-right"
 							:disabled="!card.exchange.available"
-							@click="confirming = card.exchange"
+							@click="open(card.exchange)"
 						>
 							Обменять
 						</UiButton>
@@ -134,21 +190,28 @@ onMounted(() => exchangesStore.load())
 						<div class="side">
 							<span class="label">Получаешь</span>
 							<div class="pills">
-								<span v-for="pill in card.get" :key="pill" class="pill pill--get">
+								<span
+									v-for="pill in card.get"
+									:key="pill"
+									class="pill pill--get"
+								>
 									{{ pill }}
 								</span>
 							</div>
 						</div>
 					</div>
 
-					<span v-if="card.exchange.unavailableReason === 'perk_owned'" class="card__why">
+					<span
+						v-if="card.exchange.unavailableReason === 'perk_owned'"
+						class="card__why"
+					>
 						Перк уже есть, второй раз не купить.
 					</span>
 				</div>
 
 				<span class="note">
-					Пунктирная рамка — ресурса не хватает, в скобках сколько есть. Обмен недоступен, пока
-					не хватает хотя бы одного.
+					Пунктирная рамка — ресурса не хватает, в скобках сколько есть. Обмен
+					недоступен, пока не хватает хотя бы одного.
 				</span>
 			</div>
 
@@ -163,6 +226,28 @@ onMounted(() => exchangesStore.load())
 		@close="confirming = undefined"
 	>
 		<div class="dialog">
+			<div v-if="choosesSource" class="dialog__pick">
+				<span class="label">Что отдать</span>
+				<UiCheckbox
+					v-for="entry in confirming?.sourceEntries"
+					:key="entry.entryId"
+					:label="text(entry)"
+					:model-value="pickedSource.includes(entry.entryId!)"
+					@update:model-value="toggle('source', entry.entryId!, $event)"
+				/>
+			</div>
+
+			<div v-if="choosesTarget" class="dialog__pick">
+				<span class="label">Что получить</span>
+				<UiCheckbox
+					v-for="entry in confirming?.targetEntries"
+					:key="entry.entryId"
+					:label="text(entry)"
+					:model-value="pickedTarget.includes(entry.entryId!)"
+					@update:model-value="toggle('target', entry.entryId!, $event)"
+				/>
+			</div>
+
 			<div class="dialog__table">
 				<div class="dialog__row dialog__row--head">
 					<span>Ресурс</span>
@@ -174,13 +259,21 @@ onMounted(() => exchangesStore.load())
 					<span class="dialog__name">{{ row.name }}</span>
 					<span class="dialog__was">{{ row.was }}</span>
 					<span class="dialog__arrow">→</span>
-					<span class="dialog__now" :class="{ 'dialog__now--gain': row.gain }">{{ row.now }}</span>
+					<span
+						class="dialog__now"
+						:class="{ 'dialog__now--gain': row.gain }"
+						>{{ row.now }}</span
+					>
 				</div>
 			</div>
 
 			<div class="dialog__actions">
-				<UiButton variant="outline" @click="confirming = undefined">Отмена</UiButton>
-				<UiButton icon="check" @click="onConfirm">Обменять</UiButton>
+				<UiButton variant="outline" @click="confirming = undefined"
+					>Отмена</UiButton
+				>
+				<UiButton icon="check" :disabled="!canConfirm" @click="onConfirm"
+					>Обменять</UiButton
+				>
 			</div>
 		</div>
 	</UiDialog>
@@ -316,6 +409,12 @@ onMounted(() => exchangesStore.load())
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
+}
+
+.dialog__pick {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
 }
 
 .dialog__table {

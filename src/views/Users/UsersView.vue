@@ -49,24 +49,36 @@ onMounted(() => membersStore.load())
 				:key="member.user.login"
 				class="table__row table__row--body"
 				:class="{ 'table__row--me': member.user.login === sessionStore.login }"
-				@click="router.push({ name: RouteName.UserDetail, params: { login: member.user.login } })"
+				@click="
+					router.push({
+						name: RouteName.UserDetail,
+						params: { login: member.user.login },
+					})
+				"
 			>
 				<span class="user">
 					<UiUserAvatar
 						:name="member.user.login"
-						:color="`var(--user-${member.user.colorIndex})`"
+						:color="member.user.color"
 						:size="28"
 					/>
 					{{ member.displayName ?? member.user.login }}
-					<span v-if="member.displayName" class="user__login">{{ member.user.login }}</span>
-					<UiBadge v-if="member.user.login === sessionStore.login" tone="accent">ты</UiBadge>
+					<span v-if="member.displayName" class="user__login">{{
+						member.user.login
+					}}</span>
+					<UiBadge v-if="member.user.login === sessionStore.login" tone="accent"
+						>ты</UiBadge
+					>
 				</span>
 				<span class="table__status">
 					<UiBadge :tone="userStatusView[member.status].tone" dot>
 						{{ userStatusView[member.status].label }}
 					</UiBadge>
 				</span>
-				<span class="table__game" :class="{ 'table__game--none': !member.currentGame }">
+				<span
+					class="table__game"
+					:class="{ 'table__game--none': !member.currentGame }"
+				>
 					{{ member.currentGame ?? 'нет игры' }}
 				</span>
 				<span class="table__num">{{ formatHours(member.playedSeconds) }}</span>
@@ -76,7 +88,8 @@ onMounted(() => membersStore.load())
 		</div>
 
 		<span class="note">
-			Очки, предметы и эффекты — в профиле игрока. Нажми на строку, чтобы его открыть.
+			Очки, предметы и эффекты — в профиле игрока. Нажми на строку, чтобы его
+			открыть.
 		</span>
 	</div>
 </template>
@@ -109,7 +122,10 @@ onMounted(() => membersStore.load())
 
 .table__row {
 	display: grid;
-	grid-template-columns: minmax(120px, 1fr) 120px minmax(120px, 1.2fr) 76px 76px 76px;
+	grid-template-columns: minmax(120px, 1fr) 120px minmax(
+			120px,
+			1.2fr
+		) 76px 76px 76px;
 	gap: 12px;
 	align-items: center;
 }

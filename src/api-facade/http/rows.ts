@@ -54,10 +54,13 @@ export const toChangeRow = (entry: NamedChangeEntryDto): ChangeRow => {
 
 export const toItemEntryRow = (entry: NamedItemEntryDto): ItemEntryRow => {
 	const who = entry.target
+	const entryId = entry.entryId === undefined ? {} : { entryId: entry.entryId }
 
-	if (entry.userItem) return { kind: 'user-item', amount: entry.amount, who }
+	if (entry.userItem) {
+		return { kind: 'user-item', amount: entry.amount, who, ...entryId }
+	}
 
-	return { ...toChangeRow(entry), who }
+	return { ...toChangeRow(entry), who, ...entryId }
 }
 
 export const toModifierRow = (

@@ -47,32 +47,45 @@ export const formatMoment = (iso: ISODate) => {
 
 /** «предмет «Колобок»», «колесо · «×2 золото»», «исправление» */
 export const formatJournalSource = (
-	{ type, name, event }: JournalSource,
+	{ eventKind, name, endState }: JournalSource,
 	correctsEntryId?: number,
 ) => {
-	switch (type) {
-		case 'item':
+	switch (eventKind) {
+		case 'item_added':
+		case 'item_uses_changed':
+		case 'item_removed':
 			return `предмет «${name}»`
-		case 'perk':
+		case 'perk_added':
+		case 'perk_uses_changed':
+		case 'perk_charges_changed':
+		case 'perk_removed':
 			return `перк «${name}»`
-		case 'effect':
+		case 'effect_added':
+		case 'effect_removed':
 			return `эффект «${name}»`
-		case 'wheel_row':
+		case 'wheel_row_applied':
 			return `колесо · «${name}»`
-		case 'exchange':
+		case 'exchange_used':
 			return `обмен «${name}»`
-		case 'timer':
-			return name ? `таймер · ${name}` : 'таймер'
-		case 'game':
-			return event === 'started'
-				? `начало игры · ${name}`
-				: event === 'completed'
-					? `прохождение · ${name}`
-					: event === 'rerolled'
-						? `перекрут игры · ${name}`
-						: `отмена игры · ${name}`
-		case 'manual':
+		case 'timer_created':
+			return 'новый таймер'
+		case 'timer_ended':
+			return 'таймер'
+		case 'game_started':
+			return `начало игры · ${name}`
+		case 'game_ended':
+			return endState === 'completed'
+				? `прохождение · ${name}`
+				: endState === 'rerolled'
+					? `перекрут игры · ${name}`
+					: `отмена игры · ${name}`
+		case 'manual_granted':
 			return correctsEntryId === undefined ? 'ручное изменение' : 'исправление'
+		case 'point_changed':
+			return 'изменение очков'
+		default:
+			// the backend adds kinds over time, an unknown one is shown as it is
+			return eventKind
 	}
 }
 

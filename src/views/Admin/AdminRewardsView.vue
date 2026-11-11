@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import type { CatalogEntry, RewardRow, Rewards } from '../../api-facade/contracts'
+import type {
+	CatalogEntry,
+	RewardRow,
+	Rewards,
+} from '../../api-facade/contracts'
 import type { FormRow } from '../../components/formDialog'
 import { changeRowsToForm, parseChangeRows } from '../../utils/formRows'
 import { useToastStore } from '../../stores/toastStore'
@@ -23,8 +27,19 @@ const settingsStore = useAdminSettingsStore()
 const toastStore = useToastStore()
 
 /** the rows as the admin types them */
-const draft = reactive<Record<Block, FormRow[]>>({ timer: [], game: [] })
-const targets = ref<Record<Kind, CatalogEntry[]>>({ points: [], item: [], perk: [], effect: [] })
+const draft = reactive<Record<Block, FormRow[]>>({
+	timer: [],
+	timer_created: [],
+	game_completed: [],
+	game_cancelled: [],
+	game_rerolled: [],
+})
+const targets = ref<Record<Kind, CatalogEntry[]>>({
+	points: [],
+	item: [],
+	perk: [],
+	effect: [],
+})
 
 const kindOptions = [
 	{ value: 'points', label: 'Очки' },
@@ -33,15 +48,39 @@ const kindOptions = [
 	{ value: 'effect', label: 'Эффект' },
 ]
 
-const defaultAmounts: Record<Kind, string> = { points: '10', item: '1', perk: '1', effect: '1' }
+const defaultAmounts: Record<Kind, string> = {
+	points: '10',
+	item: '1',
+	perk: '1',
+	effect: '1',
+}
 
 const blocks = computed<{ key: Block; title: string; next: string }[]>(() => [
+	{
+		key: 'timer_created',
+		title: 'За созданный таймер',
+		next: 'Действуют на следующие таймеры.',
+	},
 	{
 		key: 'timer',
 		title: 'За завершённый таймер',
 		next: 'Действуют на следующие таймеры.',
 	},
-	{ key: 'game', title: 'За завершение игры', next: 'Действуют на следующие игры.' },
+	{
+		key: 'game_completed',
+		title: 'За завершение игры',
+		next: 'Действуют на следующие игры.',
+	},
+	{
+		key: 'game_cancelled',
+		title: 'За отмену игры',
+		next: 'Действуют на следующие игры.',
+	},
+	{
+		key: 'game_rerolled',
+		title: 'За перекрут игры',
+		next: 'Действуют на следующие игры.',
+	},
 ])
 
 const targetOptions = (kind: Kind) =>
@@ -103,8 +142,9 @@ onMounted(async () => {
 	])
 
 	targets.value = { points, item: items, perk: perks, effect: effects }
-	draft.timer = changeRowsToForm(settingsStore.rewards.timer)
-	draft.game = changeRowsToForm(settingsStore.rewards.game)
+	for (const { key } of blocks.value) {
+		draft[key] = changeRowsToForm(settingsStore.rewards[key])
+	}
 })
 </script>
 
@@ -128,7 +168,11 @@ onMounted(async () => {
 					aria-label="Что"
 					@update:model-value="row.targetId = $event"
 				/>
-				<UiInput v-model="row.amount" inputmode="numeric" aria-label="Сколько" />
+				<UiInput
+					v-model="row.amount"
+					inputmode="numeric"
+					aria-label="Сколько"
+				/>
 				<UiIconButton
 					icon="x"
 					size="sm"
@@ -137,23 +181,38 @@ onMounted(async () => {
 				/>
 			</div>
 
-			<span v-if="!draft[block.key].length" class="card__empty">Награды нет.</span>
+			<span v-if="!draft[block.key].length" class="card__empty"
+				>Награды нет.</span
+			>
 
 			<div class="card__actions">
-				<UiButton variant="ghost" size="sm" icon="plus" @click="addRow(block.key)">
+				<UiButton
+					variant="ghost"
+					size="sm"
+					icon="plus"
+					@click="addRow(block.key)"
+				>
 					Добавить строку
 				</UiButton>
-				<UiButton variant="ghost" size="sm" class="card__danger" @click="onClear(block)">
+				<UiButton
+					variant="ghost"
+					size="sm"
+					class="card__danger"
+					@click="onClear(block)"
+				>
 					Убрать награду
 				</UiButton>
 				<div class="card__spacer"></div>
-				<UiButton variant="secondary" icon="check" @click="onSave(block)">Сохранить</UiButton>
+				<UiButton variant="secondary" icon="check" @click="onSave(block)"
+					>Сохранить</UiButton
+				>
 			</div>
 		</div>
 
 		<span class="note">
-			Длительность таймера меняется в «Системных параметрах». Новая награда действует только на
-			следующие таймеры и игры, уже выданные не пересчитываются.
+			Длительность таймера меняется в «Системных параметрах». Новая награда
+			действует только на следующие таймеры и игры, уже выданные не
+			пересчитываются.
 		</span>
 	</div>
 </template>

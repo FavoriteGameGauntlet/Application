@@ -3,7 +3,6 @@ import { computed, reactive, ref, useTemplateRef, watch } from 'vue'
 import type {
 	JournalEntry,
 	JournalQuery,
-	JournalSourceType,
 	ResourceRef,
 } from '../../../api-facade/contracts'
 import { useClickOutside } from '../../../composables/useClickOutside'
@@ -16,6 +15,10 @@ import { useMembersStore } from '../../../stores/membersStore'
 import { useResourcesStore } from '../../../stores/resourcesStore'
 import { useSessionStore } from '../../../stores/sessionStore'
 import { formatJournalSource, formatMoment } from '../../../utils/format'
+import {
+	isManualEntry,
+	journalSourceGroups,
+} from '../../../utils/journalSource'
 
 type FilterKey = 'user' | 'resource' | 'source' | 'period'
 
@@ -78,14 +81,7 @@ const specs = computed(() => [
 		title: 'Источник',
 		options: [
 			{ value: ALL, label: 'все' },
-			{ value: 'item', label: 'предмет' },
-			{ value: 'perk', label: 'перк' },
-			{ value: 'effect', label: 'эффект' },
-			{ value: 'wheel_row', label: 'колесо' },
-			{ value: 'exchange', label: 'обмен' },
-			{ value: 'timer', label: 'таймер' },
-			{ value: 'game', label: 'игра' },
-			{ value: 'manual', label: 'вручную' },
+			...journalSourceGroups.map(({ value, label }) => ({ value, label })),
 		],
 	},
 	{
@@ -134,7 +130,9 @@ watch(
 		entries.value = await journalStore.fetch({
 			user: filters.user || undefined,
 			resource: toResource(filters.resource),
-			source: (filters.source || undefined) as JournalSourceType | undefined,
+			sourceEventKinds: journalSourceGroups.find(
+				(g) => g.value === filters.source,
+			)?.kinds,
 			from: new Date(Date.now() - PERIOD_MS[filters.period]).toISOString(),
 		})
 	},
@@ -145,7 +143,6 @@ const pick = (key: FilterKey, value: string) => {
 	filters[key] = value
 	openFilter.value = undefined
 }
-
 </script>
 
 <template>
@@ -183,12 +180,18 @@ const pick = (key: FilterKey, value: string) => {
 			<span></span>
 		</div>
 
-		<div v-for="entry in entries" :key="entry.id" class="table__row table__row--body">
+		<div
+			v-for="entry in entries"
+			:key="entry.id"
+			class="table__row table__row--body"
+		>
 			<span class="table__time">{{ formatMoment(entry.at) }}</span>
 			<span class="table__who">
 				<span class="table__actor">{{ entry.actor }}</span>
-				<span class="table__source">{{ formatJournalSource(entry.source, entry.correctsEntryId) }}</span>
-				<UiBadge v-if="entry.manual" tone="info" dot>вручную</UiBadge>
+				<span class="table__source">{{
+					formatJournalSource(entry.source, entry.correctsEntryId)
+				}}</span>
+				<UiBadge v-if="isManualEntry(entry)" tone="info" dot>вручную</UiBadge>
 			</span>
 			<span class="table__changes">
 				<UiBadge
@@ -209,7 +212,9 @@ const pick = (key: FilterKey, value: string) => {
 			</span>
 		</div>
 
-		<div v-if="!entries.length" class="table__empty">Под эти фильтры ничего нет.</div>
+		<div v-if="!entries.length" class="table__empty">
+			Под эти фильтры ничего нет.
+		</div>
 	</div>
 </template>
 

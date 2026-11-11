@@ -30,8 +30,12 @@ export const useWishlistStore = defineStore(StoreName.Wishlist, () => {
 			toast.show(`Добавлено в вишлист${owner}`, name)
 			return true
 		} catch (e) {
-			if ((e as HttpErrorResponse).body?.code === 'DUPLICATE') {
+			const code = (e as HttpErrorResponse).body?.code
+
+			if (code === 'WISHLIST_GAME_ALREADY_EXISTS') {
 				toast.show(`Уже в вишлисте${owner}`, name, 'info')
+			} else if (code === 'GAME_ALREADY_PICKED') {
+				toast.show(`Игру уже выбирали${owner}`, name, 'info')
 			} else {
 				toast.error(e)
 			}

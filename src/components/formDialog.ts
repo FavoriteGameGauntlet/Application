@@ -2,7 +2,15 @@ export type FormField = {
 	key: string
 	label: string
 	/** a single line by default */
-	type?: 'line' | 'area' | 'tags' | 'check' | 'select' | 'rows' | 'note'
+	type?:
+		| 'line'
+		| 'area'
+		| 'tags'
+		| 'check'
+		| 'select'
+		| 'rows'
+		| 'note'
+		| 'color'
 	placeholder?: string
 	hint?: string
 	/** for `select` */
@@ -28,5 +36,5 @@ export type FormRow = {
 	who: 'self' | 'chosen'
 }
 
-/** `line`, `area` and `select` give a string, `tags` a list, `check` a flag, `rows` a list of rows */
+/** `line`, `area`, `select` and `color` give a string, `tags` a list, `check` a flag, `rows` a list of rows */
 export type FormValues = Record<string, string | string[] | boolean | FormRow[]>

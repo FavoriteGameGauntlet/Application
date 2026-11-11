@@ -88,7 +88,10 @@ export const useAdminWheelStore = defineStore(StoreName.AdminWheel, () => {
 	const saveEntry = (
 		target: AdminWheelGroup,
 		entry: AdminWheelEntry | undefined,
-		input: Pick<AdminWheelEntry, 'name' | 'description' | 'entries' | 'isManualChange'>,
+		input: Pick<
+			AdminWheelEntry,
+			'name' | 'description' | 'entries' | 'isManualChange' | 'shouldApplyToAll'
+		>,
 	) =>
 		run(() => api.admin.wheel.saveEntry(target.id, entry?.id, input), {
 			title: entry ? 'Сохранено' : 'Добавлено',
@@ -102,7 +105,8 @@ export const useAdminWheelStore = defineStore(StoreName.AdminWheel, () => {
 			tone: 'info',
 		})
 
-	const loadSpinCost = (target: AdminWheelGroup) => api.admin.wheel.spinCost(target.id)
+	const loadSpinCost = (target: AdminWheelGroup) =>
+		api.admin.wheel.spinCost(target.id)
 
 	const saveSpinCost = async (target: AdminWheelGroup, rows: SpinCostRow[]) => {
 		const toastStore = useToastStore()

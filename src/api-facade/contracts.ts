@@ -7,8 +7,8 @@ export type Seconds = number
 
 export type UserRef = {
 	login: Login
-	/** 1..8 → --user-N */
-	colorIndex: number
+	/** the color the client chose when the member joined, lowercase hex: `#ffb000` */
+	color: string
 }
 
 /**
@@ -21,11 +21,20 @@ export type UserStatus = 'playing' | 'paused' | 'offline'
 export type TimerState = 'created' | 'running' | 'paused'
 
 /** every entity is identified by an integer id, the name is only for display */
-export type ResourceRef =
+export type ResourceRef = (
 	| { kind: 'points'; id: number; name: string; amount: number }
 	| { kind: 'item'; id: number; name: string; amount: number }
 	| { kind: 'perk'; id: number; name: string }
 	| { kind: 'effect'; id: number; name: string; duration?: Seconds }
+) & {
+	/**
+	 * the id of the entry among the entries of its change; a user who picks the
+	 * entries to apply (`shouldApplyToAll` is false) names them by it
+	 */
+	entryId?: number
+	/** the entry with its sign as text («−1 золото»), set where the user picks among entries and the amount alone would hide the sign */
+	text?: string
+}
 
 /**
  * What a spin of changes costs. Points, items, perks and effects are taken the
@@ -109,6 +118,8 @@ export type WheelEntry = {
 	description?: string
 	/** the manual change form has to be opened after the entry is applied */
 	isManualChange?: boolean
+	/** false: the user picks which of `entries` to apply; changes only */
+	shouldApplyToAll?: boolean
 	/** changes that are applied automatically, there may be some next to isManualChange */
 	entries?: ResourceRef[]
 }
@@ -178,6 +189,8 @@ export type UserItem = {
 	description: string
 	usesLeft: number
 	usesMax: number
+	/** false: the user picks which of the entries to apply, each time */
+	shouldApplyToAll: boolean
 	/** what using the copy does; decides whether the user names targets and picks copies */
 	entries?: ItemEntryRow[]
 	/** what has to hold for the item to be used */
@@ -196,6 +209,8 @@ export type Perk = {
 	usesMax?: number
 	/** active perks only: what using the ability does */
 	abilityEntries?: ItemEntryRow[]
+	/** active perks only, false: the user picks which of the entries to apply */
+	abilityShouldApplyToAll?: boolean
 }
 
 export type Effect = {
@@ -228,25 +243,21 @@ export type ResourceHistoryRow = { at: ISODate; source: string; delta: string }
 
 // 6. Journal
 
-/** the `Type` of the root history event on the backend */
-export type JournalSourceType =
-	| 'item'
-	| 'perk'
-	| 'effect'
-	| 'wheel_row'
-	| 'exchange'
-	| 'manual'
-	| 'timer'
-	| 'game'
+/**
+ * What happened, as the backend names it: `item_added`, `perk_uses_changed`,
+ * `game_ended`, `manual_granted`... New kinds can appear, so it is a string
+ * and an unknown one is shown as it is.
+ */
+export type HistoryEventKind = string
 
 export type JournalSource = {
-	type: JournalSourceType
+	eventKind: HistoryEventKind
 	/** the item, the perk, the effect, the exchange, the wheel row or the game */
 	id?: number
-	/** the name of the entity above, a manual change has none */
+	/** the name of the entity above, a manual change and a timer have none */
 	name?: string
-	/** game only: what happened to the game */
-	event?: 'started' | GameEndState
+	/** `game_ended` only: how the game ended */
+	endState?: GameEndState
 }
 
 export type JournalEntry = {
@@ -254,8 +265,6 @@ export type JournalEntry = {
 	at: ISODate
 	actor: Login
 	source: JournalSource
-	/** badge «вручную» */
-	manual: boolean
 	/** set on an entry that corrects another one, the corrected entry stays as it was */
 	correctsEntryId?: number
 	/** empty for a game that was started, cancelled or rerolled */
@@ -272,7 +281,8 @@ export type JournalQuery = {
 	user?: Login
 	/** a point type, an item, a perk or an effect; no id means any of that kind */
 	resource?: { kind: ResourceRef['kind']; id?: number }
-	source?: JournalSourceType
+	/** an event kind that matches nothing is not an error, it just finds no entries */
+	sourceEventKinds?: HistoryEventKind[]
 	from?: ISODate
 	to?: ISODate
 	limit?: number
@@ -305,6 +315,10 @@ export type ExchangeOffer = {
 	sourceEntries: ResourceRef[]
 	/** what the user gets */
 	targetEntries: ResourceRef[]
+	/** false: the user picks which of `sourceEntries` to give */
+	sourceShouldApplyToAll: boolean
+	/** false: the user picks which of `targetEntries` to get */
+	targetShouldApplyToAll: boolean
 	available: boolean
 	unavailableReason?: 'insufficient' | 'perk_owned'
 }
@@ -340,13 +354,40 @@ export type ManualRequest = {
  * the order of the entries.
  */
 export type ItemUse = {
+	/** the `entryId`s to apply; required when `shouldApplyToAll` is false, not accepted otherwise */
+	entryIds?: number[]
 	targetLogins?: Login[]
 	userItemIds?: number[]
+}
+
+/** What the user adds to an exchange: who pays, and the entries of a side that doesn't apply to all. */
+export type ExchangeUse = {
+	/** the users who pay instead of the one making the exchange */
+	targetLogins?: Login[]
+	sourceEntryIds?: number[]
+	targetEntryIds?: number[]
+}
+
+/**
+ * What the user adds to the apply of a spin: whom the item concerns (a group of
+ * changes only), the entries of an item that doesn't apply to all, and the
+ * payment of the cost.
+ */
+export type WheelApply = {
+	payment?: SpinPayment
+	targetLogins?: Login[]
+	entryIds?: number[]
 }
 
 // 10. Parties
 
 export type PartyRole = 'admin' | 'user'
+
+/** a party to create: the creator joins it as a member, so they pick their color too */
+export type PartyCreateInput = PartyInput & {
+	/** lowercase hex: `#ffb000` */
+	creatorColor: string
+}
 
 export type PartyInput = {
 	name: string
@@ -390,6 +431,10 @@ export type ItemEntryWho = 'self' | 'chosen'
 
 /** One thing using an item or a perk ability does. */
 export type ItemEntryRow = {
+	/** set on an entry read from the backend, see `ResourceRef.entryId` */
+	entryId?: number
+	/** the entry as text («+50 золота»), set on the entries of a held item or perk so a user can pick among them */
+	text?: string
 	/** `user-item`: no target in the catalogue, the copies are picked when the item is used */
 	kind: ChangeRow['kind'] | 'user-item'
 	/** not set for `user-item` */
@@ -416,6 +461,8 @@ export type PointModifierRow = {
 
 /** What the holder of a perk can do on their own. */
 export type PerkAbility = {
+	/** false: the user picks which of the entries to apply, each time */
+	shouldApplyToAll: boolean
 	entries: ItemEntryRow[]
 	/** how often it can be used; not set = without limit, then no charges and no renewal */
 	uses?: { max: number; start: number }
@@ -453,6 +500,8 @@ export type CatalogEntry = {
 	perkKind?: 'active' | 'passive'
 	/** items: what using the item does */
 	entries?: ItemEntryRow[]
+	/** items, false: the user picks which of the entries to apply, each time */
+	shouldApplyToAll?: boolean
 	/** items */
 	conditions?: ItemCondition[]
 	/** effects, perks: point changes applied while it is active or held */
@@ -475,6 +524,8 @@ export type AdminExchange = {
 	description: string
 	sourceEntries: ResourceRef[]
 	targetEntries: ResourceRef[]
+	sourceShouldApplyToAll: boolean
+	targetShouldApplyToAll: boolean
 	deleted: boolean
 }
 
@@ -483,8 +534,12 @@ export type AdminExchangeInput = {
 	description: string
 	/** what the user gives, amounts are positive */
 	sourceEntries: SpinCostRow[]
+	/** false: the user picks which of the entries to give */
+	sourceShouldApplyToAll: boolean
 	/** what the user gets, amounts are positive */
 	targetEntries: SpinCostRow[]
+	/** false: the user picks which of the entries to get */
+	targetShouldApplyToAll: boolean
 }
 
 export type AdminWheelEntry = {
@@ -497,6 +552,8 @@ export type AdminWheelEntry = {
 	entries: ChangeRow[]
 	/** the user makes a change by hand after the item fell, see `manual` */
 	isManualChange: boolean
+	/** false: the user who gets the item picks which of the entries to apply */
+	shouldApplyToAll: boolean
 }
 
 export type AdminWheelGroup = {
@@ -516,7 +573,19 @@ export type AdminWheelGroup = {
  */
 export type RewardRow = ChangeRow
 
-export type Rewards = { timer: RewardRow[]; game: RewardRow[] }
+/**
+ * What gives a reward: `timer` a timer of a user ends, `timer_created` a timer
+ * is created, `game_completed` / `game_cancelled` / `game_rerolled` a user ends
+ * their current game in that way.
+ */
+export type RewardTrigger =
+	| 'timer'
+	| 'timer_created'
+	| 'game_completed'
+	| 'game_cancelled'
+	| 'game_rerolled'
+
+export type Rewards = Record<RewardTrigger, RewardRow[]>
 
 /** a setting of the party; the values are text, the backend does not check them */
 export type SystemParameter = {
@@ -539,13 +608,21 @@ export type SpinCostRow = {
  * What the user gives for a spin of changes: the ids of the chosen copies of the
  * items, of the perks and of the effects. Points are not chosen.
  */
-export type SpinPayment = { items: number[]; perks: number[]; effects: number[] }
+export type SpinPayment = {
+	items: number[]
+	perks: number[]
+	effects: number[]
+}
 
 export type PartyMember = {
 	login: Login
 	displayName: string | null
 	joinedDate: ISODate
+	/** null for a current member; a member who left can be restored */
+	leftDate: ISODate | null
 	isAdmin: boolean
+	/** lowercase hex: `#ffb000` */
+	color: string
 }
 
 // Backend addresses (localhost:8080/scalar) are noted as "Backend:" above the
@@ -567,7 +644,7 @@ export type Api = {
 	session: {
 		/**
 		 * Backend: GET {party}/members. The login comes from persistentStorage
-		 * (StoreKey.Login), isAdmin from the member list, colorIndex is client-side.
+		 * (StoreKey.Login), isAdmin and the color from the member list.
 		 */
 		getMe: () => Promise<Me>
 		getSeason: () => Promise<Season>
@@ -575,7 +652,7 @@ export type Api = {
 	currentGame: {
 		/**
 		 * Backend: GET {party}/games/users/{login}/current (204 when there is no
-		 * current game), the reward from GET {party}/rewards/game.
+		 * current game), the reward from GET {party}/rewards/game_completed.
 		 */
 		get: () => Promise<CurrentGame>
 		/** Backend: POST {party}/games/current/actions {action: 'finish'} */
@@ -611,8 +688,8 @@ export type Api = {
 		/** Backend: GET {party}/games/users/{login}/wishlist */
 		list: (login: Login) => Promise<WishlistEntry[]>
 		/**
-		 * also used to add a game to another user's wishlist; 409 DUPLICATE,
-		 * 409 ALREADY_PICKED when that user has already picked the game (it is
+		 * also used to add a game to another user's wishlist; 409
+		 * WISHLIST_GAME_ALREADY_EXISTS, 409 GAME_ALREADY_PICKED when that user has already picked the game (it is
 		 * current or in the history with any status): a game can't be picked twice
 		 *
 		 * Backend: POST {party}/games/users/{login}/wishlist
@@ -640,26 +717,24 @@ export type Api = {
 		 * GET {party}/games/{gameId}/reviews. Any game from the history can be
 		 * rated, whatever its end state; 404 when the game is not there.
 		 */
-		saveReview: (gameId: number, review: GameReview) => Promise<GameHistoryEntry>
+		saveReview: (
+			gameId: number,
+			review: GameReview,
+		) => Promise<GameHistoryEntry>
 	}
 	wheel: {
-		// The game wheel has no counterpart on the backend: /wheel-effects/* is a
-		// different wheel that rolls effects (rows with a name and a description).
-		// Backend (rename): /wheel-effects/* has to be renamed to /wheel/*, the
-		// game wheel endpoints below live under the same prefix.
-
 		/**
-		 * Backend: GET {party}/wheel/groups returning
-		 * [{id, name, kind, cost, entries: [{id, name, description?,
-		 * isManualChange, entries}]}], `cost` is the spin cost of the group.
+		 * Backend: GET {party}/wheel/groups, the groups the user can spin (their own
+		 * wishlist included) with `cost`, and GET {party}/wheel/groups/{groupId}/rows
+		 * for the items of every group but the wishlist.
 		 */
 		groups: () => Promise<WheelGroup[]>
 		/**
 		 * A spin is free and writes nothing to the history: the result is only
 		 * stored on the server and the next spin replaces it, so there is no
-		 * reroll flag. A game can't be spun while a game is being played (409). A
-		 * spin of changes checks that the cost of `apply` can be paid (409
-		 * INSUFFICIENT).
+		 * reroll flag. A game can't be spun while a game is being played (409
+		 * CURRENT_GAME_ALREADY_EXISTS). A spin checks that the cost of `apply` can
+		 * be paid (409 NOT_ENOUGH_POINTS, INVALID_PAYMENT).
 		 *
 		 * Backend: POST {party}/wheel/spin with {groupId}; the wishlist is a
 		 * group of its own, with its id in `groups`. The answer is the saved items in the order they sit
@@ -668,26 +743,39 @@ export type Api = {
 		 */
 		spin: (source: WheelSource) => Promise<WheelSpinResult>
 		/**
+		 * The spin the server still keeps, null when there is none. The answer
+		 * doesn't say which group it came from, so the group is the one whose items
+		 * hold every name of the spin.
+		 *
+		 * Backend: GET {party}/wheel/spins/last, 404 LAST_WHEEL_EFFECTS_NOT_FOUND
+		 */
+		lastSpin: () => Promise<WheelSpinResult | null>
+		/**
+		 * Drops the stored spin without applying it; there is no error when there
+		 * is none.
+		 *
+		 * Backend: POST {party}/wheel/spins/last/clear
+		 */
+		discard: () => Promise<void>
+		/**
 		 * The cost of a spin of changes is charged here, in one history record
-		 * with the changes of the result (409 INSUFFICIENT). A game that the user
-		 * has already picked can fall but can't be applied (409 ALREADY_PICKED).
+		 * with the changes of the result (409 NOT_ENOUGH_POINTS). A game that the
+		 * user has already picked can fall but can't be applied (409
+		 * GAME_ALREADY_PICKED).
 		 *
 		 * `payment` is what the user chose to give when the cost can be paid with
 		 * different copies (items of different wear): 409 INVALID_PAYMENT when it
 		 * doesn't fit the cost. Without it the server takes the most used copies.
+		 * `targetLogins` is required for a group of changes (422
+		 * WHEEL_TARGETS_INVALID without it), not allowed for a game or the wishlist.
+		 * `entryIds` is required for an item with `shouldApplyToAll` false and not
+		 * accepted otherwise (422 WHEEL_ENTRIES_INVALID).
 		 *
 		 * Backend: POST {party}/wheel/spins/last/apply, the backend applies the
 		 * last spin of the user. A game spin starts the game, creates its timer
 		 * and removes the wishlist entry, a spin of changes applies its `entries`.
 		 */
-		apply: (
-			payment?: SpinPayment,
-			/**
-			 * Who receives the central item. Required for a group of changes (422
-			 * WHEEL_TARGETS_INVALID without it), not allowed for a game or the wishlist.
-			 */
-			targetLogins?: Login[],
-		) => Promise<{
+		apply: (use?: WheelApply) => Promise<{
 			currentGame?: CurrentGame
 			journalEntry?: JournalEntry
 		}>
@@ -759,9 +847,8 @@ export type Api = {
 			use?: ItemUse,
 		) => Promise<{ journalEntry: JournalEntry }>
 		/**
-		 * Backend: GET {party}/points/users/{login}/types/{id}/history,
-		 * GET {party}/items/{login}/history, GET {party}/perks/{login}/history,
-		 * GET {party}/effects/{login}/history (filtered by id on the client)
+		 * Backend: GET {party}/history of the user filtered by `resource[kind]`
+		 * and `resource[id]`, the same endpoint as `journal.list`
 		 */
 		history: (
 			login: Login,
@@ -773,12 +860,12 @@ export type Api = {
 	journal: {
 		/**
 		 * Backend: GET {party}/history, one endpoint for all entities.
-		 * The items are the root events (`Type` is the source type, game events
-		 * included) with their point changes nested; limit and cursor count the
-		 * roots. Ids come with names (`source.id` + `source.name`, `resource.id` +
-		 * `resource.name`). The types of points with `isPublic = false` are left
-		 * out of the answer for everyone but the admins. `from` and `to` are
-		 * moments of time.
+		 * The items are the root events (`source.eventKind` says what happened,
+		 * game events included) with their changes nested; limit and cursor count
+		 * the roots. Ids come with names (`source.id` + `source.name`,
+		 * `resource.id` + `resource.name`). The types of points with
+		 * `isPublic = false` are left out of the answer for everyone but the
+		 * admins. `from` and `to` are moments of time.
 		 */
 		list: (query: JournalQuery) => Promise<JournalPage>
 	}
@@ -796,20 +883,24 @@ export type Api = {
 		 * source side is what the named users lose and the target side is what the
 		 * user making the exchange gains.
 		 */
-		execute: (id: number, targetLogins?: Login[]) => Promise<{
+		execute: (
+			id: number,
+			use?: ExchangeUse,
+		) => Promise<{
 			resources: UserResources
 			journalEntry: JournalEntry
 		}>
 	}
 	manual: {
 		/**
-		 * Any user can make a manual change. Validation: an item can't go below
-		 * zero (409 INSUFFICIENT), a perk or an effect that isn't owned can't be
-		 * revoked (409 NOT_OWNED).
+		 * Any user can make a manual change. An item can't be taken away (422
+		 * ITEM_REMOVAL_NOT_SUPPORTED), a perk the user already holds can't be
+		 * granted again (409 PERK_ALREADY_OWNED).
 		 *
-		 * Backend: POST {party}/grants with `targetLogins` and `entries` (no
-		 * perks, effects, `correctsEntryId` and `spinId` there yet). The entry in
-		 * the journal gets `manual: true`.
+		 * Backend: POST {party}/grants with `targetLogins`, `entries` and
+		 * `correctsEntryId`; the shared points go to
+		 * PATCH {party}/points/party/types/{id}. The entry in the journal has the
+		 * event kind `manual_granted`.
 		 */
 		apply: (request: ManualRequest) => Promise<{ journalEntry: JournalEntry }>
 	}
@@ -826,7 +917,7 @@ export type Api = {
 		/** Backend: GET /parties, `current` is the party chosen with `select` */
 		list: () => Promise<Party[]>
 		/** Backend: POST /parties, the creator joins as the first admin; 422 PARTY_DATES_INVALID */
-		create: (input: PartyInput) => Promise<Party>
+		create: (input: PartyCreateInput) => Promise<Party>
 		/** Backend: PATCH /parties/{id}, admins only; 422 PARTY_DATES_INVALID */
 		update: (id: number, input: PartyInput) => Promise<void>
 		/**
@@ -841,8 +932,14 @@ export type Api = {
 		// points/types, items, effects and perks (`/removed` lists the deleted).
 		catalog: {
 			/** GET /admin/catalog/{kind}?includeDeleted= */
-			list: (kind: CatalogKind, includeDeleted: boolean) => Promise<CatalogEntry[]>
-			create: (kind: CatalogKind, input: CatalogEntryInput) => Promise<CatalogEntry>
+			list: (
+				kind: CatalogKind,
+				includeDeleted: boolean,
+			) => Promise<CatalogEntry[]>
+			create: (
+				kind: CatalogKind,
+				input: CatalogEntryInput,
+			) => Promise<CatalogEntry>
 			update: (
 				kind: CatalogKind,
 				id: number,
@@ -861,7 +958,10 @@ export type Api = {
 		}
 		wheel: {
 			groups: (kind: AdminWheelGroup['kind']) => Promise<AdminWheelGroup[]>
-			createGroup: (kind: AdminWheelGroup['kind'], name: string) => Promise<AdminWheelGroup>
+			createGroup: (
+				kind: AdminWheelGroup['kind'],
+				name: string,
+			) => Promise<AdminWheelGroup>
 			renameGroup: (groupId: number, name: string) => Promise<void>
 			setNoRepeat: (groupId: number, noRepeat: boolean) => Promise<void>
 			removeGroup: (groupId: number) => Promise<void>
@@ -871,7 +971,11 @@ export type Api = {
 				entryId: number | undefined,
 				input: Pick<
 					AdminWheelEntry,
-					'name' | 'description' | 'entries' | 'isManualChange'
+					| 'name'
+					| 'description'
+					| 'entries'
+					| 'isManualChange'
+					| 'shouldApplyToAll'
 				>,
 			) => Promise<void>
 			removeEntry: (groupId: number, entryId: number) => Promise<void>
@@ -879,8 +983,8 @@ export type Api = {
 			 * Every group of changes has a cost of its own, the games are free. An
 			 * empty list makes a spin of the group free.
 			 *
-			 * Backend: PUT {party}/wheel/groups/{groupId}/spin-cost, the cost is read from
-			 * GET {party}/wheel/groups (negative amounts there)
+			 * Backend: PUT {party}/wheel/catalog/groups/{groupId}/spin-cost, the cost is
+			 * read from GET {party}/wheel/catalog/groups (negative amounts there)
 			 */
 			spinCost: (groupId: number) => Promise<SpinCostRow[]>
 			saveSpinCost: (groupId: number, rows: SpinCostRow[]) => Promise<void>
@@ -898,15 +1002,17 @@ export type Api = {
 		}
 		members: {
 			list: () => Promise<PartyMember[]>
-			/** 404 USER_NOT_FOUND, 409 MEMBER_ALREADY_EXISTS */
-			add: (login: Login) => Promise<PartyMember>
-			/** 409 LAST_ADMIN when the last admin is demoted */
+			/** the client picks the color of the new member; 404 USER_NOT_FOUND, 409 MEMBER_ALREADY_EXISTS */
+			add: (login: Login, color: string) => Promise<PartyMember>
+			/** 409 OWN_ADMIN_RIGHTS_REVOKE when the user takes the admin rights off themselves */
 			update: (
 				login: Login,
-				input: { displayName: string | null; isAdmin: boolean },
+				input: { displayName: string | null; isAdmin: boolean; color: string },
 			) => Promise<PartyMember>
-			/** 409 LAST_ADMIN */
+			/** when the last admin leaves, the member who joined first becomes an admin */
 			remove: (login: Login) => Promise<void>
+			/** brings back a member who left, 409 MEMBER_NOT_REMOVED for a current one */
+			restore: (login: Login) => Promise<void>
 		}
 	}
 }

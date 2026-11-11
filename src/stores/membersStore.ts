@@ -9,11 +9,9 @@ export const useMembersStore = defineStore(StoreName.Members, () => {
 
 	const users = computed(() => list.value.map((m) => m.user))
 
-	const colorOf = (login: Login) => {
-		const colorIndex = users.value.find((p) => p.login === login)?.colorIndex
-
-		return `var(--user-${colorIndex ?? 1})`
-	}
+	/** the avatar falls back to its default color for a login that is not in the party */
+	const colorOf = (login: Login) =>
+		users.value.find((p) => p.login === login)?.color ?? 'var(--user-1)'
 
 	const load = async () => {
 		list.value = await api.members.list()

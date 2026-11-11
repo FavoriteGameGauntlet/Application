@@ -11,17 +11,16 @@ import UiInput from '../../components/ui/UiInput.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiUserAvatar from '../../components/ui/UiUserAvatar.vue'
 import { useAdminSettingsStore } from '../../stores/adminSettingsStore'
-import { useMembersStore } from '../../stores/membersStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToastStore } from '../../stores/toastStore'
 import { formatDate } from '../../utils/format'
+import { isMemberColor, nextMemberColor } from '../../utils/memberColor'
 import { plural } from '../../utils/plural'
 
 /** `{}` adds a member, undefined means the dialog is closed */
 type Dialog = { member?: PartyMember }
 
 const store = useAdminSettingsStore()
-const membersStore = useMembersStore()
 const sessionStore = useSessionStore()
 const toastStore = useToastStore()
 
@@ -30,18 +29,35 @@ const removing = ref<PartyMember>()
 
 const query = ref('')
 
+/** those who left stay in the list so that an admin can bring them back, they go last */
 const found = computed(() => {
 	const q = query.value.trim().toLowerCase()
 
-	return store.members.filter(
-		(m) => !q || m.login.toLowerCase().includes(q) || m.displayName?.toLowerCase().includes(q),
-	)
+	return store.members
+		.filter(
+			(m) =>
+				!q ||
+				m.login.toLowerCase().includes(q) ||
+				m.displayName?.toLowerCase().includes(q),
+		)
+		.sort((a, b) => Number(!!a.leftDate) - Number(!!b.leftDate))
 })
+
+const currentCount = computed(
+	() => store.members.filter((m) => !m.leftDate).length,
+)
 
 const count = computed(
 	() =>
-		`${store.members.length} ${plural(store.members.length, ['игрок', 'игрока', 'игроков'])}`,
+		`${currentCount.value} ${plural(currentCount.value, ['игрок', 'игрока', 'игроков'])}`,
 )
+
+const colorField: FormField = {
+	key: 'color',
+	type: 'color',
+	label: 'Цвет',
+	hint: 'Из палитры или свой в виде #ffb000. Цвета могут повторяться.',
+}
 
 const fields = computed<FormField[]>(() =>
 	dialog.value?.member
@@ -58,6 +74,7 @@ const fields = computed<FormField[]>(() =>
 					type: 'check',
 					hint: 'Может менять каталоги, колесо, награды и участников.',
 				},
+				colorField,
 			]
 		: [
 				{
@@ -66,17 +83,34 @@ const fields = computed<FormField[]>(() =>
 					placeholder: 'dima',
 					hint: 'Игрок должен быть зарегистрирован.',
 				},
+				colorField,
 			],
 )
 
+/** a new member starts with the palette color that the current members use least */
 const initial = computed<FormValues>(() => ({
 	login: '',
 	displayName: dialog.value?.member?.displayName ?? '',
 	isAdmin: dialog.value?.member?.isAdmin ?? false,
+	color:
+		dialog.value?.member?.color ??
+		nextMemberColor(
+			store.members.filter((m) => !m.leftDate).map((m) => m.color),
+		),
 }))
 
 const onSave = async (values: FormValues) => {
 	const member = dialog.value?.member
+	const color = String(values.color).trim().toLowerCase()
+
+	if (!isMemberColor(color)) {
+		toastStore.show(
+			'Проверь цвет',
+			'Нужен вид #ffb000: решётка и шесть цифр.',
+			'danger',
+		)
+		return
+	}
 
 	if (!member) {
 		const login = String(values.login).trim()
@@ -86,24 +120,20 @@ const onSave = async (values: FormValues) => {
 			return
 		}
 
-		if (await store.addMember(login)) dialog.value = undefined
+		if (await store.addMember(login, color)) dialog.value = undefined
 		return
 	}
 
 	const ok = await store.updateMember(member, {
 		displayName: String(values.displayName).trim() || null,
 		isAdmin: values.isAdmin === true,
+		color,
 	})
 
 	if (ok) dialog.value = undefined
 }
 
 const askRemove = (member: PartyMember) => {
-	if (member.isAdmin && store.members.filter((m) => m.isAdmin).length === 1) {
-		toastStore.show('Нельзя удалить', 'Это последний админ пати.', 'danger')
-		return
-	}
-
 	removing.value = member
 }
 
@@ -125,7 +155,13 @@ onMounted(() => store.loadMembers())
 			<span class="head__count">{{ count }}</span>
 			<div class="head__spacer"></div>
 			<div class="head__search">
-				<UiInput v-model="query" compact icon="search" placeholder="Найти…" aria-label="Поиск" />
+				<UiInput
+					v-model="query"
+					compact
+					icon="search"
+					placeholder="Найти…"
+					aria-label="Поиск"
+				/>
 			</div>
 			<UiButton icon="plus" @click="dialog = {}">Добавить</UiButton>
 		</div>
@@ -139,15 +175,21 @@ onMounted(() => store.loadMembers())
 				<span></span>
 			</div>
 
-			<div v-for="member in found" :key="member.login" class="table__row table__row--body">
+			<div
+				v-for="member in found"
+				:key="member.login"
+				class="table__row table__row--body"
+				:class="{ 'table__row--left': member.leftDate }"
+			>
 				<span class="user">
-					<UiUserAvatar
-						:name="member.login"
-						:color="membersStore.colorOf(member.login)"
-						:size="28"
-					/>
+					<UiUserAvatar :name="member.login" :color="member.color" :size="28" />
 					{{ member.login }}
-					<UiBadge v-if="member.login === sessionStore.login" tone="accent">ты</UiBadge>
+					<UiBadge v-if="member.login === sessionStore.login" tone="accent"
+						>ты</UiBadge
+					>
+					<UiBadge v-if="member.leftDate" tone="neutral">
+						вышел {{ formatDate(member.leftDate) }}
+					</UiBadge>
 				</span>
 
 				<span class="name" :class="{ 'name--empty': !member.displayName }">
@@ -157,34 +199,50 @@ onMounted(() => store.loadMembers())
 				<span class="joined">{{ formatDate(member.joinedDate) }}</span>
 
 				<span class="role">
-					<UiBadge tone="navy">{{ member.isAdmin ? 'админ' : 'игрок' }}</UiBadge>
+					<UiBadge tone="navy">{{
+						member.isAdmin ? 'админ' : 'игрок'
+					}}</UiBadge>
 				</span>
 
 				<span class="table__actions">
 					<UiIconButton
-						icon="pencil"
+						v-if="member.leftDate"
+						icon="rotate-ccw"
 						size="sm"
-						label="Изменить"
-						@click="dialog = { member }"
+						label="Вернуть в пати"
+						@click="store.restoreMember(member)"
 					/>
-					<UiIconButton
-						icon="trash-2"
-						size="sm"
-						label="Удалить из пати"
-						@click="askRemove(member)"
-					/>
+					<template v-else>
+						<UiIconButton
+							icon="pencil"
+							size="sm"
+							label="Изменить"
+							@click="dialog = { member }"
+						/>
+						<UiIconButton
+							icon="trash-2"
+							size="sm"
+							label="Удалить из пати"
+							@click="askRemove(member)"
+						/>
+					</template>
 				</span>
 			</div>
 		</div>
 
 		<span class="note">
-			Пустое имя — показывается логин. Последнего админа нельзя снять или удалить.
+			Пустое имя — показывается логин. Снять админа с себя нельзя. Если из пати
+			уходит последний админ, им становится тот, кто вступил раньше всех.
 		</span>
 	</div>
 
 	<FormDialog
 		:open="!!dialog"
-		:title="dialog?.member ? `Участник · ${dialog.member.login}` : 'Добавить участника'"
+		:title="
+			dialog?.member
+				? `Участник · ${dialog.member.login}`
+				: 'Добавить участника'
+		"
 		:fields
 		:initial
 		@close="dialog = undefined"
@@ -254,6 +312,10 @@ onMounted(() => store.loadMembers())
 	min-height: 52px;
 	padding: 6px 16px;
 	border-top: 1px solid var(--border-subtle);
+}
+
+.table__row--left {
+	opacity: 0.6;
 }
 
 .table__actions {
