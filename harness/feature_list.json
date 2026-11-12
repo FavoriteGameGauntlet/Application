@@ -104,6 +104,13 @@
 			"priority": 15,
 			"status": "done",
 			"evidence": "Done 2026-11-12. Full record: harness/archive/features-done.json"
+		},
+		{
+			"id": "window-icon",
+			"title": "Replace the Tauri template icon of the app window with the FGG symbol from the design system (https://claude.ai/artifact/S3qWLPo4bp6J62R7JpxvbK)",
+			"priority": 16,
+			"status": "in_progress",
+			"evidence": "The icon set in src-tauri/icons/ is regenerated with `tauri icon` from src-tauri/icons/source/icon.svg. cargo check passes. icon.png was looked at. The window, the taskbar and the installer were not looked at: the app was not run."
 		}
 	]
 }

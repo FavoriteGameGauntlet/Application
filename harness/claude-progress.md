@@ -2,6 +2,12 @@
 
 Newest entry on top. Record only what was actually verified.
 
+## 2026-11-12 window-icon
+
+- Done in code: the template icons in `src-tauri/icons/` are replaced by the FGG symbol (`fgg-symbol-square` of the design system) on a white rounded plate, because the navy symbol alone vanishes on a dark taskbar. The source is `src-tauri/icons/source/icon.svg` (the C2PA metadata of the original is cut). The set is generated with `npx tauri icon` from a 1024 px render of it; the `android/`, `ios/` and `64x64.png` it also makes are deleted, `bundle.icon` in `tauri.conf.json` is unchanged.
+- Verified: `bash harness/scripts/init.sh` and `cargo check` in `src-tauri/` pass; `icon.png` was looked at.
+- Not verified by me: the app was not run, so the icon in the window, the taskbar and the installer was not seen. The plate color (white) was my choice, the mockup has none.
+
 ## 2026-11-12 release-0.7.0
 
 - Bumped the version to 0.7.0 with `npm version 0.7.0 --no-git-tag-version` (package.json, package-lock.json, tauri.conf.json, Cargo.toml, Cargo.lock). The tag `v0.7.0` is created on `master` after the merge, and the release is not a prerelease. The branch also carries the `AGENTS.md` release pointer and the new `harness/PLAYBOOK.md`.
