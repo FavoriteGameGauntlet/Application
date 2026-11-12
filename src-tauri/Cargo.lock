@@ -1009,7 +1009,7 @@ dependencies = [
 
 [[package]]
 name = "fgg"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "cookie_store",
  "reqwest 0.12.28",

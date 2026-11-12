@@ -2,6 +2,11 @@
 
 Newest entry on top. Record only what was actually verified.
 
+## 2026-11-12 release-0.7.0
+
+- Bumped the version to 0.7.0 with `npm version 0.7.0 --no-git-tag-version` (package.json, package-lock.json, tauri.conf.json, Cargo.toml, Cargo.lock). The tag `v0.7.0` is created on `master` after the merge, and the release is not a prerelease. The branch also carries the `AGENTS.md` release pointer and the new `harness/PLAYBOOK.md`.
+- Verified: `bash harness/scripts/init.sh` and `cargo check` in `src-tauri/` pass. The app was not run.
+
 ## 2026-11-12 wishlist-undo-toast
 
 - Done in code: the «Удалить игру?» window is gone, «Удалить» removes the game at once and the usual toast says «Игра убрана из списка желаемого и с колеса». By the user's word the toast has no «Вернуть» button and no timer bar, and there is no delayed deletion; the shared toast is unchanged. Removed games are shown by the «Показать удалённые» switch next to «Добавить игру» in the wishlist tab (only the current user's), in the same table and in the format the catalogue, the exchanges and the members already use: the row is dimmed (`cell--dead`), has the badge «удалена», and a restore button (`rotate-ccw`, «Вернуть») instead of the edit and delete ones. The restore puts the entry back, rereads both lists and shows a toast; a refusal shows the usual error toast. Two earlier versions (a tab of the games screen, then a window opened by a button) were rolled back: the user said another tab does not fit, the removed games belong to the wishlist, and there already is a format for it.
@@ -20,11 +25,6 @@ Newest entry on top. Record only what was actually verified.
 - Not verified by me: the app was not run. The group meta line (count of items, «не повторять») is no longer shown next to the group name.
 - Also in this branch, `wishlist-rename-text`: every text with «вишлист» now says «список желаемого» (the words are declined where the sentence needs it), and the admin facade shows the system wheel group, which the backend names in English, as «Список желаемого». Names in the code stay. The mockup still says «вишлист» and was not changed.
 - Checked by the user (said in chat: «Я проверил, всё работает»), so `screens-wheel-members` and `wishlist-rename-text` are done and moved to the archive.
-
-## 2026-11-12 release-0.6.0
-
-- Bumped the version to 0.6.0 with `npm version 0.6.0 --no-git-tag-version` (package.json, package-lock.json, tauri.conf.json, Cargo.toml, Cargo.lock). The tag `v0.6.0` is created on `master` after the merge, and the release is not a prerelease.
-- Verified: `bash harness/scripts/init.sh` and `cargo check` in `src-tauri/` pass. The app was not run.
 
 ## Open
 
