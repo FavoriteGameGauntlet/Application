@@ -9,6 +9,7 @@ Newest entry on top. Record only what was actually verified.
 - The rules that the captions carried are written down as the features `rules-ui-*` (priorities 16 to 22), each with the removed texts and ideas for the interface, by the user's word that they are done in other features.
 - Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. The app was not run, so the screens and windows were not looked at.
 - Not verified by me: the look of the screens without the captions (spacing at the bottom of the screens, the window layouts without the hints).
+- Checked by the user (said in chat: «windows-player уже проверен»), so `windows-player` is done and moved to the archive. `remove-after-form-notices` stays `in_progress` until the user has looked at the screens.
 
 ## 2026-11-12 wishlist-undo-toast
 
@@ -31,6 +32,5 @@ Newest entry on top. Record only what was actually verified.
 
 ## Open
 
-- `windows-player` is still `in_progress`: the user has not yet looked at the use, spin payment and review windows (details in `harness/archive/progress-2026-11-11.md`).
 - Found, not fixed: in `FormDialog.vue` the `immediate` watcher on `open` writes `chosenTab` before the line that declares it, so a form mounted already open throws. Every caller mounts it closed, so it never shows.
 - A target condition (`target_*`) with a transfer to `self` is still refused by the catalogue form, because the documentation names only `chosen` entries.

@@ -9,10 +9,10 @@
 		},
 		{
 			"id": "windows-player",
-			"title": "Bring the player windows to the mockup: item use, spin payment, review. The mockup, the user decisions and the check rules are the same as in windows-wheel-exchange-party (shared FormDialog components and schema, chooseEntries stays, grep -rn \"<FormDialog\" when adding a shared property, do not run the app). Mockup: https://claude.ai/artifact/54KmxzJqLk5G5hAZDG5qK4.",
+			"title": "Bring the player windows to the mockup: item use, spin payment, review",
 			"priority": 2,
-			"status": "in_progress",
-			"evidence": "The code is ready and waits for the user to look at the windows. bash harness/scripts/init.sh (eslint, vue-tsc) passes, prettier on the changed files. FormDialog with pick, rating and a count in the section head was server-rendered in Node (a temporary copy without the chosenTab line, deleted): rows, radio, avatars, «1 из 1», red hint and rating cells came out as expected. The app was not run. UseDialog was also server-rendered in Node for one case without targets: the copy that is being used is offered nowhere, and the take and copy slots come out with their only copy picked. The use, spin payment and review windows were not checked visually, and the change event (sections rebuilt from the values: the targets, the player to copy from, the picked copies) was checked only by reading the code. The user tried the use window on their own item and sent four bugs, all fixed: a copy named twice, a stale inventory of another player, the hidden slots, and the unclear hints."
+			"status": "done",
+			"evidence": "Done 2026-11-12. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "item-transfer",
