@@ -104,6 +104,13 @@
 			"priority": 15,
 			"status": "done",
 			"evidence": "Done 2026-11-12. Full record: harness/archive/features-done.json"
+		},
+		{
+			"id": "window-icon",
+			"title": "Replace the Tauri template icon of the app window with the FGG symbol",
+			"priority": 16,
+			"status": "done",
+			"evidence": "Done 2026-11-12. Full record: harness/archive/features-done.json"
 		}
 	]
 }
