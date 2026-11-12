@@ -1,5 +1,11 @@
 import { Temporal } from '@js-temporal/polyfill'
-import type { Api, GameHistoryEntry, Login, WishlistEntry } from '../contracts'
+import type {
+	Api,
+	GameHistoryEntry,
+	Login,
+	RemovedWishlistEntry,
+	WishlistEntry,
+} from '../contracts'
 import { type HttpErrorResponse, http } from '../http'
 import { currentLogin, partyPath, toSeconds } from './context'
 import { latestOwnEntry } from './journal'
@@ -142,6 +148,20 @@ export const wishlist: Api['wishlist'] = {
 			`${await partyPath()}/games/users/${await currentLogin()}/wishlist/${id}`,
 		)
 	},
+
+	listRemoved: async () =>
+		(
+			await http.get<{ response: RemovedWishlistEntry[] }>(
+				`${await partyPath()}/games/users/${await currentLogin()}/wishlist/removed`,
+			)
+		).body,
+
+	restore: async (id) =>
+		(
+			await http.post<{ response: WishlistEntry }>(
+				`${await partyPath()}/games/users/${await currentLogin()}/wishlist/${id}/restore`,
+			)
+		).body,
 }
 
 export const completed: Api['completed'] = {

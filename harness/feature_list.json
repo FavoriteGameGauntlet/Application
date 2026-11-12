@@ -30,10 +30,10 @@
 		},
 		{
 			"id": "wishlist-undo-toast",
-			"title": "The wishlist screen per the mockup: remove the «Удалить игру?» window (UiDialog, deleting, confirmDelete in WishlistTab.vue); the game disappears at once, and a toast at the bottom right «Игра убрана из списка желаемого и с колеса» appears with a «Вернуть» button and a timer bar. Today toastStore knows only a title, a text and a tone and shows one toast for 3 seconds (UiToastHost draws UiToast); it has to learn to carry an action button and a bar. This is a shared toast, so check every place that calls it. WAITING FOR THE USER'S ANSWER, change nothing until then. The undo: the backend can only delete and cannot restore. Option 1 (recommended): the game is hidden from the list, the api.wishlist.remove request goes out after the toast ends (about 5 seconds), «Вернуть» cancels the request, a new toast or leaving the screen early confirms the deletion; cost: closing the app during those seconds cancels the deletion. Option 2: delete at once, «Вернуть» adds the game again through api.wishlist.add; cost: a new id and date, and the backend may refuse (GAME_ALREADY_PICKED). Question to the user: which option, and whether 5 seconds is fine. Change the Api contract only after checking it against https://api.fgg-challenge.com/scalar. Mockup: https://claude.ai/artifact/54KmxzJqLk5G5hAZDG5qK4.",
+			"title": "Remove the wishlist delete window; show the removed games with a restore button",
 			"priority": 5,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-12. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "remove-after-form-notices",

@@ -1,7 +1,11 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { api } from '../api-facade/api'
-import type { Login, WishlistEntry } from '../api-facade/contracts'
+import type {
+	Login,
+	RemovedWishlistEntry,
+	WishlistEntry,
+} from '../api-facade/contracts'
 import type { HttpErrorResponse } from '../api-facade/http'
 import { StoreName } from '../enums/storeName'
 import { useSessionStore } from './sessionStore'
@@ -9,6 +13,9 @@ import { useToastStore } from './toastStore'
 
 export const useWishlistStore = defineStore(StoreName.Wishlist, () => {
 	const lists = ref<Record<Login, WishlistEntry[]>>({})
+
+	/** the entries that left the current user's wishlist; only the `removed` ones can be restored */
+	const removed = ref<RemovedWishlistEntry[]>([])
 
 	const mine = computed(() => lists.value[useSessionStore().login] ?? [])
 
@@ -56,18 +63,50 @@ export const useWishlistStore = defineStore(StoreName.Wishlist, () => {
 		}
 	}
 
-	const remove = async (id: number, name: string) => {
+	const remove = async (game: WishlistEntry) => {
 		try {
-			await api.wishlist.remove(id)
+			await api.wishlist.remove(game.id)
 
 			lists.value[useSessionStore().login] = mine.value.filter(
-				(g) => g.id !== id,
+				(g) => g.id !== game.id,
 			)
-			useToastStore().show('Удалено из списка желаемого', name, 'info')
+			removed.value = [...removed.value, { ...game, removalKind: 'removed' }]
+			useToastStore().show(
+				'Игра убрана из списка желаемого и с колеса',
+				game.name,
+				'info',
+			)
 		} catch (e) {
 			useToastStore().error(e)
 		}
 	}
 
-	return { lists, mine, load, loadMine, add, rename, remove }
+	const loadRemoved = async () => {
+		removed.value = await api.wishlist.listRemoved()
+	}
+
+	const restore = async (game: WishlistEntry) => {
+		const toast = useToastStore()
+
+		try {
+			await api.wishlist.restore(game.id)
+			toast.show('Игра вернулась в список желаемого', game.name)
+			await Promise.all([loadMine(), loadRemoved()])
+		} catch (e) {
+			toast.error(e)
+		}
+	}
+
+	return {
+		lists,
+		mine,
+		removed,
+		load,
+		loadMine,
+		loadRemoved,
+		add,
+		rename,
+		remove,
+		restore,
+	}
 })
