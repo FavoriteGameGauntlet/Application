@@ -93,6 +93,14 @@ export type WishlistEntry = {
 	addedBy?: Login
 }
 
+/**
+ * Why an entry left the wishlist: `removed` by a member, it can be restored;
+ * `started` because its game was started, which can't be undone.
+ */
+export type RemovedWishlistEntry = WishlistEntry & {
+	removalKind: 'removed' | 'started'
+}
+
 export type GameEndState = 'completed' | 'cancelled' | 'rerolled'
 
 export type GameHistoryEntry = {
@@ -711,8 +719,27 @@ export type Api = {
 		 * the login is the current user's.
 		 */
 		rename: (id: number, name: string) => Promise<WishlistEntry>
-		/** Backend: DELETE {party}/games/users/{login}/wishlist/{id}, the login is the current user's */
+		/**
+		 * Only hides the entry, its name stays taken.
+		 *
+		 * Backend: DELETE {party}/games/users/{login}/wishlist/{id}, the login is the current user's
+		 */
 		remove: (id: number) => Promise<void>
+		/**
+		 * Every entry that left the wishlist: those hidden by `remove` and those
+		 * whose game was started (see `removalKind`).
+		 *
+		 * Backend: GET {party}/games/users/{login}/wishlist/removed, the login is the current user's
+		 */
+		listRemoved: () => Promise<RemovedWishlistEntry[]>
+		/**
+		 * Puts an entry with the `removalKind` `removed` back with its name, date
+		 * and author; 404 WISHLIST_GAME_NOT_FOUND without such an entry, 409
+		 * GAME_ALREADY_PICKED when its game was started or taken since the removal.
+		 *
+		 * Backend: POST {party}/games/users/{login}/wishlist/{id}/restore, the login is the current user's
+		 */
+		restore: (id: number) => Promise<WishlistEntry>
 	}
 	completed: {
 		/**
