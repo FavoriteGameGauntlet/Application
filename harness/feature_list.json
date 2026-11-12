@@ -97,13 +97,6 @@
 			"priority": 14,
 			"status": "todo",
 			"evidence": ""
-		},
-		{
-			"id": "plan-format-from-server",
-			"title": "Copy the plan format of fgg-server into the Plan before edits section of AGENTS.md: Design, Questions, Mine and removals, no item lists and no verification steps.",
-			"priority": 15,
-			"status": "in_progress",
-			"evidence": ""
 		}
 	]
 }
