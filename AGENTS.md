@@ -47,8 +47,14 @@ npx prettier -w <files> # format only the changed files
 
 After the startup steps and before the first edit of any file, write a plan of changes in the reply and wait until the user has read it and answered. Until then only read, no edits.
 
-- List what is added, changed and removed: screens, components, stores, `Api` methods, contract fields, routes, `StoreKey` keys. Then the verification steps. One line per item.
-- Mark every item that the user did not name literally as "mine" and give the reason. Mark every removal. A working screen, field or method is removed only on the user's word.
+The user reads the architecture and the questions, not lists of items. The plan has three parts:
+
+1. **Design.** One or two paragraphs: what the feature does, which screen, store or `Api` layer owns each concept, how data moves between them. A flow of three to five lines is fine. No names of components, stores, `Api` methods, contract fields, routes or `StoreKey` keys.
+2. **Questions.** Every open decision, with the options ranked by design (see "Working rules"): the option that puts the code in its proper place first, the cost of each option, the recommended one marked.
+3. **Mine and removals.** Only what the feature note or the user's words do not name literally, with the reason, and every removal. A working screen, field or method is removed only on the word of the note or the user. A check outside `init.sh` (`cargo check`, running the app, a check by the user) goes here too.
+
+The plan has no list of components, `Api` methods, fields, routes or `StoreKey` keys (the diff and the PR show them) and no verification steps (`init.sh` covers them).
+
 - Put nothing into the plan "for compatibility".
 - Name every helper, type or check that two or more sections use and put it where the concept it works on lives, not in one of its users for the other to call.
 - If the plan has to change during the work (a new field, method or removal), stop, say what changes and why, and wait for an answer. A fix inside the plan needs no new answer.

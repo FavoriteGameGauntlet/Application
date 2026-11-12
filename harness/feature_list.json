@@ -25,8 +25,8 @@
 			"id": "screens-wheel-members",
 			"title": "Bring the screens without a window to the mockup: the wheel (groups as chips, editing in the chip, the game as a row at the end of the table) and the members (the login in a row above the table, the error under the field). Screens without a window are in scope by the user's decision. Mockup: https://claude.ai/artifact/54KmxzJqLk5G5hAZDG5qK4, the check rules are the same as in windows-wheel-exchange-party (do not run the app, the user looks at the windows and screens). The wishlist is not included, it is in wishlist-undo-toast.",
 			"priority": 4,
-			"status": "todo",
-			"evidence": ""
+			"status": "in_progress",
+			"evidence": "The code is ready and waits for the user to look at the wheel and members screens. bash harness/scripts/init.sh (eslint, vue-tsc) passes, prettier on the changed files. The error codes of adding a member and the games-take-only-a-name rule were read from parties.yaml and wheel.yaml of the API documentation. The app was not run and nothing was rendered."
 		},
 		{
 			"id": "wishlist-undo-toast",
@@ -96,6 +96,13 @@
 			"title": "Rework the form of the item entry rows to account for the special actions: transfer, copy and delete. The user's words, translated: «rework the form with the special actions in mind (transfer, copy, delete)». The form is components/RowsEditor.vue (the item-entry variant), used by views/Catalog/components/CatalogEntryDialog.vue for the entries of an item and of a perk ability, with the rows parsed in utils/formRows.ts (FormRow in components/formDialog.ts). Today a row is «Кто» (Владелец or Цель), «Действие» (Получает or Теряет, which is the sign of the amount), «Кол-во» and «Ресурс». The special actions are not actions of the form: they hide in the resource list as «Предмет на выбор» (a `user-item` entry: with the action «Получает» it copies the picked copies, with «Теряет» it takes them away, so «copy» and «delete» are the two signs of one resource) and as «Передать выбранный предмет» (a `user-item-transfer` entry: its action is fixed to «Передаёт», the amount has no sign, and «Кто» is the side that loses the copies). In the entry kinds of the backend (items.yaml and perks.yaml of https://api.fgg-challenge.com/scalar) these are `user_item` with a positive amount (copy), `user_item` with a negative amount (take away) and `user_item_transfer`. The use window (views/Resources/components/UseDialog.vue, slots in utils/itemUse.ts) already treats the three differently. Check the form against the documentation of the entry kinds and amounts.",
 			"priority": 14,
 			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "plan-format-from-server",
+			"title": "Copy the plan format of fgg-server into the Plan before edits section of AGENTS.md: Design, Questions, Mine and removals, no item lists and no verification steps.",
+			"priority": 15,
+			"status": "in_progress",
 			"evidence": ""
 		}
 	]

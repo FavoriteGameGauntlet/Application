@@ -54,22 +54,29 @@ export const useAdminSettingsStore = defineStore(
 			}
 		}
 
-		const addMember = async (login: Login, color: string) => {
+		/**
+		 * The two refusals the admin can fix by retyping the login are returned for
+		 * the field to show; any other failure is a toast here.
+		 */
+		const addMember = async (
+			login: Login,
+			color: string,
+		): Promise<'added' | 'not-found' | 'already-member' | 'failed'> => {
 			const toast = useToastStore()
 
 			try {
 				await api.admin.members.add(login, color)
 				toast.show('Игрок добавлен', login)
 				await loadMembers()
-				return true
+				return 'added'
 			} catch (e) {
-				if (codeOf(e) === 'MEMBER_ALREADY_EXISTS') {
-					toast.show('Уже в пати', login, 'info')
-				} else {
-					toast.error(e)
-				}
+				const code = codeOf(e)
 
-				return false
+				if (code === 'USER_LOGIN_NOT_FOUND') return 'not-found'
+				if (code === 'MEMBER_ALREADY_EXISTS') return 'already-member'
+
+				toast.error(e)
+				return 'failed'
 			}
 		}
 

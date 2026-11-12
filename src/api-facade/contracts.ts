@@ -1013,7 +1013,7 @@ export type Api = {
 		}
 		members: {
 			list: () => Promise<PartyMember[]>
-			/** the client picks the color of the new member; 404 USER_NOT_FOUND, 409 MEMBER_ALREADY_EXISTS */
+			/** the client picks the color of the new member; 404 USER_LOGIN_NOT_FOUND, 409 MEMBER_ALREADY_EXISTS (also for a member who left) */
 			add: (login: Login, color: string) => Promise<PartyMember>
 			/** 409 OWN_ADMIN_RIGHTS_REVOKE when the user takes the admin rights off themselves */
 			update: (
