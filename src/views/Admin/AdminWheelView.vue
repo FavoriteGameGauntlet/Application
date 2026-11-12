@@ -61,12 +61,6 @@ const foundEntries = computed(() => {
 	)
 })
 
-const note = computed(() =>
-	isChanges.value
-		? '«Не повторять выпавшее» — пункт не выпадет игроку снова, пока не выпадут остальные. «Вручную» — изменения игрок вносит сам после прокрута.'
-		: 'Выпавшая игра становится текущей. «Не повторять выпавшее» — игра не выпадет снова, пока не выпадут остальные из списка. Enter в строке внизу добавляет игру и оставляет строку для следующей.',
-)
-
 const fields = computed<FormField[]>(() => {
 	// a game has only a name, the backend takes nothing else for it
 	if (!isChanges.value) {
@@ -107,13 +101,11 @@ const fields = computed<FormField[]>(() => {
 			key: 'isManualChange',
 			type: 'check',
 			label: 'Остальное игрок вносит сам',
-			hint: 'После прокрута откроется ручная форма. Для пунктов, которые нельзя описать заранее.',
 		},
 		{
 			key: 'chooseEntries',
 			type: 'check',
 			label: 'Игрок выбирает, что применить',
-			hint: 'Когда пункт выпадет, игрок отметит изменения, которые сработают. Остальные пропустятся.',
 		},
 	]
 })
@@ -384,8 +376,6 @@ onMounted(() => store.load())
 					/>
 				</div>
 			</div>
-
-			<span class="note">{{ note }}</span>
 		</div>
 	</div>
 
@@ -589,12 +579,6 @@ onMounted(() => store.load())
 .item__text {
 	font: var(--type-body-sm);
 	color: var(--text-body);
-	text-wrap: pretty;
-}
-
-.note {
-	font: var(--type-body-sm);
-	color: var(--text-muted);
 	text-wrap: pretty;
 }
 </style>

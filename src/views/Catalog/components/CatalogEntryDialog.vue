@@ -134,7 +134,6 @@ const sections = computed<FormSection[]>(() => {
 											{ value: 'own', label: 'У каждого игрока свои' },
 											{ value: 'shared', label: 'Общие на пати' },
 										],
-										hint: 'Свои или общие на пати — выбирается один раз, потом не изменить.',
 									},
 								]),
 						{
@@ -185,13 +184,11 @@ const sections = computed<FormSection[]>(() => {
 							empty:
 								'Что произойдёт, когда игрок применит предмет. Например: владелец получает 10 золота.',
 							addLabel: 'Действие',
-							hint: 'Цель игрок выберет сам, когда применит предмет.',
 						},
 						{
 							key: 'chooseEntries',
 							type: 'check',
 							label: 'Игрок выбирает, что применить',
-							hint: 'При использовании он отметит строки, которые сработают.',
 						},
 						{
 							key: 'usesMax',
@@ -286,17 +283,6 @@ const sections = computed<FormSection[]>(() => {
 							},
 						],
 					},
-					{
-						tab: 'ability',
-						fields: [
-							{
-								key: 'abilityNote',
-								type: 'note',
-								label: '',
-								hint: 'Способность не меняется после создания: от неё зависит состояние у всех владельцев. Нужна другая — создай новый перк.',
-							},
-						],
-					},
 				]
 			}
 
@@ -329,7 +315,6 @@ const sections = computed<FormSection[]>(() => {
 							key: 'abilityChooseEntries',
 							type: 'check',
 							label: 'Игрок выбирает, что применить',
-							hint: 'При использовании способности он отметит строки, которые сработают.',
 						},
 					],
 				},
@@ -379,7 +364,6 @@ const sections = computed<FormSection[]>(() => {
 							optional: true,
 							width: 120,
 							placeholder: '0',
-							hint: 'Столько событий, заряжающих способность, дают одно использование. 0 — зарядов нет.',
 							when: limited,
 						},
 					],

@@ -2,6 +2,15 @@
 
 Newest entry on top. Record only what was actually verified.
 
+## 2026-11-12 remove-after-form-notices
+
+- Done in code, by the user's answers (the grey paragraphs under the screens and the hints under the fields of the windows, both deleted outright): the `.note` and `.card__note` paragraphs are gone from the admin exchanges, members, rewards and wheel screens, the spin cost card, the exchanges of the player, the manual change form, the list of players, the shared points and the completed games, with their styles and the two computed texts of the wheel and manual screens. The hints under the fields are gone from the catalogue, party, member, admin exchange and admin wheel windows. The `note` field type of `FormDialog` was used only by the perk ability window, so it is removed with it (also from `ARCHITECTURE.md`).
+- Kept on purpose: toasts, hints of the options in the menus, the red reasons why a form cannot be filled yet and the empty pick list of the use window (`hint` of `FormField` stays for them), empty-state texts, «Не меньше 8 символов.» in the login form, the card hints of the system parameters (the feature `system-parameters-data-format` owns them) and the two lines of the wheel screen. Say so if any of them should go too.
+- The rules that the captions carried are written down as the features `rules-ui-*` (priorities 16 to 22), each with the removed texts and ideas for the interface, by the user's word that they are done in other features.
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. The app was not run, so the screens and windows were not looked at.
+- Not verified by me: the look of the screens without the captions (spacing at the bottom of the screens, the window layouts without the hints).
+- Checked by the user (said in chat: «windows-player уже проверен»), so `windows-player` is done and moved to the archive. `remove-after-form-notices` stays `in_progress` until the user has looked at the screens.
+
 ## 2026-11-12 window-icon
 
 - Done in code: the template icons in `src-tauri/icons/` are replaced by the FGG symbol (`fgg-symbol-square` of the design system) on a white rounded plate, because the navy symbol alone vanishes on a dark taskbar. The source is `src-tauri/icons/source/icon.svg` (the C2PA metadata of the original is cut). The set is generated with `npx tauri icon` from a 1024 px render of it; the `android/`, `ios/` and `64x64.png` it also makes are deleted, `bundle.icon` in `tauri.conf.json` is unchanged.
@@ -15,17 +24,7 @@ Newest entry on top. Record only what was actually verified.
 - Bumped the version to 0.7.0 with `npm version 0.7.0 --no-git-tag-version` (package.json, package-lock.json, tauri.conf.json, Cargo.toml, Cargo.lock). The tag `v0.7.0` is created on `master` after the merge, and the release is not a prerelease. The branch also carries the `AGENTS.md` release pointer and the new `harness/PLAYBOOK.md`.
 - Verified: `bash harness/scripts/init.sh` and `cargo check` in `src-tauri/` pass. The app was not run.
 
-## 2026-11-12 wishlist-undo-toast
-
-- Done in code: the «Удалить игру?» window is gone, «Удалить» removes the game at once and the usual toast says «Игра убрана из списка желаемого и с колеса». By the user's word the toast has no «Вернуть» button and no timer bar, and there is no delayed deletion; the shared toast is unchanged. Removed games are shown by the «Показать удалённые» switch next to «Добавить игру» in the wishlist tab (only the current user's), in the same table and in the format the catalogue, the exchanges and the members already use: the row is dimmed (`cell--dead`), has the badge «удалена», and a restore button (`rotate-ccw`, «Вернуть») instead of the edit and delete ones. The restore puts the entry back, rereads both lists and shows a toast; a refusal shows the usual error toast. Two earlier versions (a tab of the games screen, then a window opened by a button) were rolled back: the user said another tab does not fit, the removed games belong to the wishlist, and there already is a format for it.
-- Backend, by `games.yaml`: `DELETE` only hides an entry (its name stays taken), `GET .../wishlist/removed` lists the hidden ones (not those whose game was started), `POST .../wishlist/{id}/restore` brings one back with the old name, date and author (404 `WISHLIST_GAME_NOT_FOUND`, 409 `GAME_ALREADY_PICKED`). `Api.wishlist` got `listRemoved` and `restore`. The spec files are at `/scalar/api/specification/<name>.yaml`, the Scalar page itself is JS-rendered.
-- The user asked why a restore button stands on games that can't be restored, and fixed the backend (`games.yaml` 0.20.0 to 0.21.0): `GET .../wishlist/removed` now also lists the entries whose game was started, each with `removalKind` (`removed` can be restored, `started` can't). By the user's word the switch shows all of them: a `removed` entry has the badge «удалена» and the restore button, a `started` one has the badge «начата» and no button. `Api.wishlist.listRemoved` returns `RemovedWishlistEntry[]` (`WishlistEntry` plus `removalKind`).
-- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. The contract was compared with `games.yaml` 0.21.0; the live backend was not called.
-- Not verified by me: the app was not run, so the removal, the toast, the switch, the dimmed rows and the restore were not looked at. The mockup (a canvas of 67 files) was not opened.
-- Checked by the user (said in chat: «я всё проверил»), so `wishlist-undo-toast` is done and moved to the archive.
-
 ## Open
 
-- `windows-player` is still `in_progress`: the user has not yet looked at the use, spin payment and review windows (details in `harness/archive/progress-2026-11-11.md`).
 - Found, not fixed: in `FormDialog.vue` the `immediate` watcher on `open` writes `chosenTab` before the line that declares it, so a form mounted already open throws. Every caller mounts it closed, so it never shows.
 - A target condition (`target_*`) with a transfer to `self` is still refused by the catalogue form, because the documentation names only `chosen` entries.

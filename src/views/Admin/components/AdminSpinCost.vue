@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import type { AdminWheelGroup, CatalogEntry, SpinCostRow } from '../../../api-facade/contracts'
+import type {
+	AdminWheelGroup,
+	CatalogEntry,
+	SpinCostRow,
+} from '../../../api-facade/contracts'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiIconButton from '../../../components/ui/UiIconButton.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
@@ -19,7 +23,12 @@ const store = useAdminWheelStore()
 const toastStore = useToastStore()
 
 const rows = reactive<Row[]>([])
-const targets = ref<Record<Kind, CatalogEntry[]>>({ points: [], item: [], perk: [], effect: [] })
+const targets = ref<Record<Kind, CatalogEntry[]>>({
+	points: [],
+	item: [],
+	perk: [],
+	effect: [],
+})
 
 const kindOptions = [
 	{ value: 'points', label: 'Очки' },
@@ -37,22 +46,43 @@ const onKind = (row: Row, kind: string) => {
 }
 
 const addRow = () =>
-	rows.push({ kind: 'item', targetId: targets.value.item[0]?.id ?? 0, amount: '1' })
+	rows.push({
+		kind: 'item',
+		targetId: targets.value.item[0]?.id ?? 0,
+		amount: '1',
+	})
 
 const fill = (cost: SpinCostRow[]) =>
-	rows.splice(0, rows.length, ...cost.map((r) => ({ ...r, amount: String(r.amount) })))
+	rows.splice(
+		0,
+		rows.length,
+		...cost.map((r) => ({ ...r, amount: String(r.amount) })),
+	)
 
 const save = async (list: Row[]) => {
 	const parsed = list.map((row) => ({ ...row, amount: Number(row.amount) }))
 
 	if (parsed.some((row) => !Number.isInteger(row.amount) || row.amount <= 0)) {
-		toastStore.show('Проверь количество', 'Нужно целое число больше нуля.', 'danger')
+		toastStore.show(
+			'Проверь количество',
+			'Нужно целое число больше нуля.',
+			'danger',
+		)
 		return
 	}
 
 	// a perk or an effect is held once, so it can only be taken once
-	if (parsed.some((row) => (row.kind === 'perk' || row.kind === 'effect') && row.amount !== 1)) {
-		toastStore.show('Проверь количество', 'Перк или эффект у игрока один: нужно 1.', 'danger')
+	if (
+		parsed.some(
+			(row) =>
+				(row.kind === 'perk' || row.kind === 'effect') && row.amount !== 1,
+		)
+	) {
+		toastStore.show(
+			'Проверь количество',
+			'Перк или эффект у игрока один: нужно 1.',
+			'danger',
+		)
 		return
 	}
 
@@ -95,25 +125,28 @@ onMounted(async () => {
 				@update:model-value="row.targetId = Number($event)"
 			/>
 			<UiInput v-model="row.amount" inputmode="numeric" aria-label="Сколько" />
-			<UiIconButton icon="x" size="sm" label="Убрать строку" @click="rows.splice(i, 1)" />
+			<UiIconButton
+				icon="x"
+				size="sm"
+				label="Убрать строку"
+				@click="rows.splice(i, 1)"
+			/>
 		</div>
 
 		<span v-if="!rows.length" class="card__empty">Прокрут бесплатный.</span>
 
 		<div class="card__actions">
-			<UiButton variant="ghost" size="sm" icon="plus" @click="addRow">Добавить строку</UiButton>
+			<UiButton variant="ghost" size="sm" icon="plus" @click="addRow"
+				>Добавить строку</UiButton
+			>
 			<UiButton variant="ghost" size="sm" class="card__danger" @click="onClear">
 				Сделать бесплатным
 			</UiButton>
 			<div class="card__spacer"></div>
-			<UiButton variant="secondary" icon="check" @click="save(rows)">Сохранить</UiButton>
+			<UiButton variant="secondary" icon="check" @click="save(rows)"
+				>Сохранить</UiButton
+			>
 		</div>
-
-		<span class="card__note">
-			Цена только у этой группы, у других групп своя. Она списывается, когда игрок применяет
-			результат, и действует на следующие прокруты. Если у игрока предметов больше, чем нужно,
-			он сам выбирает, какие списать.
-		</span>
 	</div>
 </template>
 
@@ -155,12 +188,6 @@ onMounted(async () => {
 
 .card .card__danger {
 	color: var(--danger-text);
-}
-
-.card__note {
-	font: var(--type-body-sm);
-	color: var(--text-muted);
-	text-wrap: pretty;
 }
 
 .row {

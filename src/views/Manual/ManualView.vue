@@ -64,12 +64,6 @@ const currentLabel = computed(() => {
 	return current?.kind === 'wheel' ? current.name : 'Ручное изменение'
 })
 
-const note = computed(() =>
-	draft.value?.kind === 'fix'
-		? 'Исходная запись не меняется: исправление попадёт в журнал новой записью, и следующие события останутся корректными. Форма ничего не подставляет и не отменяет сама.'
-		: '«Было → станет» считается по текущим ресурсам игрока. Все изменения попадут в журнал одной записью с меткой «вручную».',
-)
-
 const rows = ref<Row[]>([])
 const panelUser = ref(sessionStore.login)
 
@@ -463,10 +457,6 @@ onMounted(async () => {
 						<UiButton icon="check" @click="onApply">Применить</UiButton>
 					</div>
 				</div>
-
-				<span class="note">
-					{{ note }}
-				</span>
 			</div>
 
 			<UserResourcesPanel v-model:user="panelUser" class="side" />
@@ -702,11 +692,5 @@ onMounted(async () => {
 	display: flex;
 	align-items: center;
 	height: 40px;
-}
-
-.note {
-	font: var(--type-body-sm);
-	color: var(--text-muted);
-	text-wrap: pretty;
 }
 </style>

@@ -58,7 +58,6 @@ const colorField: FormField = {
 	key: 'color',
 	type: 'color',
 	label: 'Цвет',
-	hint: 'Из палитры или свой в виде #ffb000. Цвета могут повторяться.',
 }
 
 const fields = computed<FormField[]>(() => [
@@ -66,13 +65,11 @@ const fields = computed<FormField[]>(() => [
 		key: 'displayName',
 		label: 'Имя в пати',
 		placeholder: editing.value?.login,
-		hint: 'Пустое — покажем логин.',
 	},
 	{
 		key: 'isAdmin',
 		label: 'Админ пати',
 		type: 'check',
-		hint: 'Меняет каталоги, колесо, награды и участников.',
 	},
 	colorField,
 ])
@@ -224,11 +221,6 @@ onMounted(() => store.loadMembers())
 				Такого игрока в списке нет. Нажми «Добавить», чтобы добавить его в пати.
 			</div>
 		</div>
-
-		<span class="note">
-			Пустое имя — показывается логин. Снять админа с себя нельзя. Если из пати
-			уходит последний админ, им становится тот, кто вступил раньше всех.
-		</span>
 	</div>
 
 	<FormDialog
@@ -345,10 +337,5 @@ onMounted(() => store.loadMembers())
 
 .role {
 	display: flex;
-}
-
-.note {
-	font: var(--type-body-sm);
-	color: var(--text-muted);
 }
 </style>

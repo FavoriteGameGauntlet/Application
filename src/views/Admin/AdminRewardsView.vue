@@ -208,12 +208,6 @@ onMounted(async () => {
 				>
 			</div>
 		</div>
-
-		<span class="note">
-			Длительность таймера меняется в «Системных параметрах». Новая награда
-			действует только на следующие таймеры и игры, уже выданные не
-			пересчитываются.
-		</span>
 	</div>
 </template>
 
@@ -269,11 +263,5 @@ onMounted(async () => {
 	grid-template-columns: 160px minmax(0, 1fr) 120px 32px;
 	gap: 8px;
 	align-items: center;
-}
-
-.note {
-	font: var(--type-body-sm);
-	color: var(--text-muted);
-	text-wrap: pretty;
 }
 </style>

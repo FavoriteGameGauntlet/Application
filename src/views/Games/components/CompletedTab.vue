@@ -50,12 +50,20 @@ const reviewedGame = computed(() =>
 			<span>Оценка</span>
 		</div>
 
-		<div v-for="game in games" :key="game.gameId" class="table__row table__row--body">
+		<div
+			v-for="game in games"
+			:key="game.gameId"
+			class="table__row table__row--body"
+		>
 			<span class="table__name">{{ game.name }}</span>
-			<span class="table__num">{{ formatPeriod(game.startedDate, game.endedDate) }}</span>
+			<span class="table__num">{{
+				formatPeriod(game.startedDate, game.endedDate)
+			}}</span>
 			<span class="table__num">{{ formatDuration(game.timeSpent) }}</span>
 			<span class="table__status">
-				<UiBadge :tone="statuses[game.endState].tone">{{ statuses[game.endState].label }}</UiBadge>
+				<UiBadge :tone="statuses[game.endState].tone">{{
+					statuses[game.endState].label
+				}}</UiBadge>
 			</span>
 			<span class="table__rating">
 				<template v-if="game.rating">
@@ -92,10 +100,6 @@ const reviewedGame = computed(() =>
 			}}
 		</div>
 	</div>
-
-	<span v-if="mine" class="note">
-		Оценку и отзыв видят все в пати. Свой отзыв можно поправить в любой момент.
-	</span>
 
 	<ReviewDialog
 		:game="reviewedGame"
@@ -178,10 +182,5 @@ const reviewedGame = computed(() =>
 	font: var(--type-body-sm);
 	color: var(--text-muted);
 	border-top: 1px solid var(--border-subtle);
-}
-
-.note {
-	font: var(--type-body-sm);
-	color: var(--text-muted);
 }
 </style>
