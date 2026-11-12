@@ -276,6 +276,7 @@ onMounted(() => store.load())
 					/>
 				</div>
 				<UiCheckbox
+					v-if="!group.system"
 					:model-value="group.noRepeat"
 					label="Не повторять выпавшее"
 					@update:model-value="store.setNoRepeat(group, $event)"
