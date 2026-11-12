@@ -12,8 +12,8 @@ import UserWishlistTab from './components/UserWishlistTab.vue'
 import WishlistTab from './components/WishlistTab.vue'
 
 const tabs = [
-	'Мой вишлист',
-	'Вишлисты игроков',
+	'Мой список желаемого',
+	'Списки желаемого игроков',
 	'Мои пройденные',
 	'Пройденные игроков',
 ]
@@ -33,7 +33,9 @@ const otherUsers = computed(() =>
 const selectedUser = ref(otherUsers.value[0])
 
 const isUserTab = computed(
-	() => tab.value === 'Вишлисты игроков' || tab.value === 'Пройденные игроков',
+	() =>
+		tab.value === 'Списки желаемого игроков' ||
+		tab.value === 'Пройденные игроков',
 )
 
 onMounted(() => wishlistStore.loadMine())
@@ -51,13 +53,24 @@ onMounted(() => wishlistStore.loadMine())
 			<div v-if="isUserTab" class="user">
 				<span class="user__label">Игрок</span>
 				<div class="user__select">
-					<UiSelect v-model="selectedUser" :options="otherUsers" aria-label="Игрок" />
+					<UiSelect
+						v-model="selectedUser"
+						:options="otherUsers"
+						aria-label="Игрок"
+					/>
 				</div>
 			</div>
 
-			<WishlistTab v-if="tab === 'Мой вишлист'" />
-			<UserWishlistTab v-else-if="tab === 'Вишлисты игроков'" :user="selectedUser" />
-			<CompletedTab v-else-if="tab === 'Мои пройденные'" :user="sessionStore.login" mine />
+			<WishlistTab v-if="tab === 'Мой список желаемого'" />
+			<UserWishlistTab
+				v-else-if="tab === 'Списки желаемого игроков'"
+				:user="selectedUser"
+			/>
+			<CompletedTab
+				v-else-if="tab === 'Мои пройденные'"
+				:user="sessionStore.login"
+				mine
+			/>
 			<CompletedTab v-else :user="selectedUser" />
 		</div>
 	</div>

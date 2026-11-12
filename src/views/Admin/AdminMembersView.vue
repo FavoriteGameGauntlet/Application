@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import type { PartyMember } from '../../api-facade/contracts'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
 import type { FormField, FormValues } from '../../components/formDialog'
 import FormDialog from '../../components/FormDialog.vue'
+import InlineAddRow from '../../components/InlineAddRow.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
-import UiButton from '../../components/ui/UiButton.vue'
 import UiIconButton from '../../components/ui/UiIconButton.vue'
-import UiInput from '../../components/ui/UiInput.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiUserAvatar from '../../components/ui/UiUserAvatar.vue'
 import { useAdminSettingsStore } from '../../stores/adminSettingsStore'
@@ -17,17 +16,20 @@ import { formatDate } from '../../utils/format'
 import { isMemberColor, nextMemberColor } from '../../utils/memberColor'
 import { plural } from '../../utils/plural'
 
-/** `{}` adds a member, undefined means the dialog is closed */
-type Dialog = { member?: PartyMember }
-
 const store = useAdminSettingsStore()
 const sessionStore = useSessionStore()
 const toastStore = useToastStore()
 
-const dialog = ref<Dialog>()
+/** the member in the edit dialog, undefined means the dialog is closed */
+const editing = ref<PartyMember>()
 const removing = ref<PartyMember>()
 
+/** one field: the text filters the table and is the login that «Добавить» adds */
 const query = ref('')
+const addError = ref<string>()
+
+// the message is about the login that was typed, so a new text takes it away
+watch(query, () => (addError.value = undefined))
 
 /** those who left stay in the list so that an admin can bring them back, they go last */
 const found = computed(() => {
@@ -59,50 +61,52 @@ const colorField: FormField = {
 	hint: 'Из палитры или свой в виде #ffb000. Цвета могут повторяться.',
 }
 
-const fields = computed<FormField[]>(() =>
-	dialog.value?.member
-		? [
-				{
-					key: 'displayName',
-					label: 'Имя в пати',
-					placeholder: dialog.value.member.login,
-					hint: 'Пустое — покажем логин.',
-				},
-				{
-					key: 'isAdmin',
-					label: 'Админ пати',
-					type: 'check',
-					hint: 'Меняет каталоги, колесо, награды и участников.',
-				},
-				colorField,
-			]
-		: [
-				{
-					key: 'login',
-					label: 'Логин',
-					required: 'логин',
-					placeholder: 'dima',
-					hint: 'Игрок должен быть зарегистрирован.',
-				},
-				colorField,
-			],
-)
+const fields = computed<FormField[]>(() => [
+	{
+		key: 'displayName',
+		label: 'Имя в пати',
+		placeholder: editing.value?.login,
+		hint: 'Пустое — покажем логин.',
+	},
+	{
+		key: 'isAdmin',
+		label: 'Админ пати',
+		type: 'check',
+		hint: 'Меняет каталоги, колесо, награды и участников.',
+	},
+	colorField,
+])
 
-/** a new member starts with the palette color that the current members use least */
 const initial = computed<FormValues>(() => ({
-	login: '',
-	displayName: dialog.value?.member?.displayName ?? '',
-	isAdmin: dialog.value?.member?.isAdmin ?? false,
-	color:
-		dialog.value?.member?.color ??
+	displayName: editing.value?.displayName ?? '',
+	isAdmin: editing.value?.isAdmin ?? false,
+	color: editing.value?.color ?? '',
+}))
+
+/** a new member gets the palette color that the current members use least, and it is changed in the edit dialog */
+const onAdd = async (login: string) => {
+	const result = await store.addMember(
+		login,
 		nextMemberColor(
 			store.members.filter((m) => !m.leftDate).map((m) => m.color),
 		),
-}))
+	)
+
+	if (result === 'added') {
+		query.value = ''
+	} else if (result === 'not-found') {
+		addError.value = `Игрока ${login} нет. Проверь логин: он должен быть зарегистрирован.`
+	} else if (result === 'already-member') {
+		// the backend refuses a member who left as well
+		addError.value = `${login} уже есть в списке. Если он вышел из пати, верни его в таблице.`
+	}
+}
 
 const onSave = async (values: FormValues) => {
-	const member = dialog.value?.member
+	const member = editing.value
 	const color = String(values.color).trim().toLowerCase()
+
+	if (!member) return
 
 	if (!isMemberColor(color)) {
 		toastStore.show(
@@ -113,20 +117,13 @@ const onSave = async (values: FormValues) => {
 		return
 	}
 
-	if (!member) {
-		const login = String(values.login).trim()
-
-		if (await store.addMember(login, color)) dialog.value = undefined
-		return
-	}
-
 	const ok = await store.updateMember(member, {
 		displayName: String(values.displayName).trim() || null,
 		isAdmin: values.isAdmin === true,
 		color,
 	})
 
-	if (ok) dialog.value = undefined
+	if (ok) editing.value = undefined
 }
 
 const askRemove = (member: PartyMember) => {
@@ -149,18 +146,16 @@ onMounted(() => store.loadMembers())
 		<div class="head">
 			<UiPageTitle>Участники и права</UiPageTitle>
 			<span class="head__count">{{ count }}</span>
-			<div class="head__spacer"></div>
-			<div class="head__search">
-				<UiInput
-					v-model="query"
-					compact
-					icon="search"
-					placeholder="Найти…"
-					aria-label="Поиск"
-				/>
-			</div>
-			<UiButton icon="plus" @click="dialog = {}">Добавить</UiButton>
 		</div>
+
+		<InlineAddRow
+			v-model="query"
+			icon="search"
+			placeholder="Логин игрока…"
+			label="Логин игрока: поиск и добавление"
+			:error="addError"
+			@submit="onAdd"
+		/>
 
 		<div class="table">
 			<div class="table__row table__row--head">
@@ -213,7 +208,7 @@ onMounted(() => store.loadMembers())
 							icon="pencil"
 							size="sm"
 							label="Изменить"
-							@click="dialog = { member }"
+							@click="editing = member"
 						/>
 						<UiIconButton
 							icon="trash-2"
@@ -224,6 +219,10 @@ onMounted(() => store.loadMembers())
 					</template>
 				</span>
 			</div>
+
+			<div v-if="!found.length" class="table__empty">
+				Такого игрока в списке нет. Нажми «Добавить», чтобы добавить его в пати.
+			</div>
 		</div>
 
 		<span class="note">
@@ -233,20 +232,16 @@ onMounted(() => store.loadMembers())
 	</div>
 
 	<FormDialog
-		:open="!!dialog"
-		:title="dialog?.member ? dialog.member.login : 'Добавить участника'"
-		:plain-title="!!dialog?.member"
+		:open="!!editing"
+		:title="editing?.login ?? ''"
+		plain-title
 		:sections="[{ fields }]"
 		:initial
-		@close="dialog = undefined"
+		@close="editing = undefined"
 		@save="onSave"
 	>
-		<template v-if="dialog?.member" #lead>
-			<UiUserAvatar
-				:name="dialog.member.login"
-				:color="dialog.member.color"
-				:size="36"
-			/>
+		<template v-if="editing" #lead>
+			<UiUserAvatar :name="editing.login" :color="editing.color" :size="36" />
 		</template>
 	</FormDialog>
 
@@ -277,14 +272,6 @@ onMounted(() => store.loadMembers())
 .head__count {
 	font: var(--type-body-sm);
 	color: var(--text-muted);
-}
-
-.head__spacer {
-	flex: 1;
-}
-
-.head__search {
-	width: 260px;
 }
 
 .table {
@@ -325,6 +312,13 @@ onMounted(() => store.loadMembers())
 	display: flex;
 	gap: 4px;
 	justify-content: flex-end;
+}
+
+.table__empty {
+	padding: 16px;
+	font: var(--type-body-sm);
+	color: var(--text-subtle);
+	border-top: 1px solid var(--border-subtle);
 }
 
 .user {

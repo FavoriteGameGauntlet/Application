@@ -54,14 +54,20 @@ const onAdd = async () => {
 				@keydown.enter="onAdd"
 			/>
 		</div>
-		<UiButton class="add__button" variant="secondary" size="lg" icon="plus" @click="onAdd">
+		<UiButton
+			class="add__button"
+			variant="secondary"
+			size="lg"
+			icon="plus"
+			@click="onAdd"
+		>
 			Добавить
 		</UiButton>
 	</div>
 
 	<div class="table">
 		<div class="table__row table__row--head">
-			<span>Игра в вишлисте {{ user }}</span>
+			<span>Игра в списке желаемого у {{ user }}</span>
 			<span>Добавлена</span>
 		</div>
 
@@ -75,7 +81,7 @@ const onAdd = async () => {
 		</div>
 
 		<div v-if="!wishlistStore.lists[user]?.length" class="table__empty">
-			Вишлист {{ user }} пока пуст. Подкинь игру через поле выше.
+			Список желаемого у {{ user }} пока пуст. Подкинь игру через поле выше.
 		</div>
 	</div>
 </template>

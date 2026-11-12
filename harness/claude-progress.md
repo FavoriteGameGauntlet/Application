@@ -2,6 +2,16 @@
 
 Newest entry on top. Record only what was actually verified.
 
+## 2026-11-12 screens-wheel-members
+
+- Done in code: the groups of the wheel are pill tabs above the table instead of the mockup's chips, by the user's word (a chip is for information, not for controls; the pencil inside a chip also overflowed its round shape). The pencil of the selected group and «+ Группа» stand beside the tabs, the name is edited in a field in their place (Enter and Esc, the delete button inside the edit mode). A game is added by a row at the end of the table; a member is added by a login row above the table with the error under the field; the same field filters the table, so the separate search of the members is gone (by the user's word, as in the list of wanted games). The windows of a group, of a new game and of a new member are gone. A new member gets the least used palette color, it is changed in the edit window.
+- The backend takes only a name for a game (`wheel.yaml`), so by the user's word the description of a game is removed: no field in the game window, no text in the row. The game window only renames.
+- Found and fixed: adding a member answers `USER_LOGIN_NOT_FOUND` (`parties.yaml`), the code in the store and in the contract comment said `USER_NOT_FOUND`. `MEMBER_ALREADY_EXISTS` also comes for a member who left, so the text under the field says to bring them back in the table.
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. The app was not run and nothing was rendered; the error codes were read from the documentation, the live backend was not called.
+- Not verified by me: the app was not run. The group meta line (count of items, «не повторять») is no longer shown next to the group name.
+- Also in this branch, `wishlist-rename-text`: every text with «вишлист» now says «список желаемого» (the words are declined where the sentence needs it), and the admin facade shows the system wheel group, which the backend names in English, as «Список желаемого». Names in the code stay. The mockup still says «вишлист» and was not changed.
+- Checked by the user (said in chat: «Я проверил, всё работает»), so `screens-wheel-members` and `wishlist-rename-text` are done and moved to the archive.
+
 ## 2026-11-12 release-0.6.0
 
 - Bumped the version to 0.6.0 with `npm version 0.6.0 --no-git-tag-version` (package.json, package-lock.json, tauri.conf.json, Cargo.toml, Cargo.lock). The tag `v0.6.0` is created on `master` after the merge, and the release is not a prerelease.

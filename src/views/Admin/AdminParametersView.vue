@@ -23,8 +23,8 @@ const descriptions: Record<string, Description> = {
 		check: (n) => (n < 1 ? 'Не меньше секунды.' : undefined),
 	},
 	MinimumNumberOfWishlistGames: {
-		label: 'Игр в вишлисте, чтобы крутить его',
-		hint: 'Минимум игр в вишлисте игрока.',
+		label: 'Игр в списке желаемого, чтобы крутить его',
+		hint: 'Минимум игр в списке желаемого игрока.',
 		check: (n) => (n < 0 ? 'Не меньше нуля.' : undefined),
 	},
 	MinimumAvailableWheelEffectsForRoll: {
@@ -43,7 +43,8 @@ const labelOf = (parameter: SystemParameter) =>
 	descriptions[parameter.name]?.label ?? parameter.name
 
 const syncDraft = () => {
-	for (const parameter of store.parameters) draft[parameter.name] = parameter.value
+	for (const parameter of store.parameters)
+		draft[parameter.name] = parameter.value
 }
 
 const isChanged = (parameter: SystemParameter) =>
@@ -54,14 +55,22 @@ const onSave = async (parameter: SystemParameter) => {
 	const number = Number(value)
 
 	if (!value || !Number.isInteger(number)) {
-		toastStore.show('Не понял число', `${labelOf(parameter)}: нужно целое число.`, 'danger')
+		toastStore.show(
+			'Не понял число',
+			`${labelOf(parameter)}: нужно целое число.`,
+			'danger',
+		)
 		return
 	}
 
 	const problem = descriptions[parameter.name]?.check(number)
 
 	if (problem) {
-		toastStore.show('Проверь значение', `${labelOf(parameter)}: ${problem}`, 'danger')
+		toastStore.show(
+			'Проверь значение',
+			`${labelOf(parameter)}: ${problem}`,
+			'danger',
+		)
 		return
 	}
 
@@ -86,7 +95,11 @@ onMounted(async () => {
 	<div class="parameters">
 		<UiPageTitle>Системные параметры</UiPageTitle>
 
-		<div v-for="parameter in store.parameters" :key="parameter.name" class="card">
+		<div
+			v-for="parameter in store.parameters"
+			:key="parameter.name"
+			class="card"
+		>
 			<div class="card__head">
 				<span class="card__label">{{ labelOf(parameter) }}</span>
 				<UiBadge v-if="!parameter.isDefault" tone="accent">изменено</UiBadge>
@@ -105,7 +118,9 @@ onMounted(async () => {
 						@keydown.enter="onSave(parameter)"
 					/>
 				</div>
-				<span class="card__default">по умолчанию: {{ parameter.defaultValue }}</span>
+				<span class="card__default"
+					>по умолчанию: {{ parameter.defaultValue }}</span
+				>
 				<div class="card__spacer"></div>
 				<UiButton
 					v-if="!parameter.isDefault"

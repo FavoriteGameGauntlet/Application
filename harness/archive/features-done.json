@@ -13,6 +13,20 @@
 			"priority": 3,
 			"status": "done",
 			"evidence": "Done 2026-11-12. Checked by the user (said in chat: «Всё работает»). Run: bash harness/scripts/init.sh passes, prettier on the changed files; useSlots, needsTargets, needsUseForm and allowedTargets were run in Node for a giving and a taking transfer; the contract was compared with items.yaml, perks.yaml and history.yaml. The direction of a transfer is set by the entry in the catalogue («Владелец» gives to the chosen players, «Цель» hands to the owner), not chosen at the use. Left open: a target_* condition with a transfer to the holder is still refused by the catalogue form."
+		},
+		{
+			"id": "screens-wheel-members",
+			"title": "Bring the screens without a window to the mockup: the wheel (groups as chips, editing in the chip, the game as a row at the end of the table) and the members (the login in a row above the table, the error under the field). Screens without a window are in scope by the user's decision. Mockup: https://claude.ai/artifact/54KmxzJqLk5G5hAZDG5qK4, the check rules are the same as in windows-wheel-exchange-party (do not run the app, the user looks at the windows and screens). The wishlist is not included, it is in wishlist-undo-toast.",
+			"priority": 4,
+			"status": "done",
+			"evidence": "Done 2026-11-12. Checked by the user (said in chat: «Я проверил, всё работает»). Run: bash harness/scripts/init.sh passes, prettier on the changed files. The error codes of adding a member and the name-only game were read from parties.yaml and wheel.yaml of the API documentation. By the user's decisions: the groups are pill tabs, not chips (a chip is for information, not for controls); a game has only a name, so no description; the search and the add of a member are one field."
+		},
+		{
+			"id": "wishlist-rename-text",
+			"title": "Rename the wishlist in every text the user sees to «Список желаемого»: tabs, toasts, empty states, the wheel button and group title, the admin parameter, the registration hint, and the name of the system wheel group in the admin wheel, which the backend sends in English.",
+			"priority": 15,
+			"status": "done",
+			"evidence": "Done 2026-11-12. Checked by the user (said in chat: «Я проверил, всё работает»). Run: bash harness/scripts/init.sh passes, prettier on the changed files. The system wheel group, which the backend names in English, is renamed in the admin facade."
 		}
 	]
 }

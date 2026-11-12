@@ -100,7 +100,7 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 
 	/** what the result card shows after «Выпало ·» */
 	const resultSource = computed(() => {
-		if (resultGroup.value?.kind === 'wishlist') return 'Вишлист'
+		if (resultGroup.value?.kind === 'wishlist') return 'Список желаемого'
 
 		return resultGroup.value?.name ?? ''
 	})
@@ -248,7 +248,7 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 
 		if (!pool.value.length) {
 			useToastStore().show(
-				'Вишлист пуст',
+				'Список желаемого пуст',
 				'Перекручивать не из чего.',
 				'danger',
 			)
