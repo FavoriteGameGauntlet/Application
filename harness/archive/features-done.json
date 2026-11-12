@@ -41,6 +41,13 @@
 			"priority": 5,
 			"status": "done",
 			"evidence": "Done 2026-11-12. Checked by the user (said in chat: «я всё проверил»). Run: bash harness/scripts/init.sh passes, prettier on the changed files. The contract (listRemoved with removalKind, restore) was compared with games.yaml 0.21.0 of the API documentation; the live backend was not called, the app was not run by the agent. By the user's decisions: no «Вернуть» button in the toast, no timer bar, no delayed deletion; the removed games are shown by the «Показать удалённые» switch in the same table, as the catalogue, the exchanges and the members do; a started game is shown with the badge «начата» and has no restore button."
+		},
+		{
+			"id": "window-icon",
+			"title": "Replace the Tauri template icon of the app window with the FGG symbol from the design system (https://claude.ai/artifact/S3qWLPo4bp6J62R7JpxvbK)",
+			"priority": 16,
+			"status": "done",
+			"evidence": "Done 2026-11-12. Checked by the user (said in chat: «Всё работает»), in `tauri dev` run with GDK_BACKEND=x11 and WEBKIT_DISABLE_DMABUF_RENDERER=1 after `cargo clean -p fgg`. The icon set in src-tauri/icons/ is generated with `tauri icon` from src-tauri/icons/source/icon.svg (the symbol on a white rounded plate, the plate color is the agent's choice). bash harness/scripts/init.sh and cargo check pass. The Windows build (icon.ico, the installer) was not looked at. Wayland ignores the window icon of the app, so under Wayland without GDK_BACKEND=x11 the icon does not show in `dev`."
 		}
 	]
 }

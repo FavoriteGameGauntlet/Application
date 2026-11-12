@@ -106,6 +106,13 @@
 			"evidence": "Done 2026-11-12. Full record: harness/archive/features-done.json"
 		},
 		{
+			"id": "window-icon",
+			"title": "Replace the Tauri template icon of the app window with the FGG symbol",
+			"priority": 16,
+			"status": "done",
+			"evidence": "Done 2026-11-12. Full record: harness/archive/features-done.json"
+		},
+		{
 			"id": "rules-ui-members",
 			"title": "Express through the interface the rules that the removed captions of the members screen and its window stated. Removed: «Пустое имя — показывается логин», «Снять админа с себя нельзя», «Если из пати уходит последний админ, им становится тот, кто вступил раньше всех»; in the window «Пустое — покажем логин», «Меняет каталоги, колесо, награды и участников», «Из палитры или свой в виде #ffb000. Цвета могут повторяться». Ideas: the admin switch is disabled in the row of the user themself, with the reason on hover; the removal confirmation names who becomes the admin when the last one leaves; the name field shows the login as a placeholder (it already does); the admin switch shows what an admin may do on hover; a color that is not a hex gets an error under the field, not a toast. Open: which of these the user wants.",
 			"priority": 16,
