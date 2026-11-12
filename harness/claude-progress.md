@@ -4,11 +4,11 @@ Newest entry on top. Record only what was actually verified.
 
 ## 2026-11-12 screens-wheel-members
 
-- Done in code: the groups of the wheel are chips above the table (rename in the chip with Enter and Esc, the delete button inside the edit mode, «+ Группа» opens a chip for a new group); a game is added by a row at the end of the table; a member is added by a login row above the table with the error under the field. The windows of a group, of a new game and of a new member are gone. A new member gets the least used palette color, it is changed in the edit window.
+- Done in code: the groups of the wheel are pill tabs above the table instead of the mockup's chips, by the user's word (a chip is for information, not for controls; the pencil inside a chip also overflowed its round shape). The pencil of the selected group and «+ Группа» stand beside the tabs, the name is edited in a field in their place (Enter and Esc, the delete button inside the edit mode). A game is added by a row at the end of the table; a member is added by a login row above the table with the error under the field. The windows of a group, of a new game and of a new member are gone. A new member gets the least used palette color, it is changed in the edit window.
 - The backend takes only a name for a game (`wheel.yaml`), so by the user's word the description of a game is removed: no field in the game window, no text in the row. The game window only renames.
 - Found and fixed: adding a member answers `USER_LOGIN_NOT_FOUND` (`parties.yaml`), the code in the store and in the contract comment said `USER_NOT_FOUND`. `MEMBER_ALREADY_EXISTS` also comes for a member who left, so the text under the field says to bring them back in the table.
 - Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. The app was not run and nothing was rendered; the error codes were read from the documentation, the live backend was not called.
-- Not verified: the chips, the editing in the chip, the add rows and the error under the field were not looked at. The group meta line (count of items, «не повторять») is no longer shown in the chip, following the mockup.
+- Not verified: the tabs, the editing of a group name, the add rows and the error under the field were not looked at. The group meta line (count of items, «не повторять») is no longer shown next to the group name.
 - Next step: the user looks at the wheel and the members screens; then set `screens-wheel-members` to done with "Checked by the user".
 
 ## 2026-11-12 release-0.6.0
