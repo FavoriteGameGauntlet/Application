@@ -27,13 +27,13 @@ export const useWishlistStore = defineStore(StoreName.Wishlist, () => {
 			const game = await api.wishlist.add(login, name)
 
 			lists.value[login] = [...(lists.value[login] ?? []), game]
-			toast.show(`Добавлено в вишлист${owner}`, name)
+			toast.show(`Добавлено в список желаемого${owner}`, name)
 			return true
 		} catch (e) {
 			const code = (e as HttpErrorResponse).body?.code
 
 			if (code === 'WISHLIST_GAME_ALREADY_EXISTS') {
-				toast.show(`Уже в вишлисте${owner}`, name, 'info')
+				toast.show(`Уже в списке желаемого${owner}`, name, 'info')
 			} else if (code === 'GAME_ALREADY_PICKED') {
 				toast.show(`Игру уже выбирали${owner}`, name, 'info')
 			} else {
@@ -63,7 +63,7 @@ export const useWishlistStore = defineStore(StoreName.Wishlist, () => {
 			lists.value[useSessionStore().login] = mine.value.filter(
 				(g) => g.id !== id,
 			)
-			useToastStore().show('Удалено из вишлиста', name, 'info')
+			useToastStore().show('Удалено из списка желаемого', name, 'info')
 		} catch (e) {
 			useToastStore().error(e)
 		}

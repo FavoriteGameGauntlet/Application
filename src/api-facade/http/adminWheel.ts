@@ -50,7 +50,8 @@ const toAdminGroup = (
 	pointTypes: PointType[],
 ): AdminWheelGroup => ({
 	id: group.id,
-	name: group.name,
+	// the backend names the wishlist group of a member itself, in English
+	name: group.kind === 'wishlist' ? 'Список желаемого' : group.name,
 	kind: group.kind === 'changes' ? 'changes' : 'games',
 	system: group.kind === 'wishlist',
 	noRepeat: group.shouldCheckHistory,

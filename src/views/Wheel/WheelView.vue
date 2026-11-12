@@ -41,7 +41,7 @@ const sources = computed(() =>
 )
 
 const groupName = (group: WheelGroup) =>
-	group.kind === 'wishlist' ? 'Твой вишлист' : group.name
+	group.kind === 'wishlist' ? 'Твой список желаемого' : group.name
 
 const groupCount = (group: WheelGroup) =>
 	group.kind === 'wishlist' ? wishlistStore.mine.length : group.entries.length
@@ -74,7 +74,7 @@ const reelCenter = computed(() => {
 
 	switch (wheelStore.group?.kind) {
 		case 'wishlist':
-			return 'Вишлист пуст'
+			return 'Список желаемого пуст'
 		case 'games':
 			return 'В группе нет игр'
 		case 'changes':
@@ -148,7 +148,7 @@ onMounted(async () => {
 						class="source__link"
 						:to="{ name: RouteName.Games }"
 					>
-						Открыть вишлист
+						Открыть список желаемого
 					</RouterLink>
 				</div>
 			</div>
