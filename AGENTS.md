@@ -93,6 +93,7 @@ The plan has no list of components, `Api` methods, fields, routes or `StoreKey` 
 - Commit messages: English, imperative mood (`Add the free manual change to the admin sidebar`), no full stop in the title. A commit is a title and at most two lines of body; the diff already shows what changed.
 - The version lives in three places: `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` (+ `Cargo.lock`). Change it only with `npm version <x>`: the `scripts/bump-version.mjs` script syncs the others and runs `cargo update -p fgg`. Don't edit the version by hand.
 - `.github/workflows/release.yml` builds a release on a `v*` tag (Windows NSIS, Linux AppImage). Don't create or push tags without an explicit request.
+- `harness/PLAYBOOK.md` describes the release procedure and the format of the release description. Read it only when the user asks for a release.
 - The auto-updater verifies a signature (`plugins.updater.pubkey` in `tauri.conf.json`). Don't touch the key or that block.
 
 ## Pull requests
