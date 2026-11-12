@@ -86,11 +86,6 @@ onMounted(() => membersStore.load())
 				<span class="table__num">{{ member.spinsCount }}</span>
 			</div>
 		</div>
-
-		<span class="note">
-			Очки, предметы и эффекты — в профиле игрока. Нажми на строку, чтобы его
-			открыть.
-		</span>
 	</div>
 </template>
 
@@ -122,10 +117,9 @@ onMounted(() => membersStore.load())
 
 .table__row {
 	display: grid;
-	grid-template-columns: minmax(120px, 1fr) 120px minmax(
-			120px,
-			1.2fr
-		) 76px 76px 76px;
+	grid-template-columns:
+		minmax(120px, 1fr) 120px minmax(120px, 1.2fr)
+		76px 76px 76px;
 	gap: 12px;
 	align-items: center;
 }
@@ -198,10 +192,6 @@ onMounted(() => membersStore.load())
 	color: var(--text-strong);
 }
 
-.note {
-	font: var(--type-body-sm);
-	color: var(--text-muted);
-}
 .user__login {
 	font: var(--type-body-sm);
 	color: var(--text-muted);

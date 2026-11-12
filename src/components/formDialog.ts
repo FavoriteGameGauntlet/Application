@@ -19,7 +19,6 @@ export type FormField = {
 		| 'check'
 		| 'select'
 		| 'rows'
-		| 'note'
 		| 'color'
 		| 'chips'
 		| 'choice'

@@ -68,13 +68,11 @@ const sections: FormSection[] = [
 				key: 'chooseSource',
 				type: 'check',
 				label: 'Игрок выбирает, что отдать',
-				hint: 'При обмене он отметит строки, которые отдаёт. Остальные не списываются.',
 			},
 			{
 				key: 'chooseTarget',
 				type: 'check',
 				label: 'Игрок выбирает, что получить',
-				hint: 'При обмене он отметит строки, которые получает. Остальные не выдаются.',
 				column: 3,
 			},
 		],
@@ -245,11 +243,6 @@ watch(
 				Обменов нет. Нажми «Добавить».
 			</div>
 		</div>
-
-		<span class="note">
-			Обе стороны — список изменений, как в «Выдать». Удалённый обмен скрывается
-			у игроков, история сохраняется.
-		</span>
 	</div>
 
 	<FormDialog
@@ -372,10 +365,5 @@ watch(
 	font-weight: 600;
 	background: var(--surface-sunken);
 	border: 0;
-}
-
-.note {
-	font: var(--type-body-sm);
-	color: var(--text-muted);
 }
 </style>

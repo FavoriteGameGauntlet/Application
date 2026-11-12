@@ -15,9 +15,13 @@ const rows = computed(() =>
 	})),
 )
 
-watch(() => journalStore.revision, () => resourcesStore.loadSharedPoints(), {
-	immediate: true,
-})
+watch(
+	() => journalStore.revision,
+	() => resourcesStore.loadSharedPoints(),
+	{
+		immediate: true,
+	},
+)
 </script>
 
 <template>
@@ -28,7 +32,11 @@ watch(() => journalStore.revision, () => resourcesStore.loadSharedPoints(), {
 			<span class="table__right">Значение</span>
 		</div>
 
-		<div v-for="row in rows" :key="row.type.id" class="table__row table__row--body">
+		<div
+			v-for="row in rows"
+			:key="row.type.id"
+			class="table__row table__row--body"
+		>
 			<span class="type">
 				<span class="type__name">{{ row.type.name }}</span>
 				<span class="type__text">{{ row.type.description }}</span>
@@ -39,8 +47,6 @@ watch(() => journalStore.revision, () => resourcesStore.loadSharedPoints(), {
 
 		<div v-if="!rows.length" class="table__empty">В пати нет общих очков.</div>
 	</div>
-
-	<span class="note">Общие очки принадлежат всей пати. Менять их можно только ручной формой.</span>
 </template>
 
 <style scoped>
@@ -111,10 +117,5 @@ watch(() => journalStore.revision, () => resourcesStore.loadSharedPoints(), {
 	font: var(--type-body-sm);
 	color: var(--text-muted);
 	text-align: center;
-}
-
-.note {
-	font: var(--type-caption);
-	color: var(--text-subtle);
 }
 </style>

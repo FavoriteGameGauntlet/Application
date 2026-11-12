@@ -372,13 +372,6 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 									}}</span>
 								</div>
 
-								<div v-else-if="field.type === 'note'" class="form__tags">
-									<span v-if="field.label" class="form__label">{{
-										field.label
-									}}</span>
-									<span class="form__note">{{ field.hint }}</span>
-								</div>
-
 								<div v-else-if="field.type === 'locked'" class="form__locked">
 									<p v-for="(line, j) in field.lines" :key="j">{{ line }}</p>
 								</div>

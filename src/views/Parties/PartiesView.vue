@@ -60,7 +60,6 @@ const fields = computed<FormField[]>(() => [
 		key: 'period',
 		label: 'Даты',
 		type: 'dates',
-		hint: 'Последний день входит в пати. После него она завершится.',
 	},
 	// the creator joins the new party as a member; an existing party keeps its members' colors
 	...(editing.value?.party
@@ -70,7 +69,6 @@ const fields = computed<FormField[]>(() => [
 					key: 'color',
 					type: 'color' as const,
 					label: 'Твой цвет',
-					hint: 'Цвет твоего аватара в этой пати. Админ потом может его поменять.',
 				},
 			]),
 ])

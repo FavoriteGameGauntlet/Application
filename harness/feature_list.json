@@ -37,10 +37,10 @@
 		},
 		{
 			"id": "remove-after-form-notices",
-			"title": "Remove the obtrusive captions everywhere after forms. The user's words, translated: «remove the obtrusive captions everywhere after forms». It is unclear what is meant: toasts after saving («Сохранено», «Пати создана» and the like) or hints and notes under fields and tables. The places are found by grep for toast.show, hint and note.",
+			"title": "Remove the obtrusive captions everywhere after forms. The user's words, translated: «remove the obtrusive captions everywhere after forms». By the user's answer it means two things, both deleted outright: the grey paragraphs (`.note`, `.card__note`) under the tables and forms of the screens, and the hints under the fields of the windows (`hint` of a FormField, the `note` field type). Kept: the toasts, the hints of the options in the menus, the reasons why a form cannot be filled yet (`invalid`, the empty pick list of the use window), the empty-state texts, the hint «Не меньше 8 символов.» of the login form, the card hints of the system parameters and the two lines of the wheel screen. The rules the captions carried are to be expressed through the interface in the `rules-ui-*` features.",
 			"priority": 6,
-			"status": "todo",
-			"evidence": ""
+			"status": "in_progress",
+			"evidence": "The code is ready and waits for the user to look at the screens. bash harness/scripts/init.sh (eslint, vue-tsc) passes, prettier on the changed files. The app was not run."
 		},
 		{
 			"id": "recent-events-redesign",
@@ -104,6 +104,55 @@
 			"priority": 15,
 			"status": "done",
 			"evidence": "Done 2026-11-12. Full record: harness/archive/features-done.json"
+		},
+		{
+			"id": "rules-ui-members",
+			"title": "Express through the interface the rules that the removed captions of the members screen and its window stated. Removed: «Пустое имя — показывается логин», «Снять админа с себя нельзя», «Если из пати уходит последний админ, им становится тот, кто вступил раньше всех»; in the window «Пустое — покажем логин», «Меняет каталоги, колесо, награды и участников», «Из палитры или свой в виде #ffb000. Цвета могут повторяться». Ideas: the admin switch is disabled in the row of the user themself, with the reason on hover; the removal confirmation names who becomes the admin when the last one leaves; the name field shows the login as a placeholder (it already does); the admin switch shows what an admin may do on hover; a color that is not a hex gets an error under the field, not a toast. Open: which of these the user wants.",
+			"priority": 16,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "rules-ui-rewards-cost",
+			"title": "Express through the interface the rules that the removed captions of the rewards screen and of the spin cost card stated. Removed: «Длительность таймера меняется в «Системных параметрах»», «Новая награда действует только на следующие таймеры и игры, уже выданные не пересчитываются»; «Цена только у этой группы, у других своя», «Она списывается, когда игрок применяет результат, и действует на следующие прокруты», «Если у игрока предметов больше, чем нужно, он сам выбирает, какие списать». Ideas: a link from the timer reward card to the parameters; a mark «с следующего таймера» on a card after a save instead of a toast; the title of the cost card carries the group name; the choice of copies is shown as a switch in the cost form, as in the other «Игрок выбирает» switches. Open: which of these the user wants.",
+			"priority": 17,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "rules-ui-wheel-admin",
+			"title": "Express through the interface the rules that the removed captions of the admin wheel screen and its entry window stated. Removed under the table: «Не повторять выпавшее» (an entry does not fall again until the others have), «Вручную» (the player enters the changes after the spin), «Выпавшая игра становится текущей», «Enter в строке внизу добавляет игру и оставляет строку для следующей»; in the window the hints of «Остальное игрок вносит сам» and «Игрок выбирает, что применить». Ideas: the placeholder of the add-row says «Название игры, Enter — добавить»; a switch that has a rule gets an info mark with the text on hover or focus (one shared component for every switch of the app that carried a hint); the group tab of a games group shows what a fallen game does as a quiet line in its header. Open: which of these the user wants.",
+			"priority": 18,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "rules-ui-exchanges",
+			"title": "Express through the interface the rules that the removed captions of the exchanges screens stated. Removed: for the player «Пунктирная рамка — ресурса не хватает, в скобках сколько есть. Обмен недоступен, пока не хватает хотя бы одного»; for the admin «Обе стороны — список изменений, как в «Выдать»», «Удалённый обмен скрывается у игроков, история сохраняется», and the hints of both «Игрок выбирает» switches. Ideas: a dashed pill gets a hover text «не хватает 2, есть 1» and the card says once why the exchange is unavailable, as it already does for a perk the player owns; the delete confirmation of an exchange says that players stop seeing it and the history stays; the switches use the shared info mark of rules-ui-wheel-admin. Open: which of these the user wants.",
+			"priority": 19,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "rules-ui-catalog-dialog",
+			"title": "Express through the interface the rules that the removed hints of the catalog window stated. Removed: «Свои или общие на пати — выбирается один раз, потом не изменить» (scope of a point type), «Цель игрок выберет сам, когда применит предмет», the hints of both «Игрок выбирает, что применить» switches (item and perk ability), «Способность не меняется после создания: от неё зависит состояние у всех владельцев. Нужна другая — создай новый перк», «Столько событий, заряжающих способность, дают одно использование. 0 — зарядов нет». Ideas: after creation the scope field is shown locked, as the limits of an existing ability already are, with a lock icon and the reason on hover; the locked ability tab has a lock in its title; the charges field gets a unit text after the number («событий на одно использование»); the info mark of rules-ui-wheel-admin on the switches. Open: which of these the user wants.",
+			"priority": 20,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "rules-ui-player-screens",
+			"title": "Express through the interface the rules that the removed captions of the player screens stated. Removed: the list of players «Очки, предметы и эффекты — в профиле игрока. Нажми на строку, чтобы его открыть»; the shared points «Общие очки принадлежат всей пати. Менять их можно только ручной формой»; the completed games «Оценку и отзыв видят все в пати. Свой отзыв можно поправить в любой момент»; the manual change form, the fix note («Исходная запись не меняется: исправление попадёт в журнал новой записью…») and the plain note («Было → станет» считается по текущим ресурсам игрока, записью с меткой «вручную»). Ideas: a row of the players table gets a chevron and a hover state to show that it opens; the shared points table gets a button to the manual form for admins only; the review window title says who sees the review; the fix window shows the original journal entry as a quiet card above the rows, and the «Было → станет» column head carries the explanation on hover. Open: which of these the user wants.",
+			"priority": 21,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "rules-ui-parties-window",
+			"title": "Express through the interface the rules that the removed hints of the party window stated. Removed: «Последний день входит в пати. После него она завершится», «Цвет твоего аватара в этой пати. Админ потом может его поменять». Ideas: the period field shows the end date as «до 30 ноября включительно» next to the count of days; the color field shows an avatar preview with the login in the chosen color. Open: which of these the user wants.",
+			"priority": 22,
+			"status": "todo",
+			"evidence": ""
 		}
 	]
 }

@@ -215,11 +215,6 @@ onMounted(() => exchangesStore.load())
 						Перк уже есть, второй раз не купить.
 					</span>
 				</div>
-
-				<span class="note">
-					Пунктирная рамка — ресурса не хватает, в скобках сколько есть. Обмен
-					недоступен, пока не хватает хотя бы одного.
-				</span>
 			</div>
 
 			<UserResourcesPanel v-model:user="selectedUser" />
@@ -403,11 +398,6 @@ onMounted(() => exchangesStore.load())
 	font-weight: 600;
 	background: var(--surface-sunken);
 	border: 0;
-}
-
-.note {
-	font: var(--type-body-sm);
-	color: var(--text-muted);
 }
 
 .dialog {
