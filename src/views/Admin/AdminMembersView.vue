@@ -7,7 +7,6 @@ import FormDialog from '../../components/FormDialog.vue'
 import InlineAddRow from '../../components/InlineAddRow.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
 import UiIconButton from '../../components/ui/UiIconButton.vue'
-import UiInput from '../../components/ui/UiInput.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiUserAvatar from '../../components/ui/UiUserAvatar.vue'
 import { useAdminSettingsStore } from '../../stores/adminSettingsStore'
@@ -25,12 +24,12 @@ const toastStore = useToastStore()
 const editing = ref<PartyMember>()
 const removing = ref<PartyMember>()
 
+/** one field: the text filters the table and is the login that «Добавить» adds */
 const query = ref('')
-const newLogin = ref('')
 const addError = ref<string>()
 
 // the message is about the login that was typed, so a new text takes it away
-watch(newLogin, () => (addError.value = undefined))
+watch(query, () => (addError.value = undefined))
 
 /** those who left stay in the list so that an admin can bring them back, they go last */
 const found = computed(() => {
@@ -94,7 +93,7 @@ const onAdd = async (login: string) => {
 	)
 
 	if (result === 'added') {
-		newLogin.value = ''
+		query.value = ''
 	} else if (result === 'not-found') {
 		addError.value = `Игрока ${login} нет. Проверь логин: он должен быть зарегистрирован.`
 	} else if (result === 'already-member') {
@@ -147,22 +146,13 @@ onMounted(() => store.loadMembers())
 		<div class="head">
 			<UiPageTitle>Участники и права</UiPageTitle>
 			<span class="head__count">{{ count }}</span>
-			<div class="head__spacer"></div>
-			<div class="head__search">
-				<UiInput
-					v-model="query"
-					compact
-					icon="search"
-					placeholder="Найти…"
-					aria-label="Поиск"
-				/>
-			</div>
 		</div>
 
 		<InlineAddRow
-			v-model="newLogin"
-			placeholder="Логин игрока"
-			label="Логин игрока"
+			v-model="query"
+			icon="search"
+			placeholder="Логин игрока…"
+			label="Логин игрока: поиск и добавление"
 			:error="addError"
 			@submit="onAdd"
 		/>
@@ -229,6 +219,10 @@ onMounted(() => store.loadMembers())
 					</template>
 				</span>
 			</div>
+
+			<div v-if="!found.length" class="table__empty">
+				Такого игрока в списке нет. Нажми «Добавить», чтобы добавить его в пати.
+			</div>
 		</div>
 
 		<span class="note">
@@ -280,14 +274,6 @@ onMounted(() => store.loadMembers())
 	color: var(--text-muted);
 }
 
-.head__spacer {
-	flex: 1;
-}
-
-.head__search {
-	width: 260px;
-}
-
 .table {
 	overflow: hidden;
 	background: var(--surface-card);
@@ -326,6 +312,13 @@ onMounted(() => store.loadMembers())
 	display: flex;
 	gap: 4px;
 	justify-content: flex-end;
+}
+
+.table__empty {
+	padding: 16px;
+	font: var(--type-body-sm);
+	color: var(--text-subtle);
+	border-top: 1px solid var(--border-subtle);
 }
 
 .user {

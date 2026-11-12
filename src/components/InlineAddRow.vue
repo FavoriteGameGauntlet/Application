@@ -8,9 +8,11 @@ type Props = {
 	/** the name of the field for a screen reader, the field has no visible label */
 	label: string
 	error?: string
+	/** `search` when the same text also filters a list on the screen */
+	icon?: string
 }
 
-defineProps<Props>()
+const { icon = 'plus' } = defineProps<Props>()
 
 const emit = defineEmits<{ submit: [value: string] }>()
 
@@ -37,7 +39,7 @@ const submit = () => {
 			<UiInput
 				v-model="model"
 				compact
-				icon="plus"
+				:icon
 				:placeholder
 				:aria-label="label"
 				:aria-invalid="!!error"
