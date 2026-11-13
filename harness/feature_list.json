@@ -44,10 +44,10 @@
 		},
 		{
 			"id": "system-parameters-data-format",
-			"title": "Change the system parameters form (views/Admin/AdminParametersView.vue): add a data format to every parameter. The user's words: add a data format for each parameter. Today the texts of a parameter (label, hint, check) live in the descriptions map by name, and every value is checked as an integer. Open: what the format is (a type, a unit, an example shown to the admin) and where it comes from (the client or a backend field).",
+			"title": "Rework the system parameters screen for the backend format (system_parameters.yaml 0.5.1)",
 			"priority": 8,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-14. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "catalog-to-admin-panel",

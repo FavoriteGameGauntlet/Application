@@ -1,90 +1,92 @@
 <script setup lang="ts">
-import { onMounted, reactive } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import type { SystemParameter } from '../../api-facade/contracts'
+import type { FormField, FormValues } from '../../components/formDialog'
+import FormDialog from '../../components/FormDialog.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
-import UiButton from '../../components/ui/UiButton.vue'
-import UiInput from '../../components/ui/UiInput.vue'
+import UiIconButton from '../../components/ui/UiIconButton.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import { useAdminParametersStore } from '../../stores/adminParametersStore'
 import { useToastStore } from '../../stores/toastStore'
-
-type Description = {
-	label: string
-	hint: string
-	/** the text of what is wrong with the value, or nothing */
-	check: (value: number) => string | undefined
-}
-
-/** the backend gives the names only, the texts are here; an unknown parameter shows its name */
-const descriptions: Record<string, Description> = {
-	TimerDurationInS: {
-		label: 'Длительность таймера',
-		hint: 'В секундах. Действует на следующие таймеры, идущий не меняется.',
-		check: (n) => (n < 1 ? 'Не меньше секунды.' : undefined),
-	},
-	MinimumNumberOfWishlistGames: {
-		label: 'Игр в списке желаемого, чтобы крутить его',
-		hint: 'Минимум игр в списке желаемого игрока.',
-		check: (n) => (n < 0 ? 'Не меньше нуля.' : undefined),
-	},
-	MinimumAvailableWheelEffectsForRoll: {
-		label: 'Пунктов на колесе за прокрут',
-		hint: 'Сколько пунктов показывает один прокрут. Нечётное число: у колеса есть центральный пункт.',
-		check: (n) => (n < 1 || n % 2 === 0 ? 'Нечётное число, от 1.' : undefined),
-	},
-}
+import {
+	checkParameterValue,
+	parameterRange,
+} from '../../utils/systemParameter'
 
 const store = useAdminParametersStore()
 const toastStore = useToastStore()
 
-const draft = reactive<Record<string, string>>({})
+/** the parameter in the edit dialog, undefined means the dialog is closed */
+const editing = ref<SystemParameter>()
 
-const labelOf = (parameter: SystemParameter) =>
-	descriptions[parameter.name]?.label ?? parameter.name
+/** what the admin has typed so far, to say at once why it does not fit */
+const typed = ref('')
 
-const syncDraft = () => {
-	for (const parameter of store.parameters)
-		draft[parameter.name] = parameter.value
+const showValue = (parameter: SystemParameter, value: string) =>
+	parameter.type === 'bool' ? (value === 'true' ? 'да' : 'нет') : value
+
+const textOf = (values: FormValues) =>
+	typeof values.value === 'boolean'
+		? String(values.value)
+		: String(values.value).trim()
+
+const problem = computed(() =>
+	editing.value ? checkParameterValue(editing.value, typed.value) : undefined,
+)
+
+const fields = computed<FormField[]>(() => {
+	const parameter = editing.value
+
+	if (!parameter) return []
+
+	if (parameter.type === 'bool')
+		return [{ key: 'value', label: 'Да', type: 'check' }]
+
+	const range = parameterRange(parameter)
+
+	return [
+		{
+			key: 'value',
+			label: 'Значение',
+			numeric: true,
+			required: 'значение',
+			hint: problem.value ?? (range ? `Допустимо: ${range}.` : undefined),
+			invalid: !!problem.value,
+		},
+	]
+})
+
+const initial = computed<FormValues>(() => ({
+	value:
+		editing.value?.type === 'bool'
+			? editing.value.value === 'true'
+			: (editing.value?.value ?? ''),
+}))
+
+const edit = (parameter: SystemParameter) => {
+	typed.value = parameter.value
+	editing.value = parameter
 }
 
-const isChanged = (parameter: SystemParameter) =>
-	(draft[parameter.name] ?? '').trim() !== parameter.value
+const onSave = async (values: FormValues) => {
+	const parameter = editing.value
+	const value = textOf(values)
 
-const onSave = async (parameter: SystemParameter) => {
-	const value = (draft[parameter.name] ?? '').trim()
-	const number = Number(value)
+	if (!parameter) return
 
-	if (!value || !Number.isInteger(number)) {
-		toastStore.show(
-			'Не понял число',
-			`${labelOf(parameter)}: нужно целое число.`,
-			'danger',
-		)
+	const wrong = checkParameterValue(parameter, value)
+
+	if (wrong) {
+		toastStore.show('Проверь значение', wrong, 'danger')
 		return
 	}
 
-	const problem = descriptions[parameter.name]?.check(number)
-
-	if (problem) {
-		toastStore.show(
-			'Проверь значение',
-			`${labelOf(parameter)}: ${problem}`,
-			'danger',
-		)
-		return
-	}
-
-	if (await store.save(parameter.name, String(number))) syncDraft()
-}
-
-const onReset = async (parameter: SystemParameter) => {
-	if (await store.reset(parameter.name)) syncDraft()
+	if (await store.save(parameter, value)) editing.value = undefined
 }
 
 onMounted(async () => {
 	try {
 		await store.load()
-		syncDraft()
 	} catch (e) {
 		toastStore.error(e)
 	}
@@ -95,55 +97,75 @@ onMounted(async () => {
 	<div class="parameters">
 		<UiPageTitle>Системные параметры</UiPageTitle>
 
-		<div
-			v-for="parameter in store.parameters"
-			:key="parameter.name"
-			class="card"
-		>
-			<div class="card__head">
-				<span class="card__label">{{ labelOf(parameter) }}</span>
-				<UiBadge v-if="!parameter.isDefault" tone="accent">изменено</UiBadge>
+		<div class="table">
+			<div class="table__row table__row--head">
+				<span>Параметр</span>
+				<span>Значение</span>
+				<span></span>
 			</div>
 
-			<span v-if="descriptions[parameter.name]" class="card__hint">
-				{{ descriptions[parameter.name].hint }}
-			</span>
+			<div
+				v-for="parameter in store.parameters"
+				:key="parameter.code"
+				class="table__row table__row--body"
+			>
+				<span class="parameter">
+					<span class="parameter__name">
+						{{ parameter.name }}
+						<UiBadge v-if="!parameter.isDefault" tone="accent"
+							>изменено</UiBadge
+						>
+					</span>
+					<span class="parameter__description">{{
+						parameter.description
+					}}</span>
+				</span>
 
-			<div class="card__row">
-				<div class="card__input">
-					<UiInput
-						v-model="draft[parameter.name]"
-						inputmode="numeric"
-						:aria-label="labelOf(parameter)"
-						@keydown.enter="onSave(parameter)"
+				<span class="value">
+					<span class="value__main">{{
+						showValue(parameter, parameter.value)
+					}}</span>
+					<span v-if="!parameter.isDefault" class="value__default">
+						по умолчанию:
+						<b>{{ showValue(parameter, parameter.defaultValue) }}</b>
+					</span>
+				</span>
+
+				<span class="table__actions">
+					<UiIconButton
+						icon="pencil"
+						size="sm"
+						label="Изменить"
+						@click="edit(parameter)"
 					/>
-				</div>
-				<span class="card__default"
-					>по умолчанию: {{ parameter.defaultValue }}</span
-				>
-				<div class="card__spacer"></div>
-				<UiButton
-					v-if="!parameter.isDefault"
-					variant="ghost"
-					size="sm"
-					icon="rotate-ccw"
-					@click="onReset(parameter)"
-				>
-					Сбросить
-				</UiButton>
-				<UiButton
-					variant="secondary"
-					icon="check"
-					:disabled="!isChanged(parameter)"
-					@click="onSave(parameter)"
-				>
-					Сохранить
-				</UiButton>
+					<UiIconButton
+						v-if="!parameter.isDefault"
+						icon="rotate-ccw"
+						size="sm"
+						label="Вернуть значение по умолчанию"
+						@click="store.reset(parameter)"
+					/>
+					<span v-else></span>
+				</span>
+			</div>
+
+			<div v-if="!store.parameters.length" class="table__empty">
+				Параметров нет.
 			</div>
 		</div>
-
-		<span v-if="!store.parameters.length" class="note">Параметров нет.</span>
 	</div>
+
+	<FormDialog
+		:open="!!editing"
+		:title="editing?.name ?? ''"
+		:subtitle="editing?.description"
+		plain-title
+		:sections="[{ fields }]"
+		:initial
+		@change="typed = textOf($event)"
+		@close="editing = undefined"
+		@save="onSave"
+	/>
 </template>
 
 <style scoped>
@@ -151,62 +173,93 @@ onMounted(async () => {
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
-	max-width: 760px;
 }
 
-.card {
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
-	padding: 16px;
+.table {
+	overflow: hidden;
 	background: var(--surface-card);
 	border: 1px solid var(--border-subtle);
 	border-radius: var(--radius-lg);
 	box-shadow: var(--shadow-1);
 }
 
-.card__head {
-	display: flex;
+/* the narrow columns are set in rem because the app scales; the name takes the rest */
+.table__row {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 12rem 5rem;
+	gap: 16px;
 	align-items: center;
-	gap: 8px;
 }
 
-.card__label {
+.table__row--head {
+	padding: 12px 16px;
 	font: var(--type-label);
 	letter-spacing: var(--tracking-label);
 	text-transform: uppercase;
 	color: var(--text-muted);
+	background: var(--surface-sunken);
 }
 
-.card__hint {
+.table__row--body {
+	min-height: 52px;
+	padding: 8px 16px;
+	border-top: 1px solid var(--border-subtle);
+}
+
+/* two fixed places, so the pencil does not move when a row has no reset */
+.table__actions {
+	display: grid;
+	grid-template-columns: repeat(2, 32px);
+	justify-content: end;
+	gap: 4px;
+}
+
+.table__empty {
+	padding: 16px;
+	font: var(--type-body-sm);
+	color: var(--text-subtle);
+	border-top: 1px solid var(--border-subtle);
+}
+
+.parameter {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.parameter__name {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font: 600 15px / 1.45 var(--font-body);
+	color: var(--text-strong);
+}
+
+.parameter__description {
 	font: var(--type-body-sm);
 	color: var(--text-muted);
 	text-wrap: pretty;
 }
 
-.card__row {
+.value {
 	display: flex;
-	align-items: center;
-	gap: 12px;
-	padding-top: 12px;
-	border-top: 1px solid var(--border-subtle);
+	flex-direction: column;
+	gap: 2px;
 }
 
-.card__input {
-	width: 160px;
+.value__main {
+	font: 500 15px / 1.3 var(--font-mono);
+	font-variant-numeric: tabular-nums;
+	color: var(--text-strong);
 }
 
-.card__default {
-	font: var(--type-body-sm);
+.value__default {
+	font: var(--type-caption);
 	color: var(--text-subtle);
 }
 
-.card__spacer {
-	flex: 1;
-}
-
-.note {
-	font: var(--type-body-sm);
+.value__default b {
+	font: var(--type-mono);
 	color: var(--text-muted);
 }
 </style>

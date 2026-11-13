@@ -10,13 +10,13 @@ export const adminParameters: Api['admin']['parameters'] = {
 			)
 		).body,
 
-	save: async (name, value) => {
-		await http.post(`${await partyPath()}/system-parameters/${name}`, {
+	save: async (code, value) => {
+		await http.post(`${await partyPath()}/system-parameters/${code}`, {
 			body: { value },
 		})
 	},
 
-	reset: async (name) => {
-		await http.delete(`${await partyPath()}/system-parameters/${name}`)
+	reset: async (code) => {
+		await http.delete(`${await partyPath()}/system-parameters/${code}`)
 	},
 }

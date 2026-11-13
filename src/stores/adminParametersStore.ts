@@ -5,39 +5,44 @@ import type { SystemParameter } from '../api-facade/contracts'
 import { StoreName } from '../enums/storeName'
 import { useToastStore } from './toastStore'
 
-export const useAdminParametersStore = defineStore(StoreName.AdminParameters, () => {
-	const parameters = ref<SystemParameter[]>([])
+export const useAdminParametersStore = defineStore(
+	StoreName.AdminParameters,
+	() => {
+		const parameters = ref<SystemParameter[]>([])
 
-	const load = async () => {
-		parameters.value = await api.admin.parameters.list()
-	}
-
-	const run = async (
-		name: string,
-		request: () => Promise<void>,
-		toast: { title: string; tone?: 'success' | 'info' },
-	) => {
-		const toastStore = useToastStore()
-
-		try {
-			await request()
-			toastStore.show(toast.title, name, toast.tone)
-			await load()
-			return true
-		} catch (e) {
-			toastStore.error(e)
-			return false
+		const load = async () => {
+			parameters.value = await api.admin.parameters.list()
 		}
-	}
 
-	const save = (name: string, value: string) =>
-		run(name, () => api.admin.parameters.save(name, value), { title: 'Сохранено' })
+		const run = async (
+			parameter: SystemParameter,
+			request: () => Promise<void>,
+			toast: { title: string; tone?: 'success' | 'info' },
+		) => {
+			const toastStore = useToastStore()
 
-	const reset = (name: string) =>
-		run(name, () => api.admin.parameters.reset(name), {
-			title: 'Вернули значение по умолчанию',
-			tone: 'info',
-		})
+			try {
+				await request()
+				toastStore.show(toast.title, parameter.name, toast.tone)
+				await load()
+				return true
+			} catch (e) {
+				toastStore.error(e)
+				return false
+			}
+		}
 
-	return { parameters, load, save, reset }
-})
+		const save = (parameter: SystemParameter, value: string) =>
+			run(parameter, () => api.admin.parameters.save(parameter.code, value), {
+				title: 'Сохранено',
+			})
+
+		const reset = (parameter: SystemParameter) =>
+			run(parameter, () => api.admin.parameters.reset(parameter.code), {
+				title: 'Вернули значение по умолчанию',
+				tone: 'info',
+			})
+
+		return { parameters, load, save, reset }
+	},
+)
