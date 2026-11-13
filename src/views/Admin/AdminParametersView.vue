@@ -102,6 +102,7 @@ onMounted(async () => {
 				<span>Параметр</span>
 				<span>Значение</span>
 				<span>По умолчанию</span>
+				<span>Допустимо</span>
 				<span></span>
 			</div>
 
@@ -125,6 +126,8 @@ onMounted(async () => {
 				<span class="default">
 					{{ showValue(parameter, parameter.defaultValue) }}
 				</span>
+
+				<span class="default">{{ parameterRange(parameter) ?? '—' }}</span>
 
 				<span class="table__actions">
 					<UiIconButton
@@ -179,7 +182,7 @@ onMounted(async () => {
 
 .table__row {
 	display: grid;
-	grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) 120px 76px;
+	grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) 120px 140px 76px;
 	gap: 12px;
 	align-items: center;
 }
