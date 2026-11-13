@@ -44,10 +44,10 @@
 		},
 		{
 			"id": "system-parameters-data-format",
-			"title": "Rework the system parameters screen for the backend format (system_parameters.yaml 0.5.1): every parameter now carries a code, a title, a description, a type (int or bool) and optional bounds, and the backend checks the value (422 SYSTEM_PARAMETER_INVALID_VALUE). The user's words: system parameters were reworked, rewrite the logic for them. By the user's answers the client checks the value by type and bounds before sending, and keeps the odd-number rule of the wheel parameter itself.",
+			"title": "Rework the system parameters screen for the backend format (system_parameters.yaml 0.5.1)",
 			"priority": 8,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-14. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "catalog-to-admin-panel",
