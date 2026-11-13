@@ -39,6 +39,7 @@ const items: NavItem[] = [
 ]
 
 const adminCatalogs: NavItem[] = [
+	{ label: 'Каталог', icon: 'book-open', name: RouteName.AdminCatalog },
 	{ label: 'Обмены', icon: 'arrow-left-right', name: RouteName.AdminExchanges },
 	{ label: 'Колесо', icon: 'refresh-cw', name: RouteName.AdminWheel },
 	{ label: 'Награды', icon: 'gift', name: RouteName.AdminRewards },
@@ -46,7 +47,11 @@ const adminCatalogs: NavItem[] = [
 
 const adminSystem: NavItem[] = [
 	{ label: 'Участники и права', icon: 'users', name: RouteName.AdminMembers },
-	{ label: 'Системные параметры', icon: 'sliders-horizontal', name: RouteName.AdminParameters },
+	{
+		label: 'Системные параметры',
+		icon: 'sliders-horizontal',
+		name: RouteName.AdminParameters,
+	},
 ]
 
 const isFreeManual = computed(
@@ -70,11 +75,22 @@ const isActive = (item: NavItem) =>
 </script>
 
 <template>
-	<nav class="sidebar" :class="{ 'sidebar--collapsed': sidebarStore.isCollapsed }">
-		<AppLogo class="sidebar__logo" :height="32" :symbol="sidebarStore.isCollapsed" />
+	<nav
+		class="sidebar"
+		:class="{ 'sidebar--collapsed': sidebarStore.isCollapsed }"
+	>
+		<AppLogo
+			class="sidebar__logo"
+			:height="32"
+			:symbol="sidebarStore.isCollapsed"
+		/>
 
 		<template v-if="isAdminArea">
-			<RouterLink class="back" :to="{ name: RouteName.Home }" :title="hint('К пати')">
+			<RouterLink
+				class="back"
+				:to="{ name: RouteName.Home }"
+				:title="hint('К пати')"
+			>
 				<UiIcon name="arrow-left" :size="16" />
 				<span class="label">К пати</span>
 			</RouterLink>

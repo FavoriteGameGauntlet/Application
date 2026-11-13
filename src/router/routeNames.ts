@@ -11,6 +11,7 @@ export const enum RouteName {
 	Exchanges = 'exchanges',
 	Catalog = 'catalog',
 	Manual = 'manual',
+	AdminCatalog = 'admin-catalog',
 	AdminExchanges = 'admin-exchanges',
 	AdminWheel = 'admin-wheel',
 	AdminRewards = 'admin-rewards',
