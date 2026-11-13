@@ -5,80 +5,47 @@ import UiBadge from '../../components/ui/UiBadge.vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiInput from '../../components/ui/UiInput.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
+import UiSwitch from '../../components/ui/UiSwitch.vue'
 import { useAdminParametersStore } from '../../stores/adminParametersStore'
 import { useToastStore } from '../../stores/toastStore'
-
-type Description = {
-	label: string
-	hint: string
-	/** the text of what is wrong with the value, or nothing */
-	check: (value: number) => string | undefined
-}
-
-/** the backend gives the names only, the texts are here; an unknown parameter shows its name */
-const descriptions: Record<string, Description> = {
-	TimerDurationInS: {
-		label: 'Длительность таймера',
-		hint: 'В секундах. Действует на следующие таймеры, идущий не меняется.',
-		check: (n) => (n < 1 ? 'Не меньше секунды.' : undefined),
-	},
-	MinimumNumberOfWishlistGames: {
-		label: 'Игр в списке желаемого, чтобы крутить его',
-		hint: 'Минимум игр в списке желаемого игрока.',
-		check: (n) => (n < 0 ? 'Не меньше нуля.' : undefined),
-	},
-	MinimumAvailableWheelEffectsForRoll: {
-		label: 'Пунктов на колесе за прокрут',
-		hint: 'Сколько пунктов показывает один прокрут. Нечётное число: у колеса есть центральный пункт.',
-		check: (n) => (n < 1 || n % 2 === 0 ? 'Нечётное число, от 1.' : undefined),
-	},
-}
+import {
+	checkParameterValue,
+	parameterRange,
+} from '../../utils/systemParameter'
 
 const store = useAdminParametersStore()
 const toastStore = useToastStore()
 
 const draft = reactive<Record<string, string>>({})
 
-const labelOf = (parameter: SystemParameter) =>
-	descriptions[parameter.name]?.label ?? parameter.name
-
 const syncDraft = () => {
 	for (const parameter of store.parameters)
-		draft[parameter.name] = parameter.value
+		draft[parameter.code] = parameter.value
 }
 
+const valueOf = (parameter: SystemParameter) =>
+	(draft[parameter.code] ?? '').trim()
+
 const isChanged = (parameter: SystemParameter) =>
-	(draft[parameter.name] ?? '').trim() !== parameter.value
+	valueOf(parameter) !== parameter.value
+
+/** a value that was not touched has nothing to complain about */
+const problemOf = (parameter: SystemParameter) =>
+	isChanged(parameter)
+		? checkParameterValue(parameter, valueOf(parameter))
+		: undefined
+
+const showValue = (parameter: SystemParameter, value: string) =>
+	parameter.type === 'bool' ? (value === 'true' ? 'да' : 'нет') : value
 
 const onSave = async (parameter: SystemParameter) => {
-	const value = (draft[parameter.name] ?? '').trim()
-	const number = Number(value)
+	if (!isChanged(parameter) || problemOf(parameter)) return
 
-	if (!value || !Number.isInteger(number)) {
-		toastStore.show(
-			'Не понял число',
-			`${labelOf(parameter)}: нужно целое число.`,
-			'danger',
-		)
-		return
-	}
-
-	const problem = descriptions[parameter.name]?.check(number)
-
-	if (problem) {
-		toastStore.show(
-			'Проверь значение',
-			`${labelOf(parameter)}: ${problem}`,
-			'danger',
-		)
-		return
-	}
-
-	if (await store.save(parameter.name, String(number))) syncDraft()
+	if (await store.save(parameter, valueOf(parameter))) syncDraft()
 }
 
 const onReset = async (parameter: SystemParameter) => {
-	if (await store.reset(parameter.name)) syncDraft()
+	if (await store.reset(parameter)) syncDraft()
 }
 
 onMounted(async () => {
@@ -97,30 +64,38 @@ onMounted(async () => {
 
 		<div
 			v-for="parameter in store.parameters"
-			:key="parameter.name"
+			:key="parameter.code"
 			class="card"
 		>
 			<div class="card__head">
-				<span class="card__label">{{ labelOf(parameter) }}</span>
+				<span class="card__label">{{ parameter.name }}</span>
 				<UiBadge v-if="!parameter.isDefault" tone="accent">изменено</UiBadge>
 			</div>
 
-			<span v-if="descriptions[parameter.name]" class="card__hint">
-				{{ descriptions[parameter.name].hint }}
-			</span>
+			<span class="card__hint">{{ parameter.description }}</span>
 
 			<div class="card__row">
-				<div class="card__input">
+				<UiSwitch
+					v-if="parameter.type === 'bool'"
+					:model-value="draft[parameter.code] === 'true'"
+					:label="draft[parameter.code] === 'true' ? 'Да' : 'Нет'"
+					@update:model-value="draft[parameter.code] = String($event)"
+				/>
+				<div v-else class="card__input">
 					<UiInput
-						v-model="draft[parameter.name]"
+						v-model="draft[parameter.code]"
 						inputmode="numeric"
-						:aria-label="labelOf(parameter)"
+						:aria-label="parameter.name"
+						:error="problemOf(parameter)"
 						@keydown.enter="onSave(parameter)"
 					/>
 				</div>
-				<span class="card__default"
-					>по умолчанию: {{ parameter.defaultValue }}</span
-				>
+				<span class="card__default">
+					по умолчанию: {{ showValue(parameter, parameter.defaultValue) }}
+					<template v-if="parameterRange(parameter)">
+						· {{ parameterRange(parameter) }}
+					</template>
+				</span>
 				<div class="card__spacer"></div>
 				<UiButton
 					v-if="!parameter.isDefault"
@@ -134,7 +109,7 @@ onMounted(async () => {
 				<UiButton
 					variant="secondary"
 					icon="check"
-					:disabled="!isChanged(parameter)"
+					:disabled="!isChanged(parameter) || !!problemOf(parameter)"
 					@click="onSave(parameter)"
 				>
 					Сохранить

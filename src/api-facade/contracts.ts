@@ -606,9 +606,17 @@ export type RewardTrigger =
 
 export type Rewards = Record<RewardTrigger, RewardRow[]>
 
-/** a setting of the party; the values are text, the backend does not check them */
+/** a setting of the party; the value is text, the backend checks it against `type` and the bounds (422) */
 export type SystemParameter = {
+	/** the key in the paths of the backend */
+	code: string
+	/** the title shown to the admin */
 	name: string
+	description: string
+	type: 'int' | 'bool'
+	/** only for `int`; null when the bound is absent */
+	minValue: number | null
+	maxValue: number | null
 	value: string
 	defaultValue: string
 	/** the party has no value of its own */
@@ -1034,9 +1042,10 @@ export type Api = {
 		}
 		parameters: {
 			list: () => Promise<SystemParameter[]>
-			save: (name: string, value: string) => Promise<void>
+			/** `code` is `SystemParameter.code`; 422 SYSTEM_PARAMETER_INVALID_VALUE */
+			save: (code: string, value: string) => Promise<void>
 			/** the party goes back to the default value */
-			reset: (name: string) => Promise<void>
+			reset: (code: string) => Promise<void>
 		}
 		members: {
 			list: () => Promise<PartyMember[]>

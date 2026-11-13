@@ -44,9 +44,9 @@
 		},
 		{
 			"id": "system-parameters-data-format",
-			"title": "Change the system parameters form (views/Admin/AdminParametersView.vue): add a data format to every parameter. The user's words: add a data format for each parameter. Today the texts of a parameter (label, hint, check) live in the descriptions map by name, and every value is checked as an integer. Open: what the format is (a type, a unit, an example shown to the admin) and where it comes from (the client or a backend field).",
+			"title": "Rework the system parameters screen for the backend format (system_parameters.yaml 0.5.1): every parameter now carries a code, a title, a description, a type (int or bool) and optional bounds, and the backend checks the value (422 SYSTEM_PARAMETER_INVALID_VALUE). The user's words: system parameters were reworked, rewrite the logic for them. By the user's answers the client checks the value by type and bounds before sending, and keeps the odd-number rule of the wheel parameter itself.",
 			"priority": 8,
-			"status": "todo",
+			"status": "in_progress",
 			"evidence": ""
 		},
 		{
