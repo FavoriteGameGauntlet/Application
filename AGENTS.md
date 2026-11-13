@@ -60,6 +60,14 @@ The plan has no list of components, `Api` methods, fields, routes or `StoreKey` 
 - If the plan has to change during the work (a new field, method or removal), stop, say what changes and why, and wait for an answer. A fix inside the plan needs no new answer.
 - A one-line fix gets a one-line plan.
 
+### Design work
+
+When the user asks for a design (a screen, a form, a table, a layout), don't guess the layout in code and don't iterate on it in the repository.
+
+1. Make a mockup first, as a Claude Artifact (preferred) or a separate file outside the source tree. Hand it to a separate agent so the main context stays small. Give that agent the real colors, type and spacing from `src/styles/`, the neighbouring screens to match, and realistic data, including the awkward cases (long text, empty values, errors).
+2. Look at the rendered mockup yourself before showing it. Do not run the app or a dev server for this: the user may have `npm run tauri dev` open on port 1420. Never stop or kill a process you did not start.
+3. Give the user the link and ask them to look. Write code only after they answer.
+
 ## Working rules
 
 - One feature at a time.
