@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { onMounted, reactive } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import type { SystemParameter } from '../../api-facade/contracts'
+import type { FormField, FormValues } from '../../components/formDialog'
+import FormDialog from '../../components/FormDialog.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
-import UiButton from '../../components/ui/UiButton.vue'
-import UiInput from '../../components/ui/UiInput.vue'
+import UiIconButton from '../../components/ui/UiIconButton.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
-import UiSwitch from '../../components/ui/UiSwitch.vue'
 import { useAdminParametersStore } from '../../stores/adminParametersStore'
 import { useToastStore } from '../../stores/toastStore'
 import {
@@ -16,42 +16,77 @@ import {
 const store = useAdminParametersStore()
 const toastStore = useToastStore()
 
-const draft = reactive<Record<string, string>>({})
+/** the parameter in the edit dialog, undefined means the dialog is closed */
+const editing = ref<SystemParameter>()
 
-const syncDraft = () => {
-	for (const parameter of store.parameters)
-		draft[parameter.code] = parameter.value
-}
-
-const valueOf = (parameter: SystemParameter) =>
-	(draft[parameter.code] ?? '').trim()
-
-const isChanged = (parameter: SystemParameter) =>
-	valueOf(parameter) !== parameter.value
-
-/** a value that was not touched has nothing to complain about */
-const problemOf = (parameter: SystemParameter) =>
-	isChanged(parameter)
-		? checkParameterValue(parameter, valueOf(parameter))
-		: undefined
+/** what the admin has typed so far, to say at once why it does not fit */
+const typed = ref('')
 
 const showValue = (parameter: SystemParameter, value: string) =>
 	parameter.type === 'bool' ? (value === 'true' ? 'да' : 'нет') : value
 
-const onSave = async (parameter: SystemParameter) => {
-	if (!isChanged(parameter) || problemOf(parameter)) return
+const textOf = (values: FormValues) =>
+	typeof values.value === 'boolean'
+		? String(values.value)
+		: String(values.value).trim()
 
-	if (await store.save(parameter, valueOf(parameter))) syncDraft()
+const problem = computed(() =>
+	editing.value ? checkParameterValue(editing.value, typed.value) : undefined,
+)
+
+const fields = computed<FormField[]>(() => {
+	const parameter = editing.value
+
+	if (!parameter) return []
+
+	if (parameter.type === 'bool')
+		return [{ key: 'value', label: parameter.name, type: 'check' }]
+
+	const range = parameterRange(parameter)
+
+	return [
+		{
+			key: 'value',
+			label: 'Значение',
+			numeric: true,
+			required: 'значение',
+			hint: problem.value ?? (range ? `Допустимо: ${range}.` : undefined),
+			invalid: !!problem.value,
+		},
+	]
+})
+
+const initial = computed<FormValues>(() => ({
+	value:
+		editing.value?.type === 'bool'
+			? editing.value.value === 'true'
+			: (editing.value?.value ?? ''),
+}))
+
+const edit = (parameter: SystemParameter) => {
+	typed.value = parameter.value
+	editing.value = parameter
 }
 
-const onReset = async (parameter: SystemParameter) => {
-	if (await store.reset(parameter)) syncDraft()
+const onSave = async (values: FormValues) => {
+	const parameter = editing.value
+	const value = textOf(values)
+
+	if (!parameter) return
+
+	const wrong = checkParameterValue(parameter, value)
+
+	if (wrong) {
+		toastStore.show('Проверь значение', wrong, 'danger')
+		return
+	}
+
+	if (await store.save(parameter, value)) editing.value = undefined
 }
 
 onMounted(async () => {
 	try {
 		await store.load()
-		syncDraft()
 	} catch (e) {
 		toastStore.error(e)
 	}
@@ -62,68 +97,69 @@ onMounted(async () => {
 	<div class="parameters">
 		<UiPageTitle>Системные параметры</UiPageTitle>
 
-		<div
-			v-for="parameter in store.parameters"
-			:key="parameter.code"
-			class="card"
-		>
-			<div class="card__head">
-				<span class="card__label">{{ parameter.name }}</span>
-				<UiBadge v-if="!parameter.isDefault" tone="accent">изменено</UiBadge>
+		<div class="table">
+			<div class="table__row table__row--head">
+				<span>Параметр</span>
+				<span>Значение</span>
+				<span>По умолчанию</span>
+				<span></span>
 			</div>
 
-			<span class="card__hint">{{ parameter.description }}</span>
+			<div
+				v-for="parameter in store.parameters"
+				:key="parameter.code"
+				class="table__row table__row--body"
+			>
+				<span class="parameter">
+					<span class="parameter__name">{{ parameter.name }}</span>
+					<span class="parameter__description">{{
+						parameter.description
+					}}</span>
+				</span>
 
-			<div class="card__field">
-				<UiSwitch
-					v-if="parameter.type === 'bool'"
-					:model-value="draft[parameter.code] === 'true'"
-					:label="draft[parameter.code] === 'true' ? 'Да' : 'Нет'"
-					@update:model-value="draft[parameter.code] = String($event)"
-				/>
-				<div v-else class="card__input">
-					<UiInput
-						v-model="draft[parameter.code]"
-						inputmode="numeric"
-						:aria-label="parameter.name"
-						:error="problemOf(parameter)"
-						@keydown.enter="onSave(parameter)"
+				<span class="value">
+					{{ showValue(parameter, parameter.value) }}
+					<UiBadge v-if="!parameter.isDefault" tone="accent">изменено</UiBadge>
+				</span>
+
+				<span class="default">
+					{{ showValue(parameter, parameter.defaultValue) }}
+				</span>
+
+				<span class="table__actions">
+					<UiIconButton
+						icon="pencil"
+						size="sm"
+						label="Изменить"
+						@click="edit(parameter)"
 					/>
-				</div>
-				<span v-if="parameterRange(parameter)" class="card__caption">
-					Допустимо: {{ parameterRange(parameter) }}
+					<UiIconButton
+						v-if="!parameter.isDefault"
+						icon="rotate-ccw"
+						size="sm"
+						label="Вернуть значение по умолчанию"
+						@click="store.reset(parameter)"
+					/>
 				</span>
 			</div>
 
-			<div class="card__default">
-				<span class="card__caption">
-					По умолчанию: {{ showValue(parameter, parameter.defaultValue) }}
-				</span>
-				<UiButton
-					v-if="!parameter.isDefault"
-					variant="ghost"
-					size="sm"
-					icon="rotate-ccw"
-					@click="onReset(parameter)"
-				>
-					Сбросить
-				</UiButton>
-			</div>
-
-			<div class="card__foot">
-				<UiButton
-					variant="secondary"
-					icon="check"
-					:disabled="!isChanged(parameter) || !!problemOf(parameter)"
-					@click="onSave(parameter)"
-				>
-					Сохранить
-				</UiButton>
+			<div v-if="!store.parameters.length" class="table__empty">
+				Параметров нет.
 			</div>
 		</div>
-
-		<span v-if="!store.parameters.length" class="note">Параметров нет.</span>
 	</div>
+
+	<FormDialog
+		:open="!!editing"
+		:title="editing?.name ?? ''"
+		:subtitle="editing?.description"
+		plain-title
+		:sections="[{ fields }]"
+		:initial
+		@change="typed = textOf($event)"
+		@close="editing = undefined"
+		@save="onSave"
+	/>
 </template>
 
 <style scoped>
@@ -131,69 +167,78 @@ onMounted(async () => {
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
-	max-width: 760px;
 }
 
-.card {
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
-	padding: 16px;
+.table {
+	overflow: hidden;
 	background: var(--surface-card);
 	border: 1px solid var(--border-subtle);
 	border-radius: var(--radius-lg);
 	box-shadow: var(--shadow-1);
 }
 
-.card__head {
-	display: flex;
+.table__row {
+	display: grid;
+	grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) 120px 76px;
+	gap: 12px;
 	align-items: center;
-	gap: 8px;
 }
 
-.card__label {
+.table__row--head {
+	padding: 12px 16px;
 	font: var(--type-label);
 	letter-spacing: var(--tracking-label);
 	text-transform: uppercase;
 	color: var(--text-muted);
+	background: var(--surface-sunken);
 }
 
-.card__hint {
+.table__row--body {
+	min-height: 52px;
+	padding: 8px 16px;
+	border-top: 1px solid var(--border-subtle);
+}
+
+.table__actions {
+	display: flex;
+	gap: 4px;
+	justify-content: flex-end;
+}
+
+.table__empty {
+	padding: 16px;
+	font: var(--type-body-sm);
+	color: var(--text-subtle);
+	border-top: 1px solid var(--border-subtle);
+}
+
+.parameter {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.parameter__name {
+	font: 600 15px / 1.45 var(--font-body);
+	color: var(--text-strong);
+}
+
+.parameter__description {
 	font: var(--type-body-sm);
 	color: var(--text-muted);
 	text-wrap: pretty;
 }
 
-.card__field {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-	padding-top: 12px;
-	border-top: 1px solid var(--border-subtle);
-}
-
-.card__input {
-	width: 160px;
-}
-
-.card__caption {
-	font: var(--type-body-sm);
-	color: var(--text-subtle);
-}
-
-.card__default {
+.value {
 	display: flex;
 	align-items: center;
 	gap: 8px;
+	font: var(--type-mono);
+	color: var(--text-strong);
 }
 
-.card__foot {
-	display: flex;
-	justify-content: flex-end;
-}
-
-.note {
-	font: var(--type-body-sm);
+.default {
+	font: var(--type-mono);
 	color: var(--text-muted);
 }
 </style>
