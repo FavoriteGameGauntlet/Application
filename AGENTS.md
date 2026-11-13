@@ -29,7 +29,7 @@ The structure of `src/`, the domain (parties, wheel, resources, journal, admin) 
 
 Status transitions: `todo` becomes `in_progress` when you start the feature (set it in the first commit of the branch). `in_progress` becomes `done` when the Definition of Done is met and the evidence is recorded. The agent does not run the app, so a check only the user can make counts once the user says in chat that they checked it; record that in `evidence` as "Checked by the user" and only then set `done`. Until then the feature stays `in_progress`.
 
-`harness/archive/features-done.json` holds the full entries of done features and is not read at startup. When a feature is done, move its full entry there and leave in `feature_list.json` the `id`, a one-line `title`, the `priority`, `done` and an `evidence` like "Done <date>. Full record: harness/archive/features-done.json". Create the `archive/` folder with the first done feature. `claude-progress.md` keeps the three newest entries and any open blocker; older entries go to `harness/archive/progress-<date>.md`.
+`harness/archive/features-done.json` holds the full entries of done features and is not read at startup. When a feature is done, move its full entry there and leave in `feature_list.json` the `id`, a one-line `title`, the `priority`, `done` and an `evidence` like "Done <date>. Full record: harness/archive/features-done.json". Create the `archive/` folder with the first done feature. `claude-progress.md` keeps the three newest entries and any open blocker; older entries go to `harness/archive/progress.md`, newest on top.
 
 ## Checks
 
