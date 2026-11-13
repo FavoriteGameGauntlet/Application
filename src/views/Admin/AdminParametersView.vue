@@ -40,7 +40,7 @@ const fields = computed<FormField[]>(() => {
 	if (!parameter) return []
 
 	if (parameter.type === 'bool')
-		return [{ key: 'value', label: parameter.name, type: 'check' }]
+		return [{ key: 'value', label: 'Да', type: 'check' }]
 
 	const range = parameterRange(parameter)
 
@@ -112,16 +112,18 @@ onMounted(async () => {
 				class="table__row table__row--body"
 			>
 				<span class="parameter">
-					<span class="parameter__name">{{ parameter.name }}</span>
+					<span class="parameter__name">
+						{{ parameter.name }}
+						<UiBadge v-if="!parameter.isDefault" tone="accent"
+							>изменено</UiBadge
+						>
+					</span>
 					<span class="parameter__description">{{
 						parameter.description
 					}}</span>
 				</span>
 
-				<span class="value">
-					{{ showValue(parameter, parameter.value) }}
-					<UiBadge v-if="!parameter.isDefault" tone="accent">изменено</UiBadge>
-				</span>
+				<span class="value">{{ showValue(parameter, parameter.value) }}</span>
 
 				<span class="default">
 					{{ showValue(parameter, parameter.defaultValue) }}
@@ -143,6 +145,7 @@ onMounted(async () => {
 						label="Вернуть значение по умолчанию"
 						@click="store.reset(parameter)"
 					/>
+					<span v-else></span>
 				</span>
 			</div>
 
@@ -206,10 +209,11 @@ onMounted(async () => {
 	border-top: 1px solid var(--border-subtle);
 }
 
+/* two fixed places, so the pencil does not move when a row has no reset */
 .table__actions {
-	display: flex;
+	display: grid;
+	grid-template-columns: repeat(2, 32px);
 	gap: 4px;
-	justify-content: flex-end;
 }
 
 .table__empty {
@@ -227,6 +231,9 @@ onMounted(async () => {
 }
 
 .parameter__name {
+	display: flex;
+	align-items: center;
+	gap: 8px;
 	font: 600 15px / 1.45 var(--font-body);
 	color: var(--text-strong);
 }
