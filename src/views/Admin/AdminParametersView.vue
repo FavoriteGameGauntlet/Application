@@ -172,7 +172,11 @@ onMounted(async () => {
 	gap: 16px;
 }
 
+/* one grid for all rows, so each column is as wide as its widest cell; the name takes the rest */
 .table {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) repeat(4, max-content);
+	column-gap: 24px;
 	overflow: hidden;
 	background: var(--surface-card);
 	border: 1px solid var(--border-subtle);
@@ -182,8 +186,8 @@ onMounted(async () => {
 
 .table__row {
 	display: grid;
-	grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) 120px 140px 76px;
-	gap: 12px;
+	grid-column: 1 / -1;
+	grid-template-columns: subgrid;
 	align-items: center;
 }
 
@@ -209,6 +213,7 @@ onMounted(async () => {
 }
 
 .table__empty {
+	grid-column: 1 / -1;
 	padding: 16px;
 	font: var(--type-body-sm);
 	color: var(--text-subtle);
