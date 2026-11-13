@@ -101,8 +101,6 @@ onMounted(async () => {
 			<div class="table__row table__row--head">
 				<span>Параметр</span>
 				<span>Значение</span>
-				<span>По умолчанию</span>
-				<span>Допустимо</span>
 				<span></span>
 			</div>
 
@@ -123,13 +121,15 @@ onMounted(async () => {
 					}}</span>
 				</span>
 
-				<span class="value">{{ showValue(parameter, parameter.value) }}</span>
-
-				<span class="default">
-					{{ showValue(parameter, parameter.defaultValue) }}
+				<span class="value">
+					<span class="value__main">{{
+						showValue(parameter, parameter.value)
+					}}</span>
+					<span v-if="!parameter.isDefault" class="value__default">
+						по умолчанию:
+						<b>{{ showValue(parameter, parameter.defaultValue) }}</b>
+					</span>
 				</span>
-
-				<span class="default">{{ parameterRange(parameter) ?? '—' }}</span>
 
 				<span class="table__actions">
 					<UiIconButton
@@ -183,16 +183,12 @@ onMounted(async () => {
 	box-shadow: var(--shadow-1);
 }
 
-/* every narrow column is the same width, set in rem because the app scales; the name takes the rest */
+/* the narrow columns are set in rem because the app scales; the name takes the rest */
 .table__row {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) repeat(4, 6rem);
+	grid-template-columns: minmax(0, 1fr) 12rem 5rem;
 	gap: 16px;
 	align-items: center;
-}
-
-.table__row > :nth-child(n + 2) {
-	text-align: center;
 }
 
 .table__row--head {
@@ -214,7 +210,7 @@ onMounted(async () => {
 .table__actions {
 	display: grid;
 	grid-template-columns: repeat(2, 32px);
-	justify-content: center;
+	justify-content: end;
 	gap: 4px;
 }
 
@@ -246,11 +242,23 @@ onMounted(async () => {
 }
 
 .value {
-	font: var(--type-mono);
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.value__main {
+	font: 500 15px / 1.3 var(--font-mono);
+	font-variant-numeric: tabular-nums;
 	color: var(--text-strong);
 }
 
-.default {
+.value__default {
+	font: var(--type-caption);
+	color: var(--text-subtle);
+}
+
+.value__default b {
 	font: var(--type-mono);
 	color: var(--text-muted);
 }
