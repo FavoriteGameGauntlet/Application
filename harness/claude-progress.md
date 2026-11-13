@@ -2,6 +2,12 @@
 
 Newest entry on top. Record only what was actually verified.
 
+## 2026-11-12 recent-events-redesign removed
+
+- By the user's word the feature `recent-events-redesign` is deleted from the list: it is done inside the mockup, where all the tables are changed. No code was touched.
+- Checked by the user (said in chat: «Предыдущую фичу я проверил»), so `remove-after-form-notices` is done and moved to the archive.
+- Not committed by the user's word. The branch `recent-events-redesign` was created from `master` before this word and has no commits.
+
 ## 2026-11-12 remove-after-form-notices
 
 - Done in code, by the user's answers (the grey paragraphs under the screens and the hints under the fields of the windows, both deleted outright): the `.note` and `.card__note` paragraphs are gone from the admin exchanges, members, rewards and wheel screens, the spin cost card, the exchanges of the player, the manual change form, the list of players, the shared points and the completed games, with their styles and the two computed texts of the wheel and manual screens. The hints under the fields are gone from the catalogue, party, member, admin exchange and admin wheel windows. The `note` field type of `FormDialog` was used only by the perk ability window, so it is removed with it (also from `ARCHITECTURE.md`).
@@ -18,11 +24,6 @@ Newest entry on top. Record only what was actually verified.
 - Wayland (the user runs Fedora KDE) ignores the window icon of the app, so `tauri dev` showed a fallback icon. With `GDK_BACKEND=x11` the window first showed the old rings, because the icons are embedded at compile time and `cargo` kept the old build; `cargo clean -p fgg` fixed it. A white screen under X11 went away with `WEBKIT_DISABLE_DMABUF_RENDERER=1`.
 - Not verified by me: the app was not run by me, and the Windows build (`icon.ico`, the installer) was not seen. The plate color (white) was my choice, the mockup has none.
 - Checked by the user (said in chat: «Всё работает»), so `window-icon` is done and moved to the archive.
-
-## 2026-11-12 release-0.7.0
-
-- Bumped the version to 0.7.0 with `npm version 0.7.0 --no-git-tag-version` (package.json, package-lock.json, tauri.conf.json, Cargo.toml, Cargo.lock). The tag `v0.7.0` is created on `master` after the merge, and the release is not a prerelease. The branch also carries the `AGENTS.md` release pointer and the new `harness/PLAYBOOK.md`.
-- Verified: `bash harness/scripts/init.sh` and `cargo check` in `src-tauri/` pass. The app was not run.
 
 ## Open
 

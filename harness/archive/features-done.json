@@ -48,6 +48,13 @@
 			"priority": 16,
 			"status": "done",
 			"evidence": "Done 2026-11-12. Checked by the user (said in chat: «Всё работает»), in `tauri dev` run with GDK_BACKEND=x11 and WEBKIT_DISABLE_DMABUF_RENDERER=1 after `cargo clean -p fgg`. The icon set in src-tauri/icons/ is generated with `tauri icon` from src-tauri/icons/source/icon.svg (the symbol on a white rounded plate, the plate color is the agent's choice). bash harness/scripts/init.sh and cargo check pass. The Windows build (icon.ico, the installer) was not looked at. Wayland ignores the window icon of the app, so under Wayland without GDK_BACKEND=x11 the icon does not show in `dev`."
+		},
+		{
+			"id": "remove-after-form-notices",
+			"title": "Remove the obtrusive captions everywhere after forms. The user's words, translated: «remove the obtrusive captions everywhere after forms». By the user's answer it means two things, both deleted outright: the grey paragraphs (`.note`, `.card__note`) under the tables and forms of the screens, and the hints under the fields of the windows (`hint` of a FormField, the `note` field type). Kept: the toasts, the hints of the options in the menus, the reasons why a form cannot be filled yet (`invalid`, the empty pick list of the use window), the empty-state texts, the hint «Не меньше 8 символов.» of the login form, the card hints of the system parameters and the two lines of the wheel screen. The rules the captions carried are to be expressed through the interface in the `rules-ui-*` features.",
+			"priority": 6,
+			"status": "done",
+			"evidence": "Done 2026-11-12. Checked by the user (said in chat: «Предыдущую фичу я проверил»). bash harness/scripts/init.sh (eslint, vue-tsc) passes, prettier on the changed files. The app was not run by the agent."
 		}
 	]
 }

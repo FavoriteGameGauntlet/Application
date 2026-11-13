@@ -37,17 +37,10 @@
 		},
 		{
 			"id": "remove-after-form-notices",
-			"title": "Remove the obtrusive captions everywhere after forms. The user's words, translated: «remove the obtrusive captions everywhere after forms». By the user's answer it means two things, both deleted outright: the grey paragraphs (`.note`, `.card__note`) under the tables and forms of the screens, and the hints under the fields of the windows (`hint` of a FormField, the `note` field type). Kept: the toasts, the hints of the options in the menus, the reasons why a form cannot be filled yet (`invalid`, the empty pick list of the use window), the empty-state texts, the hint «Не меньше 8 символов.» of the login form, the card hints of the system parameters and the two lines of the wheel screen. The rules the captions carried are to be expressed through the interface in the `rules-ui-*` features.",
+			"title": "Remove the obtrusive captions everywhere after forms",
 			"priority": 6,
-			"status": "in_progress",
-			"evidence": "The code is ready and waits for the user to look at the screens. bash harness/scripts/init.sh (eslint, vue-tsc) passes, prettier on the changed files. The app was not run."
-		},
-		{
-			"id": "recent-events-redesign",
-			"title": "Rework the «Недавние события» form. The block is components/PlayerEvents.vue (the title «Недавние события», a feed of the last day) on top of components/EventFeed.vue, shown in views/Home/HomeView.vue and views/Users/UserProfileView.vue. No details yet.",
-			"priority": 7,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-12. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "system-parameters-data-format",
