@@ -1,4 +1,5 @@
 import type { RouteRecordRaw } from 'vue-router'
+import AdminCatalogView from '../views/Admin/AdminCatalogView.vue'
 import AdminExchangesView from '../views/Admin/AdminExchangesView.vue'
 import AdminMembersView from '../views/Admin/AdminMembersView.vue'
 import AdminParametersView from '../views/Admin/AdminParametersView.vue'
@@ -85,6 +86,11 @@ export const routes: RouteRecordRaw[] = [
 				meta: { admin: true },
 				redirect: { name: RouteName.AdminExchanges },
 				children: [
+					{
+						path: 'catalog',
+						component: AdminCatalogView,
+						name: RouteName.AdminCatalog,
+					},
 					{
 						path: 'exchanges',
 						component: AdminExchangesView,
