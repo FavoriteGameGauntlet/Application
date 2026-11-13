@@ -175,11 +175,7 @@ onMounted(async () => {
 	gap: 16px;
 }
 
-/* one grid for all rows, so each column is as wide as its widest cell; the name takes the rest */
 .table {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) repeat(4, max-content);
-	column-gap: 24px;
 	overflow: hidden;
 	background: var(--surface-card);
 	border: 1px solid var(--border-subtle);
@@ -187,11 +183,16 @@ onMounted(async () => {
 	box-shadow: var(--shadow-1);
 }
 
+/* the narrow columns have a set width in rem (the app scales), sized for their longest text; the name takes the rest */
 .table__row {
 	display: grid;
-	grid-column: 1 / -1;
-	grid-template-columns: subgrid;
+	grid-template-columns: minmax(0, 1fr) 6rem 8rem 9rem 5rem;
+	gap: 16px;
 	align-items: center;
+}
+
+.table__row > :nth-child(n + 2) {
+	text-align: center;
 }
 
 .table__row--head {
@@ -213,11 +214,11 @@ onMounted(async () => {
 .table__actions {
 	display: grid;
 	grid-template-columns: repeat(2, 32px);
+	justify-content: center;
 	gap: 4px;
 }
 
 .table__empty {
-	grid-column: 1 / -1;
 	padding: 16px;
 	font: var(--type-body-sm);
 	color: var(--text-subtle);
@@ -245,9 +246,6 @@ onMounted(async () => {
 }
 
 .value {
-	display: flex;
-	align-items: center;
-	gap: 8px;
 	font: var(--type-mono);
 	color: var(--text-strong);
 }
