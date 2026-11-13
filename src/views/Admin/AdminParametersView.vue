@@ -183,10 +183,10 @@ onMounted(async () => {
 	box-shadow: var(--shadow-1);
 }
 
-/* the three data columns are equal, sized in rem (the app scales) for the longest header and range; the name takes the rest */
+/* every narrow column is the same width, set in rem because the app scales; the name takes the rest */
 .table__row {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) repeat(3, 9rem) 5rem;
+	grid-template-columns: minmax(0, 1fr) repeat(4, 6rem);
 	gap: 16px;
 	align-items: center;
 }
