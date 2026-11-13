@@ -74,7 +74,7 @@ onMounted(async () => {
 
 			<span class="card__hint">{{ parameter.description }}</span>
 
-			<div class="card__row">
+			<div class="card__field">
 				<UiSwitch
 					v-if="parameter.type === 'bool'"
 					:model-value="draft[parameter.code] === 'true'"
@@ -90,13 +90,15 @@ onMounted(async () => {
 						@keydown.enter="onSave(parameter)"
 					/>
 				</div>
-				<span class="card__default">
-					по умолчанию: {{ showValue(parameter, parameter.defaultValue) }}
-					<template v-if="parameterRange(parameter)">
-						· {{ parameterRange(parameter) }}
-					</template>
+				<span v-if="parameterRange(parameter)" class="card__caption">
+					Допустимо: {{ parameterRange(parameter) }}
 				</span>
-				<div class="card__spacer"></div>
+			</div>
+
+			<div class="card__default">
+				<span class="card__caption">
+					По умолчанию: {{ showValue(parameter, parameter.defaultValue) }}
+				</span>
 				<UiButton
 					v-if="!parameter.isDefault"
 					variant="ghost"
@@ -106,6 +108,9 @@ onMounted(async () => {
 				>
 					Сбросить
 				</UiButton>
+			</div>
+
+			<div class="card__foot">
 				<UiButton
 					variant="secondary"
 					icon="check"
@@ -159,10 +164,10 @@ onMounted(async () => {
 	text-wrap: pretty;
 }
 
-.card__row {
+.card__field {
 	display: flex;
-	align-items: center;
-	gap: 12px;
+	flex-direction: column;
+	gap: 6px;
 	padding-top: 12px;
 	border-top: 1px solid var(--border-subtle);
 }
@@ -171,13 +176,20 @@ onMounted(async () => {
 	width: 160px;
 }
 
-.card__default {
+.card__caption {
 	font: var(--type-body-sm);
 	color: var(--text-subtle);
 }
 
-.card__spacer {
-	flex: 1;
+.card__default {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.card__foot {
+	display: flex;
+	justify-content: flex-end;
 }
 
 .note {
