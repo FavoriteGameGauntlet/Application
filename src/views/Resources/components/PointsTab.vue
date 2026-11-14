@@ -105,16 +105,6 @@ const bounds = computed(() =>
 		: undefined,
 )
 
-const mineFacts = computed(() => {
-	const type = selected.value
-	if (!type || !myStanding.value) return []
-
-	return [
-		`у тебя ${formatValue(myValue(type.id))}`,
-		placeText(placeOf(sessionStore.login, type.id)),
-	]
-})
-
 function openProfile(login: Login) {
 	router.push({ name: RouteName.UserDetail, params: { login } })
 }
@@ -176,9 +166,6 @@ watch(() => journalStore.revision, resourcesStore.loadStandings, {
 					}}</span>
 				</div>
 				<span v-if="bounds" class="fact">{{ bounds }}</span>
-				<span v-for="fact in mineFacts" :key="fact" class="fact">{{
-					fact
-				}}</span>
 			</div>
 
 			<div
