@@ -1,8 +1,4 @@
-import type {
-	HistoryEventKind,
-	JournalEntry,
-	JournalSource,
-} from '../api-facade/contracts'
+import type { HistoryEventKind, JournalSource } from '../api-facade/contracts'
 
 /** what happened and, when there is one, the entity it happened to: two facts for two lines */
 export type JournalSourceParts = { kind: string; name?: string }
@@ -96,9 +92,5 @@ export const journalSourceGroups: JournalSourceGroup[] = [
 	{ value: 'exchange', label: 'обмен', kinds: ['exchange_used'] },
 	{ value: 'timer', label: 'таймер', kinds: ['timer_created', 'timer_ended'] },
 	{ value: 'game', label: 'игра', kinds: ['game_started', 'game_ended'] },
-	{ value: 'manual', label: 'вручную', kinds: ['manual_granted'] },
+	{ value: 'manual', label: 'ручное изменение', kinds: ['manual_granted'] },
 ]
-
-/** the badge «вручную» of a journal entry */
-export const isManualEntry = (entry: JournalEntry) =>
-	entry.source.eventKind === 'manual_granted'

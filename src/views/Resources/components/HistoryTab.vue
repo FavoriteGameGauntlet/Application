@@ -6,7 +6,6 @@ import type {
 	JournalQuery,
 	ResourceRef,
 } from '../../../api-facade/contracts'
-import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiFilterSelect from '../../../components/ui/UiFilterSelect.vue'
 import UiRowMenu from '../../../components/ui/UiRowMenu.vue'
 import UiUserAvatar from '../../../components/ui/UiUserAvatar.vue'
@@ -22,10 +21,7 @@ import {
 	today,
 } from '../../../utils/calendar'
 import JournalSourceLabel from '../../../components/JournalSourceLabel.vue'
-import {
-	isManualEntry,
-	journalSourceGroups,
-} from '../../../utils/journalSource'
+import { journalSourceGroups } from '../../../utils/journalSource'
 import { plural } from '../../../utils/plural'
 
 type FilterKey = 'user' | 'resource' | 'source' | 'period'
@@ -265,9 +261,6 @@ function showEntry(id: number) {
 							:size="24"
 						/>
 						<span class="who__login">{{ row.entry.actor }}</span>
-						<UiBadge v-if="isManualEntry(row.entry)" tone="info" dot
-							>вручную</UiBadge
-						>
 					</span>
 					<JournalSourceLabel
 						:source="row.entry.source"

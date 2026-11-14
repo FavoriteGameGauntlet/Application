@@ -17,7 +17,6 @@ import { useResourcesStore } from '../../stores/resourcesStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToastStore } from '../../stores/toastStore'
 import { formatMoment, parseSpan } from '../../utils/format'
-import { isManualEntry } from '../../utils/journalSource'
 import { countItems } from '../../utils/userItems'
 
 type RowType = ManualChange['kind']
@@ -341,9 +340,6 @@ onMounted(async () => {
 						<span class="entry__who">
 							<span class="entry__actor-row">
 								<span class="entry__actor">{{ draft.entry.actor }}</span>
-								<UiBadge v-if="isManualEntry(draft.entry)" tone="info" dot
-									>вручную</UiBadge
-								>
 							</span>
 							<JournalSourceLabel
 								:source="draft.entry.source"
