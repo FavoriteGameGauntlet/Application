@@ -14,8 +14,6 @@ type Props = {
 
 const { view, entry } = defineProps<Props>()
 
-const GAUGE_SEGMENTS = 24
-
 /** `texts[i]` is the text the facade built for `rows[i]` */
 const toLines = (rows: ItemEntryRow[], texts: string[]) =>
 	rows.map((row, i) => ({
@@ -78,31 +76,6 @@ const formatValue = (value: number | null | undefined) =>
 	value === null || value === undefined
 		? 'Без лимита'
 		: value.toLocaleString('ru-RU')
-
-/** the start value as a mark between the bounds; only when both bounds are set */
-const gauge = computed(() => {
-	const { minimum, maximum, startValue = 0 } = entry
-
-	if (
-		minimum === null ||
-		minimum === undefined ||
-		maximum === null ||
-		maximum === undefined ||
-		maximum <= minimum
-	)
-		return undefined
-
-	const mark = Math.round(
-		((startValue - minimum) / (maximum - minimum)) * (GAUGE_SEGMENTS - 1),
-	)
-
-	return {
-		label: `Старт ${startValue} в диапазоне от ${minimum} до ${maximum}`,
-		segments: Array.from({ length: GAUGE_SEGMENTS }, (_, i) =>
-			i < mark ? 'filled' : i === mark ? 'mark' : 'empty',
-		),
-	}
-})
 
 const units = computed(() => {
 	const forms = entry.unitForms
@@ -270,13 +243,6 @@ const units = computed(() => {
 		<template v-if="isPoints">
 			<section class="block">
 				<span class="label">Значения</span>
-				<div v-if="gauge" class="gauge" role="img" :aria-label="gauge.label">
-					<span
-						v-for="(segment, i) in gauge.segments"
-						:key="i"
-						:class="`gauge__${segment}`"
-					></span>
-				</div>
 				<div class="stats stats--3">
 					<div class="stat">
 						<span class="stat__label">Минимум</span>
@@ -527,35 +493,5 @@ const units = computed(() => {
 .stat__form {
 	font: 600 16px / 1.25 var(--font-body);
 	color: var(--text-strong);
-}
-
-.gauge {
-	display: flex;
-	align-items: center;
-	gap: 3px;
-	padding: 4px 0;
-}
-
-.gauge__filled,
-.gauge__empty {
-	flex: 1;
-	height: 14px;
-	border-radius: 3px;
-}
-
-.gauge__filled {
-	background: var(--accent);
-}
-
-.gauge__empty {
-	background: var(--border-subtle);
-}
-
-.gauge__mark {
-	flex: none;
-	width: 4px;
-	height: 24px;
-	border-radius: 2px;
-	background: var(--text-strong);
 }
 </style>
