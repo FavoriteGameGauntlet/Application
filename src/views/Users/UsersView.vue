@@ -4,7 +4,6 @@ import { useRouter } from 'vue-router'
 import type { Member, UserStatus } from '../../api-facade/contracts'
 import UiBadge from '../../components/ui/UiBadge.vue'
 import UiChoiceChips from '../../components/ui/UiChoiceChips.vue'
-import UiIcon from '../../components/ui/UiIcon.vue'
 import UiInput from '../../components/ui/UiInput.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiRowMenu, { type RowMenuItem } from '../../components/ui/UiRowMenu.vue'
@@ -114,7 +113,6 @@ onMounted(() => membersStore.load())
 				<span role="columnheader">Сыграно ↓</span>
 				<span role="columnheader" class="right">Пройдено</span>
 				<span role="columnheader" class="right">Прокруты</span>
-				<span></span>
 			</div>
 
 			<UiRowMenu
@@ -169,9 +167,6 @@ onMounted(() => membersStore.load())
 				</span>
 				<span class="num right" role="cell">{{ member.completedCount }}</span>
 				<span class="num right" role="cell">{{ member.spinsCount }}</span>
-				<span class="chevron" role="cell">
-					<UiIcon name="chevron-right" :size="18" />
-				</span>
 			</UiRowMenu>
 
 			<div v-if="!rows.length" class="empty">
@@ -228,7 +223,7 @@ onMounted(() => membersStore.load())
 	display: grid;
 	grid-template-columns:
 		minmax(0, 1.5fr) 116px minmax(0, 1.2fr) minmax(0, 1.3fr)
-		84px 84px 20px;
+		84px 84px;
 	gap: 16px;
 	align-items: center;
 	box-sizing: border-box;
@@ -353,11 +348,6 @@ onMounted(() => membersStore.load())
 	height: 100%;
 	background: var(--accent);
 	border-radius: 3px;
-}
-
-.chevron {
-	display: flex;
-	color: var(--text-muted);
 }
 
 .empty {
