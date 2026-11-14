@@ -20,8 +20,8 @@ import {
 	today,
 } from '../../../utils/calendar'
 import JournalSourceLabel from '../../../components/JournalSourceLabel.vue'
+import UiBadge from '../../../components/ui/UiBadge.vue'
 import { journalSourceGroups } from '../../../utils/journalSource'
-import { plural } from '../../../utils/plural'
 
 type FilterKey = 'user' | 'resource' | 'source' | 'period'
 
@@ -121,15 +121,6 @@ watch(
 	{ immediate: true },
 )
 
-const countText = computed(() => {
-	const n = entries.value.length
-	const period = specs.value[3].options.find(
-		(o) => o.value === filters.period,
-	)?.label
-
-	return `${n} ${plural(n, ['запись', 'записи', 'записей'])} ${period}`
-})
-
 const dayTitle = (day: string) => {
 	const now = Temporal.PlainDate.from(today())
 
@@ -221,7 +212,7 @@ function showEntry(id: number) {
 			:options="spec.options"
 			:active="filters[spec.key] !== ALL"
 		/>
-		<span class="bar__count">{{ countText }}</span>
+		<UiBadge class="bar__count">{{ entries.length }}</UiBadge>
 	</div>
 
 	<div ref="table" class="table" role="table" aria-label="Журнал">
@@ -303,8 +294,6 @@ function showEntry(id: number) {
 
 .bar__count {
 	margin-left: auto;
-	font: var(--type-caption);
-	color: var(--text-muted);
 }
 
 .table {

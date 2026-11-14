@@ -13,7 +13,6 @@ import { useMembersStore } from '../../stores/membersStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { userStatusView } from '../../utils/userStatus'
 import { formatDuration } from '../../utils/format'
-import { plural } from '../../utils/plural'
 
 type StatusFilter = UserStatus | 'all'
 
@@ -30,11 +29,6 @@ const members = computed(() =>
 
 /** the bar of the leader is full */
 const maxPlayed = computed(() => members.value[0]?.playedSeconds ?? 0)
-
-const count = computed(
-	() =>
-		`${members.value.length} ${plural(members.value.length, ['игрок', 'игрока', 'игроков'])}`,
-)
 
 const chipLabels: Record<StatusFilter, string> = {
 	all: 'Все',
@@ -83,7 +77,7 @@ onMounted(() => membersStore.load())
 	<div class="users">
 		<div class="head">
 			<UiPageTitle>Участники</UiPageTitle>
-			<span class="head__count">{{ count }}</span>
+			<UiBadge>{{ members.length }}</UiBadge>
 		</div>
 
 		<div class="bar">
@@ -187,11 +181,6 @@ onMounted(() => membersStore.load())
 	display: flex;
 	align-items: center;
 	gap: 16px;
-}
-
-.head__count {
-	font: 500 14px / 1 var(--font-mono);
-	color: var(--text-muted);
 }
 
 .bar {
