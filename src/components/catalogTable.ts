@@ -62,7 +62,11 @@ export const catalogTags = (
 		case 'points':
 		case 'shared':
 			return entry.unitForms
-				? [{ text: Object.values(entry.unitForms).join(' / '), tone: 'plain' }]
+				? [
+						entry.unitForms.one,
+						entry.unitForms.several,
+						entry.unitForms.many,
+					].map((text) => ({ text, tone: 'plain' }))
 				: []
 		case 'items':
 			return (entry.entries ?? []).map((row, i) => ({
