@@ -101,18 +101,9 @@ const rows = computed(() => {
 const bounds = computed(() =>
 	selected.value &&
 	(selected.value.minimum !== null || selected.value.maximum !== null)
-		? `границы ${formatBounds(selected.value.minimum, selected.value.maximum)}`
+		? `Граница: ${formatBounds(selected.value.minimum, selected.value.maximum)}`
 		: undefined,
 )
-
-const mineFact = computed(() => {
-	const type = selected.value
-	if (!type || !myStanding.value) return undefined
-
-	const place = placeText(placeOf(sessionStore.login, type.id))
-
-	return `у тебя ${formatValue(myValue(type.id))} · ${place}`
-})
 
 function openProfile(login: Login) {
 	router.push({ name: RouteName.UserDetail, params: { login } })
@@ -175,7 +166,6 @@ watch(() => journalStore.revision, resourcesStore.loadStandings, {
 					}}</span>
 				</div>
 				<span v-if="bounds" class="fact">{{ bounds }}</span>
-				<span v-if="mineFact" class="fact">{{ mineFact }}</span>
 			</div>
 
 			<div
@@ -188,7 +178,7 @@ watch(() => journalStore.revision, resourcesStore.loadStandings, {
 					<span role="columnheader">Игрок</span>
 					<span role="columnheader">Доля от лидера</span>
 					<span role="columnheader" class="right">Значение ↓</span>
-					<span role="columnheader" class="right">К тебе</span>
+					<span role="columnheader" class="right">Разница со мной</span>
 				</div>
 
 				<UiRowMenu
@@ -199,7 +189,6 @@ watch(() => journalStore.revision, resourcesStore.loadStandings, {
 					role="row"
 					label="Действия с игроком"
 					:items="menuOf(row.standing.user.login)"
-					@click="openProfile(row.standing.user.login)"
 				>
 					<span class="num num--muted" role="cell">{{ row.place }}</span>
 					<span class="user" role="cell">
@@ -375,7 +364,7 @@ watch(() => journalStore.revision, resourcesStore.loadStandings, {
 
 .row {
 	display: grid;
-	grid-template-columns: 44px minmax(0, 1.4fr) minmax(0, 1.3fr) 96px 96px;
+	grid-template-columns: 44px minmax(0, 1.4fr) minmax(0, 1.3fr) 96px 140px;
 	gap: 16px;
 	align-items: center;
 	box-sizing: border-box;
@@ -394,7 +383,6 @@ watch(() => journalStore.revision, resourcesStore.loadStandings, {
 .row--body {
 	min-height: 56px;
 	border-top: 1px solid var(--border-subtle);
-	cursor: pointer;
 }
 
 .row--body:not(.row--me):hover {

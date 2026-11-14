@@ -1,4 +1,3 @@
-import { formatJournalSource } from '../../utils/format'
 import type {
 	Api,
 	Effect,
@@ -111,7 +110,7 @@ const toUserEffect = (dto: UserEffectDto): Effect => ({
 	id: dto.id,
 	name: dto.name,
 	description: dto.description,
-	source: formatJournalSource(dto.source),
+	source: dto.source,
 	expiresAt: dto.duration
 		? (Temporal.Instant.from(dto.startedDate)
 				.add({ seconds: toSeconds(dto.duration) })
@@ -246,7 +245,10 @@ export const resources: Api['resources'] = {
 					.filter((c) => c.login === login)
 					.map((c) => ({
 						at: entry.at,
-						source: formatJournalSource(entry.source, entry.correctsEntryId),
+						source: entry.source,
+						...(entry.correctsEntryId !== undefined && {
+							correctsEntryId: entry.correctsEntryId,
+						}),
 						delta: c.text.match(/^[+−-]\d+/)?.[0] ?? c.text,
 					})),
 			)

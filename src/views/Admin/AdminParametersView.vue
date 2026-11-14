@@ -4,20 +4,33 @@ import type { SystemParameter } from '../../api-facade/contracts'
 import type { FormField, FormValues } from '../../components/formDialog'
 import FormDialog from '../../components/FormDialog.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
-import UiIconButton from '../../components/ui/UiIconButton.vue'
-import UiPageTitle from '../../components/ui/UiPageTitle.vue'
+import UiRowMenu, { type RowMenuItem } from '../../components/ui/UiRowMenu.vue'
 import { useAdminParametersStore } from '../../stores/adminParametersStore'
 import { useToastStore } from '../../stores/toastStore'
 import {
 	checkParameterValue,
 	parameterRange,
 } from '../../utils/systemParameter'
+import AdminListHeader from './components/AdminListHeader.vue'
 
 const store = useAdminParametersStore()
 const toastStore = useToastStore()
 
 /** the parameter in the edit dialog, undefined means the dialog is closed */
 const editing = ref<SystemParameter>()
+
+const query = ref('')
+
+const rows = computed(() => {
+	const q = query.value.trim().toLowerCase()
+
+	return store.parameters.filter(
+		(p) =>
+			!q ||
+			p.name.toLowerCase().includes(q) ||
+			p.description.toLowerCase().includes(q),
+	)
+})
 
 /** what the admin has typed so far, to say at once why it does not fit */
 const typed = ref('')
@@ -68,6 +81,19 @@ const edit = (parameter: SystemParameter) => {
 	editing.value = parameter
 }
 
+const menuOf = (parameter: SystemParameter): RowMenuItem[] => [
+	{ label: 'Изменить', icon: 'pencil', select: () => edit(parameter) },
+	...(parameter.isDefault
+		? []
+		: [
+				{
+					label: 'Вернуть по умолчанию',
+					icon: 'rotate-ccw',
+					select: () => store.reset(parameter),
+				},
+			]),
+]
+
 const onSave = async (values: FormValues) => {
 	const parameter = editing.value
 	const value = textOf(values)
@@ -95,21 +121,28 @@ onMounted(async () => {
 
 <template>
 	<div class="parameters">
-		<UiPageTitle>Системные параметры</UiPageTitle>
+		<AdminListHeader
+			v-model:query="query"
+			title="Системные параметры"
+			placeholder="Найти параметр…"
+			no-add
+		/>
 
-		<div class="table">
-			<div class="table__row table__row--head">
-				<span>Параметр</span>
-				<span>Значение</span>
-				<span></span>
+		<div class="table" role="table" aria-label="Системные параметры">
+			<div class="table__row table__row--head" role="row">
+				<span role="columnheader">Параметр</span>
+				<span role="columnheader">Значение</span>
 			</div>
 
-			<div
-				v-for="parameter in store.parameters"
+			<UiRowMenu
+				v-for="parameter in rows"
 				:key="parameter.code"
 				class="table__row table__row--body"
+				role="row"
+				label="Действия с параметром"
+				:items="menuOf(parameter)"
 			>
-				<span class="parameter">
+				<span class="parameter" role="cell">
 					<span class="parameter__name">
 						{{ parameter.name }}
 						<UiBadge v-if="!parameter.isDefault" tone="accent"
@@ -121,7 +154,7 @@ onMounted(async () => {
 					}}</span>
 				</span>
 
-				<span class="value">
+				<span class="value" role="cell">
 					<span class="value__main">{{
 						showValue(parameter, parameter.value)
 					}}</span>
@@ -130,27 +163,10 @@ onMounted(async () => {
 						<b>{{ showValue(parameter, parameter.defaultValue) }}</b>
 					</span>
 				</span>
+			</UiRowMenu>
 
-				<span class="table__actions">
-					<UiIconButton
-						icon="pencil"
-						size="sm"
-						label="Изменить"
-						@click="edit(parameter)"
-					/>
-					<UiIconButton
-						v-if="!parameter.isDefault"
-						icon="rotate-ccw"
-						size="sm"
-						label="Вернуть значение по умолчанию"
-						@click="store.reset(parameter)"
-					/>
-					<span v-else></span>
-				</span>
-			</div>
-
-			<div v-if="!store.parameters.length" class="table__empty">
-				Параметров нет.
+			<div v-if="!rows.length" class="table__empty">
+				{{ store.parameters.length ? 'Ничего не нашлось.' : 'Параметров нет.' }}
 			</div>
 		</div>
 	</div>
@@ -183,16 +199,16 @@ onMounted(async () => {
 	box-shadow: var(--shadow-1);
 }
 
-/* the narrow columns are set in rem because the app scales; the name takes the rest */
+/* the narrow column is set in rem because the app scales; the name takes the rest; 60px on the right belong to the «⋯» button */
 .table__row {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) 12rem 5rem;
+	grid-template-columns: minmax(0, 1fr) 12rem;
 	gap: 16px;
 	align-items: center;
 }
 
 .table__row--head {
-	padding: 12px 16px;
+	padding: 12px 60px 12px 20px;
 	font: var(--type-label);
 	letter-spacing: var(--tracking-label);
 	text-transform: uppercase;
@@ -202,20 +218,16 @@ onMounted(async () => {
 
 .table__row--body {
 	min-height: 52px;
-	padding: 8px 16px;
+	padding: 8px 60px 8px 20px;
 	border-top: 1px solid var(--border-subtle);
 }
 
-/* two fixed places, so the pencil does not move when a row has no reset */
-.table__actions {
-	display: grid;
-	grid-template-columns: repeat(2, 32px);
-	justify-content: end;
-	gap: 4px;
+.table__row--body:hover {
+	background: var(--surface-sunken);
 }
 
 .table__empty {
-	padding: 16px;
+	padding: 16px 20px;
 	font: var(--type-body-sm);
 	color: var(--text-subtle);
 	border-top: 1px solid var(--border-subtle);

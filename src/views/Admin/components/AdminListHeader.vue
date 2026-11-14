@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiCountBadge from '../../../components/ui/UiCountBadge.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiPageTitle from '../../../components/ui/UiPageTitle.vue'
 
 type Props = {
 	title: string
-	/** the count with its noun, «4 обмена» */
-	count: string
+	/** how many entries there are, shown as a chip after the title; a screen whose filters show the counts leaves it out */
+	count?: number
 	placeholder?: string
+	/** a list whose entries are not added by the admin has no «Добавить» */
+	noAdd?: boolean
 }
 
-const { placeholder = 'Найти…' } = defineProps<Props>()
+const { placeholder = 'Найти…', noAdd } = defineProps<Props>()
 
 const query = defineModel<string>('query', { default: '' })
 
@@ -20,9 +23,9 @@ const emit = defineEmits<{ add: [] }>()
 <template>
 	<div class="head">
 		<UiPageTitle>{{ title }}</UiPageTitle>
-		<span class="head__count">{{ count }}</span>
+		<UiCountBadge v-if="count !== undefined" :value="count" />
 		<div class="head__spacer"></div>
-		<UiButton icon="plus" @click="emit('add')">Добавить</UiButton>
+		<UiButton v-if="!noAdd" icon="plus" @click="emit('add')">Добавить</UiButton>
 	</div>
 
 	<div class="bar">
@@ -50,11 +53,6 @@ const emit = defineEmits<{ add: [] }>()
 
 .bar {
 	gap: 24px;
-}
-
-.head__count {
-	font: var(--type-body-sm);
-	color: var(--text-muted);
 }
 
 .head__spacer {

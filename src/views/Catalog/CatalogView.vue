@@ -108,7 +108,13 @@ watch(
 				>
 					<span class="row__main">
 						<span class="row__name">{{ row.entry.name }}</span>
-						<span class="row__summary">{{ row.summary }}</span>
+						<span
+							v-for="(fact, i) in row.summary"
+							:key="i"
+							class="row__summary"
+							:title="fact"
+							>{{ fact }}</span
+						>
 					</span>
 					<span v-if="row.badge" class="row__badge">{{ row.badge }}</span>
 				</button>

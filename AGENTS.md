@@ -93,6 +93,8 @@ When the user asks for a design (a screen, a form, a table, a layout), don't gue
 - Show API errors through `useToastStore().error(e)`; the message comes from `body.message` of the response. Own messages to the user go through `toast.show(title, text, tone)`.
 - Calendar logic and formatting use `@js-temporal/polyfill` (see `api-facade/http.ts`, `api-facade/http/games.ts`). Plain timestamps and the timer run on `Date.now()`, which is fine. Write new calendar logic with Temporal.
 - UI texts and messages to the user are in Russian. Code comments and commit messages are in English; a comment explains why, not what the code does.
+- Explanatory text in the interface (hints under fields, notes under tables, captions that explain a state) is bad UI. Let the interface say it: a label, a badge, a disabled control. A hint is allowed only in an exceptional case; say in the reply why it is needed.
+- Facts are never joined into one line with a separator character (`·`, `•`, `|`, `/`). Each fact is its own element: a line, a badge, or a label with a value. Data reaches the screen as separate facts (an array or a pair), and the screen lays them out; a code that builds «3 участника · до 30.11» is wrong.
 - `src/assets/` (icons, fonts) is excluded from the linter; don't edit it by hand.
 
 ## Git and release

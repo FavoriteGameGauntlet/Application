@@ -33,8 +33,8 @@ import type {
 type Props = {
 	open: boolean
 	title: string
-	/** the line under the title */
-	subtitle?: string
+	/** the line under the title, an array for several lines */
+	subtitle?: string | string[]
 	/** the title is a name that keeps its case, not a heading in capitals */
 	plainTitle?: boolean
 	sections: FormSection[]

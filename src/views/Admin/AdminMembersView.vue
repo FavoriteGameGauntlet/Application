@@ -71,8 +71,6 @@ const rows = computed(() => {
 		.sort((a, b) => Number(!!a.leftDate) - Number(!!b.leftDate))
 })
 
-const count = computed(() => `${current.value.length} в пати`)
-
 const menuOf = (member: PartyMember): RowMenuItem[] =>
 	member.leftDate
 		? [
@@ -213,7 +211,6 @@ onMounted(() => store.loadMembers())
 		<AdminListHeader
 			v-model:query="query"
 			title="Участники и права"
-			:count
 			placeholder="Найти участника…"
 			@add="openAdd"
 		>

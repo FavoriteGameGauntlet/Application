@@ -77,11 +77,11 @@ const summary = computed(() => {
 	if (ratings.length) {
 		const average = ratings.reduce((sum, r) => sum + r, 0) / ratings.length
 		parts.push(
-			`средняя оценка ${average.toLocaleString('ru-RU', { maximumFractionDigits: 1 })}`,
+			`Средняя оценка ${average.toLocaleString('ru-RU', { maximumFractionDigits: 1 })}`,
 		)
 	}
 
-	return parts.join(' · ')
+	return parts
 })
 
 const period = (g: GameHistoryEntry) => {
@@ -155,7 +155,9 @@ const reviewedGame = computed(() =>
 			label="Состояние"
 			@update:model-value="state = $event as StateFilter"
 		/>
-		<span v-if="rows.length" class="bar__note">{{ summary }}</span>
+		<span v-if="rows.length" class="bar__note">
+			<span v-for="part in summary" :key="part">{{ part }}</span>
+		</span>
 	</div>
 
 	<div class="table" role="table" aria-label="Пройденные игры">
@@ -246,6 +248,10 @@ const reviewedGame = computed(() =>
 }
 
 .bar__note {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 2px;
 	margin-left: auto;
 	font: var(--type-caption);
 	color: var(--text-muted);

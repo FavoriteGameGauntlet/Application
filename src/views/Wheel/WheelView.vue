@@ -208,8 +208,8 @@ onMounted(async () => {
 							v-if="wheelStore.result.result.isManualChange"
 							class="result__manual"
 						>
-							<UiBadge tone="info" dot>Вручную</UiBadge>
-							<span>после применения нужно внести изменение вручную</span>
+							<UiBadge tone="info" dot>Ручное изменение</UiBadge>
+							<span>после применения нужно внести ручное изменение</span>
 						</div>
 					</div>
 				</div>

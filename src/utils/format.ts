@@ -1,4 +1,4 @@
-import type { ISODate, JournalSource, Seconds } from '../api-facade/contracts'
+import type { ISODate, Seconds } from '../api-facade/contracts'
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
@@ -43,51 +43,6 @@ export const formatMoment = (iso: ISODate) => {
 	if (days === 1) return `вчера ${time}`
 
 	return `${dayMonth(d)} ${time}`
-}
-
-/** «предмет «Колобок»», «колесо · «×2 золото»», «исправление» */
-export const formatJournalSource = (
-	{ eventKind, name, endState }: JournalSource,
-	correctsEntryId?: number,
-) => {
-	switch (eventKind) {
-		case 'item_added':
-		case 'item_uses_changed':
-		case 'item_removed':
-		case 'item_transferred':
-			return `предмет «${name}»`
-		case 'perk_added':
-		case 'perk_uses_changed':
-		case 'perk_charges_changed':
-		case 'perk_removed':
-			return `перк «${name}»`
-		case 'effect_added':
-		case 'effect_removed':
-			return `эффект «${name}»`
-		case 'wheel_row_applied':
-			return `колесо · «${name}»`
-		case 'exchange_used':
-			return `обмен «${name}»`
-		case 'timer_created':
-			return 'новый таймер'
-		case 'timer_ended':
-			return 'таймер'
-		case 'game_started':
-			return `начало игры · ${name}`
-		case 'game_ended':
-			return endState === 'completed'
-				? `прохождение · ${name}`
-				: endState === 'rerolled'
-					? `перекрут игры · ${name}`
-					: `отмена игры · ${name}`
-		case 'manual_granted':
-			return correctsEntryId === undefined ? 'ручное изменение' : 'исправление'
-		case 'point_changed':
-			return 'изменение очков'
-		default:
-			// the backend adds kinds over time, an unknown one is shown as it is
-			return eventKind
-	}
 }
 
 /** 6000 → «1 ч 40 м», 79200 → «22 ч», 86400 → «24 ч»; hours at most, so no time is lost to rounding */

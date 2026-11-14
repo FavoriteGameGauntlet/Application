@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { CatalogEntry } from '../../api-facade/contracts'
+import type { CatalogEntry } from '../../../api-facade/contracts'
 import {
 	type CatalogView,
 	catalogFacts,
@@ -10,61 +10,74 @@ import {
 	catalogTags,
 	catalogViews,
 	filterCatalogEntries,
-} from '../../components/catalogTable'
-import UiButton from '../../components/ui/UiButton.vue'
-import UiInput from '../../components/ui/UiInput.vue'
-import UiPageTitle from '../../components/ui/UiPageTitle.vue'
-import UiRowMenu, { type RowMenuItem } from '../../components/ui/UiRowMenu.vue'
-import UiSwitch from '../../components/ui/UiSwitch.vue'
-import UiTabs from '../../components/ui/UiTabs.vue'
-import { useAdminCatalogStore } from '../../stores/adminCatalogStore'
-import CatalogEntryDialog from './components/CatalogEntryDialog.vue'
-import CatalogEntryDrawer from './components/CatalogEntryDrawer.vue'
+} from '../../../components/catalogTable'
+import UiButton from '../../../components/ui/UiButton.vue'
+import UiCountBadge from '../../../components/ui/UiCountBadge.vue'
+import UiInput from '../../../components/ui/UiInput.vue'
+import UiPageTitle from '../../../components/ui/UiPageTitle.vue'
+import UiRowMenu, {
+	type RowMenuItem,
+} from '../../../components/ui/UiRowMenu.vue'
+import UiSwitch from '../../../components/ui/UiSwitch.vue'
+import { useAdminCatalogStore } from '../../../stores/adminCatalogStore'
+import CatalogEntryDialog from './CatalogEntryDialog.vue'
+import CatalogEntryDrawer from './CatalogEntryDrawer.vue'
+
+type Props = {
+	/** the page of the catalogue: its own route picks it */
+	view: CatalogView
+}
+
+const { view } = defineProps<Props>()
 
 const MAX_TAGS = 3
 
 const store = useAdminCatalogStore()
 
-const view = ref<CatalogView>('points')
 const query = ref('')
 /** the entry in the drawer */
 const openId = ref<number>()
 /** the entry that the dialog edits; `{}` is a new one, undefined means the dialog is closed */
 const editing = ref<{ entry?: CatalogEntry }>()
 
-const kind = computed(() => catalogKindOf(view.value))
+const kind = computed(() => catalogKindOf(view))
 
-/** Undefined while the list of the tab is not loaded yet. */
-const entriesOf = (tab: CatalogView): CatalogEntry[] | undefined => {
-	const list = store.lists[catalogKindOf(tab)]
+const title = computed(() => catalogViews.find((v) => v.value === view)?.label)
 
-	if (catalogKindOf(tab) !== 'point-types') return list
+/** Undefined while the list of the page is not loaded yet; the point types are split into own and shared ones. */
+const entries = computed((): CatalogEntry[] | undefined => {
+	const list = store.lists[kind.value]
 
-	return list?.filter((e) => e.isShared === (tab === 'shared'))
-}
+	if (kind.value !== 'point-types') return list
 
-const tabs = computed(() =>
-	catalogViews.map((tab) => ({ ...tab, count: entriesOf(tab.value)?.length })),
-)
+	return list?.filter((e) => e.isShared === (view === 'shared'))
+})
 
-const entries = computed(() => entriesOf(view.value))
+/** the entries that are not deleted, so the number does not change with the switch «Показать удалённые» */
+const count = computed(() => entries.value?.filter((e) => !e.deleted).length)
 
-const holdersHead = computed(() => catalogHolders[view.value])
+const holdersHead = computed(() => catalogHolders[view])
+
+/** the unit forms of a point type carry a prefix each, a line apiece */
+const stacksTags = computed(() => view === 'points' || view === 'shared')
+
+/** the facts of a point type and of an item carry a prefix each, a line apiece */
+const stacksFacts = computed(() => stacksTags.value || view === 'items')
 
 const heads = computed(() => [
-	...catalogHeads[view.value],
+	...catalogHeads[view],
 	...(holdersHead.value ? [holdersHead.value] : []),
 ])
 
 const rows = computed(() =>
 	filterCatalogEntries(entries.value ?? [], query.value).map((entry) => {
-		const tags = catalogTags(view.value, entry)
+		const tags = catalogTags(view, entry)
 
 		return {
 			entry,
 			tags: tags.slice(0, MAX_TAGS),
 			moreTags: tags.length - MAX_TAGS,
-			facts: catalogFacts(view.value, entry),
+			facts: catalogFacts(view, entry),
 		}
 	}),
 )
@@ -99,30 +112,25 @@ const menuOf = (entry: CatalogEntry): RowMenuItem[] =>
 				},
 			]
 
-watch(view, () => {
-	editing.value = undefined
-	openId.value = undefined
-	query.value = ''
-})
-
 store.showDeleted = false
 
-watch(() => store.showDeleted, store.loadAllCatalogs, { immediate: true })
+watch(
+	() => store.showDeleted,
+	() => store.loadCatalog(kind.value),
+	{
+		immediate: true,
+	},
+)
 </script>
 
 <template>
 	<div class="catalog">
 		<div class="head">
-			<UiPageTitle>Каталог</UiPageTitle>
+			<UiPageTitle>{{ title }}</UiPageTitle>
+			<UiCountBadge v-if="count !== undefined" :value="count" />
 			<div class="spacer"></div>
 			<UiButton icon="plus" @click="editing = {}">Добавить</UiButton>
 		</div>
-
-		<UiTabs
-			:model-value="view"
-			:items="tabs"
-			@update:model-value="view = $event as CatalogView"
-		/>
 
 		<div class="filters">
 			<div class="filters__search">
@@ -181,7 +189,11 @@ watch(() => store.showDeleted, store.loadAllCatalogs, { immediate: true })
 					}}</span>
 				</div>
 
-				<div class="cell cell--wrap" role="cell">
+				<div
+					class="cell cell--wrap"
+					:class="{ 'cell--stack': stacksTags }"
+					role="cell"
+				>
 					<span
 						v-for="(tag, i) in row.tags"
 						:key="i"
@@ -190,10 +202,14 @@ watch(() => store.showDeleted, store.loadAllCatalogs, { immediate: true })
 						>{{ tag.text }}</span
 					>
 					<span v-if="row.moreTags > 0" class="tag">+{{ row.moreTags }}</span>
-					<span v-if="!row.tags.length" class="muted">Очки не меняет</span>
+					<span v-if="!row.tags.length" class="muted">—</span>
 				</div>
 
-				<div class="cell cell--wrap" role="cell">
+				<div
+					class="cell cell--wrap"
+					:class="{ 'cell--stack': stacksFacts }"
+					role="cell"
+				>
 					<span v-for="fact in row.facts" :key="fact" class="fact">{{
 						fact
 					}}</span>
@@ -256,7 +272,8 @@ watch(() => store.showDeleted, store.loadAllCatalogs, { immediate: true })
 }
 
 .table {
-	--columns: minmax(0, 1.2fr) minmax(0, 1.35fr) minmax(0, 1.35fr);
+	/* the name takes what the fixed columns leave, so it is never narrower than they are */
+	--columns: minmax(0, 1fr) 240px 200px;
 
 	overflow: hidden;
 	background: var(--surface-card);
@@ -266,7 +283,7 @@ watch(() => store.showDeleted, store.loadAllCatalogs, { immediate: true })
 }
 
 .table--holders {
-	--columns: minmax(0, 1.15fr) minmax(0, 1.25fr) minmax(0, 1.3fr) 92px;
+	--columns: minmax(0, 1fr) 240px 200px 92px;
 }
 
 /* 60px on the right belong to the «⋯» button */
@@ -327,6 +344,11 @@ watch(() => store.showDeleted, store.loadAllCatalogs, { immediate: true })
 	gap: 6px;
 }
 
+.cell--stack {
+	flex-direction: column;
+	align-items: flex-start;
+}
+
 .name {
 	display: flex;
 	align-items: center;
@@ -376,11 +398,14 @@ watch(() => store.showDeleted, store.loadAllCatalogs, { immediate: true })
 .fact {
 	display: inline-flex;
 	align-items: center;
-	height: 26px;
-	padding: 0 10px;
-	font: 500 12px / 1 var(--font-body);
+	box-sizing: border-box;
+	max-width: 100%;
+	min-height: 26px;
+	padding: 5px 10px;
+	font: 500 12px / 1.3 var(--font-body);
 	color: var(--text-body);
-	white-space: nowrap;
+	/* the fixed columns are narrow, a long change wraps inside its tag instead of running into the next column */
+	overflow-wrap: anywhere;
 	border-radius: var(--radius-pill);
 }
 
@@ -405,6 +430,10 @@ watch(() => store.showDeleted, store.loadAllCatalogs, { immediate: true })
 .muted,
 .empty {
 	color: var(--text-muted);
+}
+
+.muted {
+	font: var(--type-caption);
 }
 
 .holders {

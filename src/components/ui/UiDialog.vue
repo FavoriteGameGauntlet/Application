@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { onBeforeUnmount, useTemplateRef, watch } from 'vue'
+import { computed, onBeforeUnmount, useTemplateRef, watch } from 'vue'
 
 import UiIconButton from './UiIconButton.vue'
 
 type Props = {
 	open?: boolean
 	title?: string
-	subtitle?: string
+	/** one line under the title; facts of different kinds go in an array, a line each */
+	subtitle?: string | string[]
 	/** the title is a name that keeps its case, not a heading in capitals */
 	plainTitle?: boolean
 	width?: number
@@ -14,7 +15,13 @@ type Props = {
 	asForm?: boolean
 }
 
-const { open = true, width = 480, asForm } = defineProps<Props>()
+const { open = true, width = 480, asForm, subtitle } = defineProps<Props>()
+
+const subtitleLines = computed(() =>
+	(typeof subtitle === 'string' ? [subtitle] : (subtitle ?? [])).filter(
+		Boolean,
+	),
+)
 
 const emit = defineEmits<{ close: []; submit: [] }>()
 
@@ -81,8 +88,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 						>
 							{{ title }}
 						</div>
-						<div v-if="subtitle" class="ui-dialog__subtitle">
-							{{ subtitle }}
+						<div
+							v-for="(line, i) in subtitleLines"
+							:key="i"
+							class="ui-dialog__subtitle"
+						>
+							{{ line }}
 						</div>
 					</div>
 					<UiIconButton

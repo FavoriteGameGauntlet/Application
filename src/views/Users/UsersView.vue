@@ -3,8 +3,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Member, UserStatus } from '../../api-facade/contracts'
 import UiBadge from '../../components/ui/UiBadge.vue'
+import UiCountBadge from '../../components/ui/UiCountBadge.vue'
 import UiChoiceChips from '../../components/ui/UiChoiceChips.vue'
-import UiIcon from '../../components/ui/UiIcon.vue'
 import UiInput from '../../components/ui/UiInput.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiRowMenu, { type RowMenuItem } from '../../components/ui/UiRowMenu.vue'
@@ -14,7 +14,6 @@ import { useMembersStore } from '../../stores/membersStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { userStatusView } from '../../utils/userStatus'
 import { formatDuration } from '../../utils/format'
-import { plural } from '../../utils/plural'
 
 type StatusFilter = UserStatus | 'all'
 
@@ -31,11 +30,6 @@ const members = computed(() =>
 
 /** the bar of the leader is full */
 const maxPlayed = computed(() => members.value[0]?.playedSeconds ?? 0)
-
-const count = computed(
-	() =>
-		`${members.value.length} ${plural(members.value.length, ['игрок', 'игрока', 'игроков'])}`,
-)
 
 const chipLabels: Record<StatusFilter, string> = {
 	all: 'Все',
@@ -84,7 +78,7 @@ onMounted(() => membersStore.load())
 	<div class="users">
 		<div class="head">
 			<UiPageTitle>Участники</UiPageTitle>
-			<span class="head__count">{{ count }}</span>
+			<UiCountBadge :value="members.length" />
 		</div>
 
 		<div class="bar">
@@ -114,7 +108,6 @@ onMounted(() => membersStore.load())
 				<span role="columnheader">Сыграно ↓</span>
 				<span role="columnheader" class="right">Пройдено</span>
 				<span role="columnheader" class="right">Прокруты</span>
-				<span></span>
 			</div>
 
 			<UiRowMenu
@@ -169,9 +162,6 @@ onMounted(() => membersStore.load())
 				</span>
 				<span class="num right" role="cell">{{ member.completedCount }}</span>
 				<span class="num right" role="cell">{{ member.spinsCount }}</span>
-				<span class="chevron" role="cell">
-					<UiIcon name="chevron-right" :size="18" />
-				</span>
 			</UiRowMenu>
 
 			<div v-if="!rows.length" class="empty">
@@ -192,11 +182,6 @@ onMounted(() => membersStore.load())
 	display: flex;
 	align-items: center;
 	gap: 16px;
-}
-
-.head__count {
-	font: 500 14px / 1 var(--font-mono);
-	color: var(--text-muted);
 }
 
 .bar {
@@ -228,7 +213,7 @@ onMounted(() => membersStore.load())
 	display: grid;
 	grid-template-columns:
 		minmax(0, 1.5fr) 116px minmax(0, 1.2fr) minmax(0, 1.3fr)
-		84px 84px 20px;
+		84px 84px;
 	gap: 16px;
 	align-items: center;
 	box-sizing: border-box;
@@ -353,11 +338,6 @@ onMounted(() => membersStore.load())
 	height: 100%;
 	background: var(--accent);
 	border-radius: 3px;
-}
-
-.chevron {
-	display: flex;
-	color: var(--text-muted);
 }
 
 .empty {

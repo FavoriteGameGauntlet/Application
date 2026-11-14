@@ -15,13 +15,13 @@ import FormDialog from '../../components/FormDialog.vue'
 import { changeTone } from '../../components/catalogTable'
 import InlineAddRow from '../../components/InlineAddRow.vue'
 import UiButton from '../../components/ui/UiButton.vue'
+import UiCountBadge from '../../components/ui/UiCountBadge.vue'
 import UiInput from '../../components/ui/UiInput.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiRowMenu, { type RowMenuItem } from '../../components/ui/UiRowMenu.vue'
 import UiTabs from '../../components/ui/UiTabs.vue'
 import { useAdminWheelStore } from '../../stores/adminWheelStore'
 import { useToastStore } from '../../stores/toastStore'
-import { plural } from '../../utils/plural'
 import AdminWheelGroupCard from './components/AdminWheelGroupCard.vue'
 import AdminWheelGroups from './components/AdminWheelGroups.vue'
 
@@ -57,15 +57,6 @@ const foundEntries = computed(() => {
 				s.toLowerCase().includes(q),
 			),
 	)
-})
-
-const count = computed(() => {
-	const n = foundEntries.value.length
-	const nouns: [string, string, string] = isChanges.value
-		? ['пункт', 'пункта', 'пунктов']
-		: ['игра', 'игры', 'игр']
-
-	return `${n} ${plural(n, nouns)}`
 })
 
 const fields = computed<FormField[]>(() => {
@@ -281,7 +272,7 @@ onMounted(() => store.load())
 						<span class="bar__label">{{
 							isChanges ? 'Пункты группы' : 'Игры группы'
 						}}</span>
-						<span class="bar__count">{{ count }}</span>
+						<UiCountBadge :value="foundEntries.length" />
 						<div class="bar__spacer"></div>
 						<div class="bar__search">
 							<UiInput
@@ -337,13 +328,13 @@ onMounted(() => store.load())
 										:class="`tag--${tag.tone}`"
 										>{{ tag.text }}</span
 									>
-									<span v-if="!entry.changes.length" class="muted"
-										>Само ничего не меняет</span
-									>
+									<span v-if="!entry.changes.length" class="muted">—</span>
 								</div>
 
 								<div class="cell cell--wrap" role="cell">
-									<span v-if="entry.isManualChange" class="fact">вручную</span>
+									<span v-if="entry.isManualChange" class="fact"
+										>ручное изменение</span
+									>
 									<span v-if="!entry.shouldApplyToAll" class="fact"
 										>на выбор</span
 									>
@@ -426,11 +417,6 @@ onMounted(() => store.load())
 	font: var(--type-label);
 	letter-spacing: var(--tracking-label);
 	text-transform: uppercase;
-	color: var(--text-muted);
-}
-
-.bar__count {
-	font: var(--type-body-sm);
 	color: var(--text-muted);
 }
 
@@ -537,7 +523,7 @@ onMounted(() => store.load())
 }
 
 .muted {
-	font: var(--type-body-sm);
+	font: var(--type-caption);
 	color: var(--text-muted);
 }
 

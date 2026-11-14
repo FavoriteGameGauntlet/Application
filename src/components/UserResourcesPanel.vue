@@ -8,6 +8,7 @@ import { useResourcesStore } from '../stores/resourcesStore'
 import { useSessionStore } from '../stores/sessionStore'
 import { formatMoment, formatRemaining } from '../utils/format'
 import { groupItems } from '../utils/userItems'
+import JournalSourceLabel from './JournalSourceLabel.vue'
 import UiInput from './ui/UiInput.vue'
 import UiSelect from './ui/UiSelect.vue'
 
@@ -82,7 +83,9 @@ const rows = computed(() => {
 			})),
 	}
 
-	return all[category.value]().filter((r) => !q || r.name.toLowerCase().includes(q))
+	return all[category.value]().filter(
+		(r) => !q || r.name.toLowerCase().includes(q),
+	)
 })
 
 watch(
@@ -116,7 +119,11 @@ const toggleRow = async (id: number, expandable: boolean) => {
 
 		<div class="panel__selects">
 			<UiSelect v-model="user" :options="userOptions" aria-label="Игрок" />
-			<UiSelect v-model="category" :options="categories" aria-label="Тип ресурса" />
+			<UiSelect
+				v-model="category"
+				:options="categories"
+				aria-label="Тип ресурса"
+			/>
 		</div>
 
 		<UiInput v-model="query" placeholder="Найти…" icon="search" />
@@ -146,10 +153,18 @@ const toggleRow = async (id: number, expandable: boolean) => {
 
 				<div v-if="expanded === row.id" class="row__history">
 					<div v-for="(h, i) in history" :key="i" class="history">
-						<span class="history__source">{{ formatMoment(h.at) }} · {{ h.source }}</span>
-						<span class="history__delta">{{ h.delta }}</span>
+						<JournalSourceLabel
+							:source="h.source"
+							:corrects-entry-id="h.correctsEntryId"
+						/>
+						<span class="history__when">
+							<span class="history__delta">{{ h.delta }}</span>
+							<span>{{ formatMoment(h.at) }}</span>
+						</span>
 					</div>
-					<span v-if="!history.length" class="history__empty">Изменений за неделю нет.</span>
+					<span v-if="!history.length" class="history__empty"
+						>Изменений за неделю нет.</span
+					>
 					<RouterLink
 						class="row__link"
 						:to="{
@@ -269,8 +284,12 @@ const toggleRow = async (id: number, expandable: boolean) => {
 	color: var(--text-muted);
 }
 
-.history__source {
-	min-width: 0;
+.history__when {
+	display: flex;
+	flex: none;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 2px;
 }
 
 .history__delta {

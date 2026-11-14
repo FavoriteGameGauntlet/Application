@@ -25,7 +25,7 @@ export const catalogViews: { value: CatalogView; label: string }[] = [
 export const changeTone = (amount: number): CatalogTone =>
 	amount > 0 ? 'plus' : amount < 0 ? 'minus' : 'plain'
 
-const pointsHeads = ['Название', 'Единицы в журнале', 'Границы и старт']
+const pointsHeads = ['Название', 'Единицы в журнале', 'Параметры']
 
 /** the column titles of the admin table, the name first */
 export const catalogHeads: Record<CatalogView, string[]> = {
@@ -62,7 +62,11 @@ export const catalogTags = (
 		case 'points':
 		case 'shared':
 			return entry.unitForms
-				? [{ text: Object.values(entry.unitForms).join(' / '), tone: 'plain' }]
+				? [
+						`1: ${entry.unitForms.one}`,
+						`2-4: ${entry.unitForms.several}`,
+						`5+: ${entry.unitForms.many}`,
+					].map((text) => ({ text, tone: 'plain' }))
 				: []
 		case 'items':
 			return (entry.entries ?? []).map((row, i) => ({
@@ -81,18 +85,24 @@ export const catalogTags = (
 export const catalogFacts = (view: CatalogView, entry: CatalogEntry) => {
 	switch (view) {
 		case 'points':
-		case 'shared':
+		case 'shared': {
+			const minimum = entry.minimum ?? null
+			const maximum = entry.maximum ?? null
+			const hasBounds = minimum !== null || maximum !== null
+
 			return [
-				formatBounds(entry.minimum ?? null, entry.maximum ?? null),
-				`старт ${entry.startValue ?? 0}`,
+				// «Граница: без границ» would repeat itself
+				`Граница: ${hasBounds ? formatBounds(minimum, maximum) : 'нет'}`,
+				`Старт: ${entry.startValue ?? 0}`,
 				...(entry.isPublic === false ? ['только админы'] : []),
 			]
+		}
 		case 'items':
 			return [
-				`×${entry.usesMax ?? 1}`,
-				entry.shouldApplyToAll === false ? 'игрок выбирает' : 'всё сразу',
-				...(entry.conditions ?? []).map((c) =>
-					itemConditionLabels[c].label.toLowerCase(),
+				`Использований: ${entry.usesMax ?? 1}`,
+				`Применение: ${entry.shouldApplyToAll === false ? 'игрок выбирает' : 'всё сразу'}`,
+				...(entry.conditions ?? []).map(
+					(c) => `Условие: ${itemConditionLabels[c].label.toLowerCase()}`,
 				),
 			]
 		case 'perks': {
@@ -130,18 +140,21 @@ export const filterCatalogEntries = (
 	)
 }
 
-/** the line under the name in the catalogue list and the badge on the right of it */
+/** the lines under the name in the catalogue list, a fact each, and the badge on the right of them */
 export const catalogSummary = (
 	view: CatalogView,
 	entry: CatalogEntry,
-): { summary: string; badge?: string } => {
-	const changes = (entry.changes ?? []).join(' · ')
+): { summary: string[]; badge?: string } => {
+	const changes = entry.changes ?? []
 
 	switch (view) {
 		case 'points':
 		case 'shared':
 			return {
-				summary: `${formatBounds(entry.minimum ?? null, entry.maximum ?? null)} · старт ${entry.startValue ?? 0}`,
+				summary: [
+					formatBounds(entry.minimum ?? null, entry.maximum ?? null),
+					`старт ${entry.startValue ?? 0}`,
+				],
 				badge: entry.isPublic === false ? 'админы' : undefined,
 			}
 		case 'items':

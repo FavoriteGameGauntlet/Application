@@ -15,7 +15,6 @@ import { useAdminCatalogStore } from '../../stores/adminCatalogStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useToastStore } from '../../stores/toastStore'
 import { formatResource } from '../../utils/formatResource'
-import { plural } from '../../utils/plural'
 import { changeRowsToForm, parseCostRows } from '../../utils/formRows'
 import AdminListHeader from './components/AdminListHeader.vue'
 
@@ -127,9 +126,9 @@ const rows = computed(() =>
 	})),
 )
 
+/** the exchanges that are not deleted, so the number does not change with the switch «Показать удалённые» */
 const count = computed(
-	() =>
-		`${rows.value.length} ${plural(rows.value.length, ['обмен', 'обмена', 'обменов'])}`,
+	() => store.exchanges.filter((exchange) => !exchange.deleted).length,
 )
 
 const menuOf = (exchange: AdminExchange): RowMenuItem[] =>

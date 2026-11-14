@@ -61,7 +61,7 @@ const menu = computed<RowMenuItem[]>(() =>
 	sessionStore.isAdmin
 		? [
 				{
-					label: 'Изменить вручную',
+					label: 'Ручное изменение',
 					icon: 'pencil',
 					select: () => manualStore.startFree(),
 				},

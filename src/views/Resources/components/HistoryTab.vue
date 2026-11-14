@@ -6,14 +6,12 @@ import type {
 	JournalQuery,
 	ResourceRef,
 } from '../../../api-facade/contracts'
-import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiFilterSelect from '../../../components/ui/UiFilterSelect.vue'
 import UiRowMenu from '../../../components/ui/UiRowMenu.vue'
 import UiUserAvatar from '../../../components/ui/UiUserAvatar.vue'
 import { useJournalStore } from '../../../stores/journalStore'
 import { useManualStore } from '../../../stores/manualStore'
 import { useMembersStore } from '../../../stores/membersStore'
-import { useResourcesStore } from '../../../stores/resourcesStore'
 import {
 	dayOf,
 	formatDay,
@@ -21,12 +19,9 @@ import {
 	timeOf,
 	today,
 } from '../../../utils/calendar'
-import { formatJournalSource } from '../../../utils/format'
-import {
-	isManualEntry,
-	journalSourceGroups,
-} from '../../../utils/journalSource'
-import { plural } from '../../../utils/plural'
+import JournalSourceLabel from '../../../components/JournalSourceLabel.vue'
+import UiCountBadge from '../../../components/ui/UiCountBadge.vue'
+import { journalSourceGroups } from '../../../utils/journalSource'
 
 type FilterKey = 'user' | 'resource' | 'source' | 'period'
 
@@ -39,10 +34,16 @@ const { user } = defineProps<Props>()
 
 const journalStore = useJournalStore()
 const membersStore = useMembersStore()
-const resourcesStore = useResourcesStore()
 const manualStore = useManualStore()
 
 const ALL = ''
+
+const resourceKinds: { value: ResourceRef['kind']; label: string }[] = [
+	{ value: 'points', label: 'очки' },
+	{ value: 'item', label: 'предметы' },
+	{ value: 'perk', label: 'перки' },
+	{ value: 'effect', label: 'эффекты' },
+]
 
 /** the last day or week counted from the current moment */
 const PERIOD_MS: Record<string, number> = {
@@ -69,14 +70,7 @@ const specs = computed(() => [
 	{
 		key: 'resource' as const,
 		title: 'Ресурс',
-		options: [
-			{ value: ALL, label: 'все' },
-			...resourcesStore.pointTypes.map((type) => ({
-				value: `points:${type.id}`,
-				label: type.name.toLowerCase(),
-			})),
-			{ value: 'effect', label: 'эффекты' },
-		],
+		options: [{ value: ALL, label: 'все' }, ...resourceKinds],
 	},
 	{
 		key: 'source' as const,
@@ -98,13 +92,11 @@ const specs = computed(() => [
 
 const entries = ref<JournalEntry[]>([])
 
-/** 'points:<id>' or 'effect' → the resource filter of the query */
+/** the filter picks a kind of resource: a list of single entities would run to hundreds of options */
 const toResource = (value: string): JournalQuery['resource'] => {
-	if (!value) return undefined
+	const found = resourceKinds.find((k) => k.value === value)
 
-	const [kind, id] = value.split(':')
-
-	return { kind: kind as ResourceRef['kind'], id: id ? Number(id) : undefined }
+	return found && { kind: found.value }
 }
 
 watch(
@@ -128,15 +120,6 @@ watch(
 	},
 	{ immediate: true },
 )
-
-const countText = computed(() => {
-	const n = entries.value.length
-	const period = specs.value[3].options.find(
-		(o) => o.value === filters.period,
-	)?.label
-
-	return `${n} ${plural(n, ['запись', 'записи', 'записей'])} ${period}`
-})
 
 const dayTitle = (day: string) => {
 	const now = Temporal.PlainDate.from(today())
@@ -191,7 +174,6 @@ function rowOf(entry: JournalEntry) {
 	return {
 		entry,
 		time: timeOf(entry.at),
-		source: formatJournalSource(entry.source, entry.correctsEntryId),
 		fix: fixOf(entry),
 		changes: entry.changes.map((c) => ({ ...c, tone: toneOf(c.text) })),
 		menu: [
@@ -230,7 +212,7 @@ function showEntry(id: number) {
 			:options="spec.options"
 			:active="filters[spec.key] !== ALL"
 		/>
-		<span class="bar__count">{{ countText }}</span>
+		<UiCountBadge class="bar__count" :value="entries.length" />
 	</div>
 
 	<div ref="table" class="table" role="table" aria-label="Журнал">
@@ -266,11 +248,11 @@ function showEntry(id: number) {
 							:size="24"
 						/>
 						<span class="who__login">{{ row.entry.actor }}</span>
-						<UiBadge v-if="isManualEntry(row.entry)" tone="info" dot
-							>вручную</UiBadge
-						>
 					</span>
-					<span class="text">{{ row.source }}</span>
+					<JournalSourceLabel
+						:source="row.entry.source"
+						:corrects-entry-id="row.entry.correctsEntryId"
+					/>
 					<button
 						v-if="row.fix?.id !== undefined"
 						class="fix fix--link"
@@ -312,8 +294,6 @@ function showEntry(id: number) {
 
 .bar__count {
 	margin-left: auto;
-	font: var(--type-caption);
-	color: var(--text-muted);
 }
 
 .table {
@@ -404,7 +384,6 @@ function showEntry(id: number) {
 	color: var(--text-strong);
 }
 
-.text,
 .fix {
 	font: var(--type-caption);
 	color: var(--text-muted);

@@ -15,7 +15,7 @@ import { useResourcesStore } from './resourcesStore'
 import { useToastStore } from './toastStore'
 
 export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
-	/** every kind is read at once, the tabs show how many each one has; undefined until it is read */
+	/** a kind is read when its page opens; undefined until it is read */
 	const lists = ref<Partial<Record<CatalogKind, CatalogEntry[]>>>({})
 	const exchanges = ref<AdminExchange[]>([])
 	/** the switch «Показать удалённые» of the open list */
@@ -68,11 +68,6 @@ export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 
 		lists.value[kind] = list
 	}
-
-	const loadAllCatalogs = () =>
-		Promise.all(
-			(['point-types', 'items', 'perks', 'effects'] as const).map(loadCatalog),
-		)
 
 	const loadExchanges = async () => {
 		exchanges.value = await api.admin.exchanges.list(showDeleted.value)
@@ -192,7 +187,7 @@ export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 		targets,
 		loadTargets,
 		fetchCatalog,
-		loadAllCatalogs,
+		loadCatalog,
 		loadExchanges,
 		saveEntry,
 		setDeleted,

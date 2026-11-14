@@ -5,6 +5,7 @@ import type {
 	WishlistEntry,
 } from '../../../api-facade/contracts'
 import UiBadge from '../../../components/ui/UiBadge.vue'
+import UiCountBadge from '../../../components/ui/UiCountBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiIconButton from '../../../components/ui/UiIconButton.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
@@ -18,7 +19,6 @@ import { useSessionStore } from '../../../stores/sessionStore'
 import { useToastStore } from '../../../stores/toastStore'
 import { useWishlistStore } from '../../../stores/wishlistStore'
 import { dayOf, formatShortDay } from '../../../utils/calendar'
-import { plural } from '../../../utils/plural'
 
 type Props = {
 	/** whose wishlist is shown */
@@ -62,11 +62,6 @@ watch(showRemoved, async (shown) => {
 })
 
 const games = computed(() => wishlistStore.lists[user] ?? [])
-
-const countText = computed(
-	() =>
-		`${games.value.length} ${plural(games.value.length, ['игра', 'игры', 'игр'])}`,
-)
 
 const startEdit = (game: WishlistEntry) => {
 	editingId.value = game.id
@@ -197,7 +192,7 @@ const onAdd = async () => {
 
 	<div class="bar">
 		<span class="bar__label">В списке желаемого</span>
-		<span class="bar__count">{{ countText }}</span>
+		<UiCountBadge :value="games.length" />
 		<div class="bar__end">
 			<UiSwitch v-if="mine" v-model="showRemoved" label="Показать удалённые" />
 			<div class="bar__search">
@@ -311,11 +306,6 @@ const onAdd = async () => {
 	font: var(--type-label);
 	letter-spacing: var(--tracking-label);
 	text-transform: uppercase;
-	color: var(--text-muted);
-}
-
-.bar__count {
-	font: var(--type-caption);
 	color: var(--text-muted);
 }
 
