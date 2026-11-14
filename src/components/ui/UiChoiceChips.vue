@@ -1,6 +1,7 @@
 <script setup lang="ts">
 type Props = {
-	options: { value: string; label: string }[]
+	/** `count` is shown after the label, in the mono face */
+	options: { value: string; label: string; count?: number }[]
 	label?: string
 }
 
@@ -21,7 +22,10 @@ const model = defineModel<string>({ default: '' })
 			:aria-checked="o.value === model"
 			@click="model = o.value"
 		>
-			{{ o.label }}
+			{{ o.label
+			}}<span v-if="o.count !== undefined" class="ui-choice-chips__count">{{
+				o.count
+			}}</span>
 		</button>
 	</div>
 </template>
@@ -41,6 +45,12 @@ const model = defineModel<string>({ default: '' })
 	background: var(--surface-sunken);
 	border-radius: var(--radius-pill);
 	cursor: pointer;
+}
+
+.ui-choice-chips__count {
+	margin-left: 8px;
+	font: 500 12px / 1 var(--font-mono);
+	color: var(--text-muted);
 }
 
 .ui-choice-chips__chip--on {
