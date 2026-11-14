@@ -9,11 +9,12 @@ import type {
 import FormDialog from '../../components/FormDialog.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
 import UiIcon from '../../components/ui/UiIcon.vue'
-import UiIconButton from '../../components/ui/UiIconButton.vue'
+import UiRowMenu, { type RowMenuItem } from '../../components/ui/UiRowMenu.vue'
 import { useAdminCatalogStore } from '../../stores/adminCatalogStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useToastStore } from '../../stores/toastStore'
 import { formatResource } from '../../utils/formatResource'
+import { plural } from '../../utils/plural'
 import { changeRowsToForm, parseCostRows } from '../../utils/formRows'
 import AdminListHeader from './components/AdminListHeader.vue'
 
@@ -125,6 +126,34 @@ const rows = computed(() =>
 	})),
 )
 
+const count = computed(
+	() =>
+		`${rows.value.length} ${plural(rows.value.length, ['обмен', 'обмена', 'обменов'])}`,
+)
+
+const menuOf = (exchange: AdminExchange): RowMenuItem[] =>
+	exchange.deleted
+		? [
+				{
+					label: 'Вернуть',
+					icon: 'rotate-ccw',
+					select: () => store.setExchangeDeleted(exchange, false),
+				},
+			]
+		: [
+				{
+					label: 'Изменить',
+					icon: 'pencil',
+					select: () => (editing.value = { exchange }),
+				},
+				{
+					label: 'Удалить',
+					icon: 'trash-2',
+					danger: true,
+					select: () => store.setExchangeDeleted(exchange, true),
+				},
+			]
+
 const onSave = async (values: FormValues) => {
 	const name = String(values.name).trim()
 	const sourceEntries = parseCostRows(values.sourceEntries as FormRow[])
@@ -170,77 +199,76 @@ watch(
 			v-model:show-deleted="store.showDeleted"
 			v-model:query="query"
 			title="Обмены"
+			:count
+			placeholder="Найти обмен…"
 			@add="editing = {}"
 		/>
 
-		<div class="table">
-			<div class="table__row table__row--head">
-				<span>Обмен</span>
-				<span>Отдаёшь</span>
-				<span></span>
-				<span>Получаешь</span>
-				<span></span>
+		<div class="table" role="table" aria-label="Обмены">
+			<div class="row row--head" role="row">
+				<span role="columnheader">Обмен</span>
+				<span role="columnheader">Что на что</span>
 			</div>
 
-			<div
+			<UiRowMenu
 				v-for="row in rows"
 				:key="row.exchange.id"
-				class="table__row table__row--body"
+				class="row"
+				:class="{ 'row--dead': row.exchange.deleted }"
+				role="row"
+				label="Действия с обменом"
+				:items="menuOf(row.exchange)"
 			>
-				<div
-					class="cell cell--name"
-					:class="{ 'cell--dead': row.exchange.deleted }"
-				>
-					<span class="cell__head">
-						<span class="cell__title">{{ row.exchange.name }}</span>
+				<div class="cell cell--name" role="cell">
+					<span class="name">
+						<span class="name__title">{{ row.exchange.name }}</span>
 						<UiBadge v-if="row.exchange.deleted">удалён</UiBadge>
 					</span>
-					<span class="cell__desc">{{ row.exchange.description }}</span>
+					<span class="desc">{{ row.exchange.description }}</span>
 				</div>
 
-				<div class="pills" :class="{ 'cell--dead': row.exchange.deleted }">
-					<span v-for="(pill, i) in row.give" :key="i" class="pill">{{
-						pill
-					}}</span>
+				<div class="cell sides" role="cell">
+					<div class="side">
+						<span class="side__head">
+							<span class="side__label">Отдаёт</span>
+							<UiBadge v-if="!row.exchange.sourceShouldApplyToAll" tone="info"
+								>игрок выбирает</UiBadge
+							>
+						</span>
+						<span class="pills">
+							<span v-for="(pill, i) in row.give" :key="i" class="pill">{{
+								pill
+							}}</span>
+						</span>
+					</div>
+
+					<span class="sides__arrow">
+						<UiIcon name="arrow-left-right" :size="20" />
+					</span>
+
+					<div class="side">
+						<span class="side__head">
+							<span class="side__label">Получает</span>
+							<UiBadge v-if="!row.exchange.targetShouldApplyToAll" tone="info"
+								>игрок выбирает</UiBadge
+							>
+						</span>
+						<span class="pills">
+							<span
+								v-for="(pill, i) in row.get"
+								:key="i"
+								class="pill pill--get"
+								>{{ pill }}</span
+							>
+						</span>
+					</div>
 				</div>
+			</UiRowMenu>
 
-				<span class="table__arrow">
-					<UiIcon name="arrow-left-right" :size="18" />
-				</span>
-
-				<div class="pills" :class="{ 'cell--dead': row.exchange.deleted }">
-					<span v-for="(pill, i) in row.get" :key="i" class="pill pill--get">{{
-						pill
-					}}</span>
-				</div>
-
-				<span class="table__actions">
-					<template v-if="!row.exchange.deleted">
-						<UiIconButton
-							icon="pencil"
-							size="sm"
-							label="Изменить"
-							@click="editing = { exchange: row.exchange }"
-						/>
-						<UiIconButton
-							icon="trash-2"
-							size="sm"
-							label="Удалить"
-							@click="store.setExchangeDeleted(row.exchange, true)"
-						/>
-					</template>
-					<UiIconButton
-						v-else
-						icon="rotate-ccw"
-						size="sm"
-						label="Вернуть"
-						@click="store.setExchangeDeleted(row.exchange, false)"
-					/>
-				</span>
-			</div>
-
-			<div v-if="!rows.length" class="table__empty">
-				Обменов нет. Нажми «Добавить».
+			<div v-if="!rows.length" class="empty">
+				{{
+					query.trim() ? 'Ничего не найдено.' : 'Обменов нет. Нажми «Добавить».'
+				}}
 			</div>
 		</div>
 	</div>
@@ -274,71 +302,93 @@ watch(
 	box-shadow: var(--shadow-1);
 }
 
-.table__row {
+/* 60px on the right belong to the «⋯» button */
+.row {
 	display: grid;
-	grid-template-columns:
-		minmax(0, 1.2fr) minmax(0, 1.4fr) 24px minmax(0, 1.4fr)
-		76px;
-	gap: 12px;
-	align-items: center;
-	padding: 12px 16px;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+	gap: 16px;
+	align-items: start;
+	padding: 16px 60px 16px 20px;
+	border-top: 1px solid var(--border-subtle);
 }
 
-.table__row--head {
+.row--head {
+	padding-block: 12px;
 	font: var(--type-label);
 	letter-spacing: var(--tracking-label);
 	text-transform: uppercase;
 	color: var(--text-muted);
 	background: var(--surface-sunken);
+	border-top: 0;
 }
 
-.table__row--body {
-	border-top: 1px solid var(--border-subtle);
+.row:not(.row--head):hover {
+	background: var(--surface-sunken);
 }
 
-.table__arrow {
-	display: flex;
-	justify-content: center;
-	color: var(--text-subtle);
+.row--dead .cell {
+	opacity: 0.55;
 }
 
-.table__actions {
-	display: flex;
-	gap: 4px;
-	justify-content: flex-end;
-}
-
-.table__empty {
-	padding: 16px;
-	font: var(--type-body-sm);
-	color: var(--text-subtle);
-	border-top: 1px solid var(--border-subtle);
-}
-
-.cell--dead {
-	opacity: 0.5;
+.cell {
+	min-width: 0;
 }
 
 .cell--name {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
-	min-width: 0;
 }
 
-.cell__head {
+.name {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 }
 
-.cell__title {
+.name__title {
 	font: 600 15px / 1.45 var(--font-body);
 	color: var(--text-strong);
 }
 
-.cell__desc {
+.desc {
 	font: var(--type-caption);
+	color: var(--text-muted);
+}
+
+.sides {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr);
+	gap: 12px;
+	align-items: start;
+}
+
+/* level with the pills, under the side labels */
+.sides__arrow {
+	display: flex;
+	justify-content: center;
+	padding-top: 26px;
+	color: var(--text-subtle);
+}
+
+.side {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	min-width: 0;
+}
+
+.side__head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 22px;
+}
+
+.side__label {
+	font: var(--type-label);
+	letter-spacing: var(--tracking-label);
+	text-transform: uppercase;
 	color: var(--text-muted);
 }
 
@@ -350,13 +400,13 @@ watch(
 
 .pill {
 	display: flex;
-	flex: none;
 	align-items: center;
-	height: 28px;
-	padding: 0 12px;
-	font: 500 13px / 1 var(--font-body);
+	box-sizing: border-box;
+	max-width: 100%;
+	min-height: 28px;
+	padding: 4px 12px;
+	font: 500 13px / 1.3 var(--font-body);
 	color: var(--text-strong);
-	white-space: nowrap;
 	border: var(--border-width) solid var(--border-strong);
 	border-radius: var(--radius-pill);
 }
@@ -365,5 +415,12 @@ watch(
 	font-weight: 600;
 	background: var(--surface-sunken);
 	border: 0;
+}
+
+.empty {
+	padding: 16px 20px;
+	font: var(--type-body-sm);
+	color: var(--text-subtle);
+	border-top: 1px solid var(--border-subtle);
 }
 </style>
