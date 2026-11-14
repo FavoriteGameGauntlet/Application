@@ -1,20 +1,21 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import type { PartyMember } from '../../api-facade/contracts'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
 import type { FormField, FormValues } from '../../components/formDialog'
 import FormDialog from '../../components/FormDialog.vue'
-import InlineAddRow from '../../components/InlineAddRow.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
-import UiIconButton from '../../components/ui/UiIconButton.vue'
-import UiPageTitle from '../../components/ui/UiPageTitle.vue'
+import UiChoiceChips from '../../components/ui/UiChoiceChips.vue'
+import UiRowMenu, { type RowMenuItem } from '../../components/ui/UiRowMenu.vue'
 import UiUserAvatar from '../../components/ui/UiUserAvatar.vue'
 import { useAdminSettingsStore } from '../../stores/adminSettingsStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToastStore } from '../../stores/toastStore'
 import { formatDate } from '../../utils/format'
 import { isMemberColor, nextMemberColor } from '../../utils/memberColor'
-import { plural } from '../../utils/plural'
+import AdminListHeader from './components/AdminListHeader.vue'
+
+type Filter = 'all' | 'admins' | 'players' | 'left'
 
 const store = useAdminSettingsStore()
 const sessionStore = useSessionStore()
@@ -23,36 +24,77 @@ const toastStore = useToastStore()
 /** the member in the edit dialog, undefined means the dialog is closed */
 const editing = ref<PartyMember>()
 const removing = ref<PartyMember>()
-
-/** one field: the text filters the table and is the login that «Добавить» adds */
-const query = ref('')
+const isAdding = ref(false)
+/** the refusal of the last «Добавить», for the login that was typed */
 const addError = ref<string>()
+let refusedLogin = ''
 
-// the message is about the login that was typed, so a new text takes it away
-watch(query, () => (addError.value = undefined))
+const query = ref('')
+const filter = ref<Filter>('all')
+
+const current = computed(() => store.members.filter((m) => !m.leftDate))
+
+const filters = computed(() => {
+	const admins = current.value.filter((m) => m.isAdmin).length
+
+	return [
+		{ value: 'all', label: 'Все', count: store.members.length },
+		{ value: 'admins', label: 'Админы', count: admins },
+		{ value: 'players', label: 'Игроки', count: current.value.length - admins },
+		{
+			value: 'left',
+			label: 'Вышли',
+			count: store.members.length - current.value.length,
+		},
+	]
+})
+
+const inFilter = (m: PartyMember) => {
+	if (filter.value === 'all') return true
+	if (filter.value === 'left') return !!m.leftDate
+
+	return !m.leftDate && m.isAdmin === (filter.value === 'admins')
+}
 
 /** those who left stay in the list so that an admin can bring them back, they go last */
-const found = computed(() => {
+const rows = computed(() => {
 	const q = query.value.trim().toLowerCase()
 
 	return store.members
 		.filter(
 			(m) =>
-				!q ||
-				m.login.toLowerCase().includes(q) ||
-				m.displayName?.toLowerCase().includes(q),
+				inFilter(m) &&
+				(!q ||
+					m.login.toLowerCase().includes(q) ||
+					m.displayName?.toLowerCase().includes(q)),
 		)
 		.sort((a, b) => Number(!!a.leftDate) - Number(!!b.leftDate))
 })
 
-const currentCount = computed(
-	() => store.members.filter((m) => !m.leftDate).length,
-)
+const count = computed(() => `${current.value.length} в пати`)
 
-const count = computed(
-	() =>
-		`${currentCount.value} ${plural(currentCount.value, ['игрок', 'игрока', 'игроков'])}`,
-)
+const menuOf = (member: PartyMember): RowMenuItem[] =>
+	member.leftDate
+		? [
+				{
+					label: 'Вернуть в пати',
+					icon: 'rotate-ccw',
+					select: () => store.restoreMember(member),
+				},
+			]
+		: [
+				{
+					label: 'Изменить',
+					icon: 'pencil',
+					select: () => (editing.value = member),
+				},
+				{
+					label: 'Удалить из пати',
+					icon: 'trash-2',
+					danger: true,
+					select: () => (removing.value = member),
+				},
+			]
 
 const colorField: FormField = {
 	key: 'color',
@@ -80,17 +122,58 @@ const initial = computed<FormValues>(() => ({
 	color: editing.value?.color ?? '',
 }))
 
-/** a new member gets the palette color that the current members use least, and it is changed in the edit dialog */
-const onAdd = async (login: string) => {
-	const result = await store.addMember(
-		login,
-		nextMemberColor(
-			store.members.filter((m) => !m.leftDate).map((m) => m.color),
-		),
+const addFields = computed<FormField[]>(() => [
+	{
+		key: 'login',
+		label: 'Логин',
+		placeholder: 'Логин игрока',
+		required: 'логин',
+		error: addError.value,
+	},
+	colorField,
+])
+
+/** a new member gets the palette color that the current members use least */
+const addInitial = computed<FormValues>(() => ({
+	login: '',
+	color: nextMemberColor(current.value.map((m) => m.color)),
+}))
+
+const openAdd = () => {
+	addError.value = undefined
+	isAdding.value = true
+}
+
+// the message is about the login that was typed, so a new text takes it away
+const onAddChange = (values: FormValues) => {
+	if (String(values.login).trim() !== refusedLogin) addError.value = undefined
+}
+
+/** the dialog takes `#ffb000` only */
+const checkedColor = (value: FormValues[string]) => {
+	const color = String(value).trim().toLowerCase()
+
+	if (isMemberColor(color)) return color
+
+	toastStore.show(
+		'Проверь цвет',
+		'Нужен вид #ffb000: решётка и шесть цифр.',
+		'danger',
 	)
+}
+
+const onAdd = async (values: FormValues) => {
+	const login = String(values.login).trim()
+	const color = checkedColor(values.color)
+
+	if (!color) return
+
+	const result = await store.addMember(login, color)
+
+	refusedLogin = login
 
 	if (result === 'added') {
-		query.value = ''
+		isAdding.value = false
 	} else if (result === 'not-found') {
 		addError.value = `Игрока ${login} нет. Проверь логин: он должен быть зарегистрирован.`
 	} else if (result === 'already-member') {
@@ -101,18 +184,9 @@ const onAdd = async (login: string) => {
 
 const onSave = async (values: FormValues) => {
 	const member = editing.value
-	const color = String(values.color).trim().toLowerCase()
+	const color = checkedColor(values.color)
 
-	if (!member) return
-
-	if (!isMemberColor(color)) {
-		toastStore.show(
-			'Проверь цвет',
-			'Нужен вид #ffb000: решётка и шесть цифр.',
-			'danger',
-		)
-		return
-	}
+	if (!member || !color) return
 
 	const ok = await store.updateMember(member, {
 		displayName: String(values.displayName).trim() || null,
@@ -121,10 +195,6 @@ const onSave = async (values: FormValues) => {
 	})
 
 	if (ok) editing.value = undefined
-}
-
-const askRemove = (member: PartyMember) => {
-	removing.value = member
 }
 
 const onRemove = () => {
@@ -140,88 +210,82 @@ onMounted(() => store.loadMembers())
 
 <template>
 	<div class="members">
-		<div class="head">
-			<UiPageTitle>Участники и права</UiPageTitle>
-			<span class="head__count">{{ count }}</span>
-		</div>
+		<AdminListHeader
+			v-model:query="query"
+			title="Участники и права"
+			:count
+			placeholder="Найти участника…"
+			@add="openAdd"
+		>
+			<UiChoiceChips
+				v-model="filter"
+				:options="filters"
+				label="Кого показать"
+			/>
+		</AdminListHeader>
 
-		<InlineAddRow
-			v-model="query"
-			icon="search"
-			placeholder="Логин игрока…"
-			label="Логин игрока: поиск и добавление"
-			:error="addError"
-			@submit="onAdd"
-		/>
-
-		<div class="table">
-			<div class="table__row table__row--head">
-				<span>Логин</span>
-				<span>Имя в пати</span>
-				<span>В пати с</span>
-				<span>Роль</span>
-				<span></span>
+		<div class="table" role="table" aria-label="Участники пати">
+			<div class="row row--head" role="row">
+				<span role="columnheader">Участник</span>
+				<span role="columnheader">Имя в пати</span>
+				<span role="columnheader">В пати</span>
+				<span role="columnheader">Роль</span>
 			</div>
 
-			<div
-				v-for="member in found"
+			<UiRowMenu
+				v-for="member in rows"
 				:key="member.login"
-				class="table__row table__row--body"
-				:class="{ 'table__row--left': member.leftDate }"
+				class="row"
+				:class="{ 'row--dead': member.leftDate }"
+				role="row"
+				label="Действия с участником"
+				:items="menuOf(member)"
 			>
-				<span class="user">
+				<div class="cell user" role="cell">
 					<UiUserAvatar :name="member.login" :color="member.color" :size="28" />
-					{{ member.login }}
+					<span class="user__login">{{ member.login }}</span>
 					<UiBadge v-if="member.login === sessionStore.login" tone="accent"
 						>ты</UiBadge
 					>
-					<UiBadge v-if="member.leftDate" tone="neutral">
-						вышел {{ formatDate(member.leftDate) }}
-					</UiBadge>
-				</span>
+				</div>
 
-				<span class="name" :class="{ 'name--empty': !member.displayName }">
-					{{ member.displayName || member.login }}
-				</span>
+				<div class="cell" role="cell">
+					<span v-if="member.displayName" class="name">{{
+						member.displayName
+					}}</span>
+					<span v-else class="name name--empty">Показывается логин</span>
+				</div>
 
-				<span class="joined">{{ formatDate(member.joinedDate) }}</span>
+				<div class="cell dates" role="cell">
+					<span>с {{ formatDate(member.joinedDate) }}</span>
+					<span v-if="member.leftDate" class="dates__left"
+						>вышел {{ formatDate(member.leftDate) }}</span
+					>
+				</div>
 
-				<span class="role">
+				<div class="cell" role="cell">
 					<UiBadge tone="navy">{{
 						member.isAdmin ? 'админ' : 'игрок'
 					}}</UiBadge>
-				</span>
+				</div>
+			</UiRowMenu>
 
-				<span class="table__actions">
-					<UiIconButton
-						v-if="member.leftDate"
-						icon="rotate-ccw"
-						size="sm"
-						label="Вернуть в пати"
-						@click="store.restoreMember(member)"
-					/>
-					<template v-else>
-						<UiIconButton
-							icon="pencil"
-							size="sm"
-							label="Изменить"
-							@click="editing = member"
-						/>
-						<UiIconButton
-							icon="trash-2"
-							size="sm"
-							label="Удалить из пати"
-							@click="askRemove(member)"
-						/>
-					</template>
-				</span>
-			</div>
-
-			<div v-if="!found.length" class="table__empty">
-				Такого игрока в списке нет. Нажми «Добавить», чтобы добавить его в пати.
+			<div v-if="!rows.length" class="table__empty">
+				Таких участников нет. Нажми «Добавить», чтобы добавить игрока в пати.
 			</div>
 		</div>
 	</div>
+
+	<FormDialog
+		:open="isAdding"
+		title="Добавить участника"
+		:sections="[{ fields: addFields }]"
+		:initial="addInitial"
+		submit-label="Добавить"
+		@close="isAdding = false"
+		@change="onAddChange"
+		@save="onAdd"
+	/>
 
 	<FormDialog
 		:open="!!editing"
@@ -255,17 +319,6 @@ onMounted(() => store.loadMembers())
 	gap: 16px;
 }
 
-.head {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-}
-
-.head__count {
-	font: var(--type-body-sm);
-	color: var(--text-muted);
-}
-
 .table {
 	overflow: hidden;
 	background: var(--surface-card);
@@ -274,40 +327,42 @@ onMounted(() => store.loadMembers())
 	box-shadow: var(--shadow-1);
 }
 
-.table__row {
+/* 60px on the right belong to the «⋯» button */
+.row {
 	display: grid;
-	grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.5fr) 120px 72px 76px;
-	gap: 12px;
+	grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 150px 120px;
+	gap: 16px;
 	align-items: center;
+	min-height: 56px;
+	padding: 8px 60px 8px 20px;
+	border-top: 1px solid var(--border-subtle);
 }
 
-.table__row--head {
-	padding: 12px 16px;
+.row--head {
+	min-height: 0;
+	padding-block: 12px;
 	font: var(--type-label);
 	letter-spacing: var(--tracking-label);
 	text-transform: uppercase;
 	color: var(--text-muted);
 	background: var(--surface-sunken);
+	border-top: 0;
 }
 
-.table__row--body {
-	min-height: 52px;
-	padding: 6px 16px;
-	border-top: 1px solid var(--border-subtle);
+.row:not(.row--head):hover {
+	background: var(--surface-sunken);
 }
 
-.table__row--left {
-	opacity: 0.6;
+.row--dead .cell {
+	opacity: 0.55;
 }
 
-.table__actions {
-	display: flex;
-	gap: 4px;
-	justify-content: flex-end;
+.cell {
+	min-width: 0;
 }
 
 .table__empty {
-	padding: 16px;
+	padding: 16px 20px;
 	font: var(--type-body-sm);
 	color: var(--text-subtle);
 	border-top: 1px solid var(--border-subtle);
@@ -317,25 +372,35 @@ onMounted(() => store.loadMembers())
 	display: flex;
 	align-items: center;
 	gap: 10px;
+}
+
+.user__login {
+	overflow: hidden;
 	font: 600 15px / 1.45 var(--font-body);
 	color: var(--text-strong);
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .name {
 	font: var(--type-body);
-	color: var(--text-body);
+	color: var(--text-strong);
 }
 
 .name--empty {
 	color: var(--text-subtle);
 }
 
-.joined {
-	font: var(--type-mono);
-	color: var(--text-muted);
+.dates {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	font: var(--type-body-sm);
+	color: var(--text-body);
 }
 
-.role {
-	display: flex;
+.dates__left {
+	font: var(--type-caption);
+	color: var(--text-muted);
 }
 </style>

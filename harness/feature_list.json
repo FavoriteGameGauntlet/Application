@@ -144,7 +144,7 @@
 			"id": "table-admin-members",
 			"title": "Rebuild the admin members table as in the artboard «Админ: участники и права»: search, role chips, joined and left dates, role, the «⋯» menu.",
 			"priority": 12.1,
-			"status": "todo",
+			"status": "in_progress",
 			"evidence": ""
 		},
 		{

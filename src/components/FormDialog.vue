@@ -526,6 +526,7 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 										:numeric="field.numeric"
 										:placeholder="field.placeholder"
 										:hint="field.hint"
+										:error="field.error"
 									/>
 								</div>
 							</div>
