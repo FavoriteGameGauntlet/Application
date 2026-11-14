@@ -10,6 +10,7 @@ import FormDialog from '../../components/FormDialog.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
 import UiIcon from '../../components/ui/UiIcon.vue'
 import UiRowMenu, { type RowMenuItem } from '../../components/ui/UiRowMenu.vue'
+import UiSwitch from '../../components/ui/UiSwitch.vue'
 import { useAdminCatalogStore } from '../../stores/adminCatalogStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useToastStore } from '../../stores/toastStore'
@@ -196,13 +197,14 @@ watch(
 <template>
 	<div class="exchanges">
 		<AdminListHeader
-			v-model:show-deleted="store.showDeleted"
 			v-model:query="query"
 			title="Обмены"
 			:count
 			placeholder="Найти обмен…"
 			@add="editing = {}"
-		/>
+		>
+			<UiSwitch v-model="store.showDeleted" label="Показать удалённые" />
+		</AdminListHeader>
 
 		<div class="table" role="table" aria-label="Обмены">
 			<div class="row row--head" role="row">

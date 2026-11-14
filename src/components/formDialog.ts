@@ -33,6 +33,8 @@ export type FormField = {
 	hint?: string
 	/** the `hint` names why the form cannot be filled yet, so it is red */
 	invalid?: boolean
+	/** for a `line`: the refusal of the last save, red under the field in place of `hint` */
+	error?: string
 	/**
 	 * for `select`, `chips`, `choice` and `pick`; `hint` of an option is the line
 	 * under it in the menu, `meta` is the quiet text at the end of a `pick` row,

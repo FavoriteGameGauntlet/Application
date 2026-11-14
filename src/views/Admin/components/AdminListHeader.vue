@@ -2,18 +2,16 @@
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiPageTitle from '../../../components/ui/UiPageTitle.vue'
-import UiSwitch from '../../../components/ui/UiSwitch.vue'
 
 type Props = {
 	title: string
-	/** the number of shown rows with its noun, «4 обмена» */
+	/** the count with its noun, «4 обмена» */
 	count: string
 	placeholder?: string
 }
 
 const { placeholder = 'Найти…' } = defineProps<Props>()
 
-const showDeleted = defineModel<boolean>('showDeleted', { required: true })
 const query = defineModel<string>('query', { default: '' })
 
 const emit = defineEmits<{ add: [] }>()
@@ -37,7 +35,8 @@ const emit = defineEmits<{ add: [] }>()
 				aria-label="Поиск"
 			/>
 		</div>
-		<UiSwitch v-model="showDeleted" label="Показать удалённые" />
+		<!-- the screen's own filters -->
+		<slot />
 	</div>
 </template>
 
