@@ -99,10 +99,10 @@ export const catalogFacts = (view: CatalogView, entry: CatalogEntry) => {
 		}
 		case 'items':
 			return [
-				`×${entry.usesMax ?? 1}`,
-				entry.shouldApplyToAll === false ? 'игрок выбирает' : 'всё сразу',
-				...(entry.conditions ?? []).map((c) =>
-					itemConditionLabels[c].label.toLowerCase(),
+				`Использований: ${entry.usesMax ?? 1}`,
+				`Применение: ${entry.shouldApplyToAll === false ? 'игрок выбирает' : 'всё сразу'}`,
+				...(entry.conditions ?? []).map(
+					(c) => `Условие: ${itemConditionLabels[c].label.toLowerCase()}`,
 				),
 			]
 		case 'perks': {

@@ -51,10 +51,13 @@ const entries = computed(() => entriesOf(view.value))
 
 const holdersHead = computed(() => catalogHolders[view.value])
 
-/** the unit forms and the facts of a point type carry a prefix each, a line apiece */
+/** the unit forms of a point type carry a prefix each, a line apiece */
 const stacksTags = computed(
 	() => view.value === 'points' || view.value === 'shared',
 )
+
+/** the facts of a point type and of an item carry a prefix each, a line apiece */
+const stacksFacts = computed(() => stacksTags.value || view.value === 'items')
 
 const heads = computed(() => [
 	...catalogHeads[view.value],
@@ -204,7 +207,7 @@ watch(() => store.showDeleted, store.loadAllCatalogs, { immediate: true })
 
 				<div
 					class="cell cell--wrap"
-					:class="{ 'cell--stack': stacksTags }"
+					:class="{ 'cell--stack': stacksFacts }"
 					role="cell"
 				>
 					<span v-for="fact in row.facts" :key="fact" class="fact">{{
