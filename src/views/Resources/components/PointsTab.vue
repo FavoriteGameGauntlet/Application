@@ -188,7 +188,7 @@ watch(() => journalStore.revision, resourcesStore.loadStandings, {
 					<span role="columnheader">Игрок</span>
 					<span role="columnheader">Доля от лидера</span>
 					<span role="columnheader" class="right">Значение ↓</span>
-					<span role="columnheader" class="right">К тебе</span>
+					<span role="columnheader" class="right">Разница со мной</span>
 				</div>
 
 				<UiRowMenu
@@ -375,7 +375,7 @@ watch(() => journalStore.revision, resourcesStore.loadStandings, {
 
 .row {
 	display: grid;
-	grid-template-columns: 44px minmax(0, 1.4fr) minmax(0, 1.3fr) 96px 96px;
+	grid-template-columns: 44px minmax(0, 1.4fr) minmax(0, 1.3fr) 96px 140px;
 	gap: 16px;
 	align-items: center;
 	box-sizing: border-box;

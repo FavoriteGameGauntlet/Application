@@ -223,6 +223,13 @@
 			"priority": 22,
 			"status": "todo",
 			"evidence": ""
+		},
+		{
+			"id": "points-diff-column-title",
+			"title": "Rename the points table column «К тебе» to «Разница со мной»",
+			"priority": 23,
+			"status": "in_progress",
+			"evidence": ""
 		}
 	]
 }
