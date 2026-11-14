@@ -5,8 +5,6 @@ import UiPageTitle from '../../../components/ui/UiPageTitle.vue'
 
 type Props = {
 	title: string
-	/** the count with its noun, «4 обмена»; a screen whose filters show the counts leaves it out */
-	count?: string
 	placeholder?: string
 	/** a list whose entries are not added by the admin has no «Добавить» */
 	noAdd?: boolean
@@ -22,7 +20,6 @@ const emit = defineEmits<{ add: [] }>()
 <template>
 	<div class="head">
 		<UiPageTitle>{{ title }}</UiPageTitle>
-		<span v-if="count" class="head__count">{{ count }}</span>
 		<div class="head__spacer"></div>
 		<UiButton v-if="!noAdd" icon="plus" @click="emit('add')">Добавить</UiButton>
 	</div>
@@ -52,11 +49,6 @@ const emit = defineEmits<{ add: [] }>()
 
 .bar {
 	gap: 24px;
-}
-
-.head__count {
-	font: var(--type-body-sm);
-	color: var(--text-muted);
 }
 
 .head__spacer {
