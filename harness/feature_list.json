@@ -95,7 +95,7 @@
 			"id": "table-completed",
 			"title": "Rebuild the completed games table as in the artboard «Игры: пройденные»: search, state chips, period with days, rating pips, total time and average rating.",
 			"priority": 12.03,
-			"status": "todo",
+			"status": "in_progress",
 			"evidence": ""
 		},
 		{

@@ -128,3 +128,15 @@ export const monthWeeks = (month: Day): (Day | undefined)[][] => {
 
 /** the day number for the cell of the calendar */
 export const dayNumber = (day: Day) => Temporal.PlainDate.from(day).day
+
+/** «4 нояб», «2 мая»: the short month without its dot, as in a table */
+export const formatShortDay = (day: Day) =>
+	Temporal.PlainDate.from(day)
+		.toLocaleString('ru-RU', { day: 'numeric', month: 'short' })
+		.replace(/\.$/, '')
+
+/** the days from the first to the last, 0 for the same day */
+export const daysBetween = ({ start, end }: Period) =>
+	Temporal.PlainDate.from(start).until(Temporal.PlainDate.from(end), {
+		largestUnit: 'days',
+	}).days

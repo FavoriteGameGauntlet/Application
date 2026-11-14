@@ -1,10 +1,19 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { GameHistoryEntry } from '../../../api-facade/contracts'
+import type {
+	GameEndState,
+	GameHistoryEntry,
+} from '../../../api-facade/contracts'
 import UiBadge from '../../../components/ui/UiBadge.vue'
-import UiButton from '../../../components/ui/UiButton.vue'
+import UiChoiceChips from '../../../components/ui/UiChoiceChips.vue'
+import UiInput from '../../../components/ui/UiInput.vue'
+import UiRowMenu, {
+	type RowMenuItem,
+} from '../../../components/ui/UiRowMenu.vue'
 import { useCompletedStore } from '../../../stores/completedStore'
-import { formatDuration, formatPeriod } from '../../../utils/format'
+import { daysBetween, dayOf, formatShortDay } from '../../../utils/calendar'
+import { formatDuration } from '../../../utils/format'
+import { plural } from '../../../utils/plural'
 import ReviewDialog from './ReviewDialog.vue'
 
 type Props = {
@@ -13,6 +22,8 @@ type Props = {
 	/** the games of the current user, so they can be rated */
 	mine?: boolean
 }
+
+type StateFilter = GameEndState | 'all'
 
 const { user, mine } = defineProps<Props>()
 
@@ -24,9 +35,96 @@ const statuses = {
 	rerolled: { label: 'Перекручена', tone: 'info' },
 } as const
 
+const chipLabels: Record<StateFilter, string> = {
+	all: 'Все',
+	completed: 'Пройдены',
+	cancelled: 'Отменены',
+	rerolled: 'Перекручены',
+}
+
+const query = ref('')
+const state = ref<StateFilter>('all')
+
 const reviewing = ref<{ game: GameHistoryEntry; editing: boolean }>()
 
 const games = computed(() => completedStore.lists[user] ?? [])
+
+const chips = computed(() =>
+	(Object.keys(chipLabels) as StateFilter[]).map((value) => ({
+		value,
+		label: chipLabels[value],
+		count:
+			value === 'all'
+				? games.value.length
+				: games.value.filter((g) => g.endState === value).length,
+	})),
+)
+
+const rows = computed(() => {
+	const q = query.value.trim().toLowerCase()
+	return games.value.filter(
+		(g) =>
+			(state.value === 'all' || g.endState === state.value) &&
+			(!q || g.name.toLowerCase().includes(q)),
+	)
+})
+
+const summary = computed(() => {
+	const total = rows.value.reduce((sum, g) => sum + g.timeSpent, 0)
+	const ratings = rows.value.flatMap((g) => (g.rating ? [g.rating] : []))
+	const parts = [`Всего ${formatDuration(total)}`]
+
+	if (ratings.length) {
+		const average = ratings.reduce((sum, r) => sum + r, 0) / ratings.length
+		parts.push(
+			`средняя оценка ${average.toLocaleString('ru-RU', { maximumFractionDigits: 1 })}`,
+		)
+	}
+
+	return parts.join(' · ')
+})
+
+const period = (g: GameHistoryEntry) => {
+	const days = { start: dayOf(g.startedDate), end: dayOf(g.endedDate) }
+	const length = daysBetween(days)
+
+	return {
+		dates: `${formatShortDay(days.start)} → ${formatShortDay(days.end)}`,
+		length: length
+			? `${length} ${plural(length, ['день', 'дня', 'дней'])}`
+			: 'в тот же день',
+	}
+}
+
+const menuOf = (game: GameHistoryEntry): RowMenuItem[] => {
+	if (game.rating) {
+		return [
+			{
+				label: 'Отзыв',
+				icon: 'book-open',
+				select: () => (reviewing.value = { game, editing: false }),
+			},
+		]
+	}
+
+	return mine
+		? [
+				{
+					label: 'Оценить',
+					icon: 'star',
+					select: () => (reviewing.value = { game, editing: true }),
+				},
+			]
+		: []
+}
+
+const lines = computed(() =>
+	rows.value.map((game) => ({
+		game,
+		period: period(game),
+		menu: menuOf(game),
+	})),
+)
 
 watch(
 	() => user,
@@ -41,62 +139,87 @@ const reviewedGame = computed(() =>
 </script>
 
 <template>
-	<div class="table">
-		<div class="table__row table__row--head">
-			<span>{{ mine ? 'Игра' : `Игра (${user})` }}</span>
-			<span>Начало → конец</span>
-			<span>Время</span>
-			<span>Статус</span>
-			<span>Оценка</span>
+	<div class="bar">
+		<div class="bar__search">
+			<UiInput
+				v-model="query"
+				compact
+				icon="search"
+				placeholder="Найти среди пройденных…"
+				aria-label="Поиск по пройденным"
+			/>
+		</div>
+		<UiChoiceChips
+			:model-value="state"
+			:options="chips"
+			label="Состояние"
+			@update:model-value="state = $event as StateFilter"
+		/>
+		<span v-if="rows.length" class="bar__note">{{ summary }}</span>
+	</div>
+
+	<div class="table" role="table" aria-label="Пройденные игры">
+		<div class="row row--head" role="row">
+			<span role="columnheader">{{ mine ? 'Игра' : `Игра (${user})` }}</span>
+			<span role="columnheader">Период</span>
+			<span role="columnheader" class="right">Время</span>
+			<span role="columnheader">Статус</span>
+			<span role="columnheader">Оценка</span>
 		</div>
 
-		<div
-			v-for="game in games"
+		<component
+			:is="menu.length ? UiRowMenu : 'div'"
+			v-for="{ game, period: days, menu } in lines"
 			:key="game.gameId"
-			class="table__row table__row--body"
+			class="row row--body"
+			role="row"
+			v-bind="menu.length ? { items: menu, label: 'Действия с игрой' } : {}"
 		>
-			<span class="table__name">{{ game.name }}</span>
-			<span class="table__num">{{
-				formatPeriod(game.startedDate, game.endedDate)
+			<span class="cell" role="cell">
+				<span class="name">{{ game.name }}</span>
+				<span class="sub">{{
+					game.reviewComment ? `«${game.reviewComment}»` : 'Отзыва пока нет'
+				}}</span>
+			</span>
+			<span class="cell" role="cell">
+				<span class="period">{{ days.dates }}</span>
+				<span class="sub">{{ days.length }}</span>
+			</span>
+			<span class="num right" role="cell">{{
+				formatDuration(game.timeSpent)
 			}}</span>
-			<span class="table__num">{{ formatDuration(game.timeSpent) }}</span>
-			<span class="table__status">
+			<span class="status" role="cell">
 				<UiBadge :tone="statuses[game.endState].tone">{{
 					statuses[game.endState].label
 				}}</UiBadge>
 			</span>
-			<span class="table__rating">
+			<span class="rating" role="cell">
 				<template v-if="game.rating">
-					<span class="table__num">{{ game.rating }} / 10</span>
-					<UiButton
-						class="table__button"
-						variant="outline"
-						size="sm"
-						@click="reviewing = { game, editing: false }"
+					<span
+						class="pips"
+						role="img"
+						:aria-label="`Оценка ${game.rating} из 10`"
 					>
-						Отзыв
-					</UiButton>
+						<i
+							v-for="i in 10"
+							:key="i"
+							class="pips__pip"
+							:class="{ 'pips__pip--on': i <= game.rating }"
+						></i>
+					</span>
+					<span class="num">{{ game.rating }}</span>
 				</template>
-				<template v-else-if="mine">
-					<span class="table__none">—</span>
-					<UiButton
-						class="table__button"
-						variant="outline"
-						size="sm"
-						@click="reviewing = { game, editing: true }"
-					>
-						Оценить
-					</UiButton>
-				</template>
-				<span v-else class="table__none">—</span>
+				<span v-else class="none">—</span>
 			</span>
-		</div>
+		</component>
 
-		<div v-if="!games.length" class="table__empty">
+		<div v-if="!rows.length" class="empty">
 			{{
-				mine
-					? 'Пока ничего не пройдено. Первая игра уже ждёт на главной.'
-					: `${user} пока ничего не прошёл(а).`
+				games.length
+					? 'Ничего не нашлось.'
+					: mine
+						? 'Пока ничего не пройдено. Первая игра уже ждёт на главной.'
+						: `${user} пока ничего не прошёл(а).`
 			}}
 		</div>
 	</div>
@@ -111,6 +234,23 @@ const reviewedGame = computed(() =>
 </template>
 
 <style scoped>
+.bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+}
+
+.bar__search {
+	width: 260px;
+}
+
+.bar__note {
+	margin-left: auto;
+	font: var(--type-caption);
+	color: var(--text-muted);
+}
+
 .table {
 	overflow: hidden;
 	background: var(--surface-card);
@@ -119,67 +259,101 @@ const reviewedGame = computed(() =>
 	box-shadow: var(--shadow-1);
 }
 
-.table__row {
+/* the right 60px stay free for the «⋯» of the row */
+.row {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) 150px 110px 130px 190px;
+	grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr) 92px 132px 156px;
 	gap: 16px;
 	align-items: center;
+	box-sizing: border-box;
+	padding: 12px 60px 12px 20px;
 }
 
-.table__row--head {
-	padding: 12px 16px;
+.row--head {
 	font: var(--type-label);
 	letter-spacing: var(--tracking-label);
 	text-transform: uppercase;
 	color: var(--text-muted);
+	white-space: nowrap;
 	background: var(--surface-sunken);
 }
 
-.table__row--body {
-	min-height: 44px;
-	padding: 4px 16px;
+.row--body {
+	min-height: 72px;
 	border-top: 1px solid var(--border-subtle);
 }
 
-.table__row--body:hover {
+.row--body:hover {
 	background: var(--surface-sunken);
 }
 
-.table__name {
-	font: 600 15px / 1.45 var(--font-body);
+.right {
+	text-align: right;
+}
+
+.cell {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	min-width: 0;
+}
+
+.name {
+	font: 600 15px / 1.35 var(--font-body);
 	color: var(--text-strong);
 }
 
-.table__num {
-	font: 600 15px / 1.45 var(--font-display);
+.period {
+	color: var(--text-strong);
+}
+
+.sub {
+	overflow: hidden;
+	font: var(--type-caption);
+	color: var(--text-muted);
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.num {
+	font: 500 14px / 1.2 var(--font-mono);
 	font-variant-numeric: tabular-nums;
 	color: var(--text-strong);
 }
 
-.table__status {
+.status {
 	display: flex;
 }
 
-.table__rating {
-	display: grid;
-	grid-template-columns: 64px auto;
-	gap: 8px;
+.rating {
+	display: flex;
 	align-items: center;
-	justify-items: start;
+	gap: 10px;
 }
 
-.table__none {
-	font: 600 15px / 1.45 var(--font-display);
-	color: var(--text-subtle);
+.pips {
+	display: inline-flex;
+	gap: 2px;
 }
 
-.table .table__button {
-	width: 104px;
+.pips__pip {
+	display: block;
+	width: 6px;
+	height: 14px;
+	border-radius: 2px;
+	background: var(--border-default);
 }
 
-.table__empty {
-	padding: 24px 16px;
-	font: var(--type-body-sm);
+.pips__pip--on {
+	background: var(--accent);
+}
+
+.none {
+	color: var(--text-muted);
+}
+
+.empty {
+	padding: 20px;
 	color: var(--text-muted);
 	border-top: 1px solid var(--border-subtle);
 }
