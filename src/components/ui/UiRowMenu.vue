@@ -15,9 +15,11 @@ type Props = {
 	items: RowMenuItem[]
 	/** the name of the button and of the menu for a screen reader */
 	label?: string
+	/** the button is shown but opens nothing; the label says why */
+	disabled?: boolean
 }
 
-const { items, label = 'Действия' } = defineProps<Props>()
+const { items, label = 'Действия', disabled } = defineProps<Props>()
 
 const kebab = useTemplateRef<HTMLButtonElement>('kebab')
 const isOpen = ref(false)
@@ -32,7 +34,7 @@ function pick(item: RowMenuItem) {
 	<div
 		class="ui-row-menu"
 		:class="{ 'ui-row-menu--open': isOpen }"
-		@contextmenu.prevent="isOpen = true"
+		@contextmenu.prevent="isOpen = !disabled"
 	>
 		<slot />
 
@@ -44,6 +46,7 @@ function pick(item: RowMenuItem) {
 			:title="label"
 			aria-haspopup="menu"
 			:aria-expanded="isOpen"
+			:disabled="disabled"
 			@click.stop="isOpen = !isOpen"
 		>
 			<UiIcon name="ellipsis" :size="18" />
@@ -108,9 +111,15 @@ function pick(item: RowMenuItem) {
 	opacity: 1;
 }
 
-.ui-row-menu__kebab:hover,
+.ui-row-menu__kebab:enabled:hover,
 .ui-row-menu--open .ui-row-menu__kebab {
 	background: var(--border-subtle);
+}
+
+.ui-row-menu:hover .ui-row-menu__kebab:disabled {
+	color: var(--text-muted);
+	cursor: not-allowed;
+	opacity: 0.5;
 }
 
 .ui-row-menu__item {
