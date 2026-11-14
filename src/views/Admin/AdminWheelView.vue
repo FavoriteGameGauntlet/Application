@@ -328,9 +328,7 @@ onMounted(() => store.load())
 										:class="`tag--${tag.tone}`"
 										>{{ tag.text }}</span
 									>
-									<span v-if="!entry.changes.length" class="muted"
-										>Само ничего не меняет</span
-									>
+									<span v-if="!entry.changes.length" class="muted">—</span>
 								</div>
 
 								<div class="cell cell--wrap" role="cell">
@@ -523,7 +521,7 @@ onMounted(() => store.load())
 }
 
 .muted {
-	font: var(--type-body-sm);
+	font: var(--type-caption);
 	color: var(--text-muted);
 }
 
