@@ -81,7 +81,7 @@
 			"id": "catalog-admin-drawer",
 			"title": "Rebuild the admin catalog table as in the artboard «Каталог: правка (админ)»: changes and properties in the row, the «у игроков» counter, actions in a «⋯» menu that also opens on right click (a shared row menu component, used by every later table), and the entry card in a drawer on the right.",
 			"priority": 12.01,
-			"status": "todo",
+			"status": "in_progress",
 			"evidence": ""
 		},
 		{

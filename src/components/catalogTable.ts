@@ -4,18 +4,15 @@ import type {
 	ResourceKind,
 } from '../api-facade/contracts'
 import { formatBounds, formatSpan } from '../utils/format'
+import { itemConditionLabels } from '../utils/itemCondition'
 
 /** the tabs of the catalogue: the point types are split into own and shared ones */
 export type CatalogView = 'points' | 'shared' | ResourceKind
 
-export type CatalogTableRow = {
-	entry: CatalogEntry
-	/** the changes as tags in the second wide column, the point types have no such column */
-	main?: string[]
-	/** the narrow columns after it */
-	extra: string[]
-	notes: string[]
-}
+export type CatalogTone = 'plus' | 'minus' | 'plain'
+
+/** a change of the entry in its row: green adds, red takes */
+export type CatalogTag = { text: string; tone: CatalogTone }
 
 export const catalogViews: { value: CatalogView; label: string }[] = [
 	{ value: 'points', label: 'Очки' },
@@ -25,67 +22,109 @@ export const catalogViews: { value: CatalogView; label: string }[] = [
 	{ value: 'effects', label: 'Эффекты' },
 ]
 
-const pointsHeads = ['Тип очков', 'Минимум', 'Максимум']
+export const changeTone = (amount: number): CatalogTone =>
+	amount > 0 ? 'plus' : amount < 0 ? 'minus' : 'plain'
 
+const pointsHeads = ['Название', 'Единицы в журнале', 'Границы и старт']
+
+/** the column titles of the admin table, the name first */
 export const catalogHeads: Record<CatalogView, string[]> = {
 	points: pointsHeads,
 	shared: pointsHeads,
-	items: ['Предмет', 'Изменение', 'Использований'],
-	perks: ['Перк', 'Эффект', 'Тип'],
-	effects: ['Эффект', 'Изменение', 'Длительность'],
+	items: ['Название', 'При использовании', 'Параметры'],
+	perks: ['Название', 'Пока перк у игрока', 'Способность'],
+	effects: ['Название', 'Пока действует', 'Срок'],
+}
+
+/** the title of the holders column; perks and effects have no count */
+export const catalogHolders: Partial<Record<CatalogView, string>> = {
+	points: 'Всего у игроков',
+	shared: 'Всего у игроков',
+	items: 'У игроков',
 }
 
 export const catalogKindOf = (view: CatalogView): CatalogKind =>
 	view === 'points' || view === 'shared' ? 'point-types' : view
 
-/** the wide columns: the name, and the changes for everything but the point types */
-export const catalogWide = (view: CatalogView) =>
-	catalogKindOf(view) === 'point-types' ? 1 : 2
+/** `changes` holds the texts of the modifiers first, a perk then adds those of its ability */
+const modifierTags = (entry: CatalogEntry, count: number): CatalogTag[] =>
+	(entry.changes ?? []).slice(0, count).map((text, i) => ({
+		text,
+		tone: changeTone(entry.modifiers?.[i]?.amount ?? 0),
+	}))
 
-/** the cells of an entry after its name, in the order of `catalogHeads` */
-export const catalogCells = (
+/** what the entry changes; the point types show the forms of their unit instead */
+export const catalogTags = (
 	view: CatalogView,
 	entry: CatalogEntry,
-): Pick<CatalogTableRow, 'main' | 'extra' | 'notes'> => {
+): CatalogTag[] => {
 	switch (view) {
 		case 'points':
 		case 'shared':
-			return {
-				extra: [String(entry.minimum ?? '—'), String(entry.maximum ?? '—')],
-				notes: [`Стартовое значение: ${entry.startValue}`],
-			}
+			return entry.unitForms
+				? [{ text: Object.values(entry.unitForms).join(' / '), tone: 'plain' }]
+				: []
 		case 'items':
-			return {
-				main: entry.changes ?? [],
-				extra: [String(entry.usesMax ?? 1)],
-				notes: [],
-			}
+			return (entry.entries ?? []).map((row, i) => ({
+				text: entry.changes?.[i] ?? '',
+				tone:
+					row.kind === 'user-item-transfer' ? 'plain' : changeTone(row.amount),
+			}))
 		case 'perks':
-			return {
-				main: entry.changes ?? [],
-				extra: [entry.perkKind === 'active' ? 'активный' : 'пассивный'],
-				notes: [],
-			}
+			return modifierTags(entry, entry.modifiers?.length ?? 0)
 		case 'effects':
-			return {
-				main: entry.changes ?? [],
-				extra: [entry.duration ? formatSpan(entry.duration) : '—'],
-				notes: [],
-			}
+			return modifierTags(entry, entry.changes?.length ?? 0)
 	}
 }
 
-/** the rows that match the search text by the name, the description or the changes */
-export const filterCatalogRows = <T extends CatalogTableRow>(
-	rows: T[],
+/** the properties of the entry as short facts */
+export const catalogFacts = (view: CatalogView, entry: CatalogEntry) => {
+	switch (view) {
+		case 'points':
+		case 'shared':
+			return [
+				formatBounds(entry.minimum ?? null, entry.maximum ?? null),
+				`старт ${entry.startValue ?? 0}`,
+				...(entry.isPublic === false ? ['только админы'] : []),
+			]
+		case 'items':
+			return [
+				`×${entry.usesMax ?? 1}`,
+				entry.shouldApplyToAll === false ? 'игрок выбирает' : 'всё сразу',
+				...(entry.conditions ?? []).map((c) =>
+					itemConditionLabels[c].label.toLowerCase(),
+				),
+			]
+		case 'perks': {
+			const { ability } = entry
+
+			if (!ability) return ['Пассивный']
+
+			return [
+				'Активный',
+				...(ability.uses ? [`максимум ${ability.uses.max}`] : ['без лимита']),
+				...(ability.chargesMax > 0 ? [`заряды ${ability.chargesMax}`] : []),
+				...(ability.renewalPeriod
+					? [`восстановление ${formatSpan(ability.renewalPeriod)}`]
+					: []),
+			]
+		}
+		case 'effects':
+			return [entry.duration ? formatSpan(entry.duration) : 'Пока не снимут']
+	}
+}
+
+/** the entries that match the search text by the name, the description or the changes */
+export const filterCatalogEntries = (
+	entries: CatalogEntry[],
 	query: string,
 ) => {
 	const q = query.trim().toLowerCase()
 
-	return rows.filter(
-		(row) =>
+	return entries.filter(
+		(entry) =>
 			!q ||
-			[row.entry.name, row.entry.description, ...(row.main ?? [])].some((s) =>
+			[entry.name, entry.description, ...(entry.changes ?? [])].some((s) =>
 				s.toLowerCase().includes(q),
 			),
 	)

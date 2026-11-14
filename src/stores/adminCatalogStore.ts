@@ -15,9 +15,8 @@ import { useResourcesStore } from './resourcesStore'
 import { useToastStore } from './toastStore'
 
 export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
-	const entries = ref<CatalogEntry[]>([])
-	/** the kind that `entries` belong to, they must not be shown for another one */
-	const entriesKind = ref<CatalogKind>()
+	/** every kind is read at once, the tabs show how many each one has; undefined until it is read */
+	const lists = ref<Partial<Record<CatalogKind, CatalogEntry[]>>>({})
 	const exchanges = ref<AdminExchange[]>([])
 	/** the switch «Показать удалённые» of the open list */
 	const showDeleted = ref(false)
@@ -42,7 +41,10 @@ export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 		])
 
 		targets.value = {
-			points: useResourcesStore().pointTypes.map(({ id, name }) => ({ id, name })),
+			points: useResourcesStore().pointTypes.map(({ id, name }) => ({
+				id,
+				name,
+			})),
 			item: items,
 			perk: perks,
 			effect: effects,
@@ -53,18 +55,24 @@ export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 	const fetchCatalog = (kind: CatalogKind, includeDeleted = false) =>
 		api.admin.catalog.list(kind, includeDeleted)
 
-	let lastRequest = 0
+	const lastRequest: Partial<Record<CatalogKind, number>> = {}
 
 	const loadCatalog = async (kind: CatalogKind) => {
-		const request = ++lastRequest
+		const request = (lastRequest[kind] ?? 0) + 1
+		lastRequest[kind] = request
+
 		const list = await fetchCatalog(kind, showDeleted.value)
 
-		// a slower answer for the kind that was left must not replace the open one
-		if (request !== lastRequest) return
+		// a slower answer read before the switch «Показать удалённые» must not replace a newer one
+		if (request !== lastRequest[kind]) return
 
-		entries.value = list
-		entriesKind.value = kind
+		lists.value[kind] = list
 	}
+
+	const loadAllCatalogs = () =>
+		Promise.all(
+			(['point-types', 'items', 'perks', 'effects'] as const).map(loadCatalog),
+		)
 
 	const loadExchanges = async () => {
 		exchanges.value = await api.admin.exchanges.list(showDeleted.value)
@@ -99,7 +107,11 @@ export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 		}
 	}
 
-	const setDeleted = async (kind: CatalogKind, entry: CatalogEntry, deleted: boolean) => {
+	const setDeleted = async (
+		kind: CatalogKind,
+		entry: CatalogEntry,
+		deleted: boolean,
+	) => {
 		const toast = useToastStore()
 
 		try {
@@ -113,7 +125,9 @@ export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 
 			toast.show(
 				deleted ? 'Удалено' : 'Возвращено',
-				deleted ? `${entry.name}: скрыто у игроков, история сохранится.` : entry.name,
+				deleted
+					? `${entry.name}: скрыто у игроков, история сохранится.`
+					: entry.name,
 				deleted ? 'info' : 'success',
 			)
 
@@ -123,7 +137,10 @@ export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 		}
 	}
 
-	const saveExchange = async (id: number | undefined, input: AdminExchangeInput) => {
+	const saveExchange = async (
+		id: number | undefined,
+		input: AdminExchangeInput,
+	) => {
 		const toast = useToastStore()
 
 		try {
@@ -143,7 +160,10 @@ export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 		}
 	}
 
-	const setExchangeDeleted = async (exchange: AdminExchange, deleted: boolean) => {
+	const setExchangeDeleted = async (
+		exchange: AdminExchange,
+		deleted: boolean,
+	) => {
 		const toast = useToastStore()
 
 		try {
@@ -166,14 +186,13 @@ export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 	}
 
 	return {
-		entries,
-		entriesKind,
+		lists,
 		exchanges,
 		showDeleted,
 		targets,
 		loadTargets,
 		fetchCatalog,
-		loadCatalog,
+		loadAllCatalogs,
 		loadExchanges,
 		saveEntry,
 		setDeleted,

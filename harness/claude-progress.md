@@ -2,6 +2,12 @@
 
 Newest entry on top. Record only what was actually verified.
 
+## 2026-11-14 catalog-admin-drawer
+
+- Done in code, by the user's answers (the tabs show counts, so the store reads all four kinds at once; the shared points keep the column «Всего у игроков» as in the mockup, it shows the party balance): the admin catalog follows the artboard «Каталог: правка (админ)». A row shows the name with the description, the changes as tags (three at most and «+N»; the point types show their unit forms), the properties as pills and the holders. The actions are in the shared `ui/UiRowMenu` («⋯» on hover and on a right click); a click on the row opens `CatalogEntryDrawer` with `CatalogEntryCard` and the «Для админа» block. `CatalogTable.vue` is removed, the catalog screen no longer uses `AdminListHeader`. `ellipsis.svg` is taken from lucide-static 0.460.0, like the other icons.
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. The app was not run, so the screen was not looked at.
+- The feature stays `in_progress` until the user has looked at the screen.
+
 ## 2026-11-14 catalog-player-card
 
 - The user asked for every screen of the canvas «Каталог: просмотр и админка» (https://claude.ai/artifact/MoHKATGRjRXi6fEFcoXjmn). By the user's answers: many small PRs, one per screen (the old `tables-more-informative` is split into the `catalog-*` and `table-*` features); the rule captions under the tables of the mockup are not brought back (they stay in the `rules-ui-*` features); the admin wheel follows the mockup (groups as a side list).
@@ -17,15 +23,6 @@ Newest entry on top. Record only what was actually verified.
 - Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. The app was not run, so the screen was not looked at, and no request to the backend was made (the list needs a session).
 - Not verified by me: that the codes are the old names (the odd-number rule is keyed by `MinimumAvailableWheelEffectsForRoll`; with another code it silently does not apply), the look of the cards, and the 422 answer of the backend.
 - Checked by the user (said in chat: «Я посмотрел, всё в порядке»), so `system-parameters-data-format` is done and moved to the archive.
-
-## 2026-11-13 catalog-to-admin-panel
-
-- Done in code, by the user's answers: the player keeps the read-only «Каталог» screen (main sidebar, tab cycle and route unchanged), the admin gets an own screen at `/admin/catalog`, first in the «Каталоги» group of the admin sidebar. The two screens are separate; only the table is shared (`components/CatalogTable.vue`, `components/catalogTable.ts`). Editing, deleted entries, the «у игроков» counters and the unit in the journal live only on the admin screen, so the admin sees on the main screen the same as a player. `CatalogEntryDialog` moved to `views/Admin/components`.
-- Both screens read the same endpoints; the admin adds `…/removed` and the writes. Whether the backend closes those to non-admins was not checked against the documentation.
-- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. The app was not run, so neither screen was looked at.
-- Not verified by me: the look and the behaviour of both screens (tabs, search, row opening, edit and delete in the admin one).
-- Found, not changed: the player's `catalogEntries` in `api-facade/http/resources.ts` counts the holders of every entry (a request per member), though the player screen does not show them.
-- The feature stays `in_progress` until the user has looked at the screens.
 
 ## Open
 
