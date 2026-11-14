@@ -101,7 +101,7 @@ const rows = computed(() => {
 const bounds = computed(() =>
 	selected.value &&
 	(selected.value.minimum !== null || selected.value.maximum !== null)
-		? `границы ${formatBounds(selected.value.minimum, selected.value.maximum)}`
+		? `Граница: ${formatBounds(selected.value.minimum, selected.value.maximum)}`
 		: undefined,
 )
 
