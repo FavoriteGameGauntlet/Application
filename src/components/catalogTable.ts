@@ -63,9 +63,9 @@ export const catalogTags = (
 		case 'shared':
 			return entry.unitForms
 				? [
-						entry.unitForms.one,
-						entry.unitForms.several,
-						entry.unitForms.many,
+						`1: ${entry.unitForms.one}`,
+						`2-4: ${entry.unitForms.several}`,
+						`5+: ${entry.unitForms.many}`,
 					].map((text) => ({ text, tone: 'plain' }))
 				: []
 		case 'items':
