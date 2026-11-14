@@ -1,5 +1,11 @@
 # Progress log archive
 
+## 2026-11-12 recent-events-redesign removed
+
+- By the user's word the feature `recent-events-redesign` is deleted from the list: it is done inside the mockup, where all the tables are changed. No code was touched.
+- Checked by the user (said in chat: «Предыдущую фичу я проверил»), so `remove-after-form-notices` is done and moved to the archive.
+- Not committed by the user's word. The branch `recent-events-redesign` was created from `master` before this word and has no commits.
+
 ## 2026-11-12 remove-after-form-notices
 
 - Done in code, by the user's answers (the grey paragraphs under the screens and the hints under the fields of the windows, both deleted outright): the `.note` and `.card__note` paragraphs are gone from the admin exchanges, members, rewards and wheel screens, the spin cost card, the exchanges of the player, the manual change form, the list of players, the shared points and the completed games, with their styles and the two computed texts of the wheel and manual screens. The hints under the fields are gone from the catalogue, party, member, admin exchange and admin wheel windows. The `note` field type of `FormDialog` was used only by the perk ability window, so it is removed with it (also from `ARCHITECTURE.md`).

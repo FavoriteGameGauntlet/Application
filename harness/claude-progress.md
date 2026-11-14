@@ -2,6 +2,13 @@
 
 Newest entry on top. Record only what was actually verified.
 
+## 2026-11-14 catalog-player-card
+
+- The user asked for every screen of the canvas «Каталог: просмотр и админка» (https://claude.ai/artifact/MoHKATGRjRXi6fEFcoXjmn). By the user's answers: many small PRs, one per screen (the old `tables-more-informative` is split into the `catalog-*` and `table-*` features); the rule captions under the tables of the mockup are not brought back (they stay in the `rules-ui-*` features); the admin wheel follows the mockup (groups as a side list).
+- Done in code: the player «Каталог» is a list with search and the full card of the open entry (`components/CatalogEntryCard.vue`, meant to be reused by the admin drawer). The item condition texts moved from `CatalogEntryDialog` to `utils/itemCondition.ts` because the card shows them too. The mockup icons «package», «zap», «eye» have no file in `assets/icons`, so the card uses «gift», «clock» and «lock».
+- Verified: `bash harness/scripts/init.sh` passes (run on node 22 with `--engine-strict=false` for `npm ci`; the project asks for node 24), prettier on the changed files. The app was not run, so the screen was not looked at.
+- The feature stays `in_progress` until the user has looked at the screen.
+
 ## 2026-11-14 system-parameters-data-format
 
 - Done in code, by the user's answers (the client checks by type and bounds before sending; the odd-number rule of the wheel parameter stays on the client): the system parameters follow `system_parameters.yaml` 0.5.1. A parameter carries `code` (the key in the paths), `name`, `description`, `type` (`int` or `bool`), `minValue` and `maxValue`. The screen has no table of texts any more: title and description come from the backend, a `bool` is a switch, the bounds are shown next to the default, the reason a value does not fit is under the field and the save button is off until it fits. `utils/systemParameter.ts` holds the check and the bounds text.
@@ -19,12 +26,6 @@ Newest entry on top. Record only what was actually verified.
 - Not verified by me: the look and the behaviour of both screens (tabs, search, row opening, edit and delete in the admin one).
 - Found, not changed: the player's `catalogEntries` in `api-facade/http/resources.ts` counts the holders of every entry (a request per member), though the player screen does not show them.
 - The feature stays `in_progress` until the user has looked at the screens.
-
-## 2026-11-12 recent-events-redesign removed
-
-- By the user's word the feature `recent-events-redesign` is deleted from the list: it is done inside the mockup, where all the tables are changed. No code was touched.
-- Checked by the user (said in chat: «Предыдущую фичу я проверил»), so `remove-after-form-notices` is done and moved to the archive.
-- Not committed by the user's word. The branch `recent-events-redesign` was created from `master` before this word and has no commits.
 
 ## Open
 

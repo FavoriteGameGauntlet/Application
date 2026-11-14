@@ -71,9 +71,79 @@
 			"evidence": ""
 		},
 		{
-			"id": "tables-more-informative",
-			"title": "Rework the tables so that they are more informative: some fields are not shown in them at all. The user's words: redo the tables, they must become more informative. The tables are in views/Admin (AdminMembersView, AdminWheelView, AdminExchangesView), Catalog/CatalogView, Users/UsersView, Games (CompletedTab, WishlistTab, UserWishlistTab) and Resources (PointsTab, SharedPointsTab, HistoryTab).",
+			"id": "catalog-player-card",
+			"title": "Rebuild the player «Каталог» screen as a list with search on the left and the full entry card on the right, as in the artboards «Каталог: просмотр» and «Карточка записи» of the canvas «Каталог: просмотр и админка» (https://claude.ai/artifact/MoHKATGRjRXi6fEFcoXjmn). The card is one shared component that the admin catalog drawer reuses.",
 			"priority": 12,
+			"status": "in_progress",
+			"evidence": ""
+		},
+		{
+			"id": "catalog-admin-drawer",
+			"title": "Rebuild the admin catalog table as in the artboard «Каталог: правка (админ)»: changes and properties in the row, the «у игроков» counter, actions in a «⋯» menu that also opens on right click (a shared row menu component, used by every later table), and the entry card in a drawer on the right.",
+			"priority": 12.01,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "table-users",
+			"title": "Rebuild the members table as in the artboard «Участники»: search, status chips, the share of play time as a bar, a chevron to the profile.",
+			"priority": 12.02,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "table-completed",
+			"title": "Rebuild the completed games table as in the artboard «Игры: пройденные»: search, state chips, period with days, rating pips, total time and average rating.",
+			"priority": 12.03,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "table-wishlist",
+			"title": "Rebuild the wishlist table as in the artboard «Игры: вишлист»: «Кто добавил» column, rename in the row, actions in the «⋯» menu. The text stays «Список желаемого» and the delete keeps its restore.",
+			"priority": 12.04,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "table-points",
+			"title": "Rebuild the points tab as in the artboard «Ресурсы: очки»: point types on the left with the user's place, a ranking with place, share of the leader and the difference to the user.",
+			"priority": 12.05,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "table-shared-points",
+			"title": "Rebuild the shared points tab as in the artboard «Ресурсы: общие очки»: description in the row, a bar between the bounds.",
+			"priority": 12.06,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "table-history",
+			"title": "Rebuild the history tab as in the artboard «Ресурсы: история»: filters as selects, rows grouped by day, who and through what, the fix link in the row.",
+			"priority": 12.07,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "table-admin-exchanges",
+			"title": "Rebuild the admin exchanges table as in the artboard «Админ: обмены»: search, show deleted, both sides with the «игрок выбирает» flags, the «⋯» menu.",
+			"priority": 12.08,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "table-admin-wheel",
+			"title": "Rebuild the admin wheel screen as in the artboard «Админ: колесо»: groups as a side list, a group card with «Не повторять выпавшее», rename, delete and the spin cost, the entries table with changes and how they apply, the «⋯» menu. Update ARCHITECTURE (the groups are no longer pill tabs).",
+			"priority": 12.09,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "table-admin-members",
+			"title": "Rebuild the admin members table as in the artboard «Админ: участники и права»: search, role chips, joined and left dates, role, the «⋯» menu.",
+			"priority": 12.1,
 			"status": "todo",
 			"evidence": ""
 		},
