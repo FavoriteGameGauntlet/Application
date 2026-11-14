@@ -5,6 +5,6 @@ export const userStatusView: Record<
 	{ label: string; tone: 'success' | 'neutral' | 'info' | 'danger' }
 > = {
 	playing: { label: 'играет', tone: 'success' },
-	paused: { label: 'на паузе', tone: 'neutral' },
-	offline: { label: 'не в сети', tone: 'info' },
+	paused: { label: 'на паузе', tone: 'info' },
+	offline: { label: 'не в сети', tone: 'neutral' },
 }
