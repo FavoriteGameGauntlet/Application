@@ -202,7 +202,7 @@ watch(() => store.showDeleted, store.loadAllCatalogs, { immediate: true })
 						>{{ tag.text }}</span
 					>
 					<span v-if="row.moreTags > 0" class="tag">+{{ row.moreTags }}</span>
-					<span v-if="!row.tags.length" class="muted">Очки не меняет</span>
+					<span v-if="!row.tags.length" class="muted">—</span>
 				</div>
 
 				<div
@@ -430,6 +430,10 @@ watch(() => store.showDeleted, store.loadAllCatalogs, { immediate: true })
 .muted,
 .empty {
 	color: var(--text-muted);
+}
+
+.muted {
+	font: var(--type-caption);
 }
 
 .holders {
