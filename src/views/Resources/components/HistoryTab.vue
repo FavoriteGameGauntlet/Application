@@ -12,7 +12,6 @@ import UiUserAvatar from '../../../components/ui/UiUserAvatar.vue'
 import { useJournalStore } from '../../../stores/journalStore'
 import { useManualStore } from '../../../stores/manualStore'
 import { useMembersStore } from '../../../stores/membersStore'
-import { useResourcesStore } from '../../../stores/resourcesStore'
 import {
 	dayOf,
 	formatDay,
@@ -35,10 +34,16 @@ const { user } = defineProps<Props>()
 
 const journalStore = useJournalStore()
 const membersStore = useMembersStore()
-const resourcesStore = useResourcesStore()
 const manualStore = useManualStore()
 
 const ALL = ''
+
+const resourceKinds: { value: ResourceRef['kind']; label: string }[] = [
+	{ value: 'points', label: 'очки' },
+	{ value: 'item', label: 'предметы' },
+	{ value: 'perk', label: 'перки' },
+	{ value: 'effect', label: 'эффекты' },
+]
 
 /** the last day or week counted from the current moment */
 const PERIOD_MS: Record<string, number> = {
@@ -65,14 +70,7 @@ const specs = computed(() => [
 	{
 		key: 'resource' as const,
 		title: 'Ресурс',
-		options: [
-			{ value: ALL, label: 'все' },
-			...resourcesStore.pointTypes.map((type) => ({
-				value: `points:${type.id}`,
-				label: type.name.toLowerCase(),
-			})),
-			{ value: 'effect', label: 'эффекты' },
-		],
+		options: [{ value: ALL, label: 'все' }, ...resourceKinds],
 	},
 	{
 		key: 'source' as const,
@@ -94,13 +92,11 @@ const specs = computed(() => [
 
 const entries = ref<JournalEntry[]>([])
 
-/** 'points:<id>' or 'effect' → the resource filter of the query */
+/** the filter picks a kind of resource: a list of single entities would run to hundreds of options */
 const toResource = (value: string): JournalQuery['resource'] => {
-	if (!value) return undefined
+	const found = resourceKinds.find((k) => k.value === value)
 
-	const [kind, id] = value.split(':')
-
-	return { kind: kind as ResourceRef['kind'], id: id ? Number(id) : undefined }
+	return found && { kind: found.value }
 }
 
 watch(
