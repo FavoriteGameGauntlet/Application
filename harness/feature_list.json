@@ -137,7 +137,7 @@
 			"id": "table-admin-wheel",
 			"title": "Rebuild the admin wheel screen as in the artboard «Админ: колесо»: groups as a side list, a group card with «Не повторять выпавшее», rename, delete and the spin cost, the entries table with changes and how they apply, the «⋯» menu. Update ARCHITECTURE (the groups are no longer pill tabs).",
 			"priority": 12.09,
-			"status": "todo",
+			"status": "in_progress",
 			"evidence": ""
 		},
 		{

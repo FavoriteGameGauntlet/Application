@@ -12,19 +12,18 @@ import type {
 } from '../../components/formDialog'
 import { changeRowsToForm, parseChangeRows } from '../../utils/formRows'
 import FormDialog from '../../components/FormDialog.vue'
+import { changeTone } from '../../components/catalogTable'
+import InlineAddRow from '../../components/InlineAddRow.vue'
 import UiButton from '../../components/ui/UiButton.vue'
-import UiCheckbox from '../../components/ui/UiCheckbox.vue'
-import UiIcon from '../../components/ui/UiIcon.vue'
-import UiIconButton from '../../components/ui/UiIconButton.vue'
 import UiInput from '../../components/ui/UiInput.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
+import UiRowMenu, { type RowMenuItem } from '../../components/ui/UiRowMenu.vue'
 import UiTabs from '../../components/ui/UiTabs.vue'
-import UiTag from '../../components/ui/UiTag.vue'
 import { useAdminWheelStore } from '../../stores/adminWheelStore'
 import { useToastStore } from '../../stores/toastStore'
-import AdminSpinCost from './components/AdminSpinCost.vue'
+import { plural } from '../../utils/plural'
+import AdminWheelGroupCard from './components/AdminWheelGroupCard.vue'
 import AdminWheelGroups from './components/AdminWheelGroups.vue'
-import InlineAddRow from '../../components/InlineAddRow.vue'
 
 /** `{}` adds an item of changes, undefined means the dialog is closed */
 type Dialog = { entry?: AdminWheelEntry }
@@ -41,7 +40,6 @@ const tabs = [
 
 const dialog = ref<Dialog>()
 const confirm = ref<Confirm>()
-const openEntryId = ref<number>()
 
 const isChanges = computed(() => store.kind === 'changes')
 const group = computed(() => store.group)
@@ -59,6 +57,15 @@ const foundEntries = computed(() => {
 				s.toLowerCase().includes(q),
 			),
 	)
+})
+
+const count = computed(() => {
+	const n = foundEntries.value.length
+	const nouns: [string, string, string] = isChanges.value
+		? ['пункт', 'пункта', 'пунктов']
+		: ['игра', 'игры', 'игр']
+
+	return `${n} ${plural(n, nouns)}`
 })
 
 const fields = computed<FormField[]>(() => {
@@ -200,12 +207,29 @@ const onConfirm = () => {
 	current?.run()
 }
 
-/** only an item of changes has something to unfold; a game is just a name */
-const toggleEntry = (entry: AdminWheelEntry) => {
-	if (!isChanges.value) return
+/** a change in its row: green adds, red takes */
+const tagsOf = (entry: AdminWheelEntry) =>
+	entry.changes.map((text, i) => ({
+		text,
+		tone: changeTone(entry.entries[i]?.amount ?? 0),
+	}))
 
-	openEntryId.value = openEntryId.value === entry.id ? undefined : entry.id
-}
+const menuOf = (
+	target: AdminWheelGroup,
+	entry: AdminWheelEntry,
+): RowMenuItem[] => [
+	{
+		label: 'Изменить',
+		icon: 'pencil',
+		select: () => (dialog.value = { entry }),
+	},
+	{
+		label: 'Удалить',
+		icon: 'trash-2',
+		danger: true,
+		select: () => askRemoveEntry(target, entry),
+	},
+]
 
 const addGame = async (name: string) => {
 	if (!group.value) return
@@ -223,13 +247,11 @@ const addGame = async (name: string) => {
 
 const selectGroup = (target: AdminWheelGroup) => {
 	store.groupId = target.id
-	openEntryId.value = undefined
 	query.value = ''
 	newGame.value = ''
 }
 
 const setKind = (value: string) => {
-	openEntryId.value = undefined
 	query.value = ''
 	newGame.value = ''
 	store.setKind(value as 'changes' | 'games')
@@ -248,133 +270,107 @@ onMounted(() => store.load())
 			@update:model-value="setKind($event!)"
 		/>
 
-		<AdminWheelGroups
-			:selected-id="group?.id"
-			@select="selectGroup"
-			@remove="askRemoveGroup"
-		/>
+		<div class="layout">
+			<AdminWheelGroups :selected-id="group?.id" @select="selectGroup" />
 
-		<div v-if="group" class="main">
-			<div class="card">
-				<span class="card__accent"></span>
-				<span class="card__name">{{ group.name }}</span>
-				<div v-if="!group.system" class="card__search">
-					<UiInput
-						v-model="query"
-						compact
-						icon="search"
-						placeholder="Найти…"
-						aria-label="Поиск"
-					/>
-				</div>
-				<UiCheckbox
-					v-if="!group.system"
-					:model-value="group.noRepeat"
-					label="Не повторять выпавшее"
-					@update:model-value="store.setNoRepeat(group, $event)"
-				/>
-				<UiButton v-if="isChanges" icon="plus" @click="dialog = {}">
-					Пункт
-				</UiButton>
-			</div>
+			<div v-if="group" class="main">
+				<AdminWheelGroupCard :group @remove="askRemoveGroup(group)" />
 
-			<AdminSpinCost v-if="isChanges" :key="group.id" :group />
-
-			<div v-if="group.system" class="card card--text">
-				Список желаемого у каждого игрока свой. Игры в него добавляют сами
-				игроки на экране «Игры», здесь список не редактируется.
-			</div>
-
-			<div v-else class="table">
-				<div
-					class="table__row table__row--head"
-					:class="{ 'table__row--wide': isChanges }"
-				>
-					<span :class="{ 'table__name-head': isChanges }">{{
-						isChanges ? 'Пункт' : 'Игра'
-					}}</span>
-					<span v-if="isChanges">Изменение</span>
-					<span></span>
-				</div>
-
-				<div
-					v-for="entry in foundEntries"
-					:key="entry.id"
-					class="item"
-					:class="{ 'item--open': openEntryId === entry.id }"
-				>
-					<div
-						class="table__row table__row--body"
-						:class="{
-							'table__row--wide': isChanges,
-							'table__row--click': isChanges,
-						}"
-						@click="toggleEntry(entry)"
-					>
-						<div class="cell cell--name">
-							<span v-if="isChanges" class="cell__chevron">
-								<UiIcon
-									:name="
-										openEntryId === entry.id ? 'chevron-down' : 'chevron-right'
-									"
-									:size="16"
-								/>
-							</span>
-							<span class="cell__title">{{ entry.name }}</span>
-						</div>
-
-						<div v-if="isChanges" class="cell cell--tags">
-							<UiTag v-for="tag in entry.changes" :key="tag">{{ tag }}</UiTag>
-							<span v-if="entry.isManualChange" class="cell__manual"
-								>вручную</span
-							>
-							<span v-if="!entry.shouldApplyToAll" class="cell__manual"
-								>на выбор</span
-							>
-						</div>
-
-						<span class="table__actions">
-							<UiIconButton
-								icon="pencil"
-								size="sm"
-								label="Изменить"
-								@click.stop="dialog = { entry }"
-							/>
-							<UiIconButton
-								icon="trash-2"
-								size="sm"
-								label="Удалить"
-								@click.stop="askRemoveEntry(group, entry)"
-							/>
-						</span>
-					</div>
-
-					<div v-if="openEntryId === entry.id" class="item__desc">
-						<span class="item__label">Описание</span>
-						<span class="item__text">{{
-							entry.description || 'Без описания'
+				<template v-if="!group.system">
+					<div class="bar">
+						<span class="bar__label">{{
+							isChanges ? 'Пункты группы' : 'Игры группы'
 						}}</span>
+						<span class="bar__count">{{ count }}</span>
+						<div class="bar__spacer"></div>
+						<div class="bar__search">
+							<UiInput
+								v-model="query"
+								compact
+								icon="search"
+								:placeholder="isChanges ? 'Найти пункт…' : 'Найти игру…'"
+								aria-label="Поиск"
+							/>
+						</div>
+						<UiButton v-if="isChanges" icon="plus" @click="dialog = {}">
+							Пункт
+						</UiButton>
 					</div>
-				</div>
 
-				<div v-if="!foundEntries.length" class="table__empty">
-					{{
-						group.entries.length
-							? 'Ничего не найдено.'
-							: isChanges
-								? 'В группе нет пунктов. Нажми «Пункт».'
-								: 'В списке нет игр. Впиши название ниже.'
-					}}
-				</div>
+					<div
+						class="table"
+						:class="{ 'table--changes': isChanges }"
+						role="table"
+						:aria-label="isChanges ? 'Пункты группы' : 'Игры группы'"
+					>
+						<div class="row row--head" role="row">
+							<span role="columnheader">{{
+								isChanges ? 'Пункт' : 'Игра'
+							}}</span>
+							<template v-if="isChanges">
+								<span role="columnheader">Изменение</span>
+								<span role="columnheader">Как применяется</span>
+							</template>
+						</div>
 
-				<div v-if="!isChanges" class="table__add">
-					<InlineAddRow
-						v-model="newGame"
-						placeholder="Название игры"
-						label="Название новой игры"
-						@submit="addGame"
-					/>
-				</div>
+						<UiRowMenu
+							v-for="entry in foundEntries"
+							:key="entry.id"
+							class="row"
+							role="row"
+							:label="isChanges ? 'Действия с пунктом' : 'Действия с игрой'"
+							:items="menuOf(group, entry)"
+						>
+							<div class="cell cell--name" role="cell">
+								<span class="name">{{ entry.name }}</span>
+								<span v-if="isChanges && entry.description" class="desc">{{
+									entry.description
+								}}</span>
+							</div>
+
+							<template v-if="isChanges">
+								<div class="cell cell--wrap" role="cell">
+									<span
+										v-for="(tag, i) in tagsOf(entry)"
+										:key="i"
+										class="tag"
+										:class="`tag--${tag.tone}`"
+										>{{ tag.text }}</span
+									>
+									<span v-if="!entry.changes.length" class="muted"
+										>Само ничего не меняет</span
+									>
+								</div>
+
+								<div class="cell cell--wrap" role="cell">
+									<span v-if="entry.isManualChange" class="fact">вручную</span>
+									<span v-if="!entry.shouldApplyToAll" class="fact"
+										>на выбор</span
+									>
+								</div>
+							</template>
+						</UiRowMenu>
+
+						<div v-if="!foundEntries.length" class="empty">
+							{{
+								group.entries.length
+									? 'Ничего не найдено.'
+									: isChanges
+										? 'В группе нет пунктов. Нажми «Пункт».'
+										: 'В списке нет игр. Впиши название ниже.'
+							}}
+						</div>
+
+						<div v-if="!isChanges" class="add">
+							<InlineAddRow
+								v-model="newGame"
+								placeholder="Название игры"
+								label="Название новой игры"
+								@submit="addGame"
+							/>
+						</div>
+					</div>
+				</template>
 			</div>
 		</div>
 	</div>
@@ -406,6 +402,13 @@ onMounted(() => store.load())
 	gap: 16px;
 }
 
+.layout {
+	display: grid;
+	grid-template-columns: 256px minmax(0, 1fr);
+	gap: 20px;
+	align-items: start;
+}
+
 .main {
 	display: flex;
 	flex-direction: column;
@@ -413,48 +416,30 @@ onMounted(() => store.load())
 	min-width: 0;
 }
 
-.card {
-	position: relative;
+.bar {
 	display: flex;
 	align-items: center;
-	gap: 20px;
-	box-sizing: border-box;
-	min-height: 66px;
-	padding: 12px 16px 12px 20px;
-	background: var(--surface-card);
-	border: 1px solid var(--border-subtle);
-	border-radius: var(--radius-lg);
-	box-shadow: var(--shadow-1);
+	gap: 12px;
 }
 
-.card__search {
-	width: 220px;
-}
-
-.card--text {
-	padding: 16px;
-	font: var(--type-body-sm);
-	color: var(--text-body);
-	text-wrap: pretty;
-}
-
-.card__accent {
-	position: absolute;
-	top: 0;
-	left: 20px;
-	width: 40px;
-	height: 4px;
-	background: var(--accent);
-	border-radius: 0 0 2px 2px;
-}
-
-.card__name {
-	flex: 1;
-	min-width: 0;
-	font: var(--type-h4);
-	letter-spacing: var(--tracking-display);
+.bar__label {
+	font: var(--type-label);
+	letter-spacing: var(--tracking-label);
 	text-transform: uppercase;
-	color: var(--text-strong);
+	color: var(--text-muted);
+}
+
+.bar__count {
+	font: var(--type-body-sm);
+	color: var(--text-muted);
+}
+
+.bar__spacer {
+	flex: 1;
+}
+
+.bar__search {
+	width: 240px;
 }
 
 .table {
@@ -465,66 +450,31 @@ onMounted(() => store.load())
 	box-shadow: var(--shadow-1);
 }
 
-.table__row {
+/* 60px on the right belong to the «⋯» button */
+.row {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) 76px;
-	gap: 12px;
-	align-items: center;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 16px;
+	align-items: start;
+	padding: 14px 60px 14px 20px;
+	border-top: 1px solid var(--border-subtle);
 }
 
-.table__row--wide {
-	grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.5fr) 76px;
+.table--changes .row {
+	grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.2fr) minmax(0, 0.9fr);
 }
 
-.table__row--head {
-	padding: 12px 16px;
+.row--head {
+	padding-block: 12px;
 	font: var(--type-label);
 	letter-spacing: var(--tracking-label);
 	text-transform: uppercase;
 	color: var(--text-muted);
 	background: var(--surface-sunken);
+	border-top: 0;
 }
 
-.table__name-head {
-	padding-left: 24px;
-}
-
-.table__row--body {
-	min-height: 52px;
-	padding: 10px 16px;
-}
-
-.table__row--click {
-	cursor: pointer;
-}
-
-.table__row--click:hover {
-	background: var(--surface-sunken);
-}
-
-.table__add {
-	padding: 8px 12px 8px 16px;
-	border-top: 1px solid var(--border-subtle);
-}
-
-.table__actions {
-	display: flex;
-	gap: 4px;
-	justify-content: flex-end;
-}
-
-.table__empty {
-	padding: 16px;
-	font: var(--type-body-sm);
-	color: var(--text-subtle);
-	border-top: 1px solid var(--border-subtle);
-}
-
-.item {
-	border-top: 1px solid var(--border-subtle);
-}
-
-.item--open {
+.row:not(.row--head):hover {
 	background: var(--surface-sunken);
 }
 
@@ -534,51 +484,72 @@ onMounted(() => store.load())
 
 .cell--name {
 	display: flex;
-	align-items: flex-start;
-	gap: 8px;
+	flex-direction: column;
+	gap: 4px;
 }
 
-.cell__chevron {
-	display: flex;
-	flex: none;
-	margin-top: 3px;
-	color: var(--text-muted);
-}
-
-.cell__title {
-	font: 600 15px / 1.45 var(--font-body);
-	color: var(--text-strong);
-}
-
-.cell--tags {
+.cell--wrap {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 6px;
 }
 
-.cell__manual {
+.name {
+	font: 600 15px / 1.45 var(--font-body);
+	color: var(--text-strong);
+	overflow-wrap: anywhere;
+}
+
+.desc {
+	font: var(--type-caption);
+	color: var(--text-muted);
+	text-wrap: pretty;
+}
+
+.tag,
+.fact {
+	display: inline-flex;
+	align-items: center;
+	height: 26px;
+	padding: 0 10px;
+	font: 500 12px / 1 var(--font-body);
+	color: var(--text-body);
+	white-space: nowrap;
+	border-radius: var(--radius-pill);
+}
+
+.tag {
+	background: var(--surface-sunken);
+}
+
+.tag--plus {
+	color: var(--success-text);
+	background: var(--success-soft);
+}
+
+.tag--minus {
+	color: var(--danger-text);
+	background: var(--danger-soft);
+}
+
+.fact {
+	border: var(--border-width) solid var(--border-default);
+}
+
+.muted {
 	font: var(--type-body-sm);
-	color: var(--text-subtle);
-}
-
-.item__desc {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-	max-width: 720px;
-	padding: 0 16px 16px 40px;
-}
-
-.item__label {
-	font: var(--type-label);
-	letter-spacing: var(--tracking-label);
-	text-transform: uppercase;
 	color: var(--text-muted);
 }
 
-.item__text {
+.empty {
+	padding: 16px 20px;
 	font: var(--type-body-sm);
-	color: var(--text-body);
-	text-wrap: pretty;
+	color: var(--text-subtle);
+	border-top: 1px solid var(--border-subtle);
+}
+
+.add {
+	padding: 8px 12px 8px 20px;
+	border-top: 1px solid var(--border-subtle);
 }
 </style>

@@ -1,199 +1,158 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import type {
 	AdminWheelGroup,
-	CatalogEntry,
 	SpinCostRow,
 } from '../../../api-facade/contracts'
+import FormDialog from '../../../components/FormDialog.vue'
+import type {
+	FormField,
+	FormRow,
+	FormValues,
+} from '../../../components/formDialog'
 import UiButton from '../../../components/ui/UiButton.vue'
-import UiIconButton from '../../../components/ui/UiIconButton.vue'
-import UiInput from '../../../components/ui/UiInput.vue'
-import UiSelect from '../../../components/ui/UiSelect.vue'
 import { useAdminCatalogStore } from '../../../stores/adminCatalogStore'
 import { useAdminWheelStore } from '../../../stores/adminWheelStore'
+import { useResourcesStore } from '../../../stores/resourcesStore'
 import { useToastStore } from '../../../stores/toastStore'
-
-type Kind = SpinCostRow['kind']
-type Row = { kind: Kind; targetId: number; amount: string }
+import { formatCost } from '../../../utils/formatResource'
+import { changeRowsToForm, parseCostRows } from '../../../utils/formRows'
 
 const { group } = defineProps<{ group: AdminWheelGroup }>()
 
 const catalogStore = useAdminCatalogStore()
+const resourcesStore = useResourcesStore()
 const store = useAdminWheelStore()
 const toastStore = useToastStore()
 
-const rows = reactive<Row[]>([])
-const targets = ref<Record<Kind, CatalogEntry[]>>({
-	points: [],
-	item: [],
-	perk: [],
-	effect: [],
-})
+const cost = ref<SpinCostRow[]>([])
+const isEditing = ref(false)
 
-const kindOptions = [
-	{ value: 'points', label: 'Очки' },
-	{ value: 'item', label: 'Предмет' },
-	{ value: 'perk', label: 'Перк' },
-	{ value: 'effect', label: 'Эффект' },
+const fields: FormField[] = [
+	{
+		key: 'cost',
+		label: 'Игрок платит за прокрут',
+		type: 'rows',
+		variant: 'cost',
+		addLabel: 'Ресурс',
+		empty: 'Строк нет: прокрут бесплатный.',
+	},
 ]
 
-const targetOptions = (kind: Kind) =>
-	targets.value[kind].map((t) => ({ value: String(t.id), label: t.name }))
+const initial = computed<FormValues>(() => ({
+	cost: changeRowsToForm(cost.value),
+}))
 
-const onKind = (row: Row, kind: string) => {
-	row.kind = kind as Kind
-	row.targetId = targets.value[row.kind][0]?.id ?? 0
-}
+const pills = computed(() =>
+	cost.value.map((row) =>
+		formatCost(
+			{
+				kind: row.kind,
+				id: row.targetId,
+				name:
+					catalogStore.targets[row.kind].find((t) => t.id === row.targetId)
+						?.name ?? '…',
+				amount: row.amount,
+			},
+			resourcesStore.pointTypes,
+		),
+	),
+)
 
-const addRow = () =>
-	rows.push({
-		kind: 'item',
-		targetId: targets.value.item[0]?.id ?? 0,
-		amount: '1',
-	})
+const onSave = async (values: FormValues) => {
+	const parsed = parseCostRows(values.cost as FormRow[])
 
-const fill = (cost: SpinCostRow[]) =>
-	rows.splice(
-		0,
-		rows.length,
-		...cost.map((r) => ({ ...r, amount: String(r.amount) })),
-	)
-
-const save = async (list: Row[]) => {
-	const parsed = list.map((row) => ({ ...row, amount: Number(row.amount) }))
-
-	if (parsed.some((row) => !Number.isInteger(row.amount) || row.amount <= 0)) {
-		toastStore.show(
-			'Проверь количество',
-			'Нужно целое число больше нуля.',
-			'danger',
-		)
+	if ('error' in parsed) {
+		toastStore.show('Проверь цену', parsed.error, 'danger')
 		return
 	}
 
-	// a perk or an effect is held once, so it can only be taken once
-	if (
-		parsed.some(
-			(row) =>
-				(row.kind === 'perk' || row.kind === 'effect') && row.amount !== 1,
-		)
-	) {
-		toastStore.show(
-			'Проверь количество',
-			'Перк или эффект у игрока один: нужно 1.',
-			'danger',
-		)
-		return
+	if (await store.saveSpinCost(group, parsed.value)) {
+		cost.value = parsed.value
+		isEditing.value = false
 	}
-
-	if (await store.saveSpinCost(group, parsed)) fill(parsed)
-}
-
-const onClear = async () => {
-	if (await store.saveSpinCost(group, [])) rows.splice(0, rows.length)
 }
 
 onMounted(async () => {
-	const [points, items, perks, effects, cost] = await Promise.all([
-		catalogStore.fetchCatalog('point-types'),
-		catalogStore.fetchCatalog('items'),
-		catalogStore.fetchCatalog('perks'),
-		catalogStore.fetchCatalog('effects'),
-		store.loadSpinCost(group),
-	])
+	try {
+		const [loaded] = await Promise.all([
+			store.loadSpinCost(group),
+			catalogStore.loadTargets(),
+		])
 
-	targets.value = { points, item: items, perk: perks, effect: effects }
-	fill(cost)
+		cost.value = loaded
+	} catch (e) {
+		toastStore.error(e)
+	}
 })
 </script>
 
 <template>
-	<div class="card">
-		<span class="card__label">Цена прокрута</span>
-
-		<div v-for="(row, i) in rows" :key="i" class="row">
-			<UiSelect
-				:options="kindOptions"
-				:model-value="row.kind"
-				aria-label="Тип"
-				@update:model-value="onKind(row, $event)"
-			/>
-			<UiSelect
-				:options="targetOptions(row.kind)"
-				:model-value="String(row.targetId)"
-				aria-label="Что"
-				@update:model-value="row.targetId = Number($event)"
-			/>
-			<UiInput v-model="row.amount" inputmode="numeric" aria-label="Сколько" />
-			<UiIconButton
-				icon="x"
-				size="sm"
-				label="Убрать строку"
-				@click="rows.splice(i, 1)"
-			/>
-		</div>
-
-		<span v-if="!rows.length" class="card__empty">Прокрут бесплатный.</span>
-
-		<div class="card__actions">
-			<UiButton variant="ghost" size="sm" icon="plus" @click="addRow"
-				>Добавить строку</UiButton
-			>
-			<UiButton variant="ghost" size="sm" class="card__danger" @click="onClear">
-				Сделать бесплатным
-			</UiButton>
-			<div class="card__spacer"></div>
-			<UiButton variant="secondary" icon="check" @click="save(rows)"
-				>Сохранить</UiButton
-			>
-		</div>
+	<div class="cost">
+		<span class="cost__label">Прокрут стоит</span>
+		<span v-for="(pill, i) in pills" :key="i" class="cost__pill">{{
+			pill
+		}}</span>
+		<span v-if="!pills.length" class="cost__free">бесплатно</span>
+		<span class="cost__note">Платит игрок, когда применяет результат.</span>
+		<div class="cost__spacer"></div>
+		<UiButton variant="outline" size="sm" @click="isEditing = true">
+			Изменить цену
+		</UiButton>
 	</div>
+
+	<FormDialog
+		:open="isEditing"
+		title="Цена прокрута"
+		:subtitle="`Группа «${group.name}»`"
+		submit-label="Сохранить"
+		:sections="[{ fields }]"
+		:initial
+		@close="isEditing = false"
+		@save="onSave"
+	/>
 </template>
 
 <style scoped>
-.card {
+.cost {
 	display: flex;
-	flex-direction: column;
-	gap: 12px;
-	padding: 16px;
-	background: var(--surface-card);
-	border: 1px solid var(--border-subtle);
-	border-radius: var(--radius-lg);
-	box-shadow: var(--shadow-1);
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 12px;
+	padding-top: 14px;
+	border-top: 1px solid var(--border-subtle);
 }
 
-.card__label {
+.cost__label {
 	font: var(--type-label);
 	letter-spacing: var(--tracking-label);
 	text-transform: uppercase;
 	color: var(--text-muted);
 }
 
-.card__empty {
+.cost__pill {
+	display: inline-flex;
+	align-items: center;
+	height: 26px;
+	padding: 0 10px;
+	font: 500 12px / 1 var(--font-body);
+	color: var(--text-body);
+	white-space: nowrap;
+	background: var(--surface-sunken);
+	border-radius: var(--radius-pill);
+}
+
+.cost__free {
 	font: var(--type-body-sm);
-	color: var(--text-subtle);
+	color: var(--text-body);
 }
 
-.card__actions {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding-top: 12px;
-	border-top: 1px solid var(--border-subtle);
+.cost__note {
+	font: var(--type-caption);
+	color: var(--text-muted);
 }
 
-.card__spacer {
+.cost__spacer {
 	flex: 1;
-}
-
-.card .card__danger {
-	color: var(--danger-text);
-}
-
-.row {
-	display: grid;
-	grid-template-columns: 160px minmax(0, 1fr) 120px 32px;
-	gap: 8px;
-	align-items: center;
 }
 </style>
