@@ -29,7 +29,11 @@ const toneIcon = computed(() => toneIcons[tone])
 			:color="toneIcon.color"
 		/>
 		<div class="ui-toast__content">
-			<div v-if="title" class="ui-toast__title" :class="{ 'ui-toast__title--gap': $slots.default }">
+			<div
+				v-if="title"
+				class="ui-toast__title"
+				:class="{ 'ui-toast__title--gap': $slots.default }"
+			>
 				{{ title }}
 			</div>
 			<div v-if="$slots.default" class="ui-toast__text">
@@ -75,6 +79,7 @@ const toneIcon = computed(() => toneIcons[tone])
 }
 
 .ui-toast__text {
+	white-space: pre-line;
 	font: var(--type-body-sm);
 	color: var(--text-on-floating-muted);
 }

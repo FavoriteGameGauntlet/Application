@@ -98,7 +98,7 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 	/** applying the result starts the game instead of granting changes */
 	const resultStartsGame = computed(() => resultGroup.value?.kind !== 'changes')
 
-	/** what the result card shows after «Выпало ·» */
+	/** what the result card shows under «Выпало на колесе» */
 	const resultSource = computed(() => {
 		if (resultGroup.value?.kind === 'wishlist') return 'Список желаемого'
 

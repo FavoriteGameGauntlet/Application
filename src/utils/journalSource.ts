@@ -1,4 +1,63 @@
-import type { HistoryEventKind, JournalEntry } from '../api-facade/contracts'
+import type {
+	HistoryEventKind,
+	JournalEntry,
+	JournalSource,
+} from '../api-facade/contracts'
+
+/** what happened and, when there is one, the entity it happened to: two facts for two lines */
+export type JournalSourceParts = { kind: string; name?: string }
+
+/** «предмет» + «Колобок», «колесо» + «×2 золото», «исправление» alone */
+export const journalSourceParts = (
+	{ eventKind, name, endState }: JournalSource,
+	correctsEntryId?: number,
+): JournalSourceParts => {
+	switch (eventKind) {
+		case 'item_added':
+		case 'item_uses_changed':
+		case 'item_removed':
+		case 'item_transferred':
+			return { kind: 'предмет', name }
+		case 'perk_added':
+		case 'perk_uses_changed':
+		case 'perk_charges_changed':
+		case 'perk_removed':
+			return { kind: 'перк', name }
+		case 'effect_added':
+		case 'effect_removed':
+			return { kind: 'эффект', name }
+		case 'wheel_row_applied':
+			return { kind: 'колесо', name }
+		case 'exchange_used':
+			return { kind: 'обмен', name }
+		case 'timer_created':
+			return { kind: 'новый таймер' }
+		case 'timer_ended':
+			return { kind: 'таймер' }
+		case 'game_started':
+			return { kind: 'начало игры', name }
+		case 'game_ended':
+			return {
+				kind:
+					endState === 'completed'
+						? 'прохождение'
+						: endState === 'rerolled'
+							? 'перекрут игры'
+							: 'отмена игры',
+				name,
+			}
+		case 'manual_granted':
+			return {
+				kind:
+					correctsEntryId === undefined ? 'ручное изменение' : 'исправление',
+			}
+		case 'point_changed':
+			return { kind: 'изменение очков' }
+		default:
+			// the backend adds kinds over time, an unknown one is shown as it is
+			return { kind: eventKind }
+	}
+}
 
 /** the event kinds the history filter offers as one source */
 export type JournalSourceGroup = {

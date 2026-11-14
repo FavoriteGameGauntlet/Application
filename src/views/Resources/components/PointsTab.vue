@@ -105,13 +105,14 @@ const bounds = computed(() =>
 		: undefined,
 )
 
-const mineFact = computed(() => {
+const mineFacts = computed(() => {
 	const type = selected.value
-	if (!type || !myStanding.value) return undefined
+	if (!type || !myStanding.value) return []
 
-	const place = placeText(placeOf(sessionStore.login, type.id))
-
-	return `у тебя ${formatValue(myValue(type.id))} · ${place}`
+	return [
+		`у тебя ${formatValue(myValue(type.id))}`,
+		placeText(placeOf(sessionStore.login, type.id)),
+	]
 })
 
 function openProfile(login: Login) {
@@ -175,7 +176,9 @@ watch(() => journalStore.revision, resourcesStore.loadStandings, {
 					}}</span>
 				</div>
 				<span v-if="bounds" class="fact">{{ bounds }}</span>
-				<span v-if="mineFact" class="fact">{{ mineFact }}</span>
+				<span v-for="fact in mineFacts" :key="fact" class="fact">{{
+					fact
+				}}</span>
 			</div>
 
 			<div

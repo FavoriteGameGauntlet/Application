@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Login, ManualChange } from '../../api-facade/contracts'
+import JournalSourceLabel from '../../components/JournalSourceLabel.vue'
 import UserResourcesPanel from '../../components/UserResourcesPanel.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
 import UiButton from '../../components/ui/UiButton.vue'
@@ -15,11 +16,7 @@ import { useMembersStore } from '../../stores/membersStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToastStore } from '../../stores/toastStore'
-import {
-	formatJournalSource,
-	formatMoment,
-	parseSpan,
-} from '../../utils/format'
+import { formatMoment, parseSpan } from '../../utils/format'
 import { isManualEntry } from '../../utils/journalSource'
 import { countItems } from '../../utils/userItems'
 
@@ -342,16 +339,16 @@ onMounted(async () => {
 					<div class="entry">
 						<span class="entry__time">{{ formatMoment(draft.entry.at) }}</span>
 						<span class="entry__who">
-							<span class="entry__actor">{{ draft.entry.actor }}</span>
-							<span class="entry__source">{{
-								formatJournalSource(
-									draft.entry.source,
-									draft.entry.correctsEntryId,
-								)
-							}}</span>
-							<UiBadge v-if="isManualEntry(draft.entry)" tone="info" dot
-								>вручную</UiBadge
-							>
+							<span class="entry__actor-row">
+								<span class="entry__actor">{{ draft.entry.actor }}</span>
+								<UiBadge v-if="isManualEntry(draft.entry)" tone="info" dot
+									>вручную</UiBadge
+								>
+							</span>
+							<JournalSourceLabel
+								:source="draft.entry.source"
+								:corrects-entry-id="draft.entry.correctsEntryId"
+							/>
 						</span>
 						<span class="entry__changes">
 							<UiBadge
@@ -369,7 +366,8 @@ onMounted(async () => {
 
 				<div v-else-if="draft.kind === 'wheel'" class="hero">
 					<span class="hero__accent"></span>
-					<span class="card__label">Выпало на колесе · {{ draft.group }}</span>
+					<span class="card__label">Выпало на колесе</span>
+					<span class="hero__group">{{ draft.group }}</span>
 					<span class="hero__name">{{ draft.name }}</span>
 					<span class="hero__desc">{{ draft.description }}</span>
 				</div>
@@ -567,6 +565,11 @@ onMounted(async () => {
 	border-radius: 0 0 2px 2px;
 }
 
+.hero__group {
+	font: var(--type-body-sm);
+	color: var(--text-muted);
+}
+
 .hero__name {
 	font: var(--type-h3);
 	letter-spacing: var(--tracking-display);
@@ -604,6 +607,13 @@ onMounted(async () => {
 
 .entry__who {
 	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+}
+
+.entry__actor-row {
+	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 8px;
@@ -612,10 +622,6 @@ onMounted(async () => {
 .entry__actor {
 	font-weight: 600;
 	color: var(--text-strong);
-}
-
-.entry__source {
-	color: var(--text-muted);
 }
 
 .entry__changes {

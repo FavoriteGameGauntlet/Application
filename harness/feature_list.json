@@ -230,6 +230,13 @@
 			"priority": 23,
 			"status": "in_progress",
 			"evidence": ""
+		},
+		{
+			"id": "no-dot-separators",
+			"title": "Show facts as separate lines or badges instead of one line joined by a dot; add the rule to AGENTS.md",
+			"priority": 24,
+			"status": "in_progress",
+			"evidence": ""
 		}
 	]
 }

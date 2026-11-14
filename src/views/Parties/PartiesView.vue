@@ -33,9 +33,12 @@ const meta = (party: Party) => {
 	const members = `${party.membersCount} ${plural(party.membersCount, ['участник', 'участника', 'участников'])}`
 
 	if (party.status === 'active')
-		return `${members} · до ${formatDate(party.endsAt)}`
+		return [members, `до ${formatDate(party.endsAt)}`]
 
-	return `${members} · ${formatPeriod(party.startsAt, party.endsAt)}.${new Date(party.endsAt).getFullYear()}`
+	return [
+		members,
+		`${formatPeriod(party.startsAt, party.endsAt)}.${new Date(party.endsAt).getFullYear()}`,
+	]
 }
 
 const items = computed(() =>
@@ -126,7 +129,7 @@ const onSave = async (values: FormValues) => {
 	}
 }
 
-const onOpen = async (party: Party, text: string) => {
+const onOpen = async (party: Party, facts: string[]) => {
 	try {
 		await partiesStore.select(party)
 	} catch (e) {
@@ -136,7 +139,8 @@ const onOpen = async (party: Party, text: string) => {
 
 	await router.push({ name: RouteName.Home })
 
-	if (!party.current) toastStore.show(`Пати: ${party.name}`, text, 'info')
+	if (!party.current)
+		toastStore.show(`Пати: ${party.name}`, facts.join('\n'), 'info')
 }
 
 onMounted(async () => {
@@ -185,7 +189,9 @@ onMounted(async () => {
 								{{ item.party.role === 'admin' ? 'админ' : 'игрок' }}
 							</UiBadge>
 						</span>
-						<span class="card__meta">{{ item.meta }}</span>
+						<span class="card__meta">
+							<span v-for="fact in item.meta" :key="fact">{{ fact }}</span>
+						</span>
 					</div>
 
 					<UiButton
@@ -337,6 +343,9 @@ onMounted(async () => {
 }
 
 .card__meta {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
 	font: var(--type-body-sm);
 	color: var(--text-muted);
 }

@@ -130,18 +130,21 @@ export const filterCatalogEntries = (
 	)
 }
 
-/** the line under the name in the catalogue list and the badge on the right of it */
+/** the lines under the name in the catalogue list, a fact each, and the badge on the right of them */
 export const catalogSummary = (
 	view: CatalogView,
 	entry: CatalogEntry,
-): { summary: string; badge?: string } => {
-	const changes = (entry.changes ?? []).join(' · ')
+): { summary: string[]; badge?: string } => {
+	const changes = entry.changes ?? []
 
 	switch (view) {
 		case 'points':
 		case 'shared':
 			return {
-				summary: `${formatBounds(entry.minimum ?? null, entry.maximum ?? null)} · старт ${entry.startValue ?? 0}`,
+				summary: [
+					formatBounds(entry.minimum ?? null, entry.maximum ?? null),
+					`старт ${entry.startValue ?? 0}`,
+				],
 				badge: entry.isPublic === false ? 'админы' : undefined,
 			}
 		case 'items':

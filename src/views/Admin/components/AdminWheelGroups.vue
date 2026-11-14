@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import type { AdminWheelGroup } from '../../../api-facade/contracts'
+import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiIcon from '../../../components/ui/UiIcon.vue'
 import UiIconButton from '../../../components/ui/UiIconButton.vue'
@@ -26,9 +27,8 @@ const meta = (group: AdminWheelGroup) => {
 	if (group.system) return 'у каждого игрока свой'
 
 	const count = group.entries.length
-	const text = `${count} ${plural(count, nouns[group.kind])}`
 
-	return group.noRepeat ? `${text} · не повторять` : text
+	return `${count} ${plural(count, nouns[group.kind])}`
 }
 
 const startAdding = () => {
@@ -101,6 +101,9 @@ watch(() => store.kind, cancel)
 			<span class="groups__text">
 				<span class="groups__name">{{ group.name }}</span>
 				<span class="groups__meta">{{ meta(group) }}</span>
+				<UiBadge v-if="group.noRepeat" class="groups__badge" tone="neutral"
+					>не повторять</UiBadge
+				>
 			</span>
 			<span v-if="group.system" class="groups__lock" title="Системная группа">
 				<UiIcon name="lock" :size="16" />
@@ -182,6 +185,11 @@ watch(() => store.kind, cancel)
 .groups__meta {
 	font: var(--type-caption);
 	color: var(--text-muted);
+}
+
+.groups__badge {
+	align-self: flex-start;
+	margin-top: 4px;
 }
 
 .groups__lock {

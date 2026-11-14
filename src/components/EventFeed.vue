@@ -2,7 +2,8 @@
 import type { RouteLocationRaw } from 'vue-router'
 import type { JournalEntry } from '../api-facade/contracts'
 import { useMembersStore } from '../stores/membersStore'
-import { formatJournalSource, formatMoment } from '../utils/format'
+import { formatMoment } from '../utils/format'
+import JournalSourceLabel from './JournalSourceLabel.vue'
 
 type Props = {
 	title: string
@@ -32,14 +33,15 @@ const membersStore = useMembersStore()
 				></span>
 				<div class="event__body">
 					<div class="event__head">
-						<span class="event__source">
-							<span class="event__who">{{ entry.actor }}</span> ·
-							{{ formatJournalSource(entry.source, entry.correctsEntryId) }}
-						</span>
+						<span class="event__who">{{ entry.actor }}</span>
 						<span class="event__time">{{
 							formatMoment(entry.at).replace('сегодня ', '')
 						}}</span>
 					</div>
+					<JournalSourceLabel
+						:source="entry.source"
+						:corrects-entry-id="entry.correctsEntryId"
+					/>
 					<div
 						v-for="(change, i) in entry.changes"
 						:key="i"
@@ -134,12 +136,9 @@ const membersStore = useMembersStore()
 	color: var(--text-muted);
 }
 
-.event__source {
+.event__who {
 	flex: 1;
 	min-width: 0;
-}
-
-.event__who {
 	font-weight: 600;
 	color: var(--text-strong);
 }

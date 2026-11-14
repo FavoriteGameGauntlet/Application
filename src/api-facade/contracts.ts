@@ -226,8 +226,8 @@ export type Effect = {
 	id: number
 	name: string
 	description: string
-	/** «предмет «Щит» · ты», «колесо · Бонусы» */
-	source: string
+	/** what granted the effect; the screen words it with `journalSourceParts` */
+	source: JournalSource
 	/** null = no expiry */
 	expiresAt: ISODate | null
 }
@@ -248,7 +248,13 @@ export type ResourceSummary = { login: Login; count: number }
 /** an item, a perk or an effect that can be given or taken by hand */
 export type CatalogOption = { id: number; name: string }
 
-export type ResourceHistoryRow = { at: ISODate; source: string; delta: string }
+export type ResourceHistoryRow = {
+	at: ISODate
+	source: JournalSource
+	/** set on an entry that corrects another one, see `JournalEntry` */
+	correctsEntryId?: number
+	delta: string
+}
 
 // 6. Journal
 

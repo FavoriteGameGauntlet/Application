@@ -21,7 +21,7 @@ import {
 	timeOf,
 	today,
 } from '../../../utils/calendar'
-import { formatJournalSource } from '../../../utils/format'
+import JournalSourceLabel from '../../../components/JournalSourceLabel.vue'
 import {
 	isManualEntry,
 	journalSourceGroups,
@@ -191,7 +191,6 @@ function rowOf(entry: JournalEntry) {
 	return {
 		entry,
 		time: timeOf(entry.at),
-		source: formatJournalSource(entry.source, entry.correctsEntryId),
 		fix: fixOf(entry),
 		changes: entry.changes.map((c) => ({ ...c, tone: toneOf(c.text) })),
 		menu: [
@@ -270,7 +269,10 @@ function showEntry(id: number) {
 							>вручную</UiBadge
 						>
 					</span>
-					<span class="text">{{ row.source }}</span>
+					<JournalSourceLabel
+						:source="row.entry.source"
+						:corrects-entry-id="row.entry.correctsEntryId"
+					/>
 					<button
 						v-if="row.fix?.id !== undefined"
 						class="fix fix--link"
@@ -404,7 +406,6 @@ function showEntry(id: number) {
 	color: var(--text-strong);
 }
 
-.text,
 .fix {
 	font: var(--type-caption);
 	color: var(--text-muted);

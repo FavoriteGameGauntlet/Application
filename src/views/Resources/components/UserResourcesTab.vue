@@ -6,6 +6,7 @@ import type {
 	ResourceKind,
 	UserItem,
 } from '../../../api-facade/contracts'
+import JournalSourceLabel from '../../../components/JournalSourceLabel.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiIcon from '../../../components/ui/UiIcon.vue'
@@ -243,7 +244,7 @@ const emptyText = computed(
 						effect.name
 					}}</span>
 					<span class="card__desc">{{ effect.description }}</span>
-					<span class="card__source">{{ effect.source }}</span>
+					<JournalSourceLabel class="card__source" :source="effect.source" />
 
 					<div class="card__footer">
 						<span v-if="effect.expiresAt" class="term">
@@ -401,8 +402,6 @@ const emptyText = computed(
 
 .card__source {
 	flex: 1;
-	font: var(--type-caption);
-	color: var(--text-muted);
 }
 
 .card__meta {

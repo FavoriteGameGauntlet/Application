@@ -36,15 +36,15 @@ watch(
 	},
 )
 
-/** «Твоя игра · 24 ч 10 м · 03.11 → 09.11» */
+/** «Твоя игра», «24 ч 10 м», «03.11 → 09.11»: a line each */
 const subtitle = computed(() =>
 	game
 		? [
 				own ? 'Твоя игра' : login,
 				formatDuration(game.timeSpent),
 				formatPeriod(game.startedDate, game.endedDate),
-			].join(' · ')
-		: '',
+			]
+		: [],
 )
 
 const sections: FormSection[] = [
