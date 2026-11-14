@@ -395,11 +395,14 @@ watch(() => store.showDeleted, store.loadAllCatalogs, { immediate: true })
 .fact {
 	display: inline-flex;
 	align-items: center;
-	height: 26px;
-	padding: 0 10px;
-	font: 500 12px / 1 var(--font-body);
+	box-sizing: border-box;
+	max-width: 100%;
+	min-height: 26px;
+	padding: 5px 10px;
+	font: 500 12px / 1.3 var(--font-body);
 	color: var(--text-body);
-	white-space: nowrap;
+	/* the fixed columns are narrow, a long change wraps inside its tag instead of running into the next column */
+	overflow-wrap: anywhere;
 	border-radius: var(--radius-pill);
 }
 
