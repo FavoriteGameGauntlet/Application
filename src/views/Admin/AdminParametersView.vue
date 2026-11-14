@@ -4,7 +4,6 @@ import type { SystemParameter } from '../../api-facade/contracts'
 import type { FormField, FormValues } from '../../components/formDialog'
 import FormDialog from '../../components/FormDialog.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
-import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiRowMenu, { type RowMenuItem } from '../../components/ui/UiRowMenu.vue'
 import { useAdminParametersStore } from '../../stores/adminParametersStore'
 import { useToastStore } from '../../stores/toastStore'
@@ -12,12 +11,26 @@ import {
 	checkParameterValue,
 	parameterRange,
 } from '../../utils/systemParameter'
+import AdminListHeader from './components/AdminListHeader.vue'
 
 const store = useAdminParametersStore()
 const toastStore = useToastStore()
 
 /** the parameter in the edit dialog, undefined means the dialog is closed */
 const editing = ref<SystemParameter>()
+
+const query = ref('')
+
+const rows = computed(() => {
+	const q = query.value.trim().toLowerCase()
+
+	return store.parameters.filter(
+		(p) =>
+			!q ||
+			p.name.toLowerCase().includes(q) ||
+			p.description.toLowerCase().includes(q),
+	)
+})
 
 /** what the admin has typed so far, to say at once why it does not fit */
 const typed = ref('')
@@ -108,7 +121,12 @@ onMounted(async () => {
 
 <template>
 	<div class="parameters">
-		<UiPageTitle>Системные параметры</UiPageTitle>
+		<AdminListHeader
+			v-model:query="query"
+			title="Системные параметры"
+			placeholder="Найти параметр…"
+			no-add
+		/>
 
 		<div class="table" role="table" aria-label="Системные параметры">
 			<div class="table__row table__row--head" role="row">
@@ -117,7 +135,7 @@ onMounted(async () => {
 			</div>
 
 			<UiRowMenu
-				v-for="parameter in store.parameters"
+				v-for="parameter in rows"
 				:key="parameter.code"
 				class="table__row table__row--body"
 				role="row"
@@ -147,8 +165,8 @@ onMounted(async () => {
 				</span>
 			</UiRowMenu>
 
-			<div v-if="!store.parameters.length" class="table__empty">
-				Параметров нет.
+			<div v-if="!rows.length" class="table__empty">
+				{{ store.parameters.length ? 'Ничего не нашлось.' : 'Параметров нет.' }}
 			</div>
 		</div>
 	</div>

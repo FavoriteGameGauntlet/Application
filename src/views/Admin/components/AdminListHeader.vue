@@ -8,9 +8,11 @@ type Props = {
 	/** the count with its noun, «4 обмена»; a screen whose filters show the counts leaves it out */
 	count?: string
 	placeholder?: string
+	/** a list whose entries are not added by the admin has no «Добавить» */
+	noAdd?: boolean
 }
 
-const { placeholder = 'Найти…' } = defineProps<Props>()
+const { placeholder = 'Найти…', noAdd } = defineProps<Props>()
 
 const query = defineModel<string>('query', { default: '' })
 
@@ -22,7 +24,7 @@ const emit = defineEmits<{ add: [] }>()
 		<UiPageTitle>{{ title }}</UiPageTitle>
 		<span v-if="count" class="head__count">{{ count }}</span>
 		<div class="head__spacer"></div>
-		<UiButton icon="plus" @click="emit('add')">Добавить</UiButton>
+		<UiButton v-if="!noAdd" icon="plus" @click="emit('add')">Добавить</UiButton>
 	</div>
 
 	<div class="bar">
