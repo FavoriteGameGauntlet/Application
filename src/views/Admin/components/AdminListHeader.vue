@@ -5,8 +5,8 @@ import UiPageTitle from '../../../components/ui/UiPageTitle.vue'
 
 type Props = {
 	title: string
-	/** the count with its noun, «4 обмена» */
-	count: string
+	/** the count with its noun, «4 обмена»; a screen whose filters show the counts leaves it out */
+	count?: string
 	placeholder?: string
 }
 
@@ -20,7 +20,7 @@ const emit = defineEmits<{ add: [] }>()
 <template>
 	<div class="head">
 		<UiPageTitle>{{ title }}</UiPageTitle>
-		<span class="head__count">{{ count }}</span>
+		<span v-if="count" class="head__count">{{ count }}</span>
 		<div class="head__spacer"></div>
 		<UiButton icon="plus" @click="emit('add')">Добавить</UiButton>
 	</div>

@@ -13,6 +13,7 @@ Newest entry on top. Record only what was actually verified.
 - The «⋯» menu of a row follows the theme (the user: it was dark in the light theme): the card surface with the text, hover and separator tokens, so the red «Удалить» is readable too. `UiPopover` keeps its `floating` surface, nothing uses it now.
 - The «Для админа» footer of the admin catalogue drawer is gone with its note about a deleted entry (the user's word; the holders count and the status stay in the table). `AGENTS.md` got the rule that explanatory text in the interface is bad UI.
 - The segmented gauge of the start value between the bounds is gone from the catalogue entry card (the user's word: it reads as progress). The card is shared, so the player catalogue lost it too; «Минимум», «Старт» and «Максимум» stay.
+- The «N в пати» count is gone from the header of the admin members screen (the user's word: the filter chips have the counts); `AdminListHeader` takes `count` as optional, the exchanges screen still passes it.
 - The rows of the points table in Resources no longer open the profile on a click (the user's word); the «⋯» menu is the only way there.
 - The members table lost the «>» arrow and its column (the user's word: the row click and the «⋯» menu already open the profile).
 - Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files, no « · » left in `src/`. The app was not run, so no layout was looked at; rows of the lists are taller now.
