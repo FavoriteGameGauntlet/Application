@@ -116,7 +116,7 @@
 			"id": "table-shared-points",
 			"title": "Rebuild the shared points tab as in the artboard «Ресурсы: общие очки»: description in the row, a bar between the bounds.",
 			"priority": 12.06,
-			"status": "todo",
+			"status": "in_progress",
 			"evidence": ""
 		},
 		{
