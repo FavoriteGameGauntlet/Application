@@ -114,7 +114,13 @@ const menuOf = (entry: CatalogEntry): RowMenuItem[] =>
 
 store.showDeleted = false
 
-watch(() => store.showDeleted, store.loadAllCatalogs, { immediate: true })
+watch(
+	() => store.showDeleted,
+	() => store.loadCatalog(kind.value),
+	{
+		immediate: true,
+	},
+)
 </script>
 
 <template>
