@@ -15,7 +15,7 @@ import { useResourcesStore } from './resourcesStore'
 import { useToastStore } from './toastStore'
 
 export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
-	/** every kind is read at once, the tabs show how many each one has; undefined until it is read */
+	/** every kind is read at once, the pages show how many each one has; undefined until it is read */
 	const lists = ref<Partial<Record<CatalogKind, CatalogEntry[]>>>({})
 	const exchanges = ref<AdminExchange[]>([])
 	/** the switch «Показать удалённые» of the open list */

@@ -39,7 +39,11 @@ const items: NavItem[] = [
 ]
 
 const adminCatalogs: NavItem[] = [
-	{ label: 'Каталог', icon: 'book-open', name: RouteName.AdminCatalog },
+	{ label: 'Очки', icon: 'coins', name: RouteName.AdminCatalogPoints },
+	{ label: 'Общие очки', icon: 'users', name: RouteName.AdminCatalogShared },
+	{ label: 'Предметы', icon: 'hexagon', name: RouteName.AdminCatalogItems },
+	{ label: 'Перки', icon: 'star', name: RouteName.AdminCatalogPerks },
+	{ label: 'Эффекты', icon: 'sparkles', name: RouteName.AdminCatalogEffects },
 	{ label: 'Обмены', icon: 'arrow-left-right', name: RouteName.AdminExchanges },
 	{ label: 'Колесо', icon: 'refresh-cw', name: RouteName.AdminWheel },
 	{ label: 'Награды', icon: 'gift', name: RouteName.AdminRewards },

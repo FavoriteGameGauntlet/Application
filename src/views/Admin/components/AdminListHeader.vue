@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiCountBadge from '../../../components/ui/UiCountBadge.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiPageTitle from '../../../components/ui/UiPageTitle.vue'
 
 type Props = {
 	title: string
+	/** how many entries there are, shown as a chip after the title; a screen whose filters show the counts leaves it out */
+	count?: number
 	placeholder?: string
 	/** a list whose entries are not added by the admin has no «Добавить» */
 	noAdd?: boolean
@@ -20,6 +23,7 @@ const emit = defineEmits<{ add: [] }>()
 <template>
 	<div class="head">
 		<UiPageTitle>{{ title }}</UiPageTitle>
+		<UiCountBadge v-if="count !== undefined" :value="count" />
 		<div class="head__spacer"></div>
 		<UiButton v-if="!noAdd" icon="plus" @click="emit('add')">Добавить</UiButton>
 	</div>

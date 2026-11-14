@@ -126,6 +126,11 @@ const rows = computed(() =>
 	})),
 )
 
+/** the exchanges that are not deleted, so the number does not change with the switch «Показать удалённые» */
+const count = computed(
+	() => store.exchanges.filter((exchange) => !exchange.deleted).length,
+)
+
 const menuOf = (exchange: AdminExchange): RowMenuItem[] =>
 	exchange.deleted
 		? [
@@ -193,6 +198,7 @@ watch(
 		<AdminListHeader
 			v-model:query="query"
 			title="Обмены"
+			:count
 			placeholder="Найти обмен…"
 			@add="editing = {}"
 		>

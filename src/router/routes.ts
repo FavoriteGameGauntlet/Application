@@ -1,5 +1,9 @@
 import type { RouteRecordRaw } from 'vue-router'
-import AdminCatalogView from '../views/Admin/AdminCatalogView.vue'
+import AdminCatalogEffectsView from '../views/Admin/AdminCatalogEffectsView.vue'
+import AdminCatalogItemsView from '../views/Admin/AdminCatalogItemsView.vue'
+import AdminCatalogPerksView from '../views/Admin/AdminCatalogPerksView.vue'
+import AdminCatalogPointsView from '../views/Admin/AdminCatalogPointsView.vue'
+import AdminCatalogSharedView from '../views/Admin/AdminCatalogSharedView.vue'
 import AdminExchangesView from '../views/Admin/AdminExchangesView.vue'
 import AdminMembersView from '../views/Admin/AdminMembersView.vue'
 import AdminParametersView from '../views/Admin/AdminParametersView.vue'
@@ -87,9 +91,29 @@ export const routes: RouteRecordRaw[] = [
 				redirect: { name: RouteName.AdminExchanges },
 				children: [
 					{
-						path: 'catalog',
-						component: AdminCatalogView,
-						name: RouteName.AdminCatalog,
+						path: 'catalog/points',
+						component: AdminCatalogPointsView,
+						name: RouteName.AdminCatalogPoints,
+					},
+					{
+						path: 'catalog/shared',
+						component: AdminCatalogSharedView,
+						name: RouteName.AdminCatalogShared,
+					},
+					{
+						path: 'catalog/items',
+						component: AdminCatalogItemsView,
+						name: RouteName.AdminCatalogItems,
+					},
+					{
+						path: 'catalog/perks',
+						component: AdminCatalogPerksView,
+						name: RouteName.AdminCatalogPerks,
+					},
+					{
+						path: 'catalog/effects',
+						component: AdminCatalogEffectsView,
+						name: RouteName.AdminCatalogEffects,
 					},
 					{
 						path: 'exchanges',
