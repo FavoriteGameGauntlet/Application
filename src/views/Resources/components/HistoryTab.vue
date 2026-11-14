@@ -20,7 +20,7 @@ import {
 	today,
 } from '../../../utils/calendar'
 import JournalSourceLabel from '../../../components/JournalSourceLabel.vue'
-import UiBadge from '../../../components/ui/UiBadge.vue'
+import UiCountBadge from '../../../components/ui/UiCountBadge.vue'
 import { journalSourceGroups } from '../../../utils/journalSource'
 
 type FilterKey = 'user' | 'resource' | 'source' | 'period'
@@ -212,7 +212,7 @@ function showEntry(id: number) {
 			:options="spec.options"
 			:active="filters[spec.key] !== ALL"
 		/>
-		<UiBadge class="bar__count">{{ entries.length }}</UiBadge>
+		<UiCountBadge class="bar__count" :value="entries.length" />
 	</div>
 
 	<div ref="table" class="table" role="table" aria-label="Журнал">

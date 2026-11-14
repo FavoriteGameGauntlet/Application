@@ -14,8 +14,8 @@ import { changeRowsToForm, parseChangeRows } from '../../utils/formRows'
 import FormDialog from '../../components/FormDialog.vue'
 import { changeTone } from '../../components/catalogTable'
 import InlineAddRow from '../../components/InlineAddRow.vue'
-import UiBadge from '../../components/ui/UiBadge.vue'
 import UiButton from '../../components/ui/UiButton.vue'
+import UiCountBadge from '../../components/ui/UiCountBadge.vue'
 import UiInput from '../../components/ui/UiInput.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiRowMenu, { type RowMenuItem } from '../../components/ui/UiRowMenu.vue'
@@ -272,7 +272,7 @@ onMounted(() => store.load())
 						<span class="bar__label">{{
 							isChanges ? 'Пункты группы' : 'Игры группы'
 						}}</span>
-						<UiBadge>{{ foundEntries.length }}</UiBadge>
+						<UiCountBadge :value="foundEntries.length" />
 						<div class="bar__spacer"></div>
 						<div class="bar__search">
 							<UiInput

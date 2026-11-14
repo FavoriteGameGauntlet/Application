@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Member, UserStatus } from '../../api-facade/contracts'
 import UiBadge from '../../components/ui/UiBadge.vue'
+import UiCountBadge from '../../components/ui/UiCountBadge.vue'
 import UiChoiceChips from '../../components/ui/UiChoiceChips.vue'
 import UiInput from '../../components/ui/UiInput.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
@@ -77,7 +78,7 @@ onMounted(() => membersStore.load())
 	<div class="users">
 		<div class="head">
 			<UiPageTitle>Участники</UiPageTitle>
-			<UiBadge>{{ members.length }}</UiBadge>
+			<UiCountBadge :value="members.length" />
 		</div>
 
 		<div class="bar">

@@ -5,6 +5,7 @@ import type {
 	WishlistEntry,
 } from '../../../api-facade/contracts'
 import UiBadge from '../../../components/ui/UiBadge.vue'
+import UiCountBadge from '../../../components/ui/UiCountBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiIconButton from '../../../components/ui/UiIconButton.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
@@ -191,7 +192,7 @@ const onAdd = async () => {
 
 	<div class="bar">
 		<span class="bar__label">В списке желаемого</span>
-		<UiBadge>{{ games.length }}</UiBadge>
+		<UiCountBadge :value="games.length" />
 		<div class="bar__end">
 			<UiSwitch v-if="mine" v-model="showRemoved" label="Показать удалённые" />
 			<div class="bar__search">
