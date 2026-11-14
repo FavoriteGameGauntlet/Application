@@ -5,26 +5,19 @@ import type { ResourceKind } from '../../api-facade/contracts'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiTabs from '../../components/ui/UiTabs.vue'
 import { RouteName } from '../../router/routeNames'
-import { useResourcesStore } from '../../stores/resourcesStore'
 import HistoryTab from './components/HistoryTab.vue'
 import UserResourcesTab from './components/UserResourcesTab.vue'
 import PointsTab from './components/PointsTab.vue'
 import SharedPointsTab from './components/SharedPointsTab.vue'
 
-const resourcesStore = useResourcesStore()
-
-const tabs = computed(() => [
+const tabs = [
 	{ value: 'points', label: 'Очки' },
-	{
-		value: 'shared',
-		label: 'Общие очки',
-		count: resourcesStore.sharedTypes.length,
-	},
+	{ value: 'shared', label: 'Общие очки' },
 	{ value: 'items', label: 'Предметы' },
 	{ value: 'perks', label: 'Перки' },
 	{ value: 'effects', label: 'Эффекты' },
 	{ value: 'history', label: 'История' },
-])
+]
 
 const route = useRoute()
 const router = useRouter()
@@ -32,7 +25,7 @@ const router = useRouter()
 const tab = computed(() => {
 	const value = route.params.tab as string | undefined
 
-	return tabs.value.some((t) => t.value === value) ? value! : 'points'
+	return tabs.some((t) => t.value === value) ? value! : 'points'
 })
 
 const resourceKind = computed(() => tab.value as ResourceKind)
