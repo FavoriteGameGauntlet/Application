@@ -51,6 +51,11 @@ const entries = computed(() => entriesOf(view.value))
 
 const holdersHead = computed(() => catalogHolders[view.value])
 
+/** the unit forms of a point type are three tags with a prefix each, a line apiece */
+const stacksTags = computed(
+	() => view.value === 'points' || view.value === 'shared',
+)
+
 const heads = computed(() => [
 	...catalogHeads[view.value],
 	...(holdersHead.value ? [holdersHead.value] : []),
@@ -181,7 +186,11 @@ watch(() => store.showDeleted, store.loadAllCatalogs, { immediate: true })
 					}}</span>
 				</div>
 
-				<div class="cell cell--wrap" role="cell">
+				<div
+					class="cell cell--wrap"
+					:class="{ 'cell--stack': stacksTags }"
+					role="cell"
+				>
 					<span
 						v-for="(tag, i) in row.tags"
 						:key="i"
@@ -325,6 +334,11 @@ watch(() => store.showDeleted, store.loadAllCatalogs, { immediate: true })
 	display: flex;
 	flex-wrap: wrap;
 	gap: 6px;
+}
+
+.cell--stack {
+	flex-direction: column;
+	align-items: flex-start;
 }
 
 .name {
