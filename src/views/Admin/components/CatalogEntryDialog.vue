@@ -16,6 +16,7 @@ import FormDialog from '../../../components/FormDialog.vue'
 import { useAdminCatalogStore } from '../../../stores/adminCatalogStore'
 import { useToastStore } from '../../../stores/toastStore'
 import { formatSpanExact, parseSpan } from '../../../utils/format'
+import { itemConditionLabels } from '../../../utils/itemCondition'
 import {
 	itemEntriesToForm,
 	modifiersToForm,
@@ -57,20 +58,6 @@ const creates: Record<CatalogKind, string> = {
 	effects: 'Создать эффект',
 	perks: 'Создать перк',
 }
-
-const conditionLabels: Record<ItemCondition, { label: string; hint: string }> =
-	{
-		target_not_self: {
-			label: 'Не на себя',
-			hint: 'Цель — не тот, кто использует',
-		},
-		target_online: { label: 'Цель в сети', hint: 'Все цели в сети' },
-		target_offline: { label: 'Цель не в сети', hint: 'Все цели не в сети' },
-		holder_not_playing: {
-			label: 'Нет текущей игры',
-			hint: 'У того, кто использует, нет текущей игры',
-		},
-	}
 
 /** a chip per length that is asked for most; `custom` opens a line for the rest */
 const durationPresets = [
@@ -201,9 +188,9 @@ const sections = computed<FormSection[]>(() => {
 							key: 'conditions',
 							label: 'Условия',
 							type: 'chips',
-							options: (Object.keys(conditionLabels) as ItemCondition[]).map(
-								(c) => ({ value: c, ...conditionLabels[c] }),
-							),
+							options: (
+								Object.keys(itemConditionLabels) as ItemCondition[]
+							).map((c) => ({ value: c, ...itemConditionLabels[c] })),
 							addLabel: 'Условие',
 						},
 					],
