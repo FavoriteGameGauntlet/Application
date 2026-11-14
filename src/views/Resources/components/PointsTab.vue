@@ -189,7 +189,6 @@ watch(() => journalStore.revision, resourcesStore.loadStandings, {
 					role="row"
 					label="Действия с игроком"
 					:items="menuOf(row.standing.user.login)"
-					@click="openProfile(row.standing.user.login)"
 				>
 					<span class="num num--muted" role="cell">{{ row.place }}</span>
 					<span class="user" role="cell">
@@ -384,7 +383,6 @@ watch(() => journalStore.revision, resourcesStore.loadStandings, {
 .row--body {
 	min-height: 56px;
 	border-top: 1px solid var(--border-subtle);
-	cursor: pointer;
 }
 
 .row--body:not(.row--me):hover {
