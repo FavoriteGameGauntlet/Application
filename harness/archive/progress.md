@@ -1,5 +1,11 @@
 # Progress log archive
 
+## 2026-11-14 catalog-admin-drawer
+
+- Done in code, by the user's answers (the tabs show counts, so the store reads all four kinds at once; the shared points keep the column «Всего у игроков» as in the mockup, it shows the party balance): the admin catalog follows the artboard «Каталог: правка (админ)». A row shows the name with the description, the changes as tags (three at most and «+N»; the point types show their unit forms), the properties as pills and the holders. The actions are in the shared `ui/UiRowMenu` («⋯» on hover and on a right click); a click on the row opens `CatalogEntryDrawer` with `CatalogEntryCard` and the «Для админа» block. `CatalogTable.vue` is removed, the catalog screen no longer uses `AdminListHeader`. `ellipsis.svg` is taken from lucide-static 0.460.0, like the other icons.
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. The app was not run, so the screen was not looked at.
+- The feature stays `in_progress` until the user has looked at the screen.
+
 ## 2026-11-14 catalog-player-card
 
 - The user asked for every screen of the canvas «Каталог: просмотр и админка» (https://claude.ai/artifact/MoHKATGRjRXi6fEFcoXjmn). By the user's answers: many small PRs, one per screen (the old `tables-more-informative` is split into the `catalog-*` and `table-*` features); the rule captions under the tables of the mockup are not brought back (they stay in the `rules-ui-*` features); the admin wheel follows the mockup (groups as a side list).

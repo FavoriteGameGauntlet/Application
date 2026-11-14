@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import CurrentGameCard from '../../components/CurrentGameCard.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiSelect from '../../components/ui/UiSelect.vue'
 import UiTabs from '../../components/ui/UiTabs.vue'
 import { useMembersStore } from '../../stores/membersStore'
 import { useSessionStore } from '../../stores/sessionStore'
-import { useWishlistStore } from '../../stores/wishlistStore'
 import CompletedTab from './components/CompletedTab.vue'
-import UserWishlistTab from './components/UserWishlistTab.vue'
 import WishlistTab from './components/WishlistTab.vue'
 
 const tabs = [
@@ -20,7 +18,6 @@ const tabs = [
 
 const membersStore = useMembersStore()
 const sessionStore = useSessionStore()
-const wishlistStore = useWishlistStore()
 
 const tab = ref(tabs[0])
 
@@ -37,8 +34,6 @@ const isUserTab = computed(
 		tab.value === 'Списки желаемого игроков' ||
 		tab.value === 'Пройденные игроков',
 )
-
-onMounted(() => wishlistStore.loadMine())
 </script>
 
 <template>
@@ -61,9 +56,15 @@ onMounted(() => wishlistStore.loadMine())
 				</div>
 			</div>
 
-			<WishlistTab v-if="tab === 'Мой список желаемого'" />
-			<UserWishlistTab
+			<WishlistTab
+				v-if="tab === 'Мой список желаемого'"
+				key="mine"
+				:user="sessionStore.login"
+				mine
+			/>
+			<WishlistTab
 				v-else-if="tab === 'Списки желаемого игроков'"
+				key="others"
 				:user="selectedUser"
 			/>
 			<CompletedTab

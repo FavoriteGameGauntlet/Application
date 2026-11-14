@@ -102,7 +102,7 @@
 			"id": "table-wishlist",
 			"title": "Rebuild the wishlist table as in the artboard «Игры: вишлист»: «Кто добавил» column, rename in the row, actions in the «⋯» menu. The text stays «Список желаемого» and the delete keeps its restore.",
 			"priority": 12.04,
-			"status": "todo",
+			"status": "in_progress",
 			"evidence": ""
 		},
 		{
