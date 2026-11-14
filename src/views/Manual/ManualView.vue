@@ -323,7 +323,7 @@ onMounted(async () => {
 		</div>
 
 		<UiPageTitle>
-			{{ draft.kind === 'fix' ? 'Исправить запись' : 'Применить вручную' }}
+			{{ draft.kind === 'fix' ? 'Исправить запись' : 'Ручное изменение' }}
 		</UiPageTitle>
 
 		<div class="layout">

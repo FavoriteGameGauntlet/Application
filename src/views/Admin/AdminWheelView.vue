@@ -332,7 +332,9 @@ onMounted(() => store.load())
 								</div>
 
 								<div class="cell cell--wrap" role="cell">
-									<span v-if="entry.isManualChange" class="fact">вручную</span>
+									<span v-if="entry.isManualChange" class="fact"
+										>ручное изменение</span
+									>
 									<span v-if="!entry.shouldApplyToAll" class="fact"
 										>на выбор</span
 									>
