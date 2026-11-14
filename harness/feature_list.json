@@ -123,7 +123,7 @@
 			"id": "table-history",
 			"title": "Rebuild the history tab as in the artboard «Ресурсы: история»: filters as selects, rows grouped by day, who and through what, the fix link in the row.",
 			"priority": 12.07,
-			"status": "todo",
+			"status": "in_progress",
 			"evidence": ""
 		},
 		{

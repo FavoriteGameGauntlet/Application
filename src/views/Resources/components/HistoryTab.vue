@@ -1,24 +1,32 @@
 <script setup lang="ts">
+import { Temporal } from '@js-temporal/polyfill'
 import { computed, reactive, ref, useTemplateRef, watch } from 'vue'
 import type {
 	JournalEntry,
 	JournalQuery,
 	ResourceRef,
 } from '../../../api-facade/contracts'
-import { useClickOutside } from '../../../composables/useClickOutside'
 import UiBadge from '../../../components/ui/UiBadge.vue'
-import UiIcon from '../../../components/ui/UiIcon.vue'
-import UiIconButton from '../../../components/ui/UiIconButton.vue'
+import UiFilterSelect from '../../../components/ui/UiFilterSelect.vue'
+import UiRowMenu from '../../../components/ui/UiRowMenu.vue'
+import UiUserAvatar from '../../../components/ui/UiUserAvatar.vue'
 import { useJournalStore } from '../../../stores/journalStore'
 import { useManualStore } from '../../../stores/manualStore'
 import { useMembersStore } from '../../../stores/membersStore'
 import { useResourcesStore } from '../../../stores/resourcesStore'
-import { useSessionStore } from '../../../stores/sessionStore'
-import { formatJournalSource, formatMoment } from '../../../utils/format'
+import {
+	dayOf,
+	formatDay,
+	formatShortDay,
+	timeOf,
+	today,
+} from '../../../utils/calendar'
+import { formatJournalSource } from '../../../utils/format'
 import {
 	isManualEntry,
 	journalSourceGroups,
 } from '../../../utils/journalSource'
+import { plural } from '../../../utils/plural'
 
 type FilterKey = 'user' | 'resource' | 'source' | 'period'
 
@@ -33,7 +41,6 @@ const journalStore = useJournalStore()
 const membersStore = useMembersStore()
 const resourcesStore = useResourcesStore()
 const manualStore = useManualStore()
-const sessionStore = useSessionStore()
 
 const ALL = ''
 
@@ -49,11 +56,6 @@ const filters = reactive<Record<FilterKey, string>>({
 	source: ALL,
 	period: 'week',
 })
-
-const openFilter = ref<FilterKey>()
-const filtersPanel = useTemplateRef('filtersPanel')
-
-useClickOutside(filtersPanel, () => (openFilter.value = undefined))
 
 const specs = computed(() => [
 	{
@@ -94,18 +96,6 @@ const specs = computed(() => [
 	},
 ])
 
-const pills = computed(() =>
-	specs.value.map((spec) => {
-		const current = spec.options.find((o) => o.value === filters[spec.key])
-
-		return {
-			...spec,
-			current: current?.label,
-			active: spec.key !== 'period' && filters[spec.key] !== ALL,
-		}
-	}),
-)
-
 const entries = ref<JournalEntry[]>([])
 
 /** 'points:<id>' or 'effect' → the resource filter of the query */
@@ -139,162 +129,191 @@ watch(
 	{ immediate: true },
 )
 
-const pick = (key: FilterKey, value: string) => {
-	filters[key] = value
-	openFilter.value = undefined
+const countText = computed(() => {
+	const n = entries.value.length
+	const period = specs.value[3].options.find(
+		(o) => o.value === filters.period,
+	)?.label
+
+	return `${n} ${plural(n, ['запись', 'записи', 'записей'])} ${period}`
+})
+
+const dayTitle = (day: string) => {
+	const now = Temporal.PlainDate.from(today())
+
+	if (day === now.toString()) return 'Сегодня'
+	if (day === now.subtract({ days: 1 }).toString()) return 'Вчера'
+
+	return formatDay(day)
+}
+
+/** «+3 билета» is green, «−100 золота» red, the rest stays neutral */
+const toneOf = (text: string) =>
+	text.startsWith('+') ? 'plus' : text.startsWith('−') ? 'minus' : undefined
+
+/** the corrected entry is outside the period when it is not in the list */
+const fixOf = ({ correctsEntryId }: JournalEntry) => {
+	if (correctsEntryId === undefined) return undefined
+
+	const target = entries.value.find((e) => e.id === correctsEntryId)
+
+	return target
+		? {
+				id: target.id,
+				text: `Исправляет запись от ${formatShortDay(dayOf(target.at))}, ${timeOf(target.at)}`,
+			}
+		: { text: 'Исправляет более раннюю запись' }
+}
+
+const days = computed(() => {
+	const result: {
+		day: string
+		title: string
+		rows: ReturnType<typeof rowOf>[]
+	}[] = []
+
+	for (const entry of entries.value) {
+		const day = dayOf(entry.at)
+		let group = result.at(-1)
+
+		if (group?.day !== day) {
+			group = { day, title: dayTitle(day), rows: [] }
+			result.push(group)
+		}
+
+		group.rows.push(rowOf(entry))
+	}
+
+	return result
+})
+
+function rowOf(entry: JournalEntry) {
+	return {
+		entry,
+		time: timeOf(entry.at),
+		source: formatJournalSource(entry.source, entry.correctsEntryId),
+		fix: fixOf(entry),
+		changes: entry.changes.map((c) => ({ ...c, tone: toneOf(c.text) })),
+		menu: [
+			{
+				label: 'Исправить',
+				icon: 'pencil',
+				select: () => manualStore.startFix(entry),
+			},
+		],
+	}
+}
+
+const table = useTemplateRef<HTMLElement>('table')
+const highlighted = ref<number>()
+
+let unhighlight: ReturnType<typeof setTimeout> | undefined
+
+function showEntry(id: number) {
+	table.value
+		?.querySelector(`[data-entry="${id}"]`)
+		?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
+	highlighted.value = id
+	clearTimeout(unhighlight)
+	unhighlight = setTimeout(() => (highlighted.value = undefined), 2000)
 }
 </script>
 
 <template>
-	<div ref="filtersPanel" class="filters">
-		<div v-for="pill in pills" :key="pill.key" class="filter">
-			<div
-				class="pill"
-				:class="{ 'pill--active': pill.active }"
-				@click="openFilter = openFilter === pill.key ? undefined : pill.key"
-			>
-				<span class="pill__key">{{ pill.title }}</span>
-				<span class="pill__value">{{ pill.current }}</span>
-				<UiIcon name="chevron-down" :size="16" />
-			</div>
-
-			<div v-if="openFilter === pill.key" class="options">
-				<div
-					v-for="option in pill.options"
-					:key="option.value"
-					class="option"
-					:class="{ 'option--on': option.value === filters[pill.key] }"
-					@click="pick(pill.key, option.value)"
-				>
-					{{ option.label }}
-				</div>
-			</div>
-		</div>
+	<div class="bar">
+		<UiFilterSelect
+			v-for="spec in specs"
+			:key="spec.key"
+			v-model="filters[spec.key]"
+			:label="spec.title"
+			:options="spec.options"
+			:active="filters[spec.key] !== ALL"
+		/>
+		<span class="bar__count">{{ countText }}</span>
 	</div>
 
-	<div class="table">
-		<div class="table__row table__row--head">
-			<span>Когда</span>
-			<span>Кто и через что</span>
-			<span>Изменения</span>
-			<span></span>
+	<div ref="table" class="table" role="table" aria-label="Журнал">
+		<div class="row row--head" role="row">
+			<span role="columnheader">Время</span>
+			<span role="columnheader">Кто и через что</span>
+			<span role="columnheader">Изменения</span>
 		</div>
 
-		<div
-			v-for="entry in entries"
-			:key="entry.id"
-			class="table__row table__row--body"
-		>
-			<span class="table__time">{{ formatMoment(entry.at) }}</span>
-			<span class="table__who">
-				<span class="table__actor">{{ entry.actor }}</span>
-				<span class="table__source">{{
-					formatJournalSource(entry.source, entry.correctsEntryId)
-				}}</span>
-				<UiBadge v-if="isManualEntry(entry)" tone="info" dot>вручную</UiBadge>
-			</span>
-			<span class="table__changes">
-				<UiBadge
-					v-for="(change, i) in entry.changes"
-					:key="i"
-					:tone="change.login === sessionStore.login ? 'accent' : 'neutral'"
-				>
-					{{ change.login ? `${change.login}: ` : '' }}{{ change.text }}
-				</UiBadge>
-			</span>
-			<span class="table__fix">
-				<UiIconButton
-					icon="pencil"
-					size="sm"
-					label="Исправить"
-					@click="manualStore.startFix(entry)"
-				/>
-			</span>
-		</div>
+		<template v-for="group in days" :key="group.day">
+			<div class="day" role="row">
+				<span role="columnheader">{{ group.title }}</span>
+				<span class="day__count">{{ group.rows.length }}</span>
+			</div>
 
-		<div v-if="!entries.length" class="table__empty">
-			Под эти фильтры ничего нет.
-		</div>
+			<UiRowMenu
+				v-for="row in group.rows"
+				:key="row.entry.id"
+				class="row row--body"
+				:class="{ 'row--on': highlighted === row.entry.id }"
+				role="row"
+				:data-entry="row.entry.id"
+				label="Действия с записью"
+				:items="row.menu"
+			>
+				<span class="time" role="cell">{{ row.time }}</span>
+
+				<span class="col" role="cell">
+					<span class="who">
+						<UiUserAvatar
+							:name="row.entry.actor"
+							:color="membersStore.colorOf(row.entry.actor)"
+							:size="24"
+						/>
+						<span class="who__login">{{ row.entry.actor }}</span>
+						<UiBadge v-if="isManualEntry(row.entry)" tone="info" dot
+							>вручную</UiBadge
+						>
+					</span>
+					<span class="text">{{ row.source }}</span>
+					<button
+						v-if="row.fix?.id !== undefined"
+						class="fix fix--link"
+						type="button"
+						@click="showEntry(row.fix.id)"
+					>
+						{{ row.fix.text }}
+					</button>
+					<span v-else-if="row.fix" class="fix">{{ row.fix.text }}</span>
+				</span>
+
+				<span class="changes" role="cell">
+					<span
+						v-for="(change, i) in row.changes"
+						:key="i"
+						class="change"
+						:class="change.tone && `change--${change.tone}`"
+					>
+						<span v-if="change.login" class="change__who">{{
+							change.login
+						}}</span>
+						{{ change.text }}
+					</span>
+				</span>
+			</UiRowMenu>
+		</template>
+
+		<div v-if="!entries.length" class="empty">Под эти фильтры ничего нет.</div>
 	</div>
 </template>
 
 <style scoped>
-.filters {
-	position: relative;
-	z-index: 3;
+.bar {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 8px;
-}
-
-.filter {
-	position: relative;
-}
-
-.pill {
-	display: flex;
+	gap: 12px;
 	align-items: center;
-	gap: 6px;
-	height: 32px;
-	padding: 0 10px 0 14px;
-	font: 500 13px / 1 var(--font-body);
-	color: var(--text-body);
-	background: var(--surface-card);
-	border: var(--border-width) solid var(--border-default);
-	border-radius: var(--radius-pill);
-	cursor: pointer;
 }
 
-.pill:hover {
-	background: var(--surface-sunken);
-}
-
-.pill--active {
-	border-color: var(--border-strong);
-}
-
-.pill__key {
+.bar__count {
+	margin-left: auto;
+	font: var(--type-caption);
 	color: var(--text-muted);
-}
-
-.pill__value {
-	font-weight: 600;
-	color: var(--text-strong);
-}
-
-.options {
-	position: absolute;
-	top: 38px;
-	left: 0;
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
-	min-width: 180px;
-	padding: 4px;
-	background: var(--surface-card);
-	border: 1px solid var(--border-subtle);
-	border-radius: var(--radius-md);
-	box-shadow: var(--shadow-3);
-}
-
-.option {
-	display: flex;
-	align-items: center;
-	height: 36px;
-	padding: 0 12px;
-	font: var(--type-body-sm);
-	color: var(--text-strong);
-	border-radius: var(--radius-sm);
-	cursor: pointer;
-}
-
-.option:hover,
-.option--on {
-	background: var(--surface-sunken);
-}
-
-.option--on {
-	font-weight: 600;
 }
 
 .table {
@@ -305,15 +324,16 @@ const pick = (key: FilterKey, value: string) => {
 	box-shadow: var(--shadow-1);
 }
 
-.table__row {
+.row {
 	display: grid;
-	grid-template-columns: 120px minmax(0, 1fr) minmax(0, 1.5fr) 32px;
+	grid-template-columns: 56px minmax(0, 1.05fr) minmax(0, 1.7fr);
 	gap: 16px;
 	align-items: center;
+	box-sizing: border-box;
+	padding: 12px 60px 12px 20px;
 }
 
-.table__row--head {
-	padding: 12px 16px;
+.row--head {
 	font: var(--type-label);
 	letter-spacing: var(--tracking-label);
 	text-transform: uppercase;
@@ -321,50 +341,126 @@ const pick = (key: FilterKey, value: string) => {
 	background: var(--surface-sunken);
 }
 
-.table__row--body {
-	padding: 6px 16px;
-	font: var(--type-body-sm);
+.row--body {
+	min-height: 72px;
 	border-top: 1px solid var(--border-subtle);
 }
 
-.table__row--body:hover {
+.row--body:hover,
+.row--on {
 	background: var(--surface-sunken);
 }
 
-.table__time {
+.row--on::before {
+	position: absolute;
+	top: 16px;
+	bottom: 16px;
+	left: 0;
+	width: 3px;
+	content: '';
+	background: var(--accent);
+	border-radius: 2px;
+}
+
+.day {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+	padding: 10px 20px;
+	font: var(--type-label);
+	letter-spacing: var(--tracking-label);
+	text-transform: uppercase;
+	color: var(--text-muted);
+	background: var(--surface-sunken);
+	border-top: 1px solid var(--border-subtle);
+}
+
+.day__count {
+	font: 500 14px / 1.2 var(--font-mono);
+	letter-spacing: 0;
+}
+
+.time {
+	font: 500 14px / 1.2 var(--font-mono);
+	font-variant-numeric: tabular-nums;
+	color: var(--text-muted);
+}
+
+.col {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+}
+
+.who {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+
+.who__login {
+	font: 600 15px / 1.35 var(--font-body);
+	color: var(--text-strong);
+}
+
+.text,
+.fix {
 	font: var(--type-caption);
 	color: var(--text-muted);
 }
 
-.table__who {
+.fix {
+	padding: 0;
+	text-align: left;
+	color: var(--info-text);
+	background: none;
+	border: 0;
+}
+
+.fix--link {
+	cursor: pointer;
+}
+
+.fix--link:hover {
+	text-decoration: underline;
+}
+
+.changes {
 	display: flex;
 	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.change {
+	display: inline-flex;
+	gap: 6px;
 	align-items: center;
-	gap: 8px;
+	height: 26px;
+	padding: 0 10px;
+	font: 500 12px / 1 var(--font-body);
+	white-space: nowrap;
+	color: var(--text-body);
+	background: var(--surface-sunken);
+	border-radius: var(--radius-pill);
 }
 
-.table__actor {
-	font-weight: 600;
-	color: var(--text-strong);
+.change--plus {
+	color: var(--success-text);
+	background: var(--success-soft);
 }
 
-.table__source {
+.change--minus {
+	color: var(--danger-text);
+	background: var(--danger-soft);
+}
+
+.change__who {
 	color: var(--text-muted);
 }
 
-.table__changes {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 4px;
-}
-
-.table__fix {
-	display: flex;
-	justify-content: flex-end;
-}
-
-.table__empty {
-	padding: 24px 16px;
+.empty {
+	padding: 20px;
 	font: var(--type-body-sm);
 	color: var(--text-muted);
 	border-top: 1px solid var(--border-subtle);
