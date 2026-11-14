@@ -109,7 +109,7 @@
 			"id": "table-points",
 			"title": "Rebuild the points tab as in the artboard «Ресурсы: очки»: point types on the left with the user's place, a ranking with place, share of the leader and the difference to the user.",
 			"priority": 12.05,
-			"status": "todo",
+			"status": "in_progress",
 			"evidence": ""
 		},
 		{

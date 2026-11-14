@@ -181,9 +181,10 @@ export type PointType = {
 	maximum: number | null
 }
 
-export type PointsLeaderboard = {
-	typeId: number
-	rows: { user: UserRef; value: number }[]
+/** the points of one member by the id of the point type; a missing type is 0 */
+export type PointsStanding = {
+	user: UserRef
+	points: Record<number, number>
 }
 
 /** one copy of an item, a user can hold several copies of the same item */
@@ -843,8 +844,8 @@ export type Api = {
 		 * PATCH {party}/points/party/types/{id}
 		 */
 		sharedPoints: () => Promise<Record<number, number>>
-		/** Backend: GET {party}/points/users (sorted by the client) */
-		leaderboard: (typeId: number) => Promise<PointsLeaderboard>
+		/** Backend: GET {party}/points/users */
+		standings: () => Promise<PointsStanding[]>
 		/**
 		 * Backend: GET {party}/points/users/{login}, GET {party}/items/{login},
 		 * GET {party}/perks/{login}, GET {party}/effects/{login}

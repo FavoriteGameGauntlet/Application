@@ -138,7 +138,7 @@ export const resources: Api['resources'] = {
 		return Object.fromEntries(points.map((p) => [p.pointType.id, p.value]))
 	},
 
-	leaderboard: async (typeId) => {
+	standings: async () => {
 		const path = await partyPath()
 		const [members, { body: users }] = await Promise.all([
 			getMembers(),
@@ -147,15 +147,10 @@ export const resources: Api['resources'] = {
 			),
 		])
 
-		return {
-			typeId,
-			rows: users
-				.map(({ login, points }) => ({
-					user: userRefOf(members, login),
-					value: points.find((p) => p.pointType.id === typeId)?.value ?? 0,
-				}))
-				.sort((a, b) => b.value - a.value),
-		}
+		return users.map(({ login, points }) => ({
+			user: userRefOf(members, login),
+			points: Object.fromEntries(points.map((p) => [p.pointType.id, p.value])),
+		}))
 	},
 
 	user: async (login) => {
