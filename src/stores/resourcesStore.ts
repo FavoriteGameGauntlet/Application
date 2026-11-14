@@ -7,7 +7,7 @@ import type {
 	ItemUse,
 	Login,
 	UserResources,
-	PointsLeaderboard,
+	PointsStanding,
 	PointType,
 	ResourceKind,
 	ResourceSummary,
@@ -20,12 +20,14 @@ import { useToastStore } from './toastStore'
 export const useResourcesStore = defineStore(StoreName.Resources, () => {
 	/** both personal and shared types */
 	const pointTypes = ref<PointType[]>([])
-	const personalTypes = computed(() => pointTypes.value.filter((t) => !t.isShared))
+	const personalTypes = computed(() =>
+		pointTypes.value.filter((t) => !t.isShared),
+	)
 	const sharedTypes = computed(() => pointTypes.value.filter((t) => t.isShared))
 	/** by the id of the shared point type */
 	const sharedPoints = ref<Record<number, number>>({})
 	const byUser = ref<Record<Login, UserResources>>({})
-	const leaderboards = ref<Record<number, PointsLeaderboard>>({})
+	const standings = ref<PointsStanding[]>([])
 	const summaries = ref<Partial<Record<ResourceKind, ResourceSummary[]>>>({})
 	const catalogs = ref<Partial<Record<ResourceKind, CatalogOption[]>>>({})
 	const catalogEntries = ref<Partial<Record<ResourceKind, CatalogEntry[]>>>({})
@@ -44,8 +46,8 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 
 	const loadMine = () => loadUser(useSessionStore().login)
 
-	const loadLeaderboard = async (typeId: number) => {
-		leaderboards.value[typeId] = await api.resources.leaderboard(typeId)
+	const loadStandings = async () => {
+		standings.value = await api.resources.standings()
 	}
 
 	const loadSummary = async (kind: ResourceKind) => {
@@ -60,7 +62,7 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 		catalogEntries.value[kind] = await api.resources.catalogEntries(kind)
 	}
 
-	const fetchHistory =(login: Login, kind: ResourceKind, id: number) =>
+	const fetchHistory = (login: Login, kind: ResourceKind, id: number) =>
 		api.resources.history(login, kind, id, 4)
 
 	const useItem = async (item: { id: number; name: string }, use?: ItemUse) => {
@@ -95,7 +97,7 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 		sharedTypes,
 		sharedPoints,
 		byUser,
-		leaderboards,
+		standings,
 		summaries,
 		catalogs,
 		catalogEntries,
@@ -103,7 +105,7 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 		loadSharedPoints,
 		loadUser,
 		loadMine,
-		loadLeaderboard,
+		loadStandings,
 		loadSummary,
 		loadCatalog,
 		loadCatalogEntries,
