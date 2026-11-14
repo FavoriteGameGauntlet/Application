@@ -25,7 +25,7 @@ export const catalogViews: { value: CatalogView; label: string }[] = [
 export const changeTone = (amount: number): CatalogTone =>
 	amount > 0 ? 'plus' : amount < 0 ? 'minus' : 'plain'
 
-const pointsHeads = ['Название', 'Единицы в журнале', 'Границы и старт']
+const pointsHeads = ['Название', 'Единицы в журнале', 'Параметры']
 
 /** the column titles of the admin table, the name first */
 export const catalogHeads: Record<CatalogView, string[]> = {
@@ -85,12 +85,18 @@ export const catalogTags = (
 export const catalogFacts = (view: CatalogView, entry: CatalogEntry) => {
 	switch (view) {
 		case 'points':
-		case 'shared':
+		case 'shared': {
+			const minimum = entry.minimum ?? null
+			const maximum = entry.maximum ?? null
+			const hasBounds = minimum !== null || maximum !== null
+
 			return [
-				formatBounds(entry.minimum ?? null, entry.maximum ?? null),
-				`старт ${entry.startValue ?? 0}`,
+				// «Граница: без границ» would repeat itself
+				`Граница: ${hasBounds ? formatBounds(minimum, maximum) : 'нет'}`,
+				`Старт: ${entry.startValue ?? 0}`,
 				...(entry.isPublic === false ? ['только админы'] : []),
 			]
+		}
 		case 'items':
 			return [
 				`×${entry.usesMax ?? 1}`,

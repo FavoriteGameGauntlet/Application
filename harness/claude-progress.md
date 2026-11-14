@@ -8,6 +8,7 @@ Newest entry on top. Record only what was actually verified.
 - The «вручную» badge is gone from the history rows and from the fix card of the manual screen, with `isManualEntry` (the kind line already says «ручное изменение» or «исправление»); the source filter option is «ручное изменение» now (the user's words).
 - The history filter «Ресурс» picks a kind (очки, предметы, перки, эффекты) instead of a single point type (the user's word: a list of single entities would be hundreds of options); the query sends `resource[kind]` without an id. Not checked against the API documentation.
 - The admin catalogue column «Единицы в журнале» shows the three forms of a unit as three tags (1, 2–4, 5 and more) instead of one tag joined by « / » (the user's word: they did not fit). No other joined line with «/» or «|» is left in the UI.
+- The unit tags of the admin catalogue carry the prefixes «1: », «2-4: », «5+: » and stand a line apiece; the column «Границы и старт» is «Параметры» now (the name is my choice, the user gave none) with the facts «Граница: …» (or «нет») and «Старт: …».
 - The rows of the points table in Resources no longer open the profile on a click (the user's word); the «⋯» menu is the only way there.
 - The members table lost the «>» arrow and its column (the user's word: the row click and the «⋯» menu already open the profile).
 - Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files, no « · » left in `src/`. The app was not run, so no layout was looked at; rows of the lists are taller now.
