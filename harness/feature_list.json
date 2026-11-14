@@ -130,7 +130,7 @@
 			"id": "table-admin-exchanges",
 			"title": "Rebuild the admin exchanges table as in the artboard «Админ: обмены»: search, show deleted, both sides with the «игрок выбирает» flags, the «⋯» menu.",
 			"priority": 12.08,
-			"status": "todo",
+			"status": "in_progress",
 			"evidence": ""
 		},
 		{
