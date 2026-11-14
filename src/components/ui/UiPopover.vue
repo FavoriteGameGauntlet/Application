@@ -7,9 +7,11 @@ type Props = {
 	anchor: HTMLElement | null
 	/** the panel is at least as wide as the anchor and at least this wide */
 	minWidth?: number
+	/** `floating` is the dark surface of menus */
+	surface?: 'card' | 'floating'
 }
 
-const { open, anchor, minWidth = 0 } = defineProps<Props>()
+const { open, anchor, minWidth = 0, surface = 'card' } = defineProps<Props>()
 
 const emit = defineEmits<{ close: [] }>()
 
@@ -122,6 +124,7 @@ onBeforeUnmount(unlisten)
 			v-if="open"
 			ref="panel"
 			class="ui-popover"
+			:class="`ui-popover--${surface}`"
 			:style
 			@keydown="onPanelKeydown"
 		>
@@ -143,5 +146,10 @@ onBeforeUnmount(unlisten)
 	border: var(--border-width) solid var(--border-default);
 	border-radius: var(--radius-md);
 	box-shadow: var(--shadow-3);
+}
+
+.ui-popover--floating {
+	background: var(--surface-floating);
+	border-color: var(--border-floating);
 }
 </style>

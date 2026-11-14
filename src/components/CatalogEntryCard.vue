@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import type { CatalogEntry, ItemEntryRow } from '../api-facade/contracts'
 import { formatSpan } from '../utils/format'
 import { itemConditionLabels } from '../utils/itemCondition'
-import type { CatalogView } from './catalogTable'
+import { type CatalogView, changeTone } from './catalogTable'
 import UiBadge from './ui/UiBadge.vue'
 import UiIcon from './ui/UiIcon.vue'
 
@@ -12,21 +12,16 @@ type Props = {
 	entry: CatalogEntry
 }
 
-type Tone = 'plus' | 'minus' | 'plain'
-
 const { view, entry } = defineProps<Props>()
 
 const GAUGE_SEGMENTS = 24
-
-const toneOf = (amount: number): Tone =>
-	amount > 0 ? 'plus' : amount < 0 ? 'minus' : 'plain'
 
 /** `texts[i]` is the text the facade built for `rows[i]` */
 const toLines = (rows: ItemEntryRow[], texts: string[]) =>
 	rows.map((row, i) => ({
 		who: row.who === 'chosen' ? 'Цель' : 'Владелец',
 		text: texts[i] ?? '',
-		tone: row.kind === 'user-item-transfer' ? 'plain' : toneOf(row.amount),
+		tone: row.kind === 'user-item-transfer' ? 'plain' : changeTone(row.amount),
 	}))
 
 const icon = computed(
@@ -63,7 +58,7 @@ const isPoints = computed(() => view === 'points' || view === 'shared')
 const modifiers = computed(() =>
 	(entry.modifiers ?? []).map((m, i) => ({
 		text: entry.changes?.[i] ?? '',
-		tone: toneOf(m.amount),
+		tone: changeTone(m.amount),
 	})),
 )
 

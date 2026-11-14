@@ -4,11 +4,10 @@ import type { CatalogEntry } from '../../api-facade/contracts'
 import CatalogEntryCard from '../../components/CatalogEntryCard.vue'
 import {
 	type CatalogView,
-	catalogCells,
 	catalogKindOf,
 	catalogSummary,
 	catalogViews,
-	filterCatalogRows,
+	filterCatalogEntries,
 } from '../../components/catalogTable'
 import UiInput from '../../components/ui/UiInput.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
@@ -48,14 +47,10 @@ const tabs = computed(() =>
 const entries = computed(() => entriesOf(view.value))
 
 const rows = computed(() =>
-	filterCatalogRows(
-		(entries.value ?? []).map((entry) => ({
-			entry,
-			...catalogCells(view.value, entry),
-			...catalogSummary(view.value, entry),
-		})),
-		query.value,
-	),
+	filterCatalogEntries(entries.value ?? [], query.value).map((entry) => ({
+		entry,
+		...catalogSummary(view.value, entry),
+	})),
 )
 
 const current = computed(
