@@ -1,18 +1,72 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
+import type { PointType } from '../../../api-facade/contracts'
+import UiRowMenu, {
+	type RowMenuItem,
+} from '../../../components/ui/UiRowMenu.vue'
 import { useJournalStore } from '../../../stores/journalStore'
+import { useManualStore } from '../../../stores/manualStore'
 import { useResourcesStore } from '../../../stores/resourcesStore'
+import { useSessionStore } from '../../../stores/sessionStore'
 import { formatBounds } from '../../../utils/format'
+import { plural } from '../../../utils/plural'
 
 const resourcesStore = useResourcesStore()
+const sessionStore = useSessionStore()
 const journalStore = useJournalStore()
+const manualStore = useManualStore()
+
+const formatValue = (n: number) =>
+	`${n < 0 ? '−' : ''}${Math.abs(n).toLocaleString('ru-RU')}`
+
+/** a bar needs both ends; an open side is written out as text */
+const meterOf = (type: PointType, value: number) => {
+	const { minimum, maximum } = type
+	if (minimum === null || maximum === null || maximum <= minimum) {
+		return undefined
+	}
+
+	const share = Math.min(
+		Math.max((value - minimum) / (maximum - minimum), 0),
+		1,
+	)
+
+	return {
+		width: `${share * 100}%`,
+		minimum: formatValue(minimum),
+		maximum: formatValue(maximum),
+		label: `${formatValue(value)} в диапазоне от ${formatValue(minimum)} до ${formatValue(maximum)}`,
+	}
+}
 
 const rows = computed(() =>
-	resourcesStore.sharedTypes.map((type) => ({
-		type,
-		value: resourcesStore.sharedPoints[type.id] ?? 0,
-		bounds: formatBounds(type.minimum, type.maximum),
-	})),
+	resourcesStore.sharedTypes.map((type) => {
+		const value = resourcesStore.sharedPoints[type.id] ?? 0
+
+		return {
+			type,
+			value: formatValue(value),
+			unit: plural(value, [
+				type.unitForms.one,
+				type.unitForms.several,
+				type.unitForms.many,
+			]),
+			meter: meterOf(type, value),
+			bounds: formatBounds(type.minimum, type.maximum),
+		}
+	}),
+)
+
+const menu = computed<RowMenuItem[]>(() =>
+	sessionStore.isAdmin
+		? [
+				{
+					label: 'Изменить вручную',
+					icon: 'pencil',
+					select: () => manualStore.startFree(),
+				},
+			]
+		: [],
 )
 
 watch(
@@ -25,27 +79,51 @@ watch(
 </script>
 
 <template>
-	<div class="table">
-		<div class="table__row table__row--head">
-			<span>Тип</span>
-			<span>Границы</span>
-			<span class="table__right">Значение</span>
+	<div class="table" role="table" aria-label="Общие очки пати">
+		<div class="row row--head" role="row">
+			<span role="columnheader">Тип</span>
+			<span role="columnheader">Где значение между границами</span>
+			<span role="columnheader" class="right">Сейчас</span>
 		</div>
 
-		<div
+		<UiRowMenu
 			v-for="row in rows"
 			:key="row.type.id"
-			class="table__row table__row--body"
+			class="row row--body"
+			role="row"
+			:label="
+				sessionStore.isAdmin
+					? 'Действия с общими очками'
+					: 'Общие очки меняет админ ручной формой'
+			"
+			:items="menu"
+			:disabled="!menu.length"
 		>
-			<span class="type">
-				<span class="type__name">{{ row.type.name }}</span>
-				<span class="type__text">{{ row.type.description }}</span>
+			<span class="col" role="cell">
+				<span class="name">{{ row.type.name }}</span>
+				<span v-if="row.type.description" class="text">{{
+					row.type.description
+				}}</span>
 			</span>
-			<span class="table__bounds">{{ row.bounds }}</span>
-			<span class="table__value">{{ row.value }}</span>
-		</div>
 
-		<div v-if="!rows.length" class="table__empty">В пати нет общих очков.</div>
+			<span v-if="row.meter" class="col col--meter" role="cell">
+				<span class="meter" role="img" :aria-label="row.meter.label"
+					><i class="meter__fill" :style="{ width: row.meter.width }"></i
+				></span>
+				<span class="ends">
+					<span>{{ row.meter.minimum }}</span>
+					<span>{{ row.meter.maximum }}</span>
+				</span>
+			</span>
+			<span v-else class="bounds" role="cell">{{ row.bounds }}</span>
+
+			<span class="col col--value" role="cell">
+				<span class="value">{{ row.value }}</span>
+				<span class="text">{{ row.unit }}</span>
+			</span>
+		</UiRowMenu>
+
+		<div v-if="!rows.length" class="empty">В пати нет общих очков.</div>
 	</div>
 </template>
 
@@ -58,64 +136,95 @@ watch(
 	box-shadow: var(--shadow-1);
 }
 
-.table__row {
+.row {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) 160px 140px;
-	gap: 16px;
+	grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.6fr) 110px;
+	gap: 24px;
 	align-items: center;
+	box-sizing: border-box;
+	padding: 12px 60px 12px 20px;
 }
 
-.table__row--head {
-	padding: 12px 16px;
+.row--head {
 	font: var(--type-label);
 	letter-spacing: var(--tracking-label);
 	text-transform: uppercase;
 	color: var(--text-muted);
+	white-space: nowrap;
 	background: var(--surface-sunken);
 }
 
-.table__right,
-.table__value {
-	text-align: right;
-}
-
-.table__row--body {
-	min-height: 56px;
-	padding: 8px 16px;
+.row--body {
+	min-height: 84px;
 	border-top: 1px solid var(--border-subtle);
 }
 
-.type {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
+.right {
+	text-align: right;
 }
 
-.type__name {
-	font: 600 15px / 1.45 var(--font-body);
+.col {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+}
+
+.col--meter {
+	gap: 8px;
+}
+
+.col--value {
+	align-items: flex-end;
+}
+
+.name {
+	font: 600 15px / 1.35 var(--font-body);
 	color: var(--text-strong);
 }
 
-.type__text {
+.text {
 	font: var(--type-caption);
 	color: var(--text-muted);
 }
 
-.table__bounds {
+.meter {
+	display: block;
+	height: 8px;
+	overflow: hidden;
+	background: var(--border-subtle);
+	border-radius: 4px;
+}
+
+.meter__fill {
+	display: block;
+	height: 100%;
+	background: var(--accent);
+	border-radius: 4px;
+}
+
+.ends {
+	display: flex;
+	justify-content: space-between;
+	font: 500 13px / 1 var(--font-mono);
+	font-variant-numeric: tabular-nums;
+	color: var(--text-muted);
+}
+
+.bounds {
 	font: var(--type-body-sm);
 	color: var(--text-muted);
 }
 
-.table__value {
-	font: 700 15px / 1 var(--font-mono);
+.value {
+	font: 600 20px / 1 var(--font-mono);
 	font-variant-numeric: tabular-nums;
 	color: var(--text-strong);
 }
 
-.table__empty {
-	padding: 24px 16px;
-	font: var(--type-body-sm);
+.empty {
+	padding: 20px;
 	color: var(--text-muted);
-	text-align: center;
+	border-top: 1px solid var(--border-subtle);
 }
 </style>

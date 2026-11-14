@@ -1,5 +1,11 @@
 # Progress log archive
 
+## 2026-11-14 table-completed
+
+- Done in code, by the user's answers (the four tabs and the player picker stay; the state words and tones stay as before; the total time and the average rating count the rows left after the search and the chips): the completed games table follows the artboard «Игры: пройденные». Search by name, state chips with counts, the review or «Отзыва пока нет» under the name, the period with short months and the number of days (`formatShortDay`, `daysBetween` in `utils/calendar.ts`), rating pips. «Отзыв» and «Оценить» moved into the `ui/UiRowMenu` of the row; another player's game without a rating has no menu.
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. The app was not run, so the screen was not looked at.
+- The feature stays `in_progress` until the user has looked at the screen.
+
 ## 2026-11-14 table-users
 
 - Done in code, by the user's answers (the row gets the «⋯» menu with «Открыть профиль»; the chips show counts through an optional `count` in `ui/UiChoiceChips`; the hint under the table is left out): the members table follows the artboard «Участники». Search by name and login, status chips with counts over the whole party, the note on the sort, the played time as «Ч ч ММ м» with a bar of the share of the leader, a chevron at the end. The status tones follow the mockup (paused is `info`, offline `neutral`), so the player profile changes too.
