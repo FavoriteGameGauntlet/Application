@@ -51,7 +51,7 @@ const entries = computed(() => entriesOf(view.value))
 
 const holdersHead = computed(() => catalogHolders[view.value])
 
-/** the unit forms of a point type are three tags with a prefix each, a line apiece */
+/** the unit forms and the facts of a point type carry a prefix each, a line apiece */
 const stacksTags = computed(
 	() => view.value === 'points' || view.value === 'shared',
 )
@@ -202,7 +202,11 @@ watch(() => store.showDeleted, store.loadAllCatalogs, { immediate: true })
 					<span v-if="!row.tags.length" class="muted">Очки не меняет</span>
 				</div>
 
-				<div class="cell cell--wrap" role="cell">
+				<div
+					class="cell cell--wrap"
+					:class="{ 'cell--stack': stacksTags }"
+					role="cell"
+				>
 					<span v-for="fact in row.facts" :key="fact" class="fact">{{
 						fact
 					}}</span>
@@ -265,7 +269,8 @@ watch(() => store.showDeleted, store.loadAllCatalogs, { immediate: true })
 }
 
 .table {
-	--columns: minmax(0, 1.2fr) minmax(0, 1.35fr) minmax(0, 1.35fr);
+	/* the name takes what the fixed columns leave, so it is never narrower than they are */
+	--columns: minmax(0, 1fr) 240px 200px;
 
 	overflow: hidden;
 	background: var(--surface-card);
@@ -275,7 +280,7 @@ watch(() => store.showDeleted, store.loadAllCatalogs, { immediate: true })
 }
 
 .table--holders {
-	--columns: minmax(0, 1.15fr) minmax(0, 1.25fr) minmax(0, 1.3fr) 92px;
+	--columns: minmax(0, 1fr) 240px 200px 92px;
 }
 
 /* 60px on the right belong to the «⋯» button */
