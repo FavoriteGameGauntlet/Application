@@ -56,7 +56,6 @@ function pick(item: RowMenuItem) {
 			:open="isOpen"
 			:anchor="kebab"
 			:min-width="212"
-			surface="floating"
 			@close="isOpen = false"
 		>
 			<div role="menu" :aria-label="label" @click.stop>
@@ -131,7 +130,7 @@ function pick(item: RowMenuItem) {
 	padding: 0 12px;
 	font: 600 14px / 1 var(--font-body);
 	text-align: left;
-	color: var(--text-on-floating);
+	color: var(--text-strong);
 	background: transparent;
 	border: 0;
 	border-radius: var(--radius-sm);
@@ -140,7 +139,7 @@ function pick(item: RowMenuItem) {
 
 .ui-row-menu__item:hover,
 .ui-row-menu__item:focus-visible {
-	background: var(--navy-600);
+	background: var(--surface-sunken);
 }
 
 .ui-row-menu__item--danger {
@@ -150,6 +149,6 @@ function pick(item: RowMenuItem) {
 .ui-row-menu__sep {
 	height: 1px;
 	margin: 6px 4px;
-	background: var(--border-floating);
+	background: var(--border-default);
 }
 </style>
