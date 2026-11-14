@@ -72,6 +72,13 @@ export const dayOf = (iso: ISODate): Day =>
 		.toPlainDate()
 		.toString()
 
+/** «09:05»: the local time of a moment of the backend */
+export const timeOf = (iso: ISODate) =>
+	Temporal.Instant.from(iso)
+		.toZonedDateTimeISO(Temporal.Now.timeZoneId())
+		.toPlainTime()
+		.toString({ smallestUnit: 'minute' })
+
 /** the first moment of the day in the local time zone */
 export const startOfDayIso = (day: Day): ISODate =>
 	Temporal.PlainDate.from(day)
