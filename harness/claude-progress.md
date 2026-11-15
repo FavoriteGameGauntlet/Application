@@ -14,7 +14,7 @@ Newest entry on top. Record only what was actually verified.
 - Not done, by the user's word (errors are reworked later): `WHEEL_SPIN_COOLDOWN` and `NOT_ENOUGH_AVAILABLE_WHEEL_EFFECTS` show the server message as it comes.
 - Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files, a script over group sizes 1 to 90 found no mismatch at the start and at the landing of the reel. The app was run by the user: the tape movement. Not looked at since the last changes: the loading state, the tickets, the apply and the clear of a spin against the backend.
 - After a change of both the script and the scoped style of a component the dev server can keep serving the old CSS (the cards sat shifted by the missing `left`); a restart of `tauri dev` fixes it, the code is not at fault.
-- The feature stays `in_progress` until the user has looked at the tickets and the loading.
+- Checked by the user (said in chat, 2026-11-16), so the feature is `done`.
 
 ## 2026-11-15 wheel-tape
 
@@ -48,7 +48,7 @@ Newest entry on top. Record only what was actually verified.
 - The rows of the points table in Resources no longer open the profile on a click (the user's word); the «⋯» menu is the only way there.
 - The members table lost the «>» arrow and its column (the user's word: the row click and the «⋯» menu already open the profile).
 - Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files, no « · » left in `src/`. The app was not run, so no layout was looked at; rows of the lists are taller now.
-- The feature stays `in_progress` until the user has looked at the screens. No PR yet, by the user's word: the branch also holds `points-diff-column-title`.
+- Marked `done` on 2026-11-16 by the user's word, with the new rule that a check only the user can make does not hold the status back; the screens were not looked at by the agent. No PR yet, by the user's word: the branch also holds `points-diff-column-title`.
 
 ## Open
 

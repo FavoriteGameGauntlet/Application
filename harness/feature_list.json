@@ -51,10 +51,10 @@
 		},
 		{
 			"id": "catalog-to-admin-panel",
-			"title": "Move the catalog editing into the admin panel. The user's words: move the catalog editing into the admin panel. Today the catalog is a route of its own (RouteName.Catalog, views/Catalog/CatalogView.vue, the «Каталог» item in AppSidebar and an entry in composables/useTabs.ts), and the admin panel (routes under admin with meta.admin, its own sidebar) holds exchanges, wheel, rewards, members and parameters. Open: what happens to the «Каталог» item of the main sidebar and to the non-admin players (gone, or a read-only view).",
+			"title": "Move the catalog editing into the admin panel",
 			"priority": 9,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "player-color-form",
@@ -72,80 +72,80 @@
 		},
 		{
 			"id": "catalog-player-card",
-			"title": "Rebuild the player «Каталог» screen as a list with search on the left and the full entry card on the right, as in the artboards «Каталог: просмотр» and «Карточка записи» of the canvas «Каталог: просмотр и админка» (https://claude.ai/artifact/MoHKATGRjRXi6fEFcoXjmn). The card is one shared component that the admin catalog drawer reuses.",
+			"title": "Rebuild the player «Каталог» screen as a list with the entry card",
 			"priority": 12,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "catalog-admin-drawer",
-			"title": "Rebuild the admin catalog table as in the artboard «Каталог: правка (админ)»: changes and properties in the row, the «у игроков» counter, actions in a «⋯» menu that also opens on right click (a shared row menu component, used by every later table), and the entry card in a drawer on the right.",
+			"title": "Rebuild the admin catalog table with the row menu and the entry drawer",
 			"priority": 12.01,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "table-users",
-			"title": "Rebuild the members table as in the artboard «Участники»: search, status chips, the share of play time as a bar, a chevron to the profile.",
+			"title": "Rebuild the members table",
 			"priority": 12.02,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "table-completed",
-			"title": "Rebuild the completed games table as in the artboard «Игры: пройденные»: search, state chips, period with days, rating pips, total time and average rating.",
+			"title": "Rebuild the completed games table",
 			"priority": 12.03,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "table-wishlist",
-			"title": "Rebuild the wishlist table as in the artboard «Игры: вишлист»: «Кто добавил» column, rename in the row, actions in the «⋯» menu. The text stays «Список желаемого» and the delete keeps its restore.",
+			"title": "Rebuild the wishlist table",
 			"priority": 12.04,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "table-points",
-			"title": "Rebuild the points tab as in the artboard «Ресурсы: очки»: point types on the left with the user's place, a ranking with place, share of the leader and the difference to the user.",
+			"title": "Rebuild the points tab",
 			"priority": 12.05,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "table-shared-points",
-			"title": "Rebuild the shared points tab as in the artboard «Ресурсы: общие очки»: description in the row, a bar between the bounds.",
+			"title": "Rebuild the shared points tab",
 			"priority": 12.06,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "table-history",
-			"title": "Rebuild the history tab as in the artboard «Ресурсы: история»: filters as selects, rows grouped by day, who and through what, the fix link in the row.",
+			"title": "Rebuild the history tab",
 			"priority": 12.07,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "table-admin-exchanges",
-			"title": "Rebuild the admin exchanges table as in the artboard «Админ: обмены»: search, show deleted, both sides with the «игрок выбирает» flags, the «⋯» menu.",
+			"title": "Rebuild the admin exchanges table",
 			"priority": 12.08,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "table-admin-wheel",
-			"title": "Rebuild the admin wheel screen as in the artboard «Админ: колесо»: groups as a side list, a group card with «Не повторять выпавшее», rename, delete and the spin cost, the entries table with changes and how they apply, the «⋯» menu. Update ARCHITECTURE (the groups are no longer pill tabs).",
+			"title": "Rebuild the admin wheel screen",
 			"priority": 12.09,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "table-admin-members",
-			"title": "Rebuild the admin members table as in the artboard «Админ: участники и права»: search, role chips, joined and left dates, role, the «⋯» menu.",
+			"title": "Rebuild the admin members table",
 			"priority": 12.1,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "auth-password-eye",
@@ -228,15 +228,15 @@
 			"id": "points-diff-column-title",
 			"title": "Rename the points table column «К тебе» to «Разница со мной»",
 			"priority": 23,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "no-dot-separators",
 			"title": "Show facts as separate lines or badges instead of one line joined by a dot; add the rule to AGENTS.md",
 			"priority": 24,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "wheel-tape",
@@ -247,10 +247,10 @@
 		},
 		{
 			"id": "wheel-group-spins",
-			"title": "Follow the per-group wheel endpoints (a spin answers with one item, the spin is kept per group), fix the sticking cards of the tape, and rework the group tickets (count, cost and spins as tags). The user's words: the wheel endpoints changed, only one item falls, fix it.",
+			"title": "Follow the per-group wheel endpoints and rework the wheel group tickets",
 			"priority": 26,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
 		}
 	]
 }
