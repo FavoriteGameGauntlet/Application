@@ -12,6 +12,9 @@ import { useResourcesStore } from '../../stores/resourcesStore'
 import { useWheelStore, type WheelTab } from '../../stores/wheelStore'
 import { useWishlistStore } from '../../stores/wishlistStore'
 import { formatCost, formatResource } from '../../utils/formatResource'
+import { affordableSpins } from '../../utils/spinPayment'
+import { useSessionStore } from '../../stores/sessionStore'
+import { useToastStore } from '../../stores/toastStore'
 import SpinEntriesDialog from './components/SpinEntriesDialog.vue'
 import SpinPaymentDialog from './components/SpinPaymentDialog.vue'
 import WheelTape from './components/WheelTape.vue'
@@ -26,6 +29,11 @@ const costText = (group?: WheelGroup) =>
 	(group?.cost ?? [])
 		.map((r) => formatCost(r, resourcesStore.pointTypes))
 		.join(', ')
+
+const sessionStore = useSessionStore()
+
+const spinsLeft = (group: WheelGroup) =>
+	affordableSpins(group.cost ?? [], resourcesStore.byUser[sessionStore.login])
 
 const sources = computed(() =>
 	wheelStore.tab === 'games' ? wheelStore.gameGroups : wheelStore.changeGroups,
@@ -80,6 +88,9 @@ const showResult = computed(
 )
 
 onMounted(async () => {
+	// the tickets count the spins the user's resources pay for
+	resourcesStore.loadMine().catch((e) => useToastStore().error(e))
+
 	await wheelStore.load()
 	await wheelStore.restore()
 })
@@ -120,6 +131,13 @@ onBeforeUnmount(() => wheelStore.landed())
 					</span>
 					<span class="ticket__cost">
 						{{ costText(group) ? `Цена: ${costText(group)}` : 'Бесплатно' }}
+					</span>
+					<span
+						v-if="spinsLeft(group) !== undefined"
+						class="ticket__cost"
+						:class="{ 'ticket__cost--none': spinsLeft(group) === 0 }"
+					>
+						Прокрутов: {{ spinsLeft(group) }}
 					</span>
 				</button>
 				<RouterLink
@@ -306,6 +324,10 @@ onBeforeUnmount(() => wheelStore.landed())
 	padding-right: 36px;
 	font: var(--type-caption);
 	color: var(--text-muted);
+}
+
+.ticket__cost--none {
+	color: var(--danger-text);
 }
 
 .ticket__link {
