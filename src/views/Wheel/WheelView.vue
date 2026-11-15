@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import type { WheelGroup } from '../../api-facade/contracts'
+import type { Reward, WheelGroup } from '../../api-facade/contracts'
+import RewardPopover from '../../components/RewardPopover.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiCountBadge from '../../components/ui/UiCountBadge.vue'
@@ -102,6 +103,40 @@ const updateStrip = () => {
 	canNext.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 1
 }
 
+type CostTip = { rows: Reward; style: { left: string; top: string } }
+
+const COST_TIP_WIDTH = 240
+const COST_TIP_EDGE = 8
+
+/** the whole cost of a ticket in the form of the timer reward, shown at once while the pointer is on the cost row */
+const costTip = ref<CostTip | null>(null)
+
+const showCost = (e: MouseEvent, group: WheelGroup) => {
+	// one item is already on the ticket in full
+	if (group.cost.length < 2) return
+
+	const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+	const left = Math.min(rect.left, innerWidth - COST_TIP_WIDTH - COST_TIP_EDGE)
+
+	costTip.value = {
+		rows: group.cost.map((r) => ({ label: r.name, value: `−${r.amount}` })),
+		style: {
+			left: `${Math.max(COST_TIP_EDGE, left)}px`,
+			top: `${rect.bottom + 6}px`,
+		},
+	}
+}
+
+const hideCost = () => {
+	costTip.value = null
+}
+
+// the tip is placed once, so it would hang in the air while the strip moves
+const onStripScroll = () => {
+	hideCost()
+	updateStrip()
+}
+
 const scrollStrip = (direction: -1 | 1) =>
 	ticketsEl.value?.scrollBy({
 		left: direction * TICKET_STEP,
@@ -176,7 +211,7 @@ onBeforeUnmount(() => {
 			<div
 				ref="ticketsEl"
 				class="tickets"
-				@scroll="updateStrip"
+				@scroll="onStripScroll"
 				@wheel="onStripWheel"
 			>
 				<div v-for="group in sources" :key="group.id" class="ticket">
@@ -199,17 +234,18 @@ onBeforeUnmount(() => {
 							:title="groupName(group)"
 							>{{ groupName(group) }}</span
 						>
-						<span class="ticket__cost">
+						<span
+							class="ticket__cost"
+							@mouseenter="showCost($event, group)"
+							@mouseleave="hideCost"
+						>
 							<template v-if="group.cost.length">
 								<span class="change change--minus ticket__pill"
 									><span class="ticket__ellipsis"
 										>−{{ costRows(group)[0] }}</span
 									></span
 								>
-								<span
-									v-if="group.cost.length > 1"
-									class="change ticket__more"
-									:title="costRows(group).join('\n')"
+								<span v-if="group.cost.length > 1" class="change ticket__more"
 									>+{{ group.cost.length - 1 }}</span
 								>
 							</template>
@@ -318,6 +354,17 @@ onBeforeUnmount(() => {
 		@close="wheelStore.cancelPayment()"
 		@confirm="wheelStore.confirmPayment($event)"
 	/>
+
+	<!-- out of the strip, which clips what sticks out of it -->
+	<Teleport to="body">
+		<RewardPopover
+			v-if="costTip"
+			class="cost-tip"
+			title="Цена прокрута"
+			:rows="costTip.rows"
+			:style="costTip.style"
+		/>
+	</Teleport>
 </template>
 
 <style scoped>
@@ -445,6 +492,13 @@ onBeforeUnmount(() => {
 
 .ticket__more {
 	flex: none;
+}
+
+/* above the dialogs (100) and the pointer passes through, so the tip never takes the hover from the row */
+.cost-tip {
+	position: fixed;
+	z-index: 110;
+	pointer-events: none;
 }
 
 .ticket__meta {
