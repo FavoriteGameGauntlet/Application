@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import type { Reward } from '../api-facade/contracts'
+import type { Change } from '../utils/formatResource'
+import UiChange from './ui/UiChange.vue'
 
 type Props = {
 	title: string
-	rows: Reward
+	changes: Change[]
 }
 
 defineProps<Props>()
@@ -12,10 +13,13 @@ defineProps<Props>()
 <template>
 	<div class="reward-popover">
 		<span class="reward-popover__title">{{ title }}</span>
-		<span v-for="row in rows" :key="row.label" class="reward-popover__row">
-			<span>{{ row.label }}</span>
-			<span class="reward-popover__value">{{ row.value }}</span>
-		</span>
+		<UiChange
+			v-for="(change, i) in changes"
+			:key="i"
+			class="reward-popover__change"
+			:tone="change.tone"
+			>{{ change.text }}</UiChange
+		>
 	</div>
 </template>
 
@@ -27,9 +31,9 @@ defineProps<Props>()
 	gap: 8px;
 	width: 240px;
 	padding: 12px 14px;
-	color: var(--text-on-floating);
-	background: var(--surface-floating);
-	border: 1px solid var(--border-floating);
+	color: var(--text-body);
+	background: var(--surface-card);
+	border: 1px solid var(--border-default);
 	border-radius: var(--radius-md);
 	box-shadow: var(--shadow-3);
 }
@@ -38,17 +42,10 @@ defineProps<Props>()
 	font: var(--type-label);
 	letter-spacing: var(--tracking-label);
 	text-transform: uppercase;
-	color: var(--text-on-floating-muted);
+	color: var(--text-strong);
 }
 
-.reward-popover__row {
-	display: flex;
-	justify-content: space-between;
-	gap: 8px;
-	font: var(--type-body-sm);
-}
-
-.reward-popover__value {
-	font: var(--type-mono);
+.reward-popover__change {
+	align-self: flex-start;
 }
 </style>

@@ -7,6 +7,7 @@ import { useCurrentGameStore } from '../stores/currentGameStore'
 import { useTimerStore } from '../stores/timerStore'
 import { useWheelStore } from '../stores/wheelStore'
 import { formatHours } from '../utils/format'
+import { rewardChanges } from '../utils/formatResource'
 import RewardPopover from './RewardPopover.vue'
 import UiBadge from './ui/UiBadge.vue'
 import UiButton from './ui/UiButton.vue'
@@ -31,8 +32,6 @@ const timerInfoOpen = ref(false)
 const menuOpen = ref(false)
 
 useClickOutside(card, () => {
-	gameInfoOpen.value = false
-	timerInfoOpen.value = false
 	menuOpen.value = false
 })
 
@@ -75,9 +74,11 @@ const onCancel = () => {
 					<button
 						class="info-button"
 						aria-label="Награда за прохождение"
-						title="Награда за прохождение"
 						:aria-expanded="gameInfoOpen"
-						@click="gameInfoOpen = !gameInfoOpen"
+						@mouseenter="gameInfoOpen = true"
+						@mouseleave="gameInfoOpen = false"
+						@focus="gameInfoOpen = true"
+						@blur="gameInfoOpen = false"
 					>
 						<UiIcon name="info" :size="16" />
 					</button>
@@ -91,7 +92,9 @@ const onCancel = () => {
 						v-if="gameInfoOpen"
 						class="popover popover--game"
 						title="Награда за прохождение"
-						:rows="currentGameStore.current?.completionReward ?? []"
+						:changes="
+							rewardChanges(currentGameStore.current?.completionReward ?? [])
+						"
 					/>
 				</span>
 
@@ -180,9 +183,11 @@ const onCancel = () => {
 					<button
 						class="info-button"
 						aria-label="Награда за таймер"
-						title="Награда за таймер"
 						:aria-expanded="timerInfoOpen"
-						@click="timerInfoOpen = !timerInfoOpen"
+						@mouseenter="timerInfoOpen = true"
+						@mouseleave="timerInfoOpen = false"
+						@focus="timerInfoOpen = true"
+						@blur="timerInfoOpen = false"
 					>
 						<UiIcon name="info" :size="16" />
 					</button>
@@ -208,7 +213,7 @@ const onCancel = () => {
 				v-if="timerInfoOpen"
 				class="popover popover--timer"
 				title="Награда за таймер"
-				:rows="timerStore.reward"
+				:changes="rewardChanges(timerStore.reward)"
 			/>
 
 			<div class="timer__spacer"></div>
@@ -314,8 +319,10 @@ const onCancel = () => {
 	background: var(--surface-sunken);
 }
 
+/* the pointer passes through, so the panel never takes the hover from the button */
 .popover {
 	position: absolute;
+	pointer-events: none;
 }
 
 .popover--game {

@@ -1,5 +1,6 @@
 import type {
 	PointType,
+	Reward,
 	ResourceRef,
 	SpinCostRef,
 } from '../api-facade/contracts'
@@ -38,3 +39,13 @@ export const formatCost = (cost: SpinCostRef, pointTypes: PointType[]) => {
 
 	return cost.amount > 1 ? `${text} ×${cost.amount}` : text
 }
+
+/** one fact of a change as a plate: green adds, red takes */
+export type Change = { text: string; tone: 'plus' | 'minus' }
+
+/** «+50 золота» is green, «−Щит» is red; the sign is the only thing a reward row says about it */
+export const rewardChanges = (reward: Reward): Change[] =>
+	reward.map((r) => ({
+		text: `${r.value} ${r.label}`,
+		tone: r.value.startsWith('−') ? 'minus' : 'plus',
+	}))

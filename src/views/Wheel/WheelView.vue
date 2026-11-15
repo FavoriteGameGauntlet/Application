@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import type { Reward, WheelGroup } from '../../api-facade/contracts'
+import type { WheelGroup } from '../../api-facade/contracts'
 import RewardPopover from '../../components/RewardPopover.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
 import UiButton from '../../components/ui/UiButton.vue'
+import UiChange from '../../components/ui/UiChange.vue'
 import UiCountBadge from '../../components/ui/UiCountBadge.vue'
 import UiIcon from '../../components/ui/UiIcon.vue'
 import UiIconButton from '../../components/ui/UiIconButton.vue'
@@ -14,7 +15,11 @@ import { useCurrentGameStore } from '../../stores/currentGameStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useWheelStore, type WheelTab } from '../../stores/wheelStore'
 import { useWishlistStore } from '../../stores/wishlistStore'
-import { formatCost, formatResource } from '../../utils/formatResource'
+import {
+	formatCost,
+	formatResource,
+	type Change,
+} from '../../utils/formatResource'
 import { affordableSpins } from '../../utils/spinPayment'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToastStore } from '../../stores/toastStore'
@@ -70,7 +75,7 @@ const emptyText = computed(() => {
 })
 
 /** what the entry changes by itself: green adds, red takes */
-const resultChanges = computed(() =>
+const resultChanges = computed<Change[]>(() =>
 	(wheelStore.resultEntry?.entries ?? []).map((r) => ({
 		text: r.text ?? formatResource(r, resourcesStore.pointTypes),
 		// a perk has no amount, its sign lives only in the text
@@ -103,27 +108,62 @@ const updateStrip = () => {
 	canNext.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 1
 }
 
-type CostTip = { rows: Reward; style: { left: string; top: string } }
+type CostTip = { changes: Change[]; style: { left: string; top: string } }
 
 const COST_TIP_WIDTH = 240
-const COST_TIP_EDGE = 8
+const COST_TIP_GAP = 6
+
+const stripEl = ref<HTMLElement>()
 
 /** the whole cost of a ticket in the form of the timer reward, shown at once while the pointer is on the cost row */
 const costTip = ref<CostTip | null>(null)
+
+/**
+ * The tip lives in the strip, so it is placed from the offsets of the row, which are layout
+ * units like the tip's own. The interface scale is a CSS zoom, and a mouse event or a
+ * rectangle may be in screen pixels instead, which put a `fixed` tip off by the scale.
+ */
+const costTipStyle = (row: HTMLElement) => {
+	const strip = stripEl.value
+	const tickets = ticketsEl.value
+
+	if (!strip || !tickets) return null
+
+	let left = 0
+	let top = 0
+
+	for (
+		let el: HTMLElement | null = row;
+		el && el !== strip;
+		el = el.offsetParent as HTMLElement | null
+	) {
+		left += el.offsetLeft
+		top += el.offsetTop
+	}
+
+	// the offsets ignore the scroll of the ticket row, which moves the tickets under the strip
+	left -= tickets.scrollLeft
+
+	return {
+		left: `${Math.max(0, Math.min(left, strip.clientWidth - COST_TIP_WIDTH))}px`,
+		top: `${top + row.offsetHeight + COST_TIP_GAP}px`,
+	}
+}
 
 const showCost = (e: MouseEvent, group: WheelGroup) => {
 	// one item is already on the ticket in full
 	if (group.cost.length < 2) return
 
-	const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-	const left = Math.min(rect.left, innerWidth - COST_TIP_WIDTH - COST_TIP_EDGE)
+	const style = costTipStyle(e.currentTarget as HTMLElement)
+
+	if (!style) return
 
 	costTip.value = {
-		rows: group.cost.map((r) => ({ label: r.name, value: `−${r.amount}` })),
-		style: {
-			left: `${Math.max(COST_TIP_EDGE, left)}px`,
-			top: `${rect.bottom + 6}px`,
-		},
+		changes: costRows(group).map((text) => ({
+			text: `−${text}`,
+			tone: 'minus',
+		})),
+		style,
 	}
 }
 
@@ -199,7 +239,7 @@ onBeforeUnmount(() => {
 			/>
 		</div>
 
-		<div class="strip">
+		<div ref="stripEl" class="strip">
 			<UiIconButton
 				v-if="canPrev || canNext"
 				icon="chevron-left"
@@ -240,16 +280,16 @@ onBeforeUnmount(() => {
 							@mouseleave="hideCost"
 						>
 							<template v-if="group.cost.length">
-								<span class="change change--minus ticket__pill"
+								<UiChange tone="minus" class="ticket__pill"
 									><span class="ticket__ellipsis"
 										>−{{ costRows(group)[0] }}</span
-									></span
+									></UiChange
 								>
-								<span v-if="group.cost.length > 1" class="change ticket__more"
-									>+{{ group.cost.length - 1 }}</span
+								<UiChange v-if="group.cost.length > 1" class="ticket__more"
+									>+{{ group.cost.length - 1 }}</UiChange
 								>
 							</template>
-							<span v-else class="change change--plus">бесплатно</span>
+							<UiChange v-else tone="plus">бесплатно</UiChange>
 						</span>
 						<span class="ticket__meta">
 							<UiCountBadge :value="groupCount(group)" />
@@ -274,6 +314,14 @@ onBeforeUnmount(() => {
 				label="Вперёд"
 				:disabled="!canNext"
 				@click="scrollStrip(1)"
+			/>
+			<!-- beside the scrolling row of tickets, which clips what sticks out of it -->
+			<RewardPopover
+				v-if="costTip"
+				class="cost-tip"
+				title="Цена прокрута"
+				:changes="costTip.changes"
+				:style="costTip.style"
 			/>
 		</div>
 
@@ -314,12 +362,11 @@ onBeforeUnmount(() => {
 						{{ wheelStore.result.result.description }}
 					</div>
 					<div v-if="resultChanges.length" class="result__changes">
-						<span
+						<UiChange
 							v-for="(change, i) in resultChanges"
 							:key="i"
-							class="change"
-							:class="`change--${change.tone}`"
-							>{{ change.text }}</span
+							:tone="change.tone"
+							>{{ change.text }}</UiChange
 						>
 					</div>
 					<div
@@ -354,17 +401,6 @@ onBeforeUnmount(() => {
 		@close="wheelStore.cancelPayment()"
 		@confirm="wheelStore.confirmPayment($event)"
 	/>
-
-	<!-- out of the strip, which clips what sticks out of it -->
-	<Teleport to="body">
-		<RewardPopover
-			v-if="costTip"
-			class="cost-tip"
-			title="Цена прокрута"
-			:rows="costTip.rows"
-			:style="costTip.style"
-		/>
-	</Teleport>
 </template>
 
 <style scoped>
@@ -381,6 +417,7 @@ onBeforeUnmount(() => {
 }
 
 .strip {
+	position: relative;
 	display: flex;
 	gap: 12px;
 	align-items: center;
@@ -494,10 +531,10 @@ onBeforeUnmount(() => {
 	flex: none;
 }
 
-/* above the dialogs (100) and the pointer passes through, so the tip never takes the hover from the row */
+/* the pointer passes through, so the tip never takes the hover from the row */
 .cost-tip {
-	position: fixed;
-	z-index: 110;
+	position: absolute;
+	z-index: 10;
 	pointer-events: none;
 }
 
@@ -582,27 +619,6 @@ onBeforeUnmount(() => {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 6px;
-}
-
-.change {
-	display: inline-flex;
-	align-items: center;
-	min-height: 26px;
-	padding: 0 10px;
-	font: 500 var(--fs-12) / 1.2 var(--font-body);
-	color: var(--text-body);
-	background: var(--surface-sunken);
-	border-radius: var(--radius-pill);
-}
-
-.change--plus {
-	color: var(--success-text);
-	background: var(--success-soft);
-}
-
-.change--minus {
-	color: var(--danger-text);
-	background: var(--danger-soft);
 }
 
 .result__manual {
