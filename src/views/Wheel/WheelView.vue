@@ -165,9 +165,6 @@ onBeforeUnmount(() => wheelStore.landed())
 				<span class="result__accent"></span>
 
 				<div class="result__body">
-					<div class="result__source">
-						{{ wheelStore.resultSource }}
-					</div>
 					<div class="result__name">{{ wheelStore.result.result.name }}</div>
 					<div v-if="resultDescription" class="result__desc">
 						{{ resultDescription }}
@@ -372,13 +369,6 @@ onBeforeUnmount(() => wheelStore.landed())
 	flex-direction: column;
 	gap: 8px;
 	min-width: 0;
-}
-
-.result__source {
-	font: var(--type-label);
-	letter-spacing: var(--tracking-label);
-	text-transform: uppercase;
-	color: var(--text-muted);
 }
 
 .result__name {
