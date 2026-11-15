@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { WheelGroup } from '../../api-facade/contracts'
 import UiBadge from '../../components/ui/UiBadge.vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiCountBadge from '../../components/ui/UiCountBadge.vue'
 import UiIcon from '../../components/ui/UiIcon.vue'
+import UiIconButton from '../../components/ui/UiIconButton.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiTabs from '../../components/ui/UiTabs.vue'
 import { RouteName } from '../../router/routeNames'
@@ -85,8 +86,73 @@ const showResult = computed(
 resourcesStore.loadMine().catch((e) => useToastStore().error(e))
 wheelStore.open()
 
+/** the width of a ticket and the gap after it, the buttons of the strip move by one ticket */
+const TICKET_STEP = 256
+
+const ticketsEl = ref<HTMLElement>()
+const canPrev = ref(false)
+const canNext = ref(false)
+
+const updateStrip = () => {
+	const el = ticketsEl.value
+
+	if (!el) return
+
+	canPrev.value = el.scrollLeft > 1
+	canNext.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 1
+}
+
+const scrollStrip = (direction: -1 | 1) =>
+	ticketsEl.value?.scrollBy({
+		left: direction * TICKET_STEP,
+		behavior: 'smooth',
+	})
+
+// the wheel of a mouse moves the strip sideways, a touchpad does it by itself
+const onStripWheel = (e: WheelEvent) => {
+	const el = ticketsEl.value
+
+	if (!el || el.scrollWidth <= el.clientWidth) return
+
+	if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return
+
+	e.preventDefault()
+	el.scrollLeft += e.deltaY
+}
+
+const revealSelected = () =>
+	ticketsEl.value
+		?.querySelector('[aria-pressed="true"]')
+		?.scrollIntoView({
+			inline: 'nearest',
+			block: 'nearest',
+			behavior: 'smooth',
+		})
+
+// after the tickets are drawn: the selected one comes into view, the buttons follow
+watch(
+	() => [wheelStore.group?.id, wheelStore.tab, wheelStore.loading],
+	() => {
+		revealSelected()
+		updateStrip()
+	},
+	{ flush: 'post' },
+)
+
+let stripObserver: ResizeObserver | undefined
+
+onMounted(() => {
+	if (!ticketsEl.value) return
+
+	stripObserver = new ResizeObserver(updateStrip)
+	stripObserver.observe(ticketsEl.value)
+})
+
 // a spin must not hang when the tape is gone before it lands
-onBeforeUnmount(() => wheelStore.landed())
+onBeforeUnmount(() => {
+	stripObserver?.disconnect()
+	wheelStore.landed()
+})
 </script>
 
 <template>
@@ -100,50 +166,73 @@ onBeforeUnmount(() => wheelStore.landed())
 			/>
 		</div>
 
-		<div class="tickets">
-			<div v-for="group in sources" :key="group.id" class="ticket">
-				<button
-					type="button"
-					class="ticket__button"
-					:class="{
-						'ticket__button--on': group.id === wheelStore.group?.id,
-						'ticket__button--off':
-							wheelStore.spinning && group.id !== wheelStore.group?.id,
-					}"
-					:aria-pressed="group.id === wheelStore.group?.id"
-					:disabled="wheelStore.spinning"
-					@click="wheelStore.setGroup(group.id)"
-				>
-					<span class="ticket__bar"></span>
-					<span class="ticket__head">
-						<span class="ticket__name">{{ groupName(group) }}</span>
-						<UiCountBadge :value="groupCount(group)" />
-					</span>
-					<span class="ticket__tags">
-						<template v-if="group.cost.length">
-							<span
-								v-for="row in costRows(group)"
-								:key="row"
-								class="change change--minus"
-								>−{{ row }}</span
-							>
-						</template>
-						<span v-else class="change change--plus">бесплатно</span>
-					</span>
-					<span class="ticket__tags">
-						<UiBadge>Прокрутов: {{ spinsLeft(group) ?? '∞' }}</UiBadge>
-					</span>
-				</button>
-				<RouterLink
-					v-if="group.kind === 'wishlist'"
-					class="ticket__link"
-					:to="{ name: RouteName.Games }"
-					aria-label="Открыть список желаемого"
-					title="Открыть список желаемого"
-				>
-					<UiIcon name="arrow-right" :size="16" />
-				</RouterLink>
+		<div class="strip">
+			<UiIconButton
+				v-if="canPrev || canNext"
+				icon="chevron-left"
+				variant="outline"
+				label="Назад"
+				:disabled="!canPrev"
+				@click="scrollStrip(-1)"
+			/>
+			<div
+				ref="ticketsEl"
+				class="tickets"
+				@scroll="updateStrip"
+				@wheel="onStripWheel"
+			>
+				<div v-for="group in sources" :key="group.id" class="ticket">
+					<button
+						type="button"
+						class="ticket__button"
+						:class="{
+							'ticket__button--on': group.id === wheelStore.group?.id,
+							'ticket__button--off':
+								wheelStore.spinning && group.id !== wheelStore.group?.id,
+						}"
+						:aria-pressed="group.id === wheelStore.group?.id"
+						:disabled="wheelStore.spinning"
+						@click="wheelStore.setGroup(group.id)"
+					>
+						<span class="ticket__bar"></span>
+						<span class="ticket__head">
+							<span class="ticket__name">{{ groupName(group) }}</span>
+							<UiCountBadge :value="groupCount(group)" />
+						</span>
+						<span class="ticket__tags">
+							<template v-if="group.cost.length">
+								<span
+									v-for="row in costRows(group)"
+									:key="row"
+									class="change change--minus"
+									>−{{ row }}</span
+								>
+							</template>
+							<span v-else class="change change--plus">бесплатно</span>
+						</span>
+						<span class="ticket__tags">
+							<UiBadge>Прокрутов: {{ spinsLeft(group) ?? '∞' }}</UiBadge>
+						</span>
+					</button>
+					<RouterLink
+						v-if="group.kind === 'wishlist'"
+						class="ticket__link"
+						:to="{ name: RouteName.Games }"
+						aria-label="Открыть список желаемого"
+						title="Открыть список желаемого"
+					>
+						<UiIcon name="arrow-right" :size="16" />
+					</RouterLink>
+				</div>
 			</div>
+			<UiIconButton
+				v-if="canPrev || canNext"
+				icon="chevron-right"
+				variant="outline"
+				label="Вперёд"
+				:disabled="!canNext"
+				@click="scrollStrip(1)"
+			/>
 		</div>
 
 		<WheelTape
@@ -238,16 +327,33 @@ onBeforeUnmount(() => wheelStore.landed())
 	gap: 32px;
 }
 
+.strip {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+}
+
+/* the padding keeps the shadow and the bar of a ticket inside the scroll box, the margin takes it back */
 .tickets {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	display: flex;
+	flex: 1;
 	gap: 16px;
+	min-width: 0;
+	padding: 6px 2px 10px;
+	margin: -6px -2px -10px;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+.tickets::-webkit-scrollbar {
+	display: none;
 }
 
 .ticket {
 	position: relative;
 	display: flex;
-	min-width: 0;
+	flex: none;
+	width: 240px;
 }
 
 .ticket__button {
