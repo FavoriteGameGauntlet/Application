@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted } from 'vue'
 import type { WheelGroup } from '../../api-facade/contracts'
 import UiBadge from '../../components/ui/UiBadge.vue'
 import UiButton from '../../components/ui/UiButton.vue'
+import UiIcon from '../../components/ui/UiIcon.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiTabs from '../../components/ui/UiTabs.vue'
 import { RouteName } from '../../router/routeNames'
@@ -13,8 +14,7 @@ import { useWishlistStore } from '../../stores/wishlistStore'
 import { formatCost } from '../../utils/formatResource'
 import SpinEntriesDialog from './components/SpinEntriesDialog.vue'
 import SpinPaymentDialog from './components/SpinPaymentDialog.vue'
-
-const REEL_OFFSETS = [-3, -2, -1, 0, 1, 2, 3]
+import WheelTape from './components/WheelTape.vue'
 
 const currentGameStore = useCurrentGameStore()
 const resourcesStore = useResourcesStore()
@@ -56,22 +56,7 @@ const tabs = [
 	{ value: 'games', label: 'Игры' },
 ]
 
-const reel = computed(() => {
-	const pool = wheelStore.pool
-	const n = pool.length
-
-	return REEL_OFFSETS.map((k) => ({
-		key: k,
-		text: n ? pool[(((wheelStore.pos + k) % n) + n) % n] : '',
-		opacity: k === 0 ? 0 : 1 - Math.abs(k) * 0.22,
-	}))
-})
-
-const reelCenter = computed(() => {
-	const n = wheelStore.pool.length
-
-	if (n) return wheelStore.pool[wheelStore.pos % n]
-
+const emptyText = computed(() => {
 	switch (wheelStore.group?.kind) {
 		case 'wishlist':
 			return 'Список желаемого пуст'
@@ -97,10 +82,15 @@ const resultDescription = computed(() => {
 	)
 })
 
+const showResult = computed(() => !!wheelStore.result && !wheelStore.spinning)
+
 onMounted(async () => {
 	await wheelStore.load()
 	await wheelStore.restore()
 })
+
+// a spin must not hang when the tape is gone before it lands
+onBeforeUnmount(() => wheelStore.landed())
 </script>
 
 <template>
@@ -114,107 +104,100 @@ onMounted(async () => {
 			/>
 		</div>
 
-		<div class="body">
-			<div class="panel">
-				<div class="panel__title">
-					{{ wheelStore.tab === 'games' ? 'Источник' : 'Группа' }}
-				</div>
-
-				<div class="groups">
-					<div
-						v-for="group in sources"
-						:key="group.id"
-						class="group"
-						:class="{ 'group--on': group.id === wheelStore.group?.id }"
-						@click="wheelStore.setGroup(group.id)"
-					>
-						<div class="group__row">
-							<span class="group__radio">
-								<span class="group__dot"></span>
-							</span>
-							<span class="group__name">{{ groupName(group) }}</span>
-							<span class="group__count">{{ groupCount(group) }}</span>
-						</div>
-						<div class="group__cost">
-							{{ costText(group) ? `Цена: ${costText(group)}` : 'Бесплатно' }}
-						</div>
-					</div>
-				</div>
-
-				<div v-if="wheelStore.tab === 'games'" class="source">
-					<span class="source__hint">Выпавшая игра станет текущей.</span>
-					<RouterLink
-						v-if="wheelStore.group?.kind === 'wishlist'"
-						class="source__link"
-						:to="{ name: RouteName.Games }"
-					>
-						Открыть список желаемого
-					</RouterLink>
-				</div>
-			</div>
-
-			<div class="main">
-				<div class="reel">
-					<div
-						v-for="row in reel"
-						:key="row.key"
-						class="reel__row"
-						:style="{ opacity: row.opacity }"
-					>
-						{{ row.text }}
-					</div>
-					<div class="reel__center">{{ reelCenter }}</div>
-				</div>
-
-				<div class="spin">
-					<UiButton
-						size="lg"
-						icon="refresh-cw"
-						:disabled="
-							wheelStore.spinning || !wheelStore.pool.length || gameInProgress
-						"
-						@click="wheelStore.spin()"
-					>
-						{{ wheelStore.spinning ? 'Крутится…' : 'Крутить колесо' }}
-					</UiButton>
-					<span v-if="gameInProgress" class="spin__hint">
-						Идёт игра. Колесо игр можно крутить, когда она закончена.
+		<div class="tickets">
+			<div v-for="group in sources" :key="group.id" class="ticket">
+				<button
+					type="button"
+					class="ticket__button"
+					:class="{
+						'ticket__button--on': group.id === wheelStore.group?.id,
+						'ticket__button--off':
+							wheelStore.spinning && group.id !== wheelStore.group?.id,
+					}"
+					:aria-pressed="group.id === wheelStore.group?.id"
+					:disabled="wheelStore.spinning"
+					@click="wheelStore.setGroup(group.id)"
+				>
+					<span class="ticket__bar"></span>
+					<span class="ticket__row">
+						<span class="ticket__name">{{ groupName(group) }}</span>
+						<span class="ticket__count">{{ groupCount(group) }}</span>
 					</span>
-				</div>
-
-				<div v-if="wheelStore.result && !wheelStore.spinning" class="result">
-					<span class="result__accent"></span>
-
-					<div class="result__head">
-						<div class="result__title">
-							<span class="result__name">{{
-								wheelStore.result.result.name
-							}}</span>
-						</div>
-						<UiButton variant="secondary" @click="wheelStore.apply()">
-							{{ wheelStore.resultStartsGame ? 'Взять игру' : 'Применить' }}
-						</UiButton>
-						<UiButton variant="outline" @click="wheelStore.discardResult()"
-							>Сбросить</UiButton
-						>
-					</div>
-
-					<div class="result__body">
-						<span class="result__desc">{{ resultDescription }}</span>
-						<span v-if="resultCost" class="result__cost">
-							Спишется при применении: {{ resultCost }}
-						</span>
-						<div
-							v-if="wheelStore.result.result.isManualChange"
-							class="result__manual"
-						>
-							<UiBadge tone="info" dot>Ручное изменение</UiBadge>
-							<span>после применения нужно внести ручное изменение</span>
-						</div>
-					</div>
-				</div>
+					<span class="ticket__cost">
+						{{ costText(group) ? `Цена: ${costText(group)}` : 'Бесплатно' }}
+					</span>
+				</button>
+				<RouterLink
+					v-if="group.kind === 'wishlist'"
+					class="ticket__link"
+					:to="{ name: RouteName.Games }"
+					aria-label="Открыть список желаемого"
+					title="Открыть список желаемого"
+				>
+					<UiIcon name="arrow-right" :size="16" />
+				</RouterLink>
 			</div>
 		</div>
+
+		<WheelTape
+			:entries="wheelStore.pool"
+			:target="wheelStore.landing?.resultIndex"
+			:winner="showResult ? wheelStore.result?.resultIndex : undefined"
+			:busy="gameInProgress"
+			:empty-text="emptyText"
+			@landed="wheelStore.landed()"
+		/>
+
+		<div class="spin">
+			<UiButton
+				size="lg"
+				icon="refresh-cw"
+				:variant="showResult ? 'outline' : 'primary'"
+				:disabled="
+					wheelStore.spinning || !wheelStore.pool.length || gameInProgress
+				"
+				@click="wheelStore.spin()"
+			>
+				{{ wheelStore.spinning ? 'Крутится…' : 'Крутить колесо' }}
+			</UiButton>
+			<span v-if="gameInProgress" class="spin__hint">
+				Идёт игра. Колесо игр можно крутить, когда она закончена.
+			</span>
+		</div>
+
+		<Transition name="result">
+			<div v-if="showResult && wheelStore.result" class="result">
+				<span class="result__accent"></span>
+
+				<div class="result__body">
+					<div class="result__source">
+						<span>Выпало</span>
+						<span>{{ wheelStore.resultSource }}</span>
+					</div>
+					<div class="result__name">{{ wheelStore.result.result.name }}</div>
+					<div class="result__desc">{{ resultDescription }}</div>
+					<div v-if="resultCost" class="result__cost">
+						Спишется при применении: {{ resultCost }}
+					</div>
+					<div
+						v-if="wheelStore.result.result.isManualChange"
+						class="result__manual"
+					>
+						<UiBadge tone="info" dot>Ручное изменение</UiBadge>
+						<span>после применения нужно внести ручное изменение</span>
+					</div>
+				</div>
+
+				<div class="result__actions">
+					<UiButton variant="outline" @click="wheelStore.discardResult()">
+						Сбросить
+					</UiButton>
+					<UiButton size="lg" @click="wheelStore.apply()">
+						{{ wheelStore.resultStartsGame ? 'Взять игру' : 'Применить' }}
+					</UiButton>
+				</div>
+			</div>
+		</Transition>
 	</div>
 
 	<SpinEntriesDialog
@@ -234,7 +217,7 @@ onMounted(async () => {
 .wheel {
 	display: flex;
 	flex-direction: column;
-	gap: 24px;
+	gap: 20px;
 }
 
 .head {
@@ -243,172 +226,114 @@ onMounted(async () => {
 	gap: 32px;
 }
 
-.body {
-	display: flex;
-	align-items: flex-start;
-	gap: 32px;
+.tickets {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 16px;
 }
 
-.panel {
-	flex: none;
-	width: 320px;
-	overflow: hidden;
+.ticket {
+	position: relative;
+	display: flex;
+	min-width: 0;
+}
+
+.ticket__button {
+	position: relative;
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 6px;
+	min-width: 0;
+	padding: 14px 16px;
+	font: inherit;
+	color: inherit;
+	text-align: left;
+	cursor: pointer;
 	background: var(--surface-card);
-	border: 1px solid var(--border-subtle);
+	border: 1.5px solid var(--border-subtle);
 	border-radius: var(--radius-lg);
 	box-shadow: var(--shadow-1);
 }
 
-.panel__title {
-	padding: 14px 16px;
-	font: var(--type-h4);
-	letter-spacing: var(--tracking-display);
-	text-transform: uppercase;
-	color: var(--text-strong);
-	background: var(--surface-sunken);
+.ticket__button:disabled {
+	cursor: default;
 }
 
-.groups {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
-	padding: 4px;
-}
-
-.group {
-	padding: 12px;
-	border-radius: var(--radius-sm);
-	cursor: pointer;
-}
-
-.group:hover,
-.group--on {
-	background: var(--surface-sunken);
-}
-
-.group__row {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-}
-
-.group__radio {
-	display: flex;
-	flex: none;
-	align-items: center;
-	justify-content: center;
-	width: 20px;
-	height: 20px;
-	border: 2px solid var(--border-default);
-	border-radius: var(--radius-pill);
-}
-
-.group--on .group__radio {
+.ticket__button--on {
 	border-color: var(--border-strong);
 }
 
-.group__dot {
-	width: 10px;
-	height: 10px;
-	border-radius: var(--radius-pill);
-	background: transparent;
+.ticket__button--off {
+	opacity: 0.5;
 }
 
-.group--on .group__dot {
+.ticket__bar {
+	position: absolute;
+	top: -1.5px;
+	left: 16px;
+	width: 0;
+	height: 4px;
 	background: var(--accent);
+	border-radius: 0 0 2px 2px;
 }
 
-.group__name {
+.ticket__button--on .ticket__bar {
+	width: 40px;
+}
+
+.ticket__row {
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+	width: 100%;
+}
+
+.ticket__name {
 	flex: 1;
-	font: var(--type-body-sm);
+	min-width: 0;
+	font: 700 var(--fs-14) / var(--lh-snug) var(--font-display);
+	letter-spacing: var(--tracking-display);
+	text-transform: uppercase;
 	color: var(--text-strong);
 }
 
-.group--on .group__name {
-	font-weight: 600;
-}
-
-.group__count {
+.ticket__count {
 	font: var(--type-mono);
 	color: var(--text-subtle);
 }
 
-.group__cost {
-	padding: 4px 0 0 32px;
+.ticket__cost {
+	padding-right: 36px;
 	font: var(--type-caption);
 	color: var(--text-muted);
 }
 
-.source {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	padding: 16px;
-}
-
-.source__hint {
-	font: var(--type-caption);
-	color: var(--text-muted);
-}
-
-.source__link {
-	align-self: flex-start;
-	margin-top: 4px;
-	font: var(--type-label);
-	letter-spacing: var(--tracking-label);
-	text-transform: uppercase;
-}
-
-.main {
-	display: flex;
-	flex: 1;
-	flex-direction: column;
-	gap: 16px;
-	max-width: 520px;
-}
-
-.reel {
-	position: relative;
-	padding: 4px 0;
-	overflow: hidden;
-	background: var(--surface-card);
-	border: 1px solid var(--border-subtle);
-	border-radius: var(--radius-lg);
-	box-shadow: var(--shadow-1);
-}
-
-.reel__row {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	height: 40px;
-	font: var(--type-body-sm);
-	color: var(--text-subtle);
-}
-
-.reel__center {
+.ticket__link {
 	position: absolute;
-	top: 124px;
 	right: 12px;
-	left: 12px;
+	bottom: 10px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	height: 40px;
-	font: var(--type-h4);
-	letter-spacing: var(--tracking-display);
-	text-transform: uppercase;
-	color: var(--text-on-contrast);
-	background: var(--surface-contrast);
+	box-sizing: border-box;
+	width: 28px;
+	height: 28px;
+	color: var(--text-muted);
+	border: 1.5px solid var(--border-default);
 	border-radius: var(--radius-sm);
+}
+
+.ticket__link:hover {
+	color: var(--text-strong);
+	border-color: var(--border-strong);
 }
 
 .spin {
 	display: flex;
 	flex-direction: column;
-	gap: 8px;
+	gap: 10px;
 	align-items: center;
-	align-self: center;
 }
 
 .spin__hint {
@@ -419,9 +344,10 @@ onMounted(async () => {
 .result {
 	position: relative;
 	display: flex;
-	flex-direction: column;
-	gap: 12px;
-	padding: 16px;
+	flex-wrap: wrap;
+	gap: 24px;
+	align-items: center;
+	padding: 20px;
 	background: var(--surface-card);
 	border: 1px solid var(--border-subtle);
 	border-radius: var(--radius-lg);
@@ -431,39 +357,35 @@ onMounted(async () => {
 .result__accent {
 	position: absolute;
 	top: 0;
-	left: 16px;
+	left: 20px;
 	width: 40px;
 	height: 4px;
 	background: var(--accent);
 	border-radius: 0 0 2px 2px;
 }
 
-.result__head {
+.result__body {
 	display: flex;
-	align-items: center;
+	flex: 1 1 420px;
+	flex-direction: column;
 	gap: 8px;
+	min-width: 0;
 }
 
-.result__title {
+.result__source {
 	display: flex;
-	flex: 1;
-	flex-direction: column;
-	gap: 6px;
+	gap: 12px;
+	font: var(--type-label);
+	letter-spacing: var(--tracking-label);
+	text-transform: uppercase;
+	color: var(--text-muted);
 }
 
 .result__name {
-	font: var(--type-h4);
+	font: var(--type-h3);
 	letter-spacing: var(--tracking-display);
 	text-transform: uppercase;
 	color: var(--text-strong);
-}
-
-.result__body {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	padding-top: 12px;
-	border-top: 1px solid var(--border-subtle);
 }
 
 .result__desc {
@@ -482,5 +404,23 @@ onMounted(async () => {
 	gap: 8px;
 	font: var(--type-caption);
 	color: var(--text-muted);
+}
+
+.result__actions {
+	display: flex;
+	flex: none;
+	align-items: center;
+	gap: 8px;
+}
+
+.result-enter-active {
+	transition:
+		opacity 240ms var(--ease-out),
+		transform 320ms var(--ease-out);
+}
+
+.result-enter-from {
+	opacity: 0;
+	transform: translateY(12px);
 }
 </style>

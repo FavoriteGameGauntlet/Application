@@ -28,7 +28,6 @@ import { useWishlistStore } from './wishlistStore'
 
 export type WheelTab = 'points' | 'games'
 
-const MIN_STEPS = 18
 const REROLL_START_DELAY_MS = 350
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -41,9 +40,11 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 	/** the selected group of the «games» tab */
 	const gameGroupId = ref<number>()
 
-	const pos = ref(0)
 	const spinning = ref(false)
 	const result = ref<WheelSpinResult | null>(null)
+	/** the spin the tape is rolling to; it becomes the result when the tape lands */
+	const landing = ref<WheelSpinResult | null>(null)
+	let onLanded: (() => void) | undefined
 	/** reel of the last spin; falls back to the pool of the selected source */
 	const spunEntries = ref<string[] | null>(null)
 	/** the cost rows with the copies to pick from, set while the choice dialog is open */
@@ -133,7 +134,6 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 			}
 
 			spunEntries.value = last.entries
-			pos.value = last.resultIndex
 			result.value = last
 		} catch (e) {
 			useToastStore().error(e)
@@ -160,7 +160,6 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		if (spinning.value) return
 
 		tab.value = value
-		pos.value = 0
 		clearResult()
 	}
 
@@ -173,36 +172,25 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 			groupId.value = id
 		}
 
-		pos.value = 0
 		clearResult()
 	}
 
-	const animate = (spin: WheelSpinResult) =>
+	/** the tape calls it when it stops on the spun entry, or when it is gone before that */
+	const landed = () => {
+		if (!landing.value) return
+
+		result.value = landing.value
+		landing.value = null
+		spinning.value = false
+		onLanded?.()
+		onLanded = undefined
+	}
+
+	const roll = (spin: WheelSpinResult) =>
 		new Promise<void>((resolve) => {
-			const n = spin.entries.length
-
+			onLanded = resolve
 			spunEntries.value = spin.entries
-			pos.value %= n
-
-			let total = (spin.resultIndex - pos.value + n) % n
-			while (total < MIN_STEPS) total += n
-
-			let i = 0
-
-			const step = () => {
-				i++
-				pos.value = (pos.value + 1) % n
-
-				if (i < total) {
-					setTimeout(step, 35 + 300 * Math.pow(i / total, 3))
-				} else {
-					result.value = spin
-					spinning.value = false
-					resolve()
-				}
-			}
-
-			step()
+			landing.value = spin
 		})
 
 	const spin = async () => {
@@ -214,7 +202,7 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		result.value = null
 
 		try {
-			await animate(await api.wheel.spin({ groupId: source.id }))
+			await roll(await api.wheel.spin({ groupId: source.id }))
 		} catch (e) {
 			spinning.value = false
 
@@ -237,7 +225,6 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		tab.value = 'games'
 		spunEntries.value = null
 		result.value = null
-		pos.value = 0
 
 		// the groups may not be loaded yet when the wheel was never opened
 		await Promise.all([router.push({ name: RouteName.Wheel }), load()])
@@ -389,9 +376,9 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		changeGroups,
 		gameGroups,
 		group,
-		pos,
 		spinning,
 		result,
+		landing,
 		pool,
 		resultSource,
 		resultStartsGame,
@@ -404,6 +391,7 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		clearResult,
 		discardResult,
 		spin,
+		landed,
 		spinGames,
 		apply,
 		confirmPayment,
