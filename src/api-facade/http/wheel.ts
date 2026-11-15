@@ -2,6 +2,7 @@ import type {
 	Api,
 	SpinPayment,
 	WheelGroup,
+	WheelSource,
 	WheelSpinResult,
 } from '../contracts'
 import { http, type HttpErrorResponse } from '../http'
@@ -17,8 +18,6 @@ type RolledWheelRowDto = {
 	name: string
 	description?: string
 	isManualChange: boolean
-	/** the place on the wheel, counted from 1 */
-	position: number
 	rolledDate: string
 }
 
@@ -45,19 +44,20 @@ const GROUP_KINDS = {
 	wishlist: 'wishlist',
 } as const
 
-/** the spin has an odd number of items, the middle one is applied */
+/** the backend names only the item that fell, the tape around it is the pool of the group */
 const toSpinResult = (
 	source: WheelSpinResult['source'],
-	rows: RolledWheelRowDto[],
+	{ name, description, isManualChange }: RolledWheelRowDto,
+	pool: string[],
 ): WheelSpinResult => {
-	const ordered = [...rows].sort((a, b) => a.position - b.position)
-	const resultIndex = Math.floor(ordered.length / 2)
-	const { name, description, isManualChange } = ordered[resultIndex]
+	const index = pool.indexOf(name)
+	// an item removed from the wheel after the spin is no longer in the pool
+	const entries = index === -1 ? [...pool, name] : pool
 
 	return {
 		source,
-		entries: ordered.map((row) => row.name),
-		resultIndex,
+		entries,
+		resultIndex: index === -1 ? pool.length : index,
 		result: {
 			name,
 			...(description !== undefined && { description }),
@@ -73,6 +73,29 @@ const toPaymentBody = ({ items, perks, effects }: SpinPayment) => ({
 	userEffectIds: effects,
 })
 
+const getGroupRows = async (path: string, groupId: number) =>
+	(
+		await http.get<{ response: WheelGroupRowDto[] }>(
+			`${path}/wheel/groups/${groupId}/rows`,
+		)
+	).body
+
+/** the names on the tape: the items of the group, the games of the wishlist for a wishlist */
+const getPoolNames = async (
+	path: string,
+	{ groupId, kind }: WheelSource,
+): Promise<string[]> => {
+	if (kind === 'wishlist') {
+		const { body: games } = await http.get<{ response: { name: string }[] }>(
+			`${path}/games/users/${await currentLogin()}/wishlist`,
+		)
+
+		return games.map((game) => game.name)
+	}
+
+	return (await getGroupRows(path, groupId)).map((row) => row.name)
+}
+
 const getGroups = async (): Promise<WheelGroup[]> => {
 	const path = await partyPath()
 	const [{ body: groups }, pointTypes] = await Promise.all([
@@ -84,13 +107,7 @@ const getGroups = async (): Promise<WheelGroup[]> => {
 		groups.map(async (group) => {
 			// the items of a wishlist are not listed here, they are the wishlist games
 			const rows =
-				group.kind === 'wishlist'
-					? []
-					: (
-							await http.get<{ response: WheelGroupRowDto[] }>(
-								`${path}/wheel/groups/${group.id}/rows`,
-							)
-						).body
+				group.kind === 'wishlist' ? [] : await getGroupRows(path, group.id)
 
 			return {
 				id: group.id,
@@ -130,22 +147,22 @@ export const wheel: Api['wheel'] = {
 
 	spin: async (source) => {
 		const path = await partyPath()
-		const { body } = await http.post<{ response: RolledWheelRowDto[] }>(
+		const { body } = await http.post<{ response: RolledWheelRowDto }>(
 			`${path}/wheel/spin`,
 			{ body: { groupId: source.groupId } },
 		)
 
-		return toSpinResult(source, body)
+		return toSpinResult(source, body, await getPoolNames(path, source))
 	},
 
-	lastSpin: async () => {
+	lastSpin: async (source) => {
 		const path = await partyPath()
-		let rows: RolledWheelRowDto[]
+		let row: RolledWheelRowDto
 
 		try {
-			rows = (
-				await http.get<{ response: RolledWheelRowDto[] }>(
-					`${path}/wheel/spins/last`,
+			row = (
+				await http.get<{ response: RolledWheelRowDto }>(
+					`${path}/wheel/groups/${source.groupId}/spins/last`,
 				)
 			).body
 		} catch (e) {
@@ -154,38 +171,26 @@ export const wheel: Api['wheel'] = {
 			throw e
 		}
 
-		// the answer doesn't name the group, so it is the one that holds every name of the spin
-		const [groups, wishlist] = await Promise.all([
-			getGroups(),
-			http.get<{ response: { name: string }[] }>(
-				`${path}/games/users/${await currentLogin()}/wishlist`,
-			),
-		])
-		const names = rows.map((row) => row.name)
-		const group = groups.find((g) => {
-			const pool =
-				g.kind === 'wishlist'
-					? wishlist.body.map((game) => game.name)
-					: g.entries.map((entry) => entry.name)
-
-			return names.every((name) => pool.includes(name))
-		})
-
-		return group ? toSpinResult({ groupId: group.id }, rows) : null
+		return toSpinResult(source, row, await getPoolNames(path, source))
 	},
 
-	discard: async () => {
-		await http.post(`${await partyPath()}/wheel/spins/last/clear`)
+	discard: async (groupId) => {
+		await http.post(
+			`${await partyPath()}/wheel/groups/${groupId}/spins/last/clear`,
+		)
 	},
 
-	apply: async ({ payment, targetLogins, entryIds } = {}) => {
-		await http.post(`${await partyPath()}/wheel/spins/last/apply`, {
-			body: {
-				...(entryIds && { entryIds }),
-				...(targetLogins && { targetLogins }),
-				...(payment && { payment: toPaymentBody(payment) }),
+	apply: async (groupId, { payment, targetLogins, entryIds } = {}) => {
+		await http.post(
+			`${await partyPath()}/wheel/groups/${groupId}/spins/last/apply`,
+			{
+				body: {
+					...(entryIds && { entryIds }),
+					...(targetLogins && { targetLogins }),
+					...(payment && { payment: toPaymentBody(payment) }),
+				},
 			},
-		})
+		)
 
 		return { journalEntry: await latestOwnEntry() }
 	},

@@ -16,7 +16,7 @@ The structure of `src/`, the domain (parties, wheel, resources, journal, admin) 
 
 1. Switch to `master`, update it (`git pull`) and create a new branch from it; work only there. Don't read the commit history.
 2. Read `harness/claude-progress.md` for the latest verified state and the next step.
-3. Read `harness/feature_list.json` and pick the unfinished feature with the lowest `priority`. Skip a feature whose only remaining step waits for the user and say so in the reply. If the user names a task themselves, work on it and add it to the list following "Required artifacts".
+3. Read `harness/feature_list.json` and pick the unfinished feature with the lowest `priority`. If the user names a task themselves, work on it and add it to the list following "Required artifacts".
 4. Run `bash harness/scripts/init.sh` (eslint, vue-tsc) from the repo root. It only checks and never rewrites files. If it fails, fix that first.
 
 ## Required artifacts
@@ -27,7 +27,7 @@ The structure of `src/`, the domain (parties, wheel, resources, journal, admin) 
 
 `harness/feature_list.json` format: `{"features": [{"id", "title", "priority", "status", "evidence"}]}`. `status` is `todo`, `in_progress` or `done`. `evidence` is empty until the feature is verified.
 
-Status transitions: `todo` becomes `in_progress` when you start the feature (set it in the first commit of the branch). `in_progress` becomes `done` when the Definition of Done is met and the evidence is recorded. The agent does not run the app, so a check only the user can make counts once the user says in chat that they checked it; record that in `evidence` as "Checked by the user" and only then set `done`. Until then the feature stays `in_progress`.
+Status transitions: `todo` becomes `in_progress` when you start the feature (set it in the first commit of the branch). `in_progress` becomes `done` when the work is finished: the Definition of Done is met and the evidence is recorded. A check only the user can make does not hold the status back: the agent does not run the app, so `evidence` says what was checked and what was not, and a later word of the user ("Checked by the user") is added to it.
 
 `harness/archive/features-done.json` holds the full entries of done features and is not read at startup. When a feature is done, move its full entry there and leave in `feature_list.json` the `id`, a one-line `title`, the `priority`, `done` and an `evidence` like "Done <date>. Full record: harness/archive/features-done.json". Create the `archive/` folder with the first done feature. `claude-progress.md` keeps the three newest entries and any open blocker; older entries go to `harness/archive/progress.md`, newest on top.
 

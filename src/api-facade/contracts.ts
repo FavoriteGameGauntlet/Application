@@ -148,15 +148,16 @@ export type WheelGroup = {
 	cost: SpinCostRef[]
 }
 
-export type WheelSource = { groupId: number }
+/** the kind tells where the tape comes from: the items of the group, or the wishlist games */
+export type WheelSource = { groupId: number; kind: WheelGroup['kind'] }
 
 export type WheelSpinResult = {
 	source: WheelSource
-	/** reel order, the animation stops at resultIndex */
+	/** the items of the tape, built by the client: the backend names only the item that fell */
 	entries: string[]
-	/** the middle item of the spin, the one that `apply` uses */
+	/** the place of the item that fell in `entries`, the one that `apply` uses */
 	resultIndex: number
-	/** the backend saves only the last spin, so the item has no id of its own */
+	/** the backend saves only the last spin of a group, so the item has no id of its own */
 	result: Omit<WheelEntry, 'id'>
 }
 
@@ -790,26 +791,27 @@ export type Api = {
 		 * be paid (409 NOT_ENOUGH_POINTS, INVALID_PAYMENT).
 		 *
 		 * Backend: POST {party}/wheel/spin with {groupId}; the wishlist is a
-		 * group of its own, with its id in `groups`. The answer is the saved items in the order they sit
-		 * on the wheel (`position` from 1), the middle one is the result. The
+		 * group of its own, with its id in `groups`. The answer is the one item
+		 * that fell. The tape around it is the pool of the group (the rows of the
+		 * group, the wishlist games for a wishlist), put together here. The
 		 * cost of a spin of changes is set by an admin, see `admin.wheel.spinCost`.
 		 */
 		spin: (source: WheelSource) => Promise<WheelSpinResult>
 		/**
-		 * The spin the server still keeps, null when there is none. The answer
-		 * doesn't say which group it came from, so the group is the one whose items
-		 * hold every name of the spin.
+		 * The spin the server keeps for the group, null when there is none. Every
+		 * group keeps its own, so a spin of another group doesn't replace it.
 		 *
-		 * Backend: GET {party}/wheel/spins/last, 404 LAST_WHEEL_EFFECTS_NOT_FOUND
+		 * Backend: GET {party}/wheel/groups/{groupId}/spins/last, 404
+		 * LAST_WHEEL_EFFECTS_NOT_FOUND
 		 */
-		lastSpin: () => Promise<WheelSpinResult | null>
+		lastSpin: (source: WheelSource) => Promise<WheelSpinResult | null>
 		/**
-		 * Drops the stored spin without applying it; there is no error when there
-		 * is none.
+		 * Drops the stored spin of the group without applying it; there is no
+		 * error when there is none.
 		 *
-		 * Backend: POST {party}/wheel/spins/last/clear
+		 * Backend: POST {party}/wheel/groups/{groupId}/spins/last/clear
 		 */
-		discard: () => Promise<void>
+		discard: (groupId: number) => Promise<void>
 		/**
 		 * The cost of a spin of changes is charged here, in one history record
 		 * with the changes of the result (409 NOT_ENOUGH_POINTS). A game that the
@@ -824,11 +826,15 @@ export type Api = {
 		 * `entryIds` is required for an item with `shouldApplyToAll` false and not
 		 * accepted otherwise (422 WHEEL_ENTRIES_INVALID).
 		 *
-		 * Backend: POST {party}/wheel/spins/last/apply, the backend applies the
-		 * last spin of the user. A game spin starts the game, creates its timer
-		 * and removes the wishlist entry, a spin of changes applies its `entries`.
+		 * Backend: POST {party}/wheel/groups/{groupId}/spins/last/apply, the
+		 * backend applies the last spin of the user in the group. A game spin
+		 * starts the game, creates its timer and removes the wishlist entry, a
+		 * spin of changes applies its `entries`.
 		 */
-		apply: (use?: WheelApply) => Promise<{
+		apply: (
+			groupId: number,
+			use?: WheelApply,
+		) => Promise<{
 			currentGame?: CurrentGame
 			journalEntry?: JournalEntry
 		}>
