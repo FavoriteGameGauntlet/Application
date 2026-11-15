@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted } from 'vue'
+import { computed, onBeforeUnmount } from 'vue'
 import type { WheelGroup } from '../../api-facade/contracts'
 import UiBadge from '../../components/ui/UiBadge.vue'
 import UiButton from '../../components/ui/UiButton.vue'
+import UiCountBadge from '../../components/ui/UiCountBadge.vue'
 import UiIcon from '../../components/ui/UiIcon.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiTabs from '../../components/ui/UiTabs.vue'
@@ -24,11 +25,9 @@ const resourcesStore = useResourcesStore()
 const wheelStore = useWheelStore()
 const wishlistStore = useWishlistStore()
 
-/** «Билет на колесо ×2, 50 золота»; empty when the spin of the group is free */
-const costText = (group?: WheelGroup) =>
-	(group?.cost ?? [])
-		.map((r) => formatCost(r, resourcesStore.pointTypes))
-		.join(', ')
+/** «Билет на колесо ×2», «50 золота»: a fact each; none when the spin of the group is free */
+const costRows = (group: WheelGroup) =>
+	group.cost.map((r) => formatCost(r, resourcesStore.pointTypes))
 
 const sessionStore = useSessionStore()
 
@@ -68,12 +67,6 @@ const emptyText = computed(() => {
 	}
 })
 
-const resultDescription = computed(() =>
-	wheelStore.resultStartsGame
-		? 'Станет текущей игрой, таймер начнётся с нуля.'
-		: wheelStore.result?.result.description,
-)
-
 /** what the entry changes by itself: green adds, red takes */
 const resultChanges = computed(() =>
 	(wheelStore.resultEntry?.entries ?? []).map((r) => ({
@@ -84,16 +77,13 @@ const resultChanges = computed(() =>
 )
 
 const showResult = computed(
-	() => !!wheelStore.shownResult && !wheelStore.spinning,
+	() => !!wheelStore.shownResult && !wheelStore.spinning && !wheelStore.loading,
 )
 
-onMounted(async () => {
-	// the tickets count the spins the user's resources pay for
-	resourcesStore.loadMine().catch((e) => useToastStore().error(e))
-
-	await wheelStore.load()
-	await wheelStore.restore()
-})
+// the tickets count the spins the user's resources pay for; set up here, not in
+// onMounted, so the first frame is already the empty one
+resourcesStore.loadMine().catch((e) => useToastStore().error(e))
+wheelStore.open()
 
 // a spin must not hang when the tape is gone before it lands
 onBeforeUnmount(() => wheelStore.landed())
@@ -125,19 +115,25 @@ onBeforeUnmount(() => wheelStore.landed())
 					@click="wheelStore.setGroup(group.id)"
 				>
 					<span class="ticket__bar"></span>
-					<span class="ticket__row">
+					<span class="ticket__head">
 						<span class="ticket__name">{{ groupName(group) }}</span>
-						<span class="ticket__count">{{ groupCount(group) }}</span>
+						<UiCountBadge :value="groupCount(group)" />
 					</span>
-					<span class="ticket__cost">
-						{{ costText(group) ? `Цена: ${costText(group)}` : 'Бесплатно' }}
+					<span class="ticket__tags">
+						<template v-if="group.cost.length">
+							<span
+								v-for="row in costRows(group)"
+								:key="row"
+								class="change change--minus"
+								>−{{ row }}</span
+							>
+						</template>
+						<span v-else class="change change--plus">бесплатно</span>
 					</span>
-					<span
-						v-if="spinsLeft(group) !== undefined"
-						class="ticket__cost"
-						:class="{ 'ticket__cost--none': spinsLeft(group) === 0 }"
-					>
-						Прокрутов: {{ spinsLeft(group) }}
+					<span class="ticket__tags">
+						<UiBadge :tone="spinsLeft(group) === 0 ? 'danger' : 'neutral'">
+							Прокрутов: {{ spinsLeft(group) ?? '∞' }}
+						</UiBadge>
 					</span>
 				</button>
 				<RouterLink
@@ -157,6 +153,7 @@ onBeforeUnmount(() => wheelStore.landed())
 			:target="wheelStore.landing?.resultIndex"
 			:winner="showResult ? wheelStore.shownResult?.resultIndex : undefined"
 			:busy="gameInProgress"
+			:loading="wheelStore.loading"
 			:empty-text="emptyText"
 			@landed="wheelStore.landed()"
 		/>
@@ -167,15 +164,15 @@ onBeforeUnmount(() => wheelStore.landed())
 				icon="refresh-cw"
 				:variant="showResult ? 'outline' : 'primary'"
 				:disabled="
-					wheelStore.spinning || !wheelStore.pool.length || gameInProgress
+					wheelStore.spinning ||
+					wheelStore.loading ||
+					!wheelStore.pool.length ||
+					gameInProgress
 				"
 				@click="wheelStore.spin()"
 			>
 				{{ wheelStore.spinning ? 'Крутится…' : 'Крутить колесо' }}
 			</UiButton>
-			<span v-if="gameInProgress" class="spin__hint">
-				Идёт игра. Колесо игр можно крутить, когда она закончена.
-			</span>
 		</div>
 
 		<Transition name="result">
@@ -184,8 +181,8 @@ onBeforeUnmount(() => wheelStore.landed())
 
 				<div class="result__body">
 					<div class="result__name">{{ wheelStore.result.result.name }}</div>
-					<div v-if="resultDescription" class="result__desc">
-						{{ resultDescription }}
+					<div v-if="wheelStore.result.result.description" class="result__desc">
+						{{ wheelStore.result.result.description }}
 					</div>
 					<div v-if="resultChanges.length" class="result__changes">
 						<span
@@ -209,7 +206,7 @@ onBeforeUnmount(() => wheelStore.landed())
 					<UiButton variant="outline" @click="wheelStore.discardResult()">
 						Сбросить
 					</UiButton>
-					<UiButton size="lg" @click="wheelStore.apply()">
+					<UiButton @click="wheelStore.apply()">
 						{{ wheelStore.resultStartsGame ? 'Взять игру' : 'Применить' }}
 					</UiButton>
 				</div>
@@ -299,15 +296,16 @@ onBeforeUnmount(() => wheelStore.landed())
 	width: 40px;
 }
 
-.ticket__row {
+/* a long name keeps its width and the count drops under it */
+.ticket__head {
 	display: flex;
-	align-items: baseline;
-	gap: 12px;
-	width: 100%;
+	flex-wrap: wrap;
+	gap: 6px 12px;
+	align-items: center;
+	justify-content: space-between;
 }
 
 .ticket__name {
-	flex: 1;
 	min-width: 0;
 	font: 700 var(--fs-14) / var(--lh-snug) var(--font-display);
 	letter-spacing: var(--tracking-display);
@@ -315,19 +313,12 @@ onBeforeUnmount(() => wheelStore.landed())
 	color: var(--text-strong);
 }
 
-.ticket__count {
-	font: var(--type-mono);
-	color: var(--text-subtle);
-}
-
-.ticket__cost {
+/* the room on the right is for the link of the wishlist */
+.ticket__tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
 	padding-right: 36px;
-	font: var(--type-caption);
-	color: var(--text-muted);
-}
-
-.ticket__cost--none {
-	color: var(--danger-text);
 }
 
 .ticket__link {
@@ -355,11 +346,6 @@ onBeforeUnmount(() => wheelStore.landed())
 	flex-direction: column;
 	gap: 10px;
 	align-items: center;
-}
-
-.spin__hint {
-	font: var(--type-body-sm);
-	color: var(--text-muted);
 }
 
 .result {

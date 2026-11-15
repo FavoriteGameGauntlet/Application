@@ -45,8 +45,10 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 	/** the spin the tape is rolling to; it becomes the result when the tape lands */
 	const landing = ref<WheelSpinResult | null>(null)
 	let onLanded: (() => void) | undefined
-	/** reel of the last spin; falls back to the pool of the selected source */
-	const spunEntries = ref<string[] | null>(null)
+	/** the groups or the spin of the selected group are on their way: the screen draws no cards until they are here */
+	const loading = ref(false)
+	/** the number of the last `restore`, an older one that comes back late is dropped */
+	let restoreSeq = 0
 	/** the cost rows with the copies to pick from, set while the choice dialog is open */
 	const pendingChoices = ref<PaymentChoice[] | null>(null)
 	/** the entries of the item that fell, set while the user picks which of them to apply */
@@ -80,10 +82,11 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		result.value?.source.groupId === group.value?.id ? result.value : null,
 	)
 
+	/** the tape of the spin that is rolling or shown, so it does not change with the group; else the pool of the group */
 	const pool = computed(() => {
 		const spun = landing.value ?? shownResult.value
 
-		if (spun && spunEntries.value) return spunEntries.value
+		if (spun) return spun.entries
 
 		return group.value?.kind === 'wishlist'
 			? useWishlistStore().mine.map((g) => g.name)
@@ -106,13 +109,6 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 	/** applying the result starts the game instead of granting changes */
 	const resultStartsGame = computed(() => resultGroup.value?.kind !== 'changes')
 
-	/** what the result card shows under «Выпало на колесе» */
-	const resultSource = computed(() => {
-		if (resultGroup.value?.kind === 'wishlist') return 'Список желаемого'
-
-		return resultGroup.value?.name ?? ''
-	})
-
 	const load = async () => {
 		groups.value = await api.wheel.groups()
 		groupId.value ??= changeGroups.value[0]?.id
@@ -121,43 +117,59 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		await useWishlistStore().loadMine()
 	}
 
-	/** shows the spin the server still keeps, after a restart for example */
+	/** shows the spin the server keeps for the selected group, after a restart or a switch for example */
 	const restore = async () => {
-		if (result.value || spinning.value) return
+		const selected = group.value
+		const seq = ++restoreSeq
+
+		if (!selected || spinning.value) {
+			loading.value = false
+			return
+		}
+
+		loading.value = true
 
 		try {
-			const last = await api.wheel.lastSpin()
-			const source =
-				last && groups.value.find((g) => g.id === last.source.groupId)
+			const last = await api.wheel.lastSpin({
+				groupId: selected.id,
+				kind: selected.kind,
+			})
 
-			if (!last || !source) return
+			// a later switch or a spin took over while the answer was on its way
+			if (seq !== restoreSeq) return
 
-			if (source.kind === 'changes') {
-				tab.value = 'points'
-				groupId.value = source.id
-			} else {
-				tab.value = 'games'
-				gameGroupId.value = source.id
-			}
-
-			spunEntries.value = last.entries
 			result.value = last
 		} catch (e) {
-			useToastStore().error(e)
+			if (seq === restoreSeq) useToastStore().error(e)
+		} finally {
+			if (seq === restoreSeq) loading.value = false
 		}
 	}
 
-	/** hides the shown result; the server keeps it until the next spin replaces it */
-	const clearResult = () => {
-		result.value = null
-		spunEntries.value = null
+	/** the screen opens empty and draws the groups and the spin of the selected one once, so a shown spin does not blink in */
+	const open = async () => {
+		loading.value = true
+
+		try {
+			await load()
+		} catch (e) {
+			loading.value = false
+			useToastStore().error(e)
+			return
+		}
+
+		await restore()
 	}
 
 	/** «Сбросить»: the result goes from the screen and from the server */
 	const discardResult = async () => {
+		const discarded = result.value
+
+		if (!discarded) return
+
 		try {
-			await api.wheel.discard()
-			clearResult()
+			await api.wheel.discard(discarded.source.groupId)
+			result.value = null
 		} catch (e) {
 			useToastStore().error(e)
 		}
@@ -167,6 +179,7 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		if (spinning.value) return
 
 		tab.value = value
+		void restore()
 	}
 
 	const setGroup = (id: number) => {
@@ -177,6 +190,8 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		} else {
 			groupId.value = id
 		}
+
+		void restore()
 	}
 
 	/** the tape calls it when it stops on the spun entry, or when it is gone before that */
@@ -193,7 +208,6 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 	const roll = (spin: WheelSpinResult) =>
 		new Promise<void>((resolve) => {
 			onLanded = resolve
-			spunEntries.value = spin.entries
 			landing.value = spin
 		})
 
@@ -202,11 +216,16 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 
 		if (spinning.value || !source || !pool.value.length) return
 
+		// a spin replaces whatever a restore of the group is still bringing
+		restoreSeq++
+		loading.value = false
 		spinning.value = true
 		result.value = null
 
 		try {
-			await roll(await api.wheel.spin({ groupId: source.id }))
+			await roll(
+				await api.wheel.spin({ groupId: source.id, kind: source.kind }),
+			)
 		} catch (e) {
 			spinning.value = false
 
@@ -227,7 +246,6 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 	/** opens the games tab and spins it, used after the current game is rerolled */
 	const spinGames = async () => {
 		tab.value = 'games'
-		spunEntries.value = null
 		result.value = null
 
 		// the groups may not be loaded yet when the wheel was never opened
@@ -317,7 +335,7 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 	}
 
 	const applySpin = async (applied: WheelSpinResult, payment?: SpinPayment) => {
-		const group = resultSource.value
+		const group = resultGroup.value?.name ?? ''
 		const toast = useToastStore()
 
 		// the backend takes targets for a group of changes only (and requires them);
@@ -330,13 +348,16 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		pickedEntryIds.value = undefined
 
 		try {
-			await api.wheel.apply({ payment, targetLogins, entryIds })
+			await api.wheel.apply(applied.source.groupId, {
+				payment,
+				targetLogins,
+				entryIds,
+			})
 
 			result.value = null
-			spunEntries.value = null
 
 			// the server keeps the spin after the apply, and a restored one could be applied twice
-			await api.wheel.discard().catch(() => undefined)
+			await api.wheel.discard(applied.source.groupId).catch(() => undefined)
 
 			if (startsGame) {
 				if (payment) {
@@ -376,25 +397,22 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 
 	return {
 		tab,
-		groups,
 		changeGroups,
 		gameGroups,
 		group,
+		loading,
 		spinning,
 		result,
 		shownResult,
 		landing,
 		pool,
-		resultSource,
 		resultEntry,
 		resultStartsGame,
 		pendingChoices,
 		pendingEntries,
-		load,
-		restore,
+		open,
 		setTab,
 		setGroup,
-		clearResult,
 		discardResult,
 		spin,
 		landed,

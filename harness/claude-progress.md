@@ -2,6 +2,18 @@
 
 Newest entry on top. Record only what was actually verified.
 
+## 2026-11-15 wheel-group-spins
+
+- The wheel endpoints changed (`wheel.yaml` 0.26.0 of the API documentation, found at `/scalar/api/specification/`): a spin answers with the one item that fell, and the saved spin is kept per group, so `spins/last`, `last/apply` and `last/clear` live under `/wheel/groups/{groupId}/`. By the user's answers: `api-facade/http/wheel.ts` puts the tape together from the pool of the group (the rows, or the wishlist games) and places the winner by its index (at the end when the item was removed since). The store reads the spin of the selected group when the screen opens and on every switch of the tab or group, and no longer switches the tab on its own (there is no single last spin any more). `WheelSource` carries the group `kind`, so no request for the group list is needed; `lastSpin`, `discard` and `apply` of `Api` take the group.
+- The tape (the user: cards vanish, stick to the edge and do not run with the tape): the edge fade is a mask on an inner layer, not a fixed 620px fade per card. Every spin passes 20 cards whatever the group size (it was 30 and more and grew with the group, so at the start a card moved over half a pitch per frame and read as standing still). A card is placed by `transform`, the blur has three steps (0, 1 and 3 px), there are 8 slots and a card farther than 3 pitches is not drawn (the tape is about 1140px at the widest window). The cause is from the formulas and the indirect signs, not measured; the user checked that the tape moves smoothly and the sticking is gone.
+- The screen opens empty and draws once (the user: a group with a spin blinked): `wheelStore.open()` runs in the setup of the view, `loading` is true while the groups and the spin of the selected group come, and `WheelTape` draws no cards then. A late older `restore` is dropped, a spin cancels one in flight.
+- Cleanup by the user's «всё поправь»: `spunEntries`, the exports `groups`, `clearResult`, `resultSource`, `load`, `restore`, the wishlist branch of `resultSource`, the line under the spin button («Идёт игра…») and the line «Станет текущей игрой…» on the result card are gone.
+- A ticket reads: the name with the tag «Количество: N», the cost as pills (a red «−50 золота» per cost row, a green «бесплатно» for a free group; red and green is my reading of the user's words, the lower case is mine), the tag «Прокрутов: N» (danger at 0, «∞» for a free group). The «Цена:» label is gone by the user's word.
+- Not done, by the user's word (errors are reworked later): `WHEEL_SPIN_COOLDOWN` and `NOT_ENOUGH_AVAILABLE_WHEEL_EFFECTS` show the server message as it comes.
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files, a script over group sizes 1 to 90 found no mismatch at the start and at the landing of the reel. The app was run by the user: the tape movement. Not looked at since the last changes: the loading state, the tickets, the apply and the clear of a spin against the backend.
+- After a change of both the script and the scoped style of a component the dev server can keep serving the old CSS (the cards sat shifted by the missing `left`); a restart of `tauri dev` fixes it, the code is not at fault.
+- The feature stays `in_progress` until the user has looked at the tickets and the loading.
+
 ## 2026-11-15 wheel-tape
 
 - Done in code, by the user's approval of the plan (the animation lives in the tape component, the tickets wrap at about 220px): the player wheel screen follows the canvas «Колесо: лента-арена». The side panel is a row of group tickets (name, count, «Цена: …» or «Бесплатно», a link to the wishlist on its ticket); `WheelTape` rolls a horizontal tape for about six seconds with blur and streaks, holds, snaps back into the frame, then the winner grows and the others fade. The store keeps the spin in `landing` until the tape calls `landed()`; the old step animation and `pos` are gone from the store. The result card has «Выпало» and the group as two elements (no dot, the project rule), the description, the cost, the manual badge, «Сбросить» and the apply button. The line «Выпавшая игра станет текущей» and the panel title are gone (not in the canvas).
@@ -35,12 +47,6 @@ Newest entry on top. Record only what was actually verified.
 - The members table lost the «>» arrow and its column (the user's word: the row click and the «⋯» menu already open the profile).
 - Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files, no « · » left in `src/`. The app was not run, so no layout was looked at; rows of the lists are taller now.
 - The feature stays `in_progress` until the user has looked at the screens. No PR yet, by the user's word: the branch also holds `points-diff-column-title`.
-
-## 2026-11-14 points-diff-column-title
-
-- Done in code, by the user's answer: the last column of the points table in Resources is «Разница со мной» instead of «К тебе» (the value is the player's points minus the own). The column is 140px instead of 96px: the head is uppercase and does not wrap, so the longer title would run into «Значение ↓».
-- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. The app was not run, so the head was not looked at.
-- The feature stays `in_progress` until the user has looked at the table. The session had no network: `git pull` on `master` failed, the branch was made from the local `master`.
 
 ## Open
 

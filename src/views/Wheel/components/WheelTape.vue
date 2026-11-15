@@ -8,6 +8,8 @@ type Props = {
 	/** the index of the shown result */
 	winner?: number
 	busy?: boolean
+	/** the tape is still being filled: no cards and no empty text, only the frame */
+	loading?: boolean
 	emptyText: string
 }
 
@@ -18,6 +20,7 @@ const {
 	target,
 	winner,
 	busy = false,
+	loading = false,
 	emptyText,
 } = defineProps<Props>()
 
@@ -27,10 +30,20 @@ const PITCH = 232
 const SPIN_MS = 6200
 const HOLD_MS = 700
 const SETTLE_MS = 450
-const MIN_TURNS = 30
+/**
+ * The cards a spin passes, whatever the size of the group: the speed of the
+ * tape follows the distance, and a card that moves more than half a pitch per
+ * frame looks like it stands still or runs back.
+ */
+const REEL_CARDS = 20
+/** the cards at each end of the reel that are the pool in its own order, so the tape starts and lands without a jump */
+const REEL_EDGE = 5
 /** the spin stops past the winner and snaps back into the frame */
 const OVERSHOOT = 0.42
-const OFFSETS = [-4, -3, -2, -1, 0, 1, 2, 3, 4, 5]
+/** the slots of the cards around the centre; the tape is at most about 1140px wide, so a card is out of it from 3 pitches on */
+const OFFSETS = [-3, -2, -1, 0, 1, 2, 3, 4]
+/** a card farther from the centre than this, in pitches, is outside the tape and is not drawn */
+const VISIBLE_CARDS = 3
 const STREAK_WIDTHS = [180, 260, 140, 300, 200, 160]
 const STREAK_TOPS = [52, 92, 138, 170, 214, 248]
 
@@ -42,14 +55,41 @@ const phase = ref<Phase>(winner === undefined ? 'idle' : 'result')
 
 let frame = 0
 
+/** the cards of the spin that is rolling; `land` is the place of the winner, the middle is random */
+let reel: { first: number; land: number; to: number; filler: string[] } | null =
+	null
+
+const textAt = (i: number) => {
+	const n = entries.length
+
+	if (!n) return ''
+
+	if (!reel || i <= reel.first + REEL_EDGE) return entries[mod(i, n)]
+
+	if (i >= reel.land - REEL_EDGE)
+		return entries[mod(reel.to + i - reel.land, n)]
+
+	return reel.filler[i - reel.first]
+}
+
 const run = (to: number) => {
 	const n = entries.length
 	const start = pos.value
-	const tail = to + OVERSHOOT
-	const stop = tail + n * Math.ceil((start + MIN_TURNS - tail) / n)
-	const land = stop - OVERSHOOT
+	const first = Math.floor(start)
+	const land = first + REEL_CARDS
+	const stop = land + OVERSHOOT
 	const t0 = performance.now()
 
+	// no two equal cards in a row: they would read as one card that stands still
+	const filler: string[] = []
+	let prev = mod(first, n)
+
+	for (let j = 0; j <= REEL_CARDS; j++) {
+		prev = n > 1 ? (prev + 1 + Math.floor(Math.random() * (n - 1))) % n : 0
+		filler.push(entries[prev])
+	}
+
+	reel = { first, land, to, filler }
 	phase.value = 'spin'
 
 	const step = (now: number) => {
@@ -73,7 +113,9 @@ const run = (to: number) => {
 			pos.value = stop + (land - stop) * e
 			phase.value = 'settle'
 		} else {
-			pos.value = mod(land, n)
+			// the cards around the winner are the pool in its own order, so the winner's index is its place
+			reel = null
+			pos.value = to
 			phase.value = 'result'
 			frame = 0
 			emit('landed')
@@ -116,35 +158,38 @@ watch(
 	},
 )
 
-onBeforeUnmount(() => cancelAnimationFrame(frame))
+onBeforeUnmount(() => {
+	cancelAnimationFrame(frame)
+	reel = null
+})
 
 const empty = computed(() => !entries.length)
 const result = computed(() => phase.value === 'result' && !empty.value)
 const moving = computed(() => phase.value === 'spin' || phase.value === 'hold')
 
 const cards = computed(() => {
-	const n = entries.length
 	const base = Math.floor(pos.value)
-	const blur = speed.value > 2 ? Math.min(5, speed.value * 0.2) : 0
+	// a few steps and not a radius per frame: a card with the same blur is drawn once and then only moved
+	const blur = speed.value > 6 ? 3 : speed.value > 2 ? 1 : 0
 
 	return OFFSETS.map((k) => {
 		const i = base + k
 		const d = i - pos.value
 		const x = d * PITCH
-		const fade = Math.max(0, 1 - Math.pow(Math.abs(x) / 620, 2))
 		const isWin = result.value && Math.abs(d) < 0.5
 		const scale = isWin ? 1.16 : 1 + 0.1 * Math.max(0, 1 - Math.abs(d))
 		const dimmed = result.value && !isWin ? 0.22 : 1
 
 		return {
 			key: k,
-			text: n ? entries[mod(i, n)] : '',
+			text: textAt(i),
 			win: isWin,
 			style: {
-				left: `calc(50% + ${x - 108}px)`,
-				transform: `scale(${scale})`,
-				opacity: fade * dimmed * (busy ? 0.5 : 1),
-				filter: blur > 0.3 ? `blur(${blur}px)` : 'none',
+				// the place is a transform, not `left`: the tape moves without a layout every frame
+				transform: `translateX(${x}px) scale(${scale})`,
+				opacity: dimmed * (busy ? 0.5 : 1),
+				filter: blur ? `blur(${blur}px)` : 'none',
+				...(Math.abs(d) > VISIBLE_CARDS && { display: 'none' }),
 			},
 		}
 	})
@@ -177,29 +222,31 @@ const streaks = computed(() => {
 			'tape--busy': busy,
 		}"
 	>
-		<div
-			v-for="card in cards"
-			:key="card.key"
-			class="card"
-			:class="{ 'card--win': card.win, 'card--ghost': empty }"
-			:style="card.style"
-		>
-			<span class="card__hex"></span>
-			<span class="card__text">{{ card.text }}</span>
-		</div>
+		<div v-if="!loading" class="stage">
+			<div
+				v-for="card in cards"
+				:key="card.key"
+				class="card"
+				:class="{ 'card--win': card.win, 'card--ghost': empty }"
+				:style="card.style"
+			>
+				<span class="card__hex"></span>
+				<span class="card__text">{{ card.text }}</span>
+			</div>
 
-		<span
-			v-for="streak in streaks"
-			:key="streak.key"
-			class="streak"
-			:style="streak.style"
-		></span>
+			<span
+				v-for="streak in streaks"
+				:key="streak.key"
+				class="streak"
+				:style="streak.style"
+			></span>
+		</div>
 
 		<span class="frame"></span>
 		<span class="mark mark--top"></span>
 		<span class="mark mark--bottom"></span>
 
-		<div v-if="empty" class="empty">{{ emptyText }}</div>
+		<div v-if="empty && !loading" class="empty">{{ emptyText }}</div>
 	</div>
 </template>
 
@@ -226,9 +273,31 @@ const streaks = computed(() => {
 	--frame-h: 194px;
 }
 
+/* the edge fade lives here and not on the tape, so the tape keeps its background and border; the width of the window doesn't matter */
+.stage {
+	position: absolute;
+	inset: 0;
+	-webkit-mask-image: linear-gradient(
+		to right,
+		transparent,
+		#000 18%,
+		#000 82%,
+		transparent
+	);
+	mask-image: linear-gradient(
+		to right,
+		transparent,
+		#000 18%,
+		#000 82%,
+		transparent
+	);
+}
+
 .card {
 	position: absolute;
 	top: 74px;
+	left: calc(50% - 108px);
+	will-change: transform;
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
