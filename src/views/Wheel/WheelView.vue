@@ -131,9 +131,7 @@ onBeforeUnmount(() => wheelStore.landed())
 						<span v-else class="change change--plus">бесплатно</span>
 					</span>
 					<span class="ticket__tags">
-						<UiBadge :tone="spinsLeft(group) === 0 ? 'danger' : 'neutral'">
-							Прокрутов: {{ spinsLeft(group) ?? '∞' }}
-						</UiBadge>
+						<UiBadge>Прокрутов: {{ spinsLeft(group) ?? '∞' }}</UiBadge>
 					</span>
 				</button>
 				<RouterLink
