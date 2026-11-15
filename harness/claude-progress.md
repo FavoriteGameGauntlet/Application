@@ -10,7 +10,7 @@ Newest entry on top. Record only what was actually verified.
 - By the user's wish: a ticket of a paid group shows «Прокрутов: N», the spins the user's resources pay for (`affordableSpins` in `utils/spinPayment.ts`: the smallest of held/amount over the cost rows; items, perks and effects count copies), red at 0. The screen reloads the user's resources when it opens. A free group shows no count.
 - The wishlist link uses the `arrow-right` icon: there is no list icon in `assets/icons`.
 - Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. The app was not run, so the screen and the motion were not looked at.
-- The feature stays `in_progress` until the user has looked at the screen.
+- Checked by the user (the screen works), so the feature is `done`.
 
 ## 2026-11-14 no-dot-separators
 

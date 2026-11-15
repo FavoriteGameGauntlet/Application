@@ -240,10 +240,10 @@
 		},
 		{
 			"id": "wheel-tape",
-			"title": "Rebuild the player wheel screen as in the canvas «Колесо: лента-арена» (https://claude.ai/artifact/NDrfk38uEo4Y5cek77KV2Q): group tickets in a row, a horizontal tape with a fixed frame and a smooth spin, the result card under the button.",
+			"title": "Rebuild the player wheel screen as a tape",
 			"priority": 25,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-15. Full record: harness/archive/features-done.json"
 		}
 	]
 }
