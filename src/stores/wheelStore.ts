@@ -75,13 +75,20 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		),
 	)
 
-	const pool = computed(
-		() =>
-			spunEntries.value ??
-			(group.value?.kind === 'wishlist'
-				? useWishlistStore().mine.map((g) => g.name)
-				: (group.value?.entries.map((e) => e.name) ?? [])),
+	/** the spin kept on the server, when it was made from the selected group */
+	const shownResult = computed(() =>
+		result.value?.source.groupId === group.value?.id ? result.value : null,
 	)
+
+	const pool = computed(() => {
+		const spun = landing.value ?? shownResult.value
+
+		if (spun && spunEntries.value) return spunEntries.value
+
+		return group.value?.kind === 'wishlist'
+			? useWishlistStore().mine.map((g) => g.name)
+			: (group.value?.entries.map((e) => e.name) ?? [])
+	})
 
 	const resultGroup = computed(() => {
 		const source = result.value?.source
@@ -160,7 +167,6 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		if (spinning.value) return
 
 		tab.value = value
-		clearResult()
 	}
 
 	const setGroup = (id: number) => {
@@ -171,8 +177,6 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		} else {
 			groupId.value = id
 		}
-
-		clearResult()
 	}
 
 	/** the tape calls it when it stops on the spun entry, or when it is gone before that */
@@ -378,6 +382,7 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		group,
 		spinning,
 		result,
+		shownResult,
 		landing,
 		pool,
 		resultSource,

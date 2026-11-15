@@ -75,7 +75,9 @@ const resultChanges = computed(() =>
 	})),
 )
 
-const showResult = computed(() => !!wheelStore.result && !wheelStore.spinning)
+const showResult = computed(
+	() => !!wheelStore.shownResult && !wheelStore.spinning,
+)
 
 onMounted(async () => {
 	await wheelStore.load()
@@ -135,7 +137,7 @@ onBeforeUnmount(() => wheelStore.landed())
 		<WheelTape
 			:entries="wheelStore.pool"
 			:target="wheelStore.landing?.resultIndex"
-			:winner="showResult ? wheelStore.result?.resultIndex : undefined"
+			:winner="showResult ? wheelStore.shownResult?.resultIndex : undefined"
 			:busy="gameInProgress"
 			:empty-text="emptyText"
 			@landed="wheelStore.landed()"
@@ -164,7 +166,7 @@ onBeforeUnmount(() => wheelStore.landed())
 
 				<div class="result__body">
 					<div class="result__source">
-						Выпало: {{ wheelStore.resultSource }}
+						{{ wheelStore.resultSource }}
 					</div>
 					<div class="result__name">{{ wheelStore.result.result.name }}</div>
 					<div v-if="resultDescription" class="result__desc">
