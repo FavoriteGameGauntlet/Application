@@ -87,7 +87,7 @@ resourcesStore.loadMine().catch((e) => useToastStore().error(e))
 wheelStore.open()
 
 /** the width of a ticket and the gap after it, the buttons of the strip move by one ticket */
-const TICKET_STEP = 256
+const TICKET_STEP = 280
 
 const ticketsEl = ref<HTMLElement>()
 const canPrev = ref(false)
@@ -121,13 +121,11 @@ const onStripWheel = (e: WheelEvent) => {
 }
 
 const revealSelected = () =>
-	ticketsEl.value
-		?.querySelector('[aria-pressed="true"]')
-		?.scrollIntoView({
-			inline: 'nearest',
-			block: 'nearest',
-			behavior: 'smooth',
-		})
+	ticketsEl.value?.querySelector('[aria-pressed="true"]')?.scrollIntoView({
+		inline: 'nearest',
+		block: 'nearest',
+		behavior: 'smooth',
+	})
 
 // after the tickets are drawn: the selected one comes into view, the buttons follow
 watch(
@@ -195,22 +193,30 @@ onBeforeUnmount(() => {
 						@click="wheelStore.setGroup(group.id)"
 					>
 						<span class="ticket__bar"></span>
-						<span class="ticket__head">
-							<span class="ticket__name">{{ groupName(group) }}</span>
-							<UiCountBadge :value="groupCount(group)" />
-						</span>
-						<span class="ticket__tags">
+						<span
+							class="ticket__name"
+							:class="{ 'ticket__name--link': group.kind === 'wishlist' }"
+							:title="groupName(group)"
+							>{{ groupName(group) }}</span
+						>
+						<span class="ticket__cost">
 							<template v-if="group.cost.length">
+								<span class="change change--minus ticket__pill"
+									><span class="ticket__ellipsis"
+										>−{{ costRows(group)[0] }}</span
+									></span
+								>
 								<span
-									v-for="row in costRows(group)"
-									:key="row"
-									class="change change--minus"
-									>−{{ row }}</span
+									v-if="group.cost.length > 1"
+									class="change ticket__more"
+									:title="costRows(group).join('\n')"
+									>+{{ group.cost.length - 1 }}</span
 								>
 							</template>
 							<span v-else class="change change--plus">бесплатно</span>
 						</span>
-						<span class="ticket__tags">
+						<span class="ticket__meta">
+							<UiCountBadge :value="groupCount(group)" />
 							<UiBadge>Прокрутов: {{ spinsLeft(group) ?? '∞' }}</UiBadge>
 						</span>
 					</button>
@@ -353,7 +359,7 @@ onBeforeUnmount(() => {
 	position: relative;
 	display: flex;
 	flex: none;
-	width: 240px;
+	width: 264px;
 }
 
 .ticket__button {
@@ -400,35 +406,58 @@ onBeforeUnmount(() => {
 	width: 40px;
 }
 
-/* a long name keeps its width and the count drops under it */
-.ticket__head {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 6px 12px;
-	align-items: center;
-	justify-content: space-between;
-}
-
+/* two lines are always reserved, so the cost and the tags stand at the same place on every ticket */
 .ticket__name {
-	min-width: 0;
+	display: -webkit-box;
+	height: calc(2 * var(--fs-14) * var(--lh-snug));
+	overflow: hidden;
 	font: 700 var(--fs-14) / var(--lh-snug) var(--font-display);
 	letter-spacing: var(--tracking-display);
 	text-transform: uppercase;
 	color: var(--text-strong);
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
 }
 
 /* the room on the right is for the link of the wishlist */
-.ticket__tags {
+.ticket__name--link {
+	padding-right: 36px;
+}
+
+/* one row whatever the cost: the first item and the count of the rest */
+.ticket__cost {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	min-width: 0;
+}
+
+.ticket__pill {
+	min-width: 0;
+	max-width: 100%;
+}
+
+.ticket__ellipsis {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.ticket__more {
+	flex: none;
+}
+
+.ticket__meta {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 6px;
-	padding-right: 36px;
+	margin-top: auto;
 }
 
 .ticket__link {
 	position: absolute;
+	top: 10px;
 	right: 12px;
-	bottom: 10px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
