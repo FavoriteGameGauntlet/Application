@@ -244,6 +244,13 @@
 			"priority": 25,
 			"status": "done",
 			"evidence": "Done 2026-11-15. Full record: harness/archive/features-done.json"
+		},
+		{
+			"id": "wheel-group-spins",
+			"title": "Follow the per-group wheel endpoints (a spin answers with one item, the spin is kept per group), fix the sticking cards of the tape, and rework the group tickets (count, cost and spins as tags). The user's words: the wheel endpoints changed, only one item falls, fix it.",
+			"priority": 26,
+			"status": "in_progress",
+			"evidence": ""
 		}
 	]
 }
