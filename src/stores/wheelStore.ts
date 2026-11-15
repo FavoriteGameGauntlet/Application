@@ -381,6 +381,7 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		landing,
 		pool,
 		resultSource,
+		resultEntry,
 		resultStartsGame,
 		pendingChoices,
 		pendingEntries,

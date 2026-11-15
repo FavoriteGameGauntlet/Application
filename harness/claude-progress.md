@@ -5,6 +5,7 @@ Newest entry on top. Record only what was actually verified.
 ## 2026-11-15 wheel-tape
 
 - Done in code, by the user's approval of the plan (the animation lives in the tape component, the tickets wrap at about 220px): the player wheel screen follows the canvas «Колесо: лента-арена». The side panel is a row of group tickets (name, count, «Цена: …» or «Бесплатно», a link to the wishlist on its ticket); `WheelTape` rolls a horizontal tape for about six seconds with blur and streaks, holds, snaps back into the frame, then the winner grows and the others fade. The store keeps the spin in `landing` until the tape calls `landed()`; the old step animation and `pos` are gone from the store. The result card has «Выпало» and the group as two elements (no dot, the project rule), the description, the cost, the manual badge, «Сбросить» and the apply button. The line «Выпавшая игра станет текущей» and the panel title are gone (not in the canvas).
+- By the user's review: the result card lost the fallback «Эффект из группы «…».» and the line «Спишется при применении» (the ticket already shows the cost); «Выпало: группа» is one label. The card shows the entry's changes as tags (green adds, red takes) from the texts the API layer builds.
 - The wishlist link uses the `arrow-right` icon: there is no list icon in `assets/icons`.
 - Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. The app was not run, so the screen and the motion were not looked at.
 - The feature stays `in_progress` until the user has looked at the screen.

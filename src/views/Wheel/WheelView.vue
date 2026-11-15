@@ -11,7 +11,7 @@ import { useCurrentGameStore } from '../../stores/currentGameStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useWheelStore, type WheelTab } from '../../stores/wheelStore'
 import { useWishlistStore } from '../../stores/wishlistStore'
-import { formatCost } from '../../utils/formatResource'
+import { formatCost, formatResource } from '../../utils/formatResource'
 import SpinEntriesDialog from './components/SpinEntriesDialog.vue'
 import SpinPaymentDialog from './components/SpinPaymentDialog.vue'
 import WheelTape from './components/WheelTape.vue'
@@ -26,15 +26,6 @@ const costText = (group?: WheelGroup) =>
 	(group?.cost ?? [])
 		.map((r) => formatCost(r, resourcesStore.pointTypes))
 		.join(', ')
-
-/** the cost is charged when the result is applied */
-const resultCost = computed(() => {
-	const source = wheelStore.result?.source
-
-	if (!source) return ''
-
-	return costText(wheelStore.groups.find((g) => g.id === source.groupId))
-})
 
 const sources = computed(() =>
 	wheelStore.tab === 'games' ? wheelStore.gameGroups : wheelStore.changeGroups,
@@ -69,18 +60,20 @@ const emptyText = computed(() => {
 	}
 })
 
-const resultDescription = computed(() => {
-	const result = wheelStore.result
+const resultDescription = computed(() =>
+	wheelStore.resultStartsGame
+		? 'Станет текущей игрой, таймер начнётся с нуля.'
+		: wheelStore.result?.result.description,
+)
 
-	if (!result) return ''
-	if (wheelStore.resultStartsGame)
-		return 'Станет текущей игрой, таймер начнётся с нуля.'
-
-	return (
-		result.result.description ??
-		`Эффект из группы «${wheelStore.resultSource}».`
-	)
-})
+/** what the entry changes by itself: green adds, red takes */
+const resultChanges = computed(() =>
+	(wheelStore.resultEntry?.entries ?? []).map((r) => ({
+		text: r.text ?? formatResource(r, resourcesStore.pointTypes),
+		// a perk has no amount, its sign lives only in the text
+		tone: r.text?.startsWith('−') ? 'minus' : 'plus',
+	})),
+)
 
 const showResult = computed(() => !!wheelStore.result && !wheelStore.spinning)
 
@@ -171,13 +164,20 @@ onBeforeUnmount(() => wheelStore.landed())
 
 				<div class="result__body">
 					<div class="result__source">
-						<span>Выпало</span>
-						<span>{{ wheelStore.resultSource }}</span>
+						Выпало: {{ wheelStore.resultSource }}
 					</div>
 					<div class="result__name">{{ wheelStore.result.result.name }}</div>
-					<div class="result__desc">{{ resultDescription }}</div>
-					<div v-if="resultCost" class="result__cost">
-						Спишется при применении: {{ resultCost }}
+					<div v-if="resultDescription" class="result__desc">
+						{{ resultDescription }}
+					</div>
+					<div v-if="resultChanges.length" class="result__changes">
+						<span
+							v-for="(change, i) in resultChanges"
+							:key="i"
+							class="change"
+							:class="`change--${change.tone}`"
+							>{{ change.text }}</span
+						>
 					</div>
 					<div
 						v-if="wheelStore.result.result.isManualChange"
@@ -373,8 +373,6 @@ onBeforeUnmount(() => wheelStore.landed())
 }
 
 .result__source {
-	display: flex;
-	gap: 12px;
 	font: var(--type-label);
 	letter-spacing: var(--tracking-label);
 	text-transform: uppercase;
@@ -393,9 +391,31 @@ onBeforeUnmount(() => wheelStore.landed())
 	color: var(--text-body);
 }
 
-.result__cost {
-	font: var(--type-body-sm);
-	color: var(--text-muted);
+.result__changes {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.change {
+	display: inline-flex;
+	align-items: center;
+	min-height: 26px;
+	padding: 0 10px;
+	font: 500 var(--fs-12) / 1.2 var(--font-body);
+	color: var(--text-body);
+	background: var(--surface-sunken);
+	border-radius: var(--radius-pill);
+}
+
+.change--plus {
+	color: var(--success-text);
+	background: var(--success-soft);
+}
+
+.change--minus {
+	color: var(--danger-text);
+	background: var(--danger-soft);
 }
 
 .result__manual {
