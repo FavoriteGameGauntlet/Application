@@ -69,3 +69,18 @@ export const buildPayment = (
 
 	return payment
 }
+
+/** how many spins the held resources pay for; undefined when the spin is free */
+export const affordableSpins = (cost: SpinCostRef[], res?: UserResources) => {
+	if (!cost.length) return undefined
+	if (!res) return 0
+
+	return Math.min(
+		...cost.map((c) => {
+			const held =
+				c.kind === 'points' ? (res.points[c.id] ?? 0) : optionsOf(c, res).length
+
+			return Math.floor(held / c.amount)
+		}),
+	)
+}

@@ -2,6 +2,16 @@
 
 Newest entry on top. Record only what was actually verified.
 
+## 2026-11-15 wheel-tape
+
+- Done in code, by the user's approval of the plan (the animation lives in the tape component, the tickets wrap at about 220px): the player wheel screen follows the canvas «Колесо: лента-арена». The side panel is a row of group tickets (name, count, «Цена: …» or «Бесплатно», a link to the wishlist on its ticket); `WheelTape` rolls a horizontal tape for about six seconds with blur and streaks, holds, snaps back into the frame, then the winner grows and the others fade. The store keeps the spin in `landing` until the tape calls `landed()`; the old step animation and `pos` are gone from the store. The result card has «Выпало» and the group as two elements (no dot, the project rule), the description, the cost, the manual badge, «Сбросить» and the apply button. The line «Выпавшая игра станет текущей» and the panel title are gone (not in the canvas).
+- By the user's review: the result card lost the fallback «Эффект из группы «…».» and the line «Спишется при применении» (the ticket already shows the cost); «Выпало: группа» is one label. The card shows the entry's changes as tags (green adds, red takes) from the texts the API layer builds.
+- By the user's second review: the result card has no group line (the selected ticket already names the group). Switching tabs or groups keeps the spin: the store shows it (`shownResult`) and its tape whenever its group is selected, since the server keeps it until the next spin.
+- By the user's wish: a ticket of a paid group shows «Прокрутов: N», the spins the user's resources pay for (`affordableSpins` in `utils/spinPayment.ts`: the smallest of held/amount over the cost rows; items, perks and effects count copies), red at 0. The screen reloads the user's resources when it opens. A free group shows no count.
+- The wishlist link uses the `arrow-right` icon: there is no list icon in `assets/icons`.
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. The app was not run, so the screen and the motion were not looked at.
+- Checked by the user (the screen works), so the feature is `done`.
+
 ## 2026-11-14 no-dot-separators
 
 - Done in code, by the user's answers (facts a line or a badge each; the journal source split into a kind and a name): no screen joins facts with « · » any more. The journal source is `journalSourceParts` (`utils/journalSource.ts`) shown by `JournalSourceLabel`, in the event feed, the history tab, the manual fix card and the item history of the resources panel; `Effect.source` and `ResourceHistoryRow.source` are the raw `JournalSource` (the latter with `correctsEntryId`). Parties and catalogue rows give a fact a line, the points table head lost the «у тебя N» and place chips (the user's word: the side list and the own row already show both), the wheel group shows «не повторять» as a badge, the completed games note and the review dialog subtitle are lines (`UiDialog` and `FormDialog` take `subtitle` as a string or an array), the party toast text uses line breaks (`UiToast` keeps them). The rule is in `AGENTS.md`, «Code conventions».
@@ -31,12 +41,6 @@ Newest entry on top. Record only what was actually verified.
 - Done in code, by the user's answer: the last column of the points table in Resources is «Разница со мной» instead of «К тебе» (the value is the player's points minus the own). The column is 140px instead of 96px: the head is uppercase and does not wrap, so the longer title would run into «Значение ↓».
 - Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. The app was not run, so the head was not looked at.
 - The feature stays `in_progress` until the user has looked at the table. The session had no network: `git pull` on `master` failed, the branch was made from the local `master`.
-
-## 2026-11-14 table-admin-members
-
-- Done in code, by the user's answers (the shared `AdminListHeader` gets a slot for the screen's filters, the exchanges screen puts its switch there; «Добавить» opens a dialog with the login and the color, a refusal is shown under the login field through `FormField.error`): the admin members screen follows the artboard «Админ: участники и права». Search and the chips «Все», «Админы», «Игроки», «Вышли» with counts (admins and players count current members), the count in the header is «N в пати». A row has the avatar, the login and «ты», the party name or a grey «Показывается логин», «с» the joined date and «вышел» the left date under it, the role and `ui/UiRowMenu` («Изменить», «Удалить из пати», or «Вернуть в пати» for one who left). State words and colors stay as before, the caption under the table is left out.
-- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. The app was not run, so the screen was not looked at.
-- The feature stays `in_progress` until the user has looked at the screen.
 
 ## Open
 

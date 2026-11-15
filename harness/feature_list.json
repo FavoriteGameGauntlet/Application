@@ -237,6 +237,13 @@
 			"priority": 24,
 			"status": "in_progress",
 			"evidence": ""
+		},
+		{
+			"id": "wheel-tape",
+			"title": "Rebuild the player wheel screen as a tape",
+			"priority": 25,
+			"status": "done",
+			"evidence": "Done 2026-11-15. Full record: harness/archive/features-done.json"
 		}
 	]
 }
