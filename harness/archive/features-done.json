@@ -202,6 +202,13 @@
 			"priority": 48,
 			"status": "done",
 			"evidence": "2026-11-16: init.sh passes; temporary vite page with the real router and guards (storage faked): no login -> login, no party -> parties, party -> home. Not checked in the app. Checked by the user in the app (2026-11-16)."
+		},
+		{
+			"id": "wheel-capsule-design",
+			"title": "Create an interactive Sites design for the player wheel as a capsule machine. Capsules mix inside a transparent sphere, one rolls into a tray and opens to reveal its name. Show the pool as a capsule count and keep names hidden until opening. Use FavoriteGameGauntlet/DesignSystem as the visual reference, as the user requested. This feature covers the design mockup only; applying it to the desktop client requires the user's review.",
+			"priority": 49,
+			"status": "done",
+			"evidence": "Done 2026-11-16. Interactive mockup published privately in Sites: https://fgg-wheel-capsule-20261116.awakeparsley8.chatgpt.site (version 2, project appgprj_6afb4d99955c8191811ca3b8e5ce263c, source 940a5af546667988be7c516f692855eeb46ed74e). Visual source: FavoriteGameGauntlet/DesignSystem at 63b05060c43204f50589fb39cd9507d441fcbb41, cloned read-only to /home/Jegern/GolandProjects/fgg-design-system. JavaScript syntax and all 13 local asset references checked. Browser: mixing locks selection and hides the name; delivery leaves 23 capsules in the sphere from 24; opening shows the name on the paper and in the result panel. Checked discard, game and point application, both tabs, all six groups, empty/error/current-game scenarios, retry, theme toggle, demo navigation notices, toast close, keyboard tab switching and visible focus. Inspected 1440x900, 1280x800 and 390x844, including a long result in the light theme; no horizontal overflow or browser console errors. Fixed stale capsule text on repeat and checked that the paper is blank during the next mix. Muted label colours give calculated contrast 6.13:1 on light cards and 6.96:1 on dark cards. Application code and backend were not changed or exercised. User review of the design is pending; implementing this design in the client is a separate step. Application ESLint source checks and Vue/TypeScript type checking passed through bash harness/scripts/init.sh; changed records formatted with Prettier."
 		}
 	]
 }
