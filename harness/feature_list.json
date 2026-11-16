@@ -277,7 +277,7 @@
 			"id": "home-tiles-scroll-uses",
 			"title": "The home tiles «Мои очки», «Предметы», «Перки» and «Эффекты» scroll when their rows do not fit, and items, perks and effects show the uses left next to the name. Today the points tile cuts the list by useFitCount and the others overflow. usesLeft and usesMax already come for items and perks; check in the API documentation what an effect has (an effect has no uses since effect-passive-only, it shows its remaining time). The user (2026-11-16, after the recent events mockup): the tiles get the same treatment as the feed, the scroll with UiScrollArea and the catalogue card on hover of a row.",
 			"priority": 30,
-			"status": "todo",
+			"status": "in_progress",
 			"evidence": ""
 		},
 		{
