@@ -405,6 +405,13 @@
 			"priority": 48,
 			"status": "done",
 			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
+		},
+		{
+			"id": "wheel-capsule-design",
+			"title": "Create an interactive Sites design for the player wheel as a capsule machine. Capsules mix inside a transparent sphere, one rolls into a tray and opens to reveal its name. Show the pool as a capsule count and keep names hidden until opening. Use FavoriteGameGauntlet/DesignSystem as the visual reference, as the user requested. This feature covers the design mockup only; applying it to the desktop client requires the user's review.",
+			"priority": 49,
+			"status": "in_progress",
+			"evidence": ""
 		}
 	]
 }
