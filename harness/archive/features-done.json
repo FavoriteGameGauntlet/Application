@@ -201,7 +201,7 @@
 			"title": "The app always starts on the home screen (the party list when no party is chosen); the last opened route is no longer saved between launches. By the user, 2026-11-16.",
 			"priority": 48,
 			"status": "done",
-			"evidence": "2026-11-16: init.sh passes; temporary vite page with the real router and guards (storage faked): no login -> login, no party -> parties, party -> home. Not checked in the app."
+			"evidence": "2026-11-16: init.sh passes; temporary vite page with the real router and guards (storage faked): no login -> login, no party -> parties, party -> home. Not checked in the app. Checked by the user in the app (2026-11-16)."
 		}
 	]
 }

@@ -6,7 +6,7 @@ Newest entry on top. Record only what was actually verified.
 
 - By the user: the app always starts on the home screen. `initialPathGuard` and `StoreKey.InitialRoute` are gone, the router starts at `/`. By the user's answer, `partyGuard` (after `authGuard`) sends every screen but the login and the party list to the party list while no party is chosen (`parties.isSelected`, new in `Api`, reads the stored choice; logging out clears it). An old `initialRoute` value stays in the users' store file unread.
 - The party list is one screen whether it opens after the login or from the season name in the top bar; only the highlight of the chosen party differs (there is none right after a login).
-- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. A temporary vite page (not committed) with the real router and guards, the store and `isSelected` faked: `/` with no login went to the login, logged in without a party to the party list, with a party to the home screen. Not checked: the app itself.
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. A temporary vite page (not committed) with the real router and guards, the store and `isSelected` faked: `/` with no login went to the login, logged in without a party to the party list, with a party to the home screen. Checked by the user in the app.
 
 ## 2026-11-16 home-tiles-scroll-uses
 
