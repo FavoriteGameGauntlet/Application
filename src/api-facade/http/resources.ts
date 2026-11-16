@@ -59,6 +59,7 @@ type UserPerkDto = {
 
 type UserEffectDto = {
 	id: number
+	effectId: number
 	name: string
 	description: string
 	/** ISO 8601 duration, left out for a copy that lasts until it is ended */
@@ -108,6 +109,7 @@ const toUserPerk = (dto: UserPerkDto, pointTypes: PointType[]): Perk => {
 
 const toUserEffect = (dto: UserEffectDto): Effect => ({
 	id: dto.id,
+	effectId: dto.effectId,
 	name: dto.name,
 	description: dto.description,
 	source: dto.source,

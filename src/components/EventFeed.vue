@@ -8,18 +8,13 @@ import {
 	watch,
 } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
-import type {
-	CatalogEntry,
-	JournalEntry,
-	ResourceKind,
-} from '../api-facade/contracts'
+import type { JournalEntry } from '../api-facade/contracts'
 import { useMembersStore } from '../stores/membersStore'
 import { useResourcesStore } from '../stores/resourcesStore'
 import { formatMoment } from '../utils/format'
 import { journalSourceCatalogKind } from '../utils/journalSource'
-import CatalogEntryCard from './CatalogEntryCard.vue'
+import CatalogHoverCard from './CatalogHoverCard.vue'
 import JournalSourceLabel from './JournalSourceLabel.vue'
-import UiPopover from './ui/UiPopover.vue'
 import UiScrollArea from './ui/UiScrollArea.vue'
 
 type Props = {
@@ -44,7 +39,6 @@ const emit = defineEmits<{
 
 /** the next page is asked for this far before the end of the list */
 const MORE_AHEAD = 200
-const CARD_WIDTH = 360
 
 const membersStore = useMembersStore()
 const resourcesStore = useResourcesStore()
@@ -87,37 +81,13 @@ watch(
 	},
 )
 
-const requestedKinds = new Set<ResourceKind>()
-
-/** the catalogue of a kind is read once, when the first event about it shows */
-watch(
-	() => entries,
-	() => {
-		for (const entry of entries) {
-			const kind = journalSourceCatalogKind(entry.source)
-
-			if (
-				!kind ||
-				requestedKinds.has(kind) ||
-				resourcesStore.catalogEntries[kind]
-			) {
-				continue
-			}
-
-			requestedKinds.add(kind)
-			resourcesStore.loadCatalogEntries(kind)
-		}
-	},
-	{ immediate: true },
-)
-
-const catalogEntryOf = (
-	entry: JournalEntry,
-): { kind: ResourceKind; entry: CatalogEntry } | undefined => {
+/** the catalogue entry an event names, for its card on hover */
+const cardOf = (entry: JournalEntry) => {
 	const kind = journalSourceCatalogKind(entry.source)
 	const found =
 		kind &&
-		resourcesStore.catalogEntries[kind]?.find((e) => e.id === entry.source.id)
+		entry.source.id !== undefined &&
+		resourcesStore.catalogEntryOf(kind, entry.source.id)
 
 	return found ? { kind, entry: found } : undefined
 }
@@ -127,7 +97,7 @@ const hovered = ref<{ id: number; anchor: HTMLElement }>()
 const hoveredCard = computed(() => {
 	const entry = entries.find((e) => e.id === hovered.value?.id)
 
-	return entry && catalogEntryOf(entry)
+	return entry && cardOf(entry)
 })
 
 const showsEnd = computed(() => ended && !loading && entries.length > 0)
@@ -150,7 +120,7 @@ const showsEmpty = computed(() => ended && !loading && !entries.length)
 				v-for="entry in entries"
 				:key="entry.id"
 				class="event"
-				:class="{ 'event--catalog': catalogEntryOf(entry) }"
+				:class="{ 'event--catalog': cardOf(entry) }"
 				@mouseenter="
 					hovered = {
 						id: entry.id,
@@ -199,19 +169,13 @@ const showsEmpty = computed(() => ended && !loading && !entries.length)
 			<span v-if="showsEnd && endText" class="feed__end">{{ endText }}</span>
 		</UiScrollArea>
 
-		<UiPopover
-			:open="!!hoveredCard"
-			:anchor="hovered?.anchor ?? null"
+		<CatalogHoverCard
+			:anchor="hovered?.anchor"
+			:view="hoveredCard?.kind ?? 'items'"
+			:entry="hoveredCard?.entry"
 			side="left"
-			:min-width="CARD_WIDTH"
 			@close="hovered = undefined"
-		>
-			<CatalogEntryCard
-				v-if="hoveredCard"
-				:view="hoveredCard.kind"
-				:entry="hoveredCard.entry"
-			/>
-		</UiPopover>
+		/>
 	</div>
 </template>
 
