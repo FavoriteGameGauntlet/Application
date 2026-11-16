@@ -251,6 +251,153 @@
 			"priority": 26,
 			"status": "done",
 			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
+		},
+		{
+			"id": "popover-zoom",
+			"title": "Fix the place of every popover at an interface scale other than 100 %. Bug: at a larger scale the «⋯» menu of the system parameters runs off to the right, so no parameter can be changed. UiPopover is teleported to body with position fixed and placed from getBoundingClientRect, which does not match the CSS zoom of the root. The tips of the timer reward, the game reward (CurrentGameCard) and the cost of a wheel group (WheelView) already avoid it: they are placed absolute inside their card, the fix of wheel-group-spins; only UiPopover is left. Every row menu, select, pick chips and date range uses it.",
+			"priority": 27,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "single-choice-entries",
+			"title": "Where the user picks what to apply (an item use, a perk ability use, an exchange, the apply of a wheel spin), only one entry can be picked. The user's answer «везде»; the exchange window also shows that only one can be picked. Today the exchange window has its own checkboxes and the use window uses UiPickList with several picks. A single choice control states the rule, so no caption. Depends on the Server feature single-choice-entries.",
+			"priority": 28,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "home-recent-events",
+			"title": "The «Недавние события» feed of the home screen fills the height of the window and grows with it, and an event shows the information of its item, perk or effect on hover. Today PlayerEvents asks for a fixed 5 events of the last day. Open: what the hover shows (the catalogue card of the entry, or the changes of the event).",
+			"priority": 29,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "home-tiles-scroll-uses",
+			"title": "The home tiles «Мои очки», «Предметы», «Перки» and «Эффекты» scroll when their rows do not fit, and items, perks and effects show the uses left next to the name. Today the points tile cuts the list by useFitCount and the others overflow. usesLeft and usesMax already come for items and perks; check in the API documentation what an effect has (an effect has no uses since effect-passive-only, it shows its remaining time).",
+			"priority": 30,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "history-paging",
+			"title": "The history tab loads older events as the user scrolls down. Today only the last 20 events show. HistoryTab reads one page with the default limit of 20 and ignores nextCursor of GET history.",
+			"priority": 31,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "timer-end-sound",
+			"title": "Play a sound when the timer ends. Open: the sound file (it goes next to the other assets), whether it plays when the window is hidden or minimized, and whether the user can turn it off.",
+			"priority": 32,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "catalog-wheel-entries",
+			"title": "The player catalogue gets a wheel section with every item of every group. The user's answer: all items. Depends on the Server feature wheel-rows-for-members.",
+			"priority": 33,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "perk-ability-edit",
+			"title": "The ability tab of an existing perk can be edited in the admin catalogue. The user's answer: allow the edit. Today the tab is locked. The lock part of rules-ui-catalog-dialog goes away with it. Depends on the Server feature perk-ability-edit.",
+			"priority": 34,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "user-avatars",
+			"title": "A user uploads their own avatar, and UiUserAvatar shows it everywhere (it already takes src, today only the initials show). The client checks the size limits of the API documentation before the upload. Depends on the Server feature user-avatars; where the upload lives (profile, a menu) goes through the design of AGENTS.md.",
+			"priority": 35,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "ux-field-errors",
+			"title": "Bad UX 1 of 12 (found 2026-11-14): validation errors come as a toast after «Сохранить» instead of next to the field. Affects the catalogue window (units, numbers, bounds, uses, conditions, duration, ability), exchanges, rewards, the color of the party and member windows, the manual change and an empty wishlist name; a row error («В строке не выбран ресурс») does not say which row. Give FormDialog field validation: the field turns red, a «Нужно …» line in the footer names the problem, the button is off. Good examples already exist: the system parameters, the login of the member window, the login form.",
+			"priority": 36,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "ux-one-rows-editor",
+			"title": "Bad UX 2 of 12: four editors for one concept, the rows of resource changes. RowsEditor (catalogue, exchanges): «Кто / Действие / Кол-во / Ресурс», «Получает / Теряет». The manual change: «Кому / Тип / Ресурс / Действие / Сколько», «Добавить / Снять / Выдать / Забрать». Rewards: «Тип / Что / Сколько», the sign is typed into the number, no column heads. Keep one RowsEditor with variants: the existing change variant for rewards, a variant with «Кому» and «было → станет» for the manual form.",
+			"priority": 37,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "ux-manual-change",
+			"title": "Bad UX 3 of 12: the manual change and the fix of an entry (ManualView). «Исправить» opens an empty form and the admin types the reverse changes by hand. Errors are found per row but only the first shows, as a toast. «Применить» is always on. The duration of an effect is free text in «Сколько», and the amount field is not numeric. Fill the fix with the reverse rows of the original entry, show the error under its row, turn the button off and name the reason. Overlaps rules-ui-player-screens.",
+			"priority": 38,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "ux-rewards",
+			"title": "Bad UX 4 of 12: rewards (AdminRewardsView). Five cards, each with its own «Сохранить», and nothing shows which cards are changed. Leaving the page drops the edits silently. «Убрать награду» saves at once without a confirmation and is on even for an empty card. Mark a changed card and turn «Сохранить» on only then; confirm «Убрать»; move to RowsEditor. Overlaps rules-ui-rewards-cost and save-buttons-without-text.",
+			"priority": 39,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "ux-catalog-dialog",
+			"title": "Bad UX 5 of 12: the catalogue window. A point type needs all three unit forms, they are not marked and are caught by a toast, there is no example «1 билет, 3 билета, 7 билетов». A perk or effect row lets you type an amount and then says it must be 1: fix it at 1. «Игрок выбирает, что применить» shows with 0 or 1 row, as do the side switches of exchanges: show them from two rows. A duration is entered three ways (chips plus «Своё» text on an effect, UiSpanInput on a perk renewal, free text in the manual form): make it one. Overlaps item-entry-form-special-actions and rules-ui-catalog-dialog.",
+			"priority": 40,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "ux-use-item-perk",
+			"title": "Bad UX 6 of 12: using an item and a perk behave differently. An item always opens the window, even with nothing to pick (the window works as a confirmation). A perk with no choice fires at once without a confirmation. Neither shows what will change, though the exchange window shows «было → станет». One rule for both and a table of changes as in the exchange.",
+			"priority": 41,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "ux-exchange-window",
+			"title": "Bad UX 7 of 12: the player exchange window. Its own checkboxes, though UseDialog picks through UiPickList. «Обменять» is off with no reason. You can pick what you cannot afford, and «станет» goes negative with no mark. Build the window on FormDialog with the choice and a «Нужно …» line, mark the shortage. Overlaps rules-ui-exchanges and single-choice-entries.",
+			"priority": 42,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "ux-color-picker",
+			"title": "Bad UX 8 of 12: ColorPicker. A custom hex has no swatch, a wrong value is caught by a toast, a screen reader reads the palette circles as «#ffb000». Overlaps player-color-form, rules-ui-members and rules-ui-parties-window.",
+			"priority": 43,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "ux-wishlist",
+			"title": "Bad UX 9 of 12: the «Список желаемого» screen. The add field with a magnifier icon stands right above the search with the same icon, and the two are easy to confuse. An empty add gives a toast instead of a disabled button. A rename to an empty name is cancelled silently.",
+			"priority": 44,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "ux-auth",
+			"title": "Bad UX 10 of 12: login and registration. The fields have no autocomplete (username, current-password, new-password), so password managers and autofill do not work. The focus is not put on the login. The hint «Не меньше 8 символов» and its check act on the login tab too. Overlaps auth-password-eye.",
+			"priority": 45,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "ux-bool-parameters",
+			"title": "Bad UX 11 of 12: system parameters. A boolean parameter opens a window with one «Да» switch; the switch belongs in the table row.",
+			"priority": 46,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "ux-unsaved-close",
+			"title": "Bad UX 12 of 12: Esc and the cross close any form without a question, even the large perk form with two tabs. Ask when the form has changes.",
+			"priority": 47,
+			"status": "todo",
+			"evidence": ""
 		}
 	]
 }
