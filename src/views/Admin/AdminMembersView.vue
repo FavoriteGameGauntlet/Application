@@ -10,16 +10,14 @@ import UiRowMenu, { type RowMenuItem } from '../../components/ui/UiRowMenu.vue'
 import UiUserAvatar from '../../components/ui/UiUserAvatar.vue'
 import { useAdminSettingsStore } from '../../stores/adminSettingsStore'
 import { useSessionStore } from '../../stores/sessionStore'
-import { useToastStore } from '../../stores/toastStore'
 import { formatDate } from '../../utils/format'
-import { isMemberColor, nextMemberColor } from '../../utils/memberColor'
+import { nextMemberColor } from '../../utils/memberColor'
 import AdminListHeader from './components/AdminListHeader.vue'
 
 type Filter = 'all' | 'admins' | 'players' | 'left'
 
 const store = useAdminSettingsStore()
 const sessionStore = useSessionStore()
-const toastStore = useToastStore()
 
 /** the member in the edit dialog, undefined means the dialog is closed */
 const editing = ref<PartyMember>()
@@ -147,26 +145,9 @@ const onAddChange = (values: FormValues) => {
 	if (String(values.login).trim() !== refusedLogin) addError.value = undefined
 }
 
-/** the dialog takes `#ffb000` only */
-const checkedColor = (value: FormValues[string]) => {
-	const color = String(value).trim().toLowerCase()
-
-	if (isMemberColor(color)) return color
-
-	toastStore.show(
-		'Проверь цвет',
-		'Нужен вид #ffb000: решётка и шесть цифр.',
-		'danger',
-	)
-}
-
 const onAdd = async (values: FormValues) => {
 	const login = String(values.login).trim()
-	const color = checkedColor(values.color)
-
-	if (!color) return
-
-	const result = await store.addMember(login, color)
+	const result = await store.addMember(login, String(values.color))
 
 	refusedLogin = login
 
@@ -182,14 +163,13 @@ const onAdd = async (values: FormValues) => {
 
 const onSave = async (values: FormValues) => {
 	const member = editing.value
-	const color = checkedColor(values.color)
 
-	if (!member || !color) return
+	if (!member) return
 
 	const ok = await store.updateMember(member, {
 		displayName: String(values.displayName).trim() || null,
 		isAdmin: values.isAdmin === true,
-		color,
+		color: String(values.color),
 	})
 
 	if (ok) editing.value = undefined

@@ -17,3 +17,22 @@ export const MEMBER_COLORS = [
 	'#c98a63',
 	'#b3b64a',
 ] as const
+
+/** what a screen reader says for a palette circle instead of its hex */
+export const MEMBER_COLOR_NAMES: Record<
+	(typeof MEMBER_COLORS)[number],
+	string
+> = {
+	'#ffb000': 'Жёлтый',
+	'#3d7bff': 'Синий',
+	'#e5484d': 'Красный',
+	'#22b07d': 'Зелёный',
+	'#a35cff': 'Фиолетовый',
+	'#ff7a2f': 'Оранжевый',
+	'#1fc2d6': 'Бирюзовый',
+	'#ff5cae': 'Розовый',
+	'#a3d921': 'Салатовый',
+	'#c9adff': 'Лавандовый',
+	'#c98a63': 'Коричневый',
+	'#b3b64a': 'Оливковый',
+}
