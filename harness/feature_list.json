@@ -254,10 +254,10 @@
 		},
 		{
 			"id": "popover-zoom",
-			"title": "Fix the place of every popover at an interface scale other than 100 %. Bug: at a larger scale the «⋯» menu of the system parameters runs off to the right, so no parameter can be changed. UiPopover is teleported to body with position fixed and placed from getBoundingClientRect, which does not match the CSS zoom of the root. The tips of the timer reward, the game reward (CurrentGameCard) and the cost of a wheel group (WheelView) already avoid it: they are placed absolute inside their card, the fix of wheel-group-spins; only UiPopover is left. Every row menu, select, pick chips and date range uses it.",
+			"title": "Place every popover right at an interface scale other than 100 %",
 			"priority": 27,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "single-choice-entries",
