@@ -188,6 +188,13 @@
 			"priority": 29,
 			"status": "done",
 			"evidence": "2026-11-16: init.sh passes; temporary vite page with the real PlayerEvents and a fake API in Chromium (720/1080 px, both themes): no page stretch, paging by cursor, end caption, catalogue card on hover. Not checked in the app or against the backend."
+		},
+		{
+			"id": "home-tiles-scroll-uses",
+			"title": "The home tiles «Мои очки», «Предметы», «Перки» and «Эффекты» scroll when their rows do not fit, and items, perks and effects show the uses left next to the name. Today the points tile cuts the list by useFitCount and the others overflow. usesLeft and usesMax already come for items and perks; check in the API documentation what an effect has (an effect has no uses since effect-passive-only, it shows its remaining time). The user (2026-11-16, after the recent events mockup): the tiles get the same treatment as the feed, the scroll with UiScrollArea and the catalogue card on hover of a row.",
+			"priority": 30,
+			"status": "done",
+			"evidence": "2026-11-16: init.sh passes; temporary vite page with the real tiles and feed on fake data in Chromium (720/1080 px, both themes): no page stretch, tiles scroll, cards open right of the rows, uses shown. Not checked in the app or against the backend."
 		}
 	]
 }
