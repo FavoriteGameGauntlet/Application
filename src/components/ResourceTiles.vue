@@ -211,6 +211,7 @@ const hoveredEntry = computed(
 	flex: none;
 	align-items: center;
 	gap: 8px;
+	cursor: default;
 	min-height: 36px;
 	padding: 6px 8px;
 	font: var(--type-body-sm);

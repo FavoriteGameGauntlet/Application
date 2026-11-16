@@ -278,6 +278,7 @@ const showsEmpty = computed(() => ended && !loading && !entries.length)
 	display: flex;
 	flex: none;
 	gap: 12px;
+	cursor: default;
 	padding: 8px 10px;
 	border-radius: var(--radius-md);
 	transition: background var(--dur-fast) var(--ease-out);
