@@ -1,6 +1,6 @@
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { authGuard } from './authGuard'
-import { initialPathGuard } from './initialPathGuard'
+import { partyGuard } from './partyGuard'
 import { routes } from './routes'
 
 export const router = createRouter({
@@ -8,5 +8,5 @@ export const router = createRouter({
 	routes,
 })
 
-router.beforeEach(initialPathGuard)
 router.beforeEach(authGuard)
+router.beforeEach(partyGuard)

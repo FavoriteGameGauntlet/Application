@@ -988,6 +988,8 @@ export type Api = {
 		 * choice on the client instead.
 		 */
 		select: (id: number) => Promise<void>
+		/** whether a party is chosen; logging out clears the choice */
+		isSelected: () => Promise<boolean>
 	}
 	admin: {
 		// Backend: the catalogs are the create/update/delete/restore addresses of

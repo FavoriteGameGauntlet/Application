@@ -398,6 +398,13 @@
 			"priority": 47,
 			"status": "todo",
 			"evidence": ""
+		},
+		{
+			"id": "start-on-home",
+			"title": "The app always starts on the home screen",
+			"priority": 48,
+			"status": "done",
+			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
 		}
 	]
 }

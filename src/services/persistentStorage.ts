@@ -1,7 +1,6 @@
 import { load, type Store } from '@tauri-apps/plugin-store'
 
 export enum StoreKey {
-	InitialRoute = 'initialRoute',
 	Login = 'login',
 	DisplayName = 'displayName',
 	PartyId = 'partyId',
@@ -12,7 +11,6 @@ export enum StoreKey {
 }
 
 export type StoredData = Partial<{
-	[StoreKey.InitialRoute]: string
 	[StoreKey.Login]: string
 	[StoreKey.DisplayName]: string
 	/** the party the user works in; every backend address except /auth/* and /parties lives under it */
@@ -26,7 +24,6 @@ export type StoredData = Partial<{
 }>
 
 const defaults: StoredData = {
-	[StoreKey.InitialRoute]: undefined,
 	[StoreKey.Login]: undefined,
 	[StoreKey.DisplayName]: undefined,
 	[StoreKey.PartyId]: undefined,

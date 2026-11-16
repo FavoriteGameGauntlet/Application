@@ -1,5 +1,10 @@
 # Progress log archive
 
+## 2026-11-16 popover-zoom
+
+- The «⋯» menus, selects, pick chips and date ranges (`UiPopover`) drifted right and down at 110 and 125 %: the interface scale is a CSS `zoom` of the root, and in Chromium `getBoundingClientRect` answers in screen pixels while `left` and `top` of the `fixed` panel are layout units and get the zoom again. `UiPopover` now divides the anchor rectangle by the ratio of the body rectangle to the body size and takes the window size from the body (which fills the window), so the placement works whichever unit the engine answers in. The panel stays teleported and `fixed`, so it still escapes the dialogs.
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed file. A temporary vite page (not committed) with the real `UiPopover` in Chromium at html zoom 0.9, 1, 1.1 and 1.25: the panel starts at the anchor's left edge, right under it, opens upwards near the bottom and keeps 8px from the right edge. Not checked: the app itself (WebView2 on Windows, WebKitGTK on Linux).
+
 ## 2026-11-15 wheel-group-spins
 
 - The wheel endpoints changed (`wheel.yaml` 0.26.0 of the API documentation, found at `/scalar/api/specification/`): a spin answers with the one item that fell, and the saved spin is kept per group, so `spins/last`, `last/apply` and `last/clear` live under `/wheel/groups/{groupId}/`. By the user's answers: `api-facade/http/wheel.ts` puts the tape together from the pool of the group (the rows, or the wishlist games) and places the winner by its index (at the end when the item was removed since). The store reads the spin of the selected group when the screen opens and on every switch of the tab or group, and no longer switches the tab on its own (there is no single last spin any more). `WheelSource` carries the group `kind`, so no request for the group list is needed; `lastSpin`, `discard` and `apply` of `Api` take the group.

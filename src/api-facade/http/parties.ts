@@ -92,6 +92,9 @@ export const parties: Api['parties'] = {
 	},
 
 	select: (id) => persistentStorage.set(StoreKey.PartyId, id),
+
+	isSelected: async () =>
+		(await persistentStorage.get(StoreKey.PartyId)) !== undefined,
 }
 
 export const adminMembers: Api['admin']['members'] = {
