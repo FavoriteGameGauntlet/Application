@@ -9,9 +9,17 @@ type Props = {
 	minWidth?: number
 	/** `floating` is the dark surface of menus */
 	surface?: 'card' | 'floating'
+	/** `left` puts a `minWidth` wide panel left of the anchor, top to top, kept inside the window */
+	side?: 'below' | 'left'
 }
 
-const { open, anchor, minWidth = 0, surface = 'card' } = defineProps<Props>()
+const {
+	open,
+	anchor,
+	minWidth = 0,
+	surface = 'card',
+	side = 'below',
+} = defineProps<Props>()
 
 const emit = defineEmits<{ close: [] }>()
 
@@ -20,6 +28,7 @@ const panel = useTemplateRef<HTMLElement>('panel')
 const style = ref<Record<string, string>>({})
 
 const GAP = 4
+const SIDE_GAP = 16
 const EDGE = 8
 /** below this much room under the anchor the panel opens upwards */
 const ROOM = 220
@@ -43,6 +52,19 @@ function place() {
 		top: screenRect.top / scale,
 		bottom: screenRect.bottom / scale,
 		width: screenRect.width / scale,
+	}
+
+	if (side === 'left') {
+		const height = panel.value?.offsetHeight ?? 0
+
+		style.value = {
+			left: `${Math.max(EDGE, rect.left - SIDE_GAP - minWidth)}px`,
+			top: `${Math.max(EDGE, Math.min(rect.top, viewHeight - EDGE - height))}px`,
+			width: `${minWidth}px`,
+			maxHeight: `${viewHeight - 2 * EDGE}px`,
+		}
+
+		return
 	}
 
 	const width = Math.max(rect.width, minWidth)

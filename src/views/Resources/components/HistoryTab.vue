@@ -109,7 +109,7 @@ watch(
 watch(
 	[filters, () => journalStore.revision],
 	async () => {
-		entries.value = await journalStore.fetch({
+		const page = await journalStore.fetch({
 			user: filters.user || undefined,
 			resource: toResource(filters.resource),
 			sourceEventKinds: journalSourceGroups.find(
@@ -117,6 +117,8 @@ watch(
 			)?.kinds,
 			from: new Date(Date.now() - PERIOD_MS[filters.period]).toISOString(),
 		})
+
+		entries.value = page.items
 	},
 	{ immediate: true },
 )
