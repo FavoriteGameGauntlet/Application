@@ -412,6 +412,13 @@
 			"priority": 49,
 			"status": "done",
 			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
+		},
+		{
+			"id": "wheel-current-reference",
+			"title": "Inspect the current wheel screen by rendering its existing Vue components and styles in an isolated Sites reference preview with demo data. Compare that actual UI with the capsule-machine mockup. The user asked to look at the current window and pointed out that its elements can be copied from fgg-application. Keep application source unchanged and record the difference between a component preview and the native Tauri window.",
+			"priority": 50,
+			"status": "in_progress",
+			"evidence": ""
 		}
 	]
 }
