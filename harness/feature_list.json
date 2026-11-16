@@ -270,7 +270,7 @@
 			"id": "home-recent-events",
 			"title": "The «Недавние события» feed of the home screen fills the height of the window and grows with it, and an event shows the information of its item, perk or effect on hover. Today PlayerEvents asks for a fixed 5 events of the last day. Open: what the hover shows (the catalogue card of the entry, or the changes of the event).",
 			"priority": 29,
-			"status": "todo",
+			"status": "in_progress",
 			"evidence": ""
 		},
 		{
