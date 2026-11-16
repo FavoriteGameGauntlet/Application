@@ -57,13 +57,6 @@
 			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
 		},
 		{
-			"id": "player-color-form",
-			"title": "Add a form for a player to choose their own color. The user's words: add a color choice form for the player. Today ColorPicker is reached only through FormDialog (type 'color'), in the party creation form and in the admin member edit form (AdminMembersView), so a player has no way to change their own color. Open: where the form lives (which screen or menu) and whether the admin can still change the color.",
-			"priority": 10,
-			"status": "todo",
-			"evidence": ""
-		},
-		{
 			"id": "save-buttons-without-text",
 			"title": "Remove the text from the «Сохранить» buttons. The user's words: remove the text from the Save buttons. The text is set in FormDialog (the default submitLabel), ReviewDialog, WishlistTab, AdminParametersView, AdminRewardsView, AdminSpinCost, and by submit-label in AdminExchangesView, AdminWheelView, CatalogEntryDialog and PartiesView. Open: what stays on the button (an icon only, such as the check icon AdminSpinCost already uses), which buttons count (every «Сохранить», or also «Создать пати», «Добавить пункт» and the like) and how a screen reader gets the name (aria-label).",
 			"priority": 11,
@@ -366,10 +359,10 @@
 		},
 		{
 			"id": "ux-color-picker",
-			"title": "Bad UX 8 of 12: ColorPicker. A custom hex has no swatch, a wrong value is caught by a toast, a screen reader reads the palette circles as «#ffb000». Overlaps player-color-form, rules-ui-members and rules-ui-parties-window.",
+			"title": "ColorPicker: palette plus a saturation/brightness square and hue slider, hex error at the field",
 			"priority": 43,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "ux-wishlist",

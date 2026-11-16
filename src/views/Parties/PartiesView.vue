@@ -22,7 +22,7 @@ import {
 	today,
 } from '../../utils/calendar'
 import { formatDate, formatPeriod } from '../../utils/format'
-import { isMemberColor, nextMemberColor } from '../../utils/memberColor'
+import { nextMemberColor } from '../../utils/memberColor'
 import { plural } from '../../utils/plural'
 
 const router = useRouter()
@@ -103,17 +103,6 @@ const onSave = async (values: FormValues) => {
 
 	const party = editing.value?.party
 	const creatorColor = String(values.color ?? '')
-		.trim()
-		.toLowerCase()
-
-	if (!party && !isMemberColor(creatorColor)) {
-		toastStore.show(
-			'Проверь цвет',
-			'Нужен вид #ffb000: решётка и шесть цифр.',
-			'danger',
-		)
-		return
-	}
 
 	try {
 		if (party) {

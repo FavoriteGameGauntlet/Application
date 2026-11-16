@@ -202,6 +202,13 @@
 			"priority": 48,
 			"status": "done",
 			"evidence": "2026-11-16: init.sh passes; temporary vite page with the real router and guards (storage faked): no login -> login, no party -> parties, party -> home. Not checked in the app. Checked by the user in the app (2026-11-16)."
+		},
+		{
+			"id": "ux-color-picker",
+			"title": "Bad UX 8 of 12: ColorPicker. The user's words: pick a color in a palette, not only through hex. Besides the preset circles the field gets an always shown square of saturation and brightness with a hue slider, a swatch next to the hex field, the error of a wrong hex at the field (the form does not save) instead of a toast, and names of the circles for a screen reader. Took in player-color-form (the same feature by the user's word). Overlaps rules-ui-members and rules-ui-parties-window.",
+			"priority": 43,
+			"status": "done",
+			"evidence": "Done 2026-11-16. init.sh passes; a temporary vite page with the real FormDialog in Chromium: the square is 216x216, drag, hue click and arrow keys change the hex, a wrong hex disables save, a typed palette hex selects its circle and saves lowercase. Not checked: the app itself, dark theme, WebKitGTK."
 		}
 	]
 }

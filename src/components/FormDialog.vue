@@ -22,6 +22,7 @@ import UiSwitch from './ui/UiSwitch.vue'
 import UiTabs from './ui/UiTabs.vue'
 import UiTag from './ui/UiTag.vue'
 import UiTextarea from './ui/UiTextarea.vue'
+import { isMemberColor } from '../utils/memberColor'
 import type {
 	FormField,
 	FormRow,
@@ -224,6 +225,21 @@ const missingIn = (inSections: FormSection[]) => [
 
 const missing = computed(() => missingIn(sections))
 
+/** a color field shows its own error, so the footer names nothing for it */
+const hasWrongColor = computed(() =>
+	sections
+		.filter(inShownTab)
+		.flatMap((s) => s.fields)
+		.some(
+			(f) =>
+				f.type === 'color' && isShown(f) && !isMemberColor(texts[f.key] ?? ''),
+		),
+)
+
+const isBlocked = computed(
+	() => missing.value.length > 0 || hasWrongColor.value,
+)
+
 /** the tabs with something still to fill, as the bar shows them */
 const tabItems = computed(() =>
 	visibleTabs.value.map((t) => ({
@@ -265,7 +281,7 @@ const valuesNow = () => {
 
 const onSubmit = () => {
 	// Enter submits the dialog as well, whatever the state of the button
-	if (missing.value.length) return
+	if (isBlocked.value) return
 
 	for (const field of allFields.value) {
 		if (field.type === 'tags') addTag(field.key)
@@ -541,9 +557,7 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 			<UiButton type="button" variant="ghost" @click="emit('close')"
 				>Отмена</UiButton
 			>
-			<UiButton type="submit" :disabled="missing.length > 0">{{
-				submitLabel
-			}}</UiButton>
+			<UiButton type="submit" :disabled="isBlocked">{{ submitLabel }}</UiButton>
 		</template>
 	</UiDialog>
 </template>
