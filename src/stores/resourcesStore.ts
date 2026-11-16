@@ -62,6 +62,31 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 		catalogEntries.value[kind] = await api.resources.catalogEntries(kind)
 	}
 
+	/** the kinds asked for by `catalogEntryOf`, so a kind is read once */
+	const requestedEntries = new Set<ResourceKind>()
+
+	/**
+	 * The catalogue entry of a point type, an item, a perk or an effect, for its card.
+	 * The first call for a kind reads that catalogue, so it answers undefined until then.
+	 */
+	const catalogEntryOf = (
+		kind: 'points' | ResourceKind,
+		id: number,
+	): CatalogEntry | undefined => {
+		if (kind === 'points') {
+			const type = pointTypes.value.find((t) => t.id === id)
+
+			return type && { ...type, deleted: false }
+		}
+
+		if (!catalogEntries.value[kind] && !requestedEntries.has(kind)) {
+			requestedEntries.add(kind)
+			loadCatalogEntries(kind).catch(() => requestedEntries.delete(kind))
+		}
+
+		return catalogEntries.value[kind]?.find((e) => e.id === id)
+	}
+
 	const fetchHistory = (login: Login, kind: ResourceKind, id: number) =>
 		api.resources.history(login, kind, id, 4)
 
@@ -109,6 +134,7 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 		loadSummary,
 		loadCatalog,
 		loadCatalogEntries,
+		catalogEntryOf,
 		fetchHistory,
 		useItem,
 		usePerk,

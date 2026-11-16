@@ -224,7 +224,10 @@ export type Perk = {
 }
 
 export type Effect = {
+	/** id of the copy */
 	id: number
+	/** id of the effect in the catalogue */
+	effectId: number
 	name: string
 	description: string
 	/** what granted the effect; the screen words it with `journalSourceParts` */

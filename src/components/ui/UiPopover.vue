@@ -9,8 +9,10 @@ type Props = {
 	minWidth?: number
 	/** `floating` is the dark surface of menus */
 	surface?: 'card' | 'floating'
-	/** `left` puts a `minWidth` wide panel left of the anchor, top to top, kept inside the window */
-	side?: 'below' | 'left'
+	/** `left` and `right` put a `minWidth` wide panel beside the anchor, top to top, kept inside the window */
+	side?: 'below' | 'left' | 'right'
+	/** a hover card: the pointer goes through it to the rows under it */
+	passive?: boolean
 }
 
 const {
@@ -54,11 +56,15 @@ function place() {
 		width: screenRect.width / scale,
 	}
 
-	if (side === 'left') {
+	if (side !== 'below') {
 		const height = panel.value?.offsetHeight ?? 0
+		const sideLeft =
+			side === 'left'
+				? rect.left - SIDE_GAP - minWidth
+				: rect.left + rect.width + SIDE_GAP
 
 		style.value = {
-			left: `${Math.max(EDGE, rect.left - SIDE_GAP - minWidth)}px`,
+			left: `${Math.max(EDGE, Math.min(sideLeft, viewWidth - EDGE - minWidth))}px`,
 			top: `${Math.max(EDGE, Math.min(rect.top, viewHeight - EDGE - height))}px`,
 			width: `${minWidth}px`,
 			maxHeight: `${viewHeight - 2 * EDGE}px`,
@@ -163,7 +169,7 @@ onBeforeUnmount(unlisten)
 			v-if="open"
 			ref="panel"
 			class="ui-popover"
-			:class="`ui-popover--${surface}`"
+			:class="[`ui-popover--${surface}`, { 'ui-popover--passive': passive }]"
 			:style
 			@keydown="onPanelKeydown"
 		>
@@ -185,6 +191,10 @@ onBeforeUnmount(unlisten)
 	border: var(--border-width) solid var(--border-default);
 	border-radius: var(--radius-md);
 	box-shadow: var(--shadow-3);
+}
+
+.ui-popover--passive {
+	pointer-events: none;
 }
 
 .ui-popover--floating {

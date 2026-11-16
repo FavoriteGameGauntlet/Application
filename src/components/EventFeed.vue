@@ -11,15 +11,15 @@ import type { RouteLocationRaw } from 'vue-router'
 import type {
 	CatalogEntry,
 	JournalEntry,
-	ResourceKind,
+	ResourceRef,
 } from '../api-facade/contracts'
 import { useMembersStore } from '../stores/membersStore'
 import { useResourcesStore } from '../stores/resourcesStore'
 import { formatMoment } from '../utils/format'
 import { journalSourceCatalogKind } from '../utils/journalSource'
-import CatalogEntryCard from './CatalogEntryCard.vue'
+import CatalogHoverCard from './CatalogHoverCard.vue'
+import type { CatalogView } from './catalogTable'
 import JournalSourceLabel from './JournalSourceLabel.vue'
-import UiPopover from './ui/UiPopover.vue'
 import UiScrollArea from './ui/UiScrollArea.vue'
 
 type Props = {
@@ -44,7 +44,6 @@ const emit = defineEmits<{
 
 /** the next page is asked for this far before the end of the list */
 const MORE_AHEAD = 200
-const CARD_WIDTH = 360
 
 const membersStore = useMembersStore()
 const resourcesStore = useResourcesStore()
@@ -87,48 +86,59 @@ watch(
 	},
 )
 
-const requestedKinds = new Set<ResourceKind>()
+type Card = { view: CatalogView; entry: CatalogEntry }
 
-/** the catalogue of a kind is read once, when the first event about it shows */
-watch(
-	() => entries,
-	() => {
-		for (const entry of entries) {
-			const kind = journalSourceCatalogKind(entry.source)
-
-			if (
-				!kind ||
-				requestedKinds.has(kind) ||
-				resourcesStore.catalogEntries[kind]
-			) {
-				continue
-			}
-
-			requestedKinds.add(kind)
-			resourcesStore.loadCatalogEntries(kind)
-		}
-	},
-	{ immediate: true },
-)
-
-const catalogEntryOf = (
-	entry: JournalEntry,
-): { kind: ResourceKind; entry: CatalogEntry } | undefined => {
-	const kind = journalSourceCatalogKind(entry.source)
+/** the card of the item, perk or effect an event names */
+const cardOfSource = ({ source }: JournalEntry): Card | undefined => {
+	const kind = journalSourceCatalogKind(source)
 	const found =
 		kind &&
-		resourcesStore.catalogEntries[kind]?.find((e) => e.id === entry.source.id)
+		source.id !== undefined &&
+		resourcesStore.catalogEntryOf(kind, source.id)
 
-	return found ? { kind, entry: found } : undefined
+	return found ? { view: kind, entry: found } : undefined
 }
 
-const hovered = ref<{ id: number; anchor: HTMLElement }>()
+const resourceViews = {
+	points: 'points',
+	item: 'items',
+	perk: 'perks',
+	effect: 'effects',
+} as const satisfies Record<ResourceRef['kind'], CatalogView>
 
-const hoveredCard = computed(() => {
-	const entry = entries.find((e) => e.id === hovered.value?.id)
+/** the card of the resource a change row moves; events about points name none in their source */
+const cardOfChange = ({
+	resource,
+}: JournalEntry['changes'][number]): Card | undefined => {
+	if (!resource) return undefined
 
-	return entry && catalogEntryOf(entry)
-})
+	const view = resourceViews[resource.kind]
+	const found = resourcesStore.catalogEntryOf(view, resource.id)
+
+	if (!found) return undefined
+
+	return { view: found.isShared ? 'shared' : view, entry: found }
+}
+
+/** the card is read on every render, so it shows once the catalogue of its kind arrives */
+const hovered = ref<{ card: () => Card | undefined; anchor: HTMLElement }>()
+
+const hover = (card: () => Card | undefined, event: MouseEvent) => {
+	hovered.value = { card, anchor: event.currentTarget as HTMLElement }
+}
+
+/** back from a change row to the rest of its event */
+const leaveChange = (entry: JournalEntry, event: MouseEvent) => {
+	const row = (event.currentTarget as HTMLElement).closest<HTMLElement>(
+		'.event',
+	)
+
+	hovered.value = row
+		? { card: () => cardOfSource(entry), anchor: row }
+		: undefined
+}
+
+const hoveredCard = computed(() => hovered.value?.card())
 
 const showsEnd = computed(() => ended && !loading && entries.length > 0)
 const showsEmpty = computed(() => ended && !loading && !entries.length)
@@ -150,13 +160,8 @@ const showsEmpty = computed(() => ended && !loading && !entries.length)
 				v-for="entry in entries"
 				:key="entry.id"
 				class="event"
-				:class="{ 'event--catalog': catalogEntryOf(entry) }"
-				@mouseenter="
-					hovered = {
-						id: entry.id,
-						anchor: $event.currentTarget as HTMLElement,
-					}
-				"
+				:class="{ 'event--catalog': cardOfSource(entry) }"
+				@mouseenter="hover(() => cardOfSource(entry), $event)"
 				@mouseleave="hovered = undefined"
 			>
 				<span
@@ -178,6 +183,9 @@ const showsEmpty = computed(() => ended && !loading && !entries.length)
 						v-for="(change, i) in entry.changes"
 						:key="i"
 						class="event__change"
+						:class="{ 'event__change--catalog': cardOfChange(change) }"
+						@mouseenter="hover(() => cardOfChange(change), $event)"
+						@mouseleave="leaveChange(entry, $event)"
 					>
 						<span class="event__user">{{ change.login }}</span>
 						<span class="event__text">{{ change.text }}</span>
@@ -199,19 +207,13 @@ const showsEmpty = computed(() => ended && !loading && !entries.length)
 			<span v-if="showsEnd && endText" class="feed__end">{{ endText }}</span>
 		</UiScrollArea>
 
-		<UiPopover
-			:open="!!hoveredCard"
-			:anchor="hovered?.anchor ?? null"
+		<CatalogHoverCard
+			:anchor="hovered?.anchor"
+			:view="hoveredCard?.view ?? 'items'"
+			:entry="hoveredCard?.entry"
 			side="left"
-			:min-width="CARD_WIDTH"
 			@close="hovered = undefined"
-		>
-			<CatalogEntryCard
-				v-if="hoveredCard"
-				:view="hoveredCard.kind"
-				:entry="hoveredCard.entry"
-			/>
-		</UiPopover>
+		/>
 	</div>
 </template>
 
@@ -276,6 +278,7 @@ const showsEmpty = computed(() => ended && !loading && !entries.length)
 	display: flex;
 	flex: none;
 	gap: 12px;
+	cursor: default;
 	padding: 8px 10px;
 	border-radius: var(--radius-md);
 	transition: background var(--dur-fast) var(--ease-out);
@@ -328,7 +331,18 @@ const showsEmpty = computed(() => ended && !loading && !entries.length)
 	display: grid;
 	grid-template-columns: 80px minmax(0, 1fr);
 	gap: 8px;
+	margin: 0 -6px;
+	padding: 0 6px;
 	font: var(--type-body-sm);
+	border-radius: var(--radius-sm);
+}
+
+.event__change--catalog:hover {
+	background: var(--surface-sunken);
+}
+
+.event--catalog:hover .event__change--catalog:hover {
+	background: var(--surface-card);
 }
 
 .event__user {
