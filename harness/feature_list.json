@@ -401,10 +401,10 @@
 		},
 		{
 			"id": "start-on-home",
-			"title": "The app always starts on the home screen (the party list when no party is chosen); the last opened route is no longer saved between launches. By the user, 2026-11-16.",
+			"title": "The app always starts on the home screen",
 			"priority": 48,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-16. Full record: harness/archive/features-done.json"
 		}
 	]
 }

@@ -17,6 +17,8 @@ export const usePartiesStore = defineStore(StoreName.Parties, () => {
 
 	const select = (party: Party) => api.parties.select(party.id)
 
+	const isSelected = () => api.parties.isSelected()
+
 	const create = async (input: PartyCreateInput) => {
 		await api.parties.create(input)
 		await load()
@@ -27,5 +29,5 @@ export const usePartiesStore = defineStore(StoreName.Parties, () => {
 		await load()
 	}
 
-	return { list, load, select, create, update }
+	return { list, load, select, isSelected, create, update }
 })
