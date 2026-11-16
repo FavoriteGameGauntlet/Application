@@ -24,13 +24,30 @@ const EDGE = 8
 /** below this much room under the anchor the panel opens upwards */
 const ROOM = 220
 
+/**
+ * The interface scale is a CSS zoom of the root, and `getBoundingClientRect` may answer in
+ * screen pixels while `left` and `top` of the panel are layout units. The body fills the
+ * window, so its rectangle against its own size gives that ratio and the window in layout units.
+ */
 function place() {
 	if (!anchor) return
 
-	const rect = anchor.getBoundingClientRect()
+	const { body } = document
+	const scale = body.getBoundingClientRect().width / body.offsetWidth || 1
+	const viewWidth = body.offsetWidth
+	const viewHeight = body.offsetHeight
+
+	const screenRect = anchor.getBoundingClientRect()
+	const rect = {
+		left: screenRect.left / scale,
+		top: screenRect.top / scale,
+		bottom: screenRect.bottom / scale,
+		width: screenRect.width / scale,
+	}
+
 	const width = Math.max(rect.width, minWidth)
-	const left = Math.max(EDGE, Math.min(rect.left, innerWidth - EDGE - width))
-	const below = innerHeight - rect.bottom - GAP - EDGE
+	const left = Math.max(EDGE, Math.min(rect.left, viewWidth - EDGE - width))
+	const below = viewHeight - rect.bottom - GAP - EDGE
 	const above = rect.top - GAP - EDGE
 
 	style.value =
@@ -43,7 +60,7 @@ function place() {
 				}
 			: {
 					left: `${left}px`,
-					bottom: `${innerHeight - rect.top + GAP}px`,
+					bottom: `${viewHeight - rect.top + GAP}px`,
 					width: `${width}px`,
 					maxHeight: `${above}px`,
 				}

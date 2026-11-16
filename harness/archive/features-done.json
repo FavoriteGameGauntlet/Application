@@ -174,6 +174,13 @@
 			"priority": 24,
 			"status": "done",
 			"evidence": "Done 2026-11-16. Done in code; bash harness/scripts/init.sh passes, prettier on the changed files, no « · » left in src/. The agent did not run the app, so no layout was looked at; the user's look is not recorded. Not checked against the API documentation: the history filter «Ресурс» sends resource[kind] without an id."
+		},
+		{
+			"id": "popover-zoom",
+			"title": "Fix the place of every popover at an interface scale other than 100 %. Bug: at a larger scale the «⋯» menu of the system parameters runs off to the right, so no parameter can be changed. UiPopover is teleported to body with position fixed and placed from getBoundingClientRect, which does not match the CSS zoom of the root. The tips of the timer reward, the game reward (CurrentGameCard) and the cost of a wheel group (WheelView) already avoid it: they are placed absolute inside their card, the fix of wheel-group-spins; only UiPopover is left. Every row menu, select, pick chips and date range uses it.",
+			"priority": 27,
+			"status": "done",
+			"evidence": "Done 2026-11-16. UiPopover converts the anchor rectangle and the window into layout units by the ratio of the body rectangle to its size. In Chromium (vite page with the real UiPopover, html zoom 0.9, 1, 1.1, 1.25) the panel starts at the anchor's left edge and under it at every scale, opens upwards near the bottom and stays 8px inside the right edge; the old formula on a plain page at 1.25 put it 94px right of and 72px below the anchor. Not checked: the app itself (WebView2, WebKitGTK) and the screens that use it."
 		}
 	]
 }
