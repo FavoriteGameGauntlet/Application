@@ -254,63 +254,63 @@
 		},
 		{
 			"id": "popover-zoom",
-			"title": "Fix the place of every popover at an interface scale other than 100 %. Tester bug 2026-11-16: at a larger scale the «⋯» menu of the system parameters runs off to the right, so no parameter can be changed. UiPopover is teleported to body with position fixed and placed from getBoundingClientRect, which does not match the CSS zoom of the root (the cause wheel-group-spins found for the ticket cost tip, fixed only there). Every row menu, select, pick chips and date range uses it.",
+			"title": "Fix the place of every popover at an interface scale other than 100 %. Bug: at a larger scale the «⋯» menu of the system parameters runs off to the right, so no parameter can be changed. UiPopover is teleported to body with position fixed and placed from getBoundingClientRect, which does not match the CSS zoom of the root (the cause wheel-group-spins found for the ticket cost tip, fixed only there). Every row menu, select, pick chips and date range uses it.",
 			"priority": 27,
 			"status": "todo",
 			"evidence": ""
 		},
 		{
 			"id": "single-choice-entries",
-			"title": "Where the user picks what to apply (an item use, a perk ability use, an exchange, the apply of a wheel spin), only one entry can be picked. Tester feedback 2026-11-16, the user's answer «везде»; the testers also asked to say on the exchange window that only one can be picked. Today the exchange window has its own checkboxes and the use window uses UiPickList with several picks. A single choice control states the rule, so no caption. Depends on the Server feature single-choice-entries.",
+			"title": "Where the user picks what to apply (an item use, a perk ability use, an exchange, the apply of a wheel spin), only one entry can be picked. The user's answer «везде»; the exchange window also shows that only one can be picked. Today the exchange window has its own checkboxes and the use window uses UiPickList with several picks. A single choice control states the rule, so no caption. Depends on the Server feature single-choice-entries.",
 			"priority": 28,
 			"status": "todo",
 			"evidence": ""
 		},
 		{
 			"id": "home-recent-events",
-			"title": "The «Недавние события» feed of the home screen fills the height of the window and grows with it, and an event shows the information of its item, perk or effect on hover. Tester feedback 2026-11-16. Today PlayerEvents asks for a fixed 5 events of the last day. Open: what the hover shows (the catalogue card of the entry, or the changes of the event).",
+			"title": "The «Недавние события» feed of the home screen fills the height of the window and grows with it, and an event shows the information of its item, perk or effect on hover. Today PlayerEvents asks for a fixed 5 events of the last day. Open: what the hover shows (the catalogue card of the entry, or the changes of the event).",
 			"priority": 29,
 			"status": "todo",
 			"evidence": ""
 		},
 		{
 			"id": "home-tiles-scroll-uses",
-			"title": "The home tiles «Мои очки», «Предметы», «Перки» and «Эффекты» scroll when their rows do not fit, and items, perks and effects show the uses left next to the name. Tester feedback 2026-11-16. Today the points tile cuts the list by useFitCount and the others overflow. usesLeft and usesMax already come for items and perks; check in the API documentation what an effect has (an effect has no uses since effect-passive-only, it shows its remaining time).",
+			"title": "The home tiles «Мои очки», «Предметы», «Перки» and «Эффекты» scroll when their rows do not fit, and items, perks and effects show the uses left next to the name. Today the points tile cuts the list by useFitCount and the others overflow. usesLeft and usesMax already come for items and perks; check in the API documentation what an effect has (an effect has no uses since effect-passive-only, it shows its remaining time).",
 			"priority": 30,
 			"status": "todo",
 			"evidence": ""
 		},
 		{
 			"id": "history-paging",
-			"title": "The history tab loads older events as the user scrolls down. Tester feedback 2026-11-16: only the last 20 events show. HistoryTab reads one page with the default limit of 20 and ignores nextCursor of GET history.",
+			"title": "The history tab loads older events as the user scrolls down. Today only the last 20 events show. HistoryTab reads one page with the default limit of 20 and ignores nextCursor of GET history.",
 			"priority": 31,
 			"status": "todo",
 			"evidence": ""
 		},
 		{
 			"id": "timer-end-sound",
-			"title": "Play a sound when the timer ends. Tester feedback 2026-11-16. Open: the sound file (it goes next to the other assets), whether it plays when the window is hidden or minimized, and whether the user can turn it off.",
+			"title": "Play a sound when the timer ends. Open: the sound file (it goes next to the other assets), whether it plays when the window is hidden or minimized, and whether the user can turn it off.",
 			"priority": 32,
 			"status": "todo",
 			"evidence": ""
 		},
 		{
 			"id": "catalog-wheel-entries",
-			"title": "The player catalogue gets a wheel section with every item of every group. Tester feedback 2026-11-16, the user's answer: all items. Depends on the Server feature wheel-rows-for-members.",
+			"title": "The player catalogue gets a wheel section with every item of every group. The user's answer: all items. Depends on the Server feature wheel-rows-for-members.",
 			"priority": 33,
 			"status": "todo",
 			"evidence": ""
 		},
 		{
 			"id": "perk-ability-edit",
-			"title": "The ability tab of an existing perk can be edited in the admin catalogue. Tester feedback 2026-11-16, the user's answer: allow the edit. Today the tab is locked. The lock part of rules-ui-catalog-dialog goes away with it. Depends on the Server feature perk-ability-edit.",
+			"title": "The ability tab of an existing perk can be edited in the admin catalogue. The user's answer: allow the edit. Today the tab is locked. The lock part of rules-ui-catalog-dialog goes away with it. Depends on the Server feature perk-ability-edit.",
 			"priority": 34,
 			"status": "todo",
 			"evidence": ""
 		},
 		{
 			"id": "user-avatars",
-			"title": "A user uploads their own avatar, and UiUserAvatar shows it everywhere (it already takes src, today only the initials show). The client checks the size limits of the API documentation before the upload. Tester feedback 2026-11-16. Depends on the Server feature user-avatars; where the upload lives (profile, a menu) goes through the design of AGENTS.md.",
+			"title": "A user uploads their own avatar, and UiUserAvatar shows it everywhere (it already takes src, today only the initials show). The client checks the size limits of the API documentation before the upload. Depends on the Server feature user-avatars; where the upload lives (profile, a menu) goes through the design of AGENTS.md.",
 			"priority": 35,
 			"status": "todo",
 			"evidence": ""
