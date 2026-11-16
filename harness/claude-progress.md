@@ -2,6 +2,13 @@
 
 Newest entry on top. Record only what was actually verified.
 
+## 2026-11-16 home-recent-events
+
+- By the user's answers to the plan and the approved mockup (https://claude.ai/artifact/5HXVn5NnaGGgDzb9YHtFVk): the «Недавние события» card on the home screen and the player profile takes the height its grid column gets and never stretches the page (`contain: size`, at least 240px); the header stays and the list scrolls. The feed still reads the last 24 hours from now (the user: the last day, not the current day), fixed when the feed restarts, and loads the next page by `nextCursor` when the list is 200px from its end, when it is shorter than the card or when the card grows. A refresh after an action replaces the shown events without blinking empty. Placeholder rows show while a page loads, «Больше событий за сутки нет» at the end.
+- The scrollbar lives in the new `UiScrollArea` (`::-webkit-scrollbar` only: `scrollbar-color` or `scrollbar-width` would switch it off in Chromium 121+), so the home tiles can take it next.
+- Hovering an event about an item, perk or effect shows its `CatalogEntryCard` in a `UiPopover` left of the row (`side: 'left'`, new, kept inside the window). `source.id` is taken as the catalogue id: the API documentation names the item, perk or effect and calls a held copy a «copy» elsewhere; it does not say so outright. The catalogue of a kind is read once, when the first event about it shows; an entity missing from the player catalogue (deleted) gets no card. `journalStore.fetch` returns the page now.
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. A temporary vite page (not committed) with the real `PlayerEvents` against a fake API of 47 events in Chromium at 720 and 1080 px, light and dark: the page stays the window height, the feed asks for 3 pages while scrolled to the end, the end caption shows, the card opens left of a hovered item row, the scrollbar is thin. Not checked: the app itself, the real backend, WebKitGTK.
+
 ## 2026-11-16 popover-zoom
 
 - The «⋯» menus, selects, pick chips and date ranges (`UiPopover`) drifted right and down at 110 and 125 %: the interface scale is a CSS `zoom` of the root, and in Chromium `getBoundingClientRect` answers in screen pixels while `left` and `top` of the `fixed` panel are layout units and get the zoom again. `UiPopover` now divides the anchor rectangle by the ratio of the body rectangle to the body size and takes the window size from the body (which fills the window), so the placement works whichever unit the engine answers in. The panel stays teleported and `fixed`, so it still escapes the dialogs.
@@ -20,16 +27,6 @@ Newest entry on top. Record only what was actually verified.
 - Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files, a script over group sizes 1 to 90 found no mismatch at the start and at the landing of the reel. The app was run by the user: the tape movement. Not looked at since the last changes: the loading state, the tickets, the apply and the clear of a spin against the backend.
 - After a change of both the script and the scoped style of a component the dev server can keep serving the old CSS (the cards sat shifted by the missing `left`); a restart of `tauri dev` fixes it, the code is not at fault.
 - Checked by the user (said in chat, 2026-11-16), so the feature is `done`.
-
-## 2026-11-15 wheel-tape
-
-- Done in code, by the user's approval of the plan (the animation lives in the tape component, the tickets wrap at about 220px): the player wheel screen follows the canvas «Колесо: лента-арена». The side panel is a row of group tickets (name, count, «Цена: …» or «Бесплатно», a link to the wishlist on its ticket); `WheelTape` rolls a horizontal tape for about six seconds with blur and streaks, holds, snaps back into the frame, then the winner grows and the others fade. The store keeps the spin in `landing` until the tape calls `landed()`; the old step animation and `pos` are gone from the store. The result card has «Выпало» and the group as two elements (no dot, the project rule), the description, the cost, the manual badge, «Сбросить» and the apply button. The line «Выпавшая игра станет текущей» and the panel title are gone (not in the canvas).
-- By the user's review: the result card lost the fallback «Эффект из группы «…».» and the line «Спишется при применении» (the ticket already shows the cost); «Выпало: группа» is one label. The card shows the entry's changes as tags (green adds, red takes) from the texts the API layer builds.
-- By the user's second review: the result card has no group line (the selected ticket already names the group). Switching tabs or groups keeps the spin: the store shows it (`shownResult`) and its tape whenever its group is selected, since the server keeps it until the next spin.
-- By the user's wish: a ticket of a paid group shows «Прокрутов: N», the spins the user's resources pay for (`affordableSpins` in `utils/spinPayment.ts`: the smallest of held/amount over the cost rows; items, perks and effects count copies), red at 0. The screen reloads the user's resources when it opens. A free group shows no count.
-- The wishlist link uses the `arrow-right` icon: there is no list icon in `assets/icons`.
-- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. The app was not run, so the screen and the motion were not looked at.
-- Checked by the user (the screen works), so the feature is `done`.
 
 ## Open
 

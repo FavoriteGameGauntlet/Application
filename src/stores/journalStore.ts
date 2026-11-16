@@ -12,8 +12,7 @@ export const useJournalStore = defineStore(StoreName.Journal, () => {
 		revision.value++
 	}
 
-	const fetch = async (query: JournalQuery) =>
-		(await api.journal.list(query)).items
+	const fetch = (query: JournalQuery) => api.journal.list(query)
 
 	return { revision, bump, fetch }
 })

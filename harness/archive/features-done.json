@@ -181,6 +181,13 @@
 			"priority": 27,
 			"status": "done",
 			"evidence": "Done 2026-11-16. UiPopover converts the anchor rectangle and the window into layout units by the ratio of the body rectangle to its size. In Chromium (vite page with the real UiPopover, html zoom 0.9, 1, 1.1, 1.25) the panel starts at the anchor's left edge and under it at every scale, opens upwards near the bottom and stays 8px inside the right edge; the old formula on a plain page at 1.25 put it 94px right of and 72px below the anchor. Not checked: the app itself (WebView2, WebKitGTK) and the screens that use it."
+		},
+		{
+			"id": "home-recent-events",
+			"title": "The «Недавние события» feed of the home screen fills the height of the window and grows with it, and an event shows the information of its item, perk or effect on hover. Today PlayerEvents asks for a fixed 5 events of the last day. Open: what the hover shows (the catalogue card of the entry, or the changes of the event).",
+			"priority": 29,
+			"status": "done",
+			"evidence": "2026-11-16: init.sh passes; temporary vite page with the real PlayerEvents and a fake API in Chromium (720/1080 px, both themes): no page stretch, paging by cursor, end caption, catalogue card on hover. Not checked in the app or against the backend."
 		}
 	]
 }

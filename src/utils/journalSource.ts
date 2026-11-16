@@ -1,4 +1,8 @@
-import type { HistoryEventKind, JournalSource } from '../api-facade/contracts'
+import type {
+	HistoryEventKind,
+	JournalSource,
+	ResourceKind,
+} from '../api-facade/contracts'
 
 /** what happened and, when there is one, the entity it happened to: two facts for two lines */
 export type JournalSourceParts = { kind: string; name?: string }
@@ -53,6 +57,17 @@ export const journalSourceParts = (
 			// the backend adds kinds over time, an unknown one is shown as it is
 			return { kind: eventKind }
 	}
+}
+
+/** the catalogue kind whose entry `source.id` names; other sources name a wheel row, an exchange or a game */
+export const journalSourceCatalogKind = ({
+	eventKind,
+}: JournalSource): ResourceKind | undefined => {
+	if (eventKind.startsWith('item_')) return 'items'
+	if (eventKind.startsWith('perk_')) return 'perks'
+	if (eventKind.startsWith('effect_')) return 'effects'
+
+	return undefined
 }
 
 /** the event kinds the history filter offers as one source */
