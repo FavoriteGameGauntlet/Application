@@ -298,6 +298,7 @@ const units = computed(() => {
 	flex-direction: column;
 	gap: 22px;
 	padding: 24px;
+	container-type: inline-size;
 }
 
 .card__head {
@@ -493,5 +494,25 @@ const units = computed(() => {
 .stat__form {
 	font: 600 16px / 1.25 var(--font-body);
 	color: var(--text-strong);
+}
+
+/* a hover card or the drawer has no room for three boxes: a long unit form ran over its box */
+@container (max-width: 480px) {
+	.stats--3 {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 6px;
+	}
+
+	.stats--3 .stat {
+		display: grid;
+		grid-template-columns: 96px minmax(0, 1fr);
+		align-items: baseline;
+		gap: 2px 12px;
+		padding: 10px 14px;
+	}
+
+	.stats--3 .stat > :not(:first-child) {
+		grid-column: 2;
+	}
 }
 </style>
