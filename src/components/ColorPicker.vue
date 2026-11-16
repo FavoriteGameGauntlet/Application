@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 import { MEMBER_COLORS, MEMBER_COLOR_NAMES } from '../constants/memberColors'
 import {
 	hexToHsv,
@@ -8,6 +8,7 @@ import {
 	type Hsv,
 } from '../utils/memberColor'
 import UiInput from './ui/UiInput.vue'
+import UiPopover from './ui/UiPopover.vue'
 
 type Props = {
 	label: string
@@ -93,7 +94,9 @@ const onSquareKey = (event: KeyboardEvent) => {
 
 	if (!moves[event.key]) return
 
+	// the popover walks its buttons with the up and down arrows
 	event.preventDefault()
+	event.stopPropagation()
 	setHsv({ ...hsv.value, ...moves[event.key] })
 }
 
@@ -105,11 +108,16 @@ const onHueKey = (event: KeyboardEvent) => {
 	if (!delta) return
 
 	event.preventDefault()
+	event.stopPropagation()
 	setHsv({
 		...hsv.value,
 		h: clamp(hsv.value.h + delta * stepOf(event) * 360, 360),
 	})
 }
+
+const isPicking = ref(false)
+/** the panel hangs under the swatch, so the hex field above it stays in sight */
+const preview = useTemplateRef('preview')
 
 const percent = (value: number) => `${Math.round(value * 100)}%`
 </script>
@@ -132,58 +140,25 @@ const percent = (value: number) => `${Math.round(value * 100)}%`
 				@click="color = swatch"
 			></button>
 
-			<span
-				v-if="isValid && !isPalette"
-				class="swatch swatch--on"
-				:style="{ background: color }"
-				role="img"
+			<button
+				type="button"
+				class="swatch swatch--custom"
+				:class="{ 'swatch--on': isValid && !isPalette }"
+				:style="isValid && !isPalette ? { background: color } : undefined"
 				aria-label="Свой цвет"
 				title="Свой цвет"
-			></span>
-		</div>
-
-		<div class="picker__panel">
-			<div
-				class="square"
-				:style="{ '--hue': `hsl(${hsv.h} 100% 50%)` }"
-				@pointerdown="onSquareDown"
-			>
-				<button
-					type="button"
-					class="handle"
-					:style="{
-						left: percent(hsv.s),
-						top: percent(1 - hsv.v),
-						background: shown,
-					}"
-					role="slider"
-					aria-label="Насыщенность и яркость"
-					:aria-valuenow="Math.round(hsv.s * 100)"
-					:aria-valuetext="`насыщенность ${percent(hsv.s)}, яркость ${percent(hsv.v)}`"
-					@keydown="onSquareKey"
-				></button>
-			</div>
-
-			<div class="hue" @pointerdown="onHueDown">
-				<button
-					type="button"
-					class="handle"
-					:style="{
-						left: percent(hsv.h / 360),
-						background: `hsl(${hsv.h} 100% 50%)`,
-					}"
-					role="slider"
-					aria-label="Оттенок"
-					aria-valuemin="0"
-					aria-valuemax="360"
-					:aria-valuenow="Math.round(hsv.h)"
-					@keydown="onHueKey"
-				></button>
-			</div>
+				:aria-pressed="isValid && !isPalette"
+				:aria-expanded="isPicking"
+				@click="isPicking = true"
+			></button>
 		</div>
 
 		<div class="picker__hex">
-			<span class="picker__preview" :style="{ background: shown }"></span>
+			<span
+				ref="preview"
+				class="picker__preview"
+				:style="{ background: shown }"
+			></span>
 
 			<div class="picker__input">
 				<UiInput
@@ -197,6 +172,53 @@ const percent = (value: number) => `${Math.round(value * 100)}%`
 				/>
 			</div>
 		</div>
+
+		<UiPopover
+			:open="isPicking"
+			:anchor="preview"
+			:min-width="240"
+			@close="isPicking = false"
+		>
+			<div class="picker__panel">
+				<div
+					class="square"
+					:style="{ '--hue': `hsl(${hsv.h} 100% 50%)` }"
+					@pointerdown="onSquareDown"
+				>
+					<button
+						type="button"
+						class="handle"
+						:style="{
+							left: percent(hsv.s),
+							top: percent(1 - hsv.v),
+							background: shown,
+						}"
+						role="slider"
+						aria-label="Насыщенность и яркость"
+						:aria-valuenow="Math.round(hsv.s * 100)"
+						:aria-valuetext="`насыщенность ${percent(hsv.s)}, яркость ${percent(hsv.v)}`"
+						@keydown="onSquareKey"
+					></button>
+				</div>
+
+				<div class="hue" @pointerdown="onHueDown">
+					<button
+						type="button"
+						class="handle"
+						:style="{
+							left: percent(hsv.h / 360),
+							background: `hsl(${hsv.h} 100% 50%)`,
+						}"
+						role="slider"
+						aria-label="Оттенок"
+						aria-valuemin="0"
+						aria-valuemax="360"
+						:aria-valuenow="Math.round(hsv.h)"
+						@keydown="onHueKey"
+					></button>
+				</div>
+			</div>
+		</UiPopover>
 	</div>
 </template>
 
@@ -234,19 +256,16 @@ const percent = (value: number) => `${Math.round(value * 100)}%`
 	outline-offset: 2px;
 }
 
-span.swatch {
-	cursor: default;
+/* any color: the hue circle until a custom one is picked */
+.swatch--custom {
+	background: conic-gradient(#f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
 }
 
 .picker__panel {
 	display: flex;
 	flex-direction: column;
 	gap: 14px;
-	align-self: flex-start;
-	width: 240px;
-	padding: 12px;
-	background: var(--surface-sunken);
-	border-radius: var(--radius-md);
+	padding: 6px;
 }
 
 .square,
