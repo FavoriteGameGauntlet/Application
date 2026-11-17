@@ -19,8 +19,6 @@ import { useAdminSettingsStore } from '../../stores/adminSettingsStore'
 type Kind = RewardRow['kind']
 type Block = keyof Rewards
 
-/** the parameter that holds the length of the timer */
-
 const catalogStore = useAdminCatalogStore()
 const settingsStore = useAdminSettingsStore()
 
@@ -55,32 +53,12 @@ const defaultAmounts: Record<Kind, string> = {
 	effect: '1',
 }
 
-const blocks = computed<{ key: Block; title: string; next: string }[]>(() => [
-	{
-		key: 'timer_created',
-		title: 'За созданный таймер',
-		next: 'Действуют на следующие таймеры.',
-	},
-	{
-		key: 'timer',
-		title: 'За завершённый таймер',
-		next: 'Действуют на следующие таймеры.',
-	},
-	{
-		key: 'game_completed',
-		title: 'За завершение игры',
-		next: 'Действуют на следующие игры.',
-	},
-	{
-		key: 'game_cancelled',
-		title: 'За отмену игры',
-		next: 'Действуют на следующие игры.',
-	},
-	{
-		key: 'game_rerolled',
-		title: 'За перекрут игры',
-		next: 'Действуют на следующие игры.',
-	},
+const blocks = computed<{ key: Block; title: string }[]>(() => [
+	{ key: 'timer_created', title: 'За созданный таймер' },
+	{ key: 'timer', title: 'За завершённый таймер' },
+	{ key: 'game_completed', title: 'За завершение игры' },
+	{ key: 'game_cancelled', title: 'За отмену игры' },
+	{ key: 'game_rerolled', title: 'За перекрут игры' },
 ])
 
 const targetOptions = (kind: Kind) =>
@@ -106,7 +84,7 @@ const payload = (key: Block, rows: RewardRow[]): Rewards => ({
 	[key]: rows,
 })
 
-const onSave = (block: { key: Block; next: string }) => {
+const onSave = (block: { key: Block }) => {
 	const rows = parseChangeRows(draft[block.key])
 
 	if ('error' in rows) {
@@ -117,7 +95,6 @@ const onSave = (block: { key: Block; next: string }) => {
 	return settingsStore.saveRewards(
 		payload(block.key, rows.value),
 		'Награды сохранены',
-		block.next,
 	)
 }
 

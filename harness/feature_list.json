@@ -177,10 +177,10 @@
 		},
 		{
 			"id": "rules-ui-rewards-cost",
-			"title": "Express through the interface the rules that the removed captions of the rewards screen and of the spin cost card stated. Removed: «Длительность таймера меняется в «Системных параметрах»», «Новая награда действует только на следующие таймеры и игры, уже выданные не пересчитываются»; «Цена только у этой группы, у других своя», «Она списывается, когда игрок применяет результат, и действует на следующие прокруты», «Если у игрока предметов больше, чем нужно, он сам выбирает, какие списать». Ideas: a link from the timer reward card to the parameters; a mark «с следующего таймера» on a card after a save instead of a toast; the title of the cost card carries the group name; the choice of copies is shown as a switch in the cost form, as in the other «Игрок выбирает» switches. Open: which of these the user wants.",
+			"title": "Express the rules of the removed captions of the rewards screen and the spin cost card through the interface",
 			"priority": 17,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-17. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "rules-ui-wheel-admin",
