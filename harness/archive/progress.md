@@ -1,5 +1,10 @@
 # Progress log archive
 
+## 2026-11-17 save-buttons-without-text
+
+- By the user's correction of the note: a form button keeps only its verb, because the dialog title names the object. «Создать пати», «Создать обмен» and the four «Создать <kind>» of the catalogue form became «Создать», «Добавить пункт» of the wheel entry form «Добавить», «Удалить из пати» of the member removal «Удалить» (the default of `ConfirmDialog`). «Сохранить» and «Отмена» stay.
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. Not checked: the app itself.
+
 ## 2026-11-16 ux-color-picker
 
 - By the user's answers and the approved mockup (https://claude.ai/artifact/G1XdUSsbPCDvjw1F2kLEVw, frames 1–4 after the user tried the always-open frame 5, with a square square): `ColorPicker` keeps the 12 palette circles; a 13th «Свой цвет» circle (a hue wheel, or the custom color once picked) opens a `UiPopover` under the swatch with a 214px saturation/brightness square and a hue slider (pointer and arrow keys, Shift for 10%). The swatch and the hex field stay under the circles. A wrong hex shows «Цвет в формате #rrggbb» at the field and `FormDialog` keeps «Сохранить» off, so the toasts of `AdminMembersView` and `PartiesView` are gone. The circles have Russian names for screen readers. The user merged player-color-form into this feature and asked to drop its entry.

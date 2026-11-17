@@ -230,6 +230,13 @@
 			"priority": 14,
 			"status": "done",
 			"evidence": "2026-11-17. By the user's answers (all recommended options) and the mockup https://claude.ai/artifact/V54ZDUwLv523SQTH9qciTv with uncoloured special actions: «Копирует», «Удаляет», «Передаёт» are a group of the «Действие» list, their resource cell is «Выбирает игрок», a transfer picks its direction in «Кто». Catalogue and player texts say «скопировать» / «удалить» and the card and table leave these rows uncoloured. Verified: init.sh, a temporary vite page (not committed) with the real RowsEditor in Chromium at the dialog width. Not checked: the app itself."
+		},
+		{
+			"id": "rules-ui-members",
+			"title": "Express through the interface the rules that the removed captions of the members screen and its window stated. Removed: «Пустое имя — показывается логин», «Снять админа с себя нельзя», «Если из пати уходит последний админ, им становится тот, кто вступил раньше всех»; in the window «Пустое — покажем логин», «Меняет каталоги, колесо, награды и участников», «Из палитры или свой в виде #ffb000. Цвета могут повторяться». Ideas: the admin switch is disabled in the row of the user themself, with the reason on hover; the removal confirmation names who becomes the admin when the last one leaves; the name field shows the login as a placeholder (it already does); the admin switch shows what an admin may do on hover; a color that is not a hex gets an error under the field, not a toast. Open: which of these the user wants.",
+			"priority": 16,
+			"status": "done",
+			"evidence": "By the user's answers (1a, 2a, 3b): in the member window of the user themself «Админ пати» is a disabled switch with «Снять админа с себя нельзя» on hover (FormField.disabledReason); when the last admin removes themself, the confirmation adds «Админом станет <login>.» (the current member who joined first) or «В пати не останется админа.» when AdminSuccessionEnabled is off; no hover text on what an admin may do. The empty name and the hex error were already in the interface. Verified 2026-11-17: init.sh, a temporary vite page (not committed) with the real AdminMembersView and mocked API in Chromium. Not checked: the app itself, the hover tooltip over the disabled switch in WebView2 and WebKitGTK."
 		}
 	]
 }
