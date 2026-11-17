@@ -381,8 +381,13 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 									v-else-if="field.type === 'check'"
 									class="form__check"
 									:style="{ width: field.width && `${field.width}px` }"
+									:title="field.disabledReason"
 								>
-									<UiSwitch v-model="flags[field.key]" :label="field.label" />
+									<UiSwitch
+										v-model="flags[field.key]"
+										:label="field.label"
+										:disabled="!!field.disabledReason"
+									/>
 									<span v-if="field.hint" class="form__note form__check-hint">{{
 										field.hint
 									}}</span>
