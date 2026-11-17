@@ -216,6 +216,13 @@
 			"priority": 11,
 			"status": "done",
 			"evidence": "Done 2026-11-17. init.sh passes, prettier on the changed files. Changed: the create buttons of the party, exchange and catalogue forms, «Добавить пункт» of the wheel entry form, «Удалить из пати» of the member removal. Kept: «Изменить цену» (opens the form, it is not inside one). Not checked: the app itself."
+		},
+		{
+			"id": "auth-password-eye",
+			"title": "Fix the eye in the login and registration forms (user: it vanished in some cases). By the user's answers and the mockup https://claude.ai/artifact/799PxQ7gyhLpvGPkvp1KHY: our own eye button in every password field of UiInput, the native WebView2 eye hidden; on the registration tab both fields keep their eye and share one state.",
+			"priority": 13,
+			"status": "done",
+			"evidence": "Done 2026-11-17. init.sh passes, prettier on the changed files. A temporary vite page (not committed) with the real AuthView in Chromium: the eye switches the login password to text and back, keeps the caret in the field, on the registration tab either eye switches both fields, Tab reaches the eye and rings only it, Enter on it toggles and does not submit. Not checked: the app itself on WebView2 and WebKitGTK."
 		}
 	]
 }
