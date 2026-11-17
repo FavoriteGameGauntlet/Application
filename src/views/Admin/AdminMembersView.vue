@@ -282,7 +282,6 @@ onMounted(() => store.loadMembers())
 		:open="!!removing"
 		:title="removing ? `Удалить ${removing.login} из пати?` : ''"
 		text="Игрок пропадёт из участников. Его записи в журнале останутся."
-		ok-label="Удалить из пати"
 		cancel-label="Оставить"
 		@close="removing = undefined"
 		@confirm="onRemove"

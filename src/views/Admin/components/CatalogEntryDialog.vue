@@ -52,13 +52,6 @@ const adds: Record<CatalogKind, string> = {
 	perks: 'Новый перк',
 }
 
-const creates: Record<CatalogKind, string> = {
-	'point-types': 'Создать тип очков',
-	items: 'Создать предмет',
-	effects: 'Создать эффект',
-	perks: 'Создать перк',
-}
-
 /** a chip per length that is asked for most; `custom` opens a line for the rest */
 const durationPresets = [
 	{ value: 'none', label: 'Пока не снимут' },
@@ -445,7 +438,7 @@ const initial = computed<FormValues>(() => ({
 
 const title = computed(() => (entry ? `Изменить «${entry.name}»` : adds[kind]))
 
-const submitLabel = computed(() => (entry ? 'Сохранить' : creates[kind]))
+const submitLabel = computed(() => (entry ? 'Сохранить' : 'Создать'))
 
 const invalid = (title: string, text: string) => {
 	toastStore.show(title, text, 'danger')

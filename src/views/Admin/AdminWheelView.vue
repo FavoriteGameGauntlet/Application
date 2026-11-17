@@ -142,7 +142,7 @@ const dialogSubtitle = computed(() =>
 )
 
 const submitLabel = computed(() =>
-	dialog.value?.entry ? 'Сохранить' : 'Добавить пункт',
+	dialog.value?.entry ? 'Сохранить' : 'Добавить',
 )
 
 const onSave = async (values: FormValues) => {
