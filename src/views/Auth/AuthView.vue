@@ -24,6 +24,8 @@ const login = ref('')
 const email = ref('')
 const password = ref('')
 const passwordRepeat = ref('')
+// one eye shows both password fields
+const isPasswordShown = ref(false)
 
 const tried = ref(false)
 const serverError = ref<string>()
@@ -126,6 +128,7 @@ const onSubmit = async () => {
 					/>
 					<UiInput
 						v-model="password"
+						v-model:revealed="isPasswordShown"
 						type="password"
 						label="Пароль"
 						placeholder="••••••••"
@@ -136,6 +139,7 @@ const onSubmit = async () => {
 					<UiInput
 						v-if="isRegister"
 						v-model="passwordRepeat"
+						v-model:revealed="isPasswordShown"
 						type="password"
 						label="Повтори пароль"
 						placeholder="••••••••"
