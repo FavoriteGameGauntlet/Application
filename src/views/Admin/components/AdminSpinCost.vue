@@ -89,12 +89,11 @@ onMounted(async () => {
 
 <template>
 	<div class="cost">
-		<span class="cost__label">Прокрут стоит</span>
+		<span class="cost__label">Применение стоит</span>
 		<span v-for="(pill, i) in pills" :key="i" class="cost__pill">{{
 			pill
 		}}</span>
 		<span v-if="!pills.length" class="cost__free">бесплатно</span>
-		<span class="cost__note">Платит игрок, когда применяет результат.</span>
 		<div class="cost__spacer"></div>
 		<UiButton variant="outline" size="sm" @click="isEditing = true">
 			Изменить цену
@@ -145,11 +144,6 @@ onMounted(async () => {
 .cost__free {
 	font: var(--type-body-sm);
 	color: var(--text-body);
-}
-
-.cost__note {
-	font: var(--type-caption);
-	color: var(--text-muted);
 }
 
 .cost__spacer {

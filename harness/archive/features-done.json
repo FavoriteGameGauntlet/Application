@@ -237,6 +237,13 @@
 			"priority": 16,
 			"status": "done",
 			"evidence": "By the user's answers (1a, 2a, 3b): in the member window of the user themself «Админ пати» is a disabled switch with «Снять админа с себя нельзя» on hover (FormField.disabledReason); when the last admin removes themself, the confirmation adds «Админом станет <login>.» (the current member who joined first) or «В пати не останется админа.» when AdminSuccessionEnabled is off; no hover text on what an admin may do. The empty name and the hex error were already in the interface. Verified 2026-11-17: init.sh, a temporary vite page (not committed) with the real AdminMembersView and mocked API in Chromium. Not checked: the app itself, the hover tooltip over the disabled switch in WebView2 and WebKitGTK."
+		},
+		{
+			"id": "rules-ui-rewards-cost",
+			"title": "Express through the interface the rules that the removed captions of the rewards screen and of the spin cost card stated. Removed: «Длительность таймера меняется в «Системных параметрах»», «Новая награда действует только на следующие таймеры и игры, уже выданные не пересчитываются»; «Цена только у этой группы, у других своя», «Она списывается, когда игрок применяет результат, и действует на следующие прокруты», «Если у игрока предметов больше, чем нужно, он сам выбирает, какие списать». Ideas: a link from the timer reward card to the parameters; a mark «с следующего таймера» on a card after a save instead of a toast; the title of the cost card carries the group name; the choice of copies is shown as a switch in the cost form, as in the other «Игрок выбирает» switches. Open: which of these the user wants.",
+			"priority": 17,
+			"status": "done",
+			"evidence": "By the user's answers (1b, 2a, 3b, 4 nothing): no link to the timer length; the save toast of a reward card says only «Награды сохранены», since the server reads the reward when a timer or game ends, so the old «Действуют на следующие таймеры/игры» was wrong; the spin cost line of the admin wheel starts «Применение стоит» and lost the note «Платит игрок, когда применяет результат.»; nothing for the copy choice, the payment covers the whole cost and the player picks only which copy. Verified 2026-11-17: init.sh, a temporary vite page (not committed) with the real AdminSpinCost and AdminRewardsView and a mocked API in Chromium. Not checked: the app itself."
 		}
 	]
 }

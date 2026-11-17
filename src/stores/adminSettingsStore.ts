@@ -34,7 +34,7 @@ export const useAdminSettingsStore = defineStore(
 		const saveRewards = async (
 			value: Rewards,
 			title: string,
-			text: string,
+			text?: string,
 			tone: 'success' | 'info' = 'success',
 		) => {
 			const toast = useToastStore()

@@ -1055,7 +1055,7 @@ export type Api = {
 		}
 		rewards: {
 			get: () => Promise<Rewards>
-			/** only affects the timers and games that start after it */
+			/** a timer or a game gets the reward that is set when it ends */
 			save: (rewards: Rewards) => Promise<void>
 		}
 		parameters: {
