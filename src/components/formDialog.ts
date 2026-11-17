@@ -33,6 +33,8 @@ export type FormField = {
 	hint?: string
 	/** the `hint` names why the form cannot be filled yet, so it is red */
 	invalid?: boolean
+	/** for a `check`: the switch is off limits, the text says why on hover */
+	disabledReason?: string
 	/** for a `line`: the refusal of the last save, red under the field in place of `hint` */
 	error?: string
 	/**

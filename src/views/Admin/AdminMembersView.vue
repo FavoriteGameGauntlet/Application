@@ -8,8 +8,10 @@ import UiBadge from '../../components/ui/UiBadge.vue'
 import UiChoiceChips from '../../components/ui/UiChoiceChips.vue'
 import UiRowMenu, { type RowMenuItem } from '../../components/ui/UiRowMenu.vue'
 import UiUserAvatar from '../../components/ui/UiUserAvatar.vue'
+import { useAdminParametersStore } from '../../stores/adminParametersStore'
 import { useAdminSettingsStore } from '../../stores/adminSettingsStore'
 import { useSessionStore } from '../../stores/sessionStore'
+import { useToastStore } from '../../stores/toastStore'
 import { formatDate } from '../../utils/format'
 import { nextMemberColor } from '../../utils/memberColor'
 import AdminListHeader from './components/AdminListHeader.vue'
@@ -18,6 +20,8 @@ type Filter = 'all' | 'admins' | 'players' | 'left'
 
 const store = useAdminSettingsStore()
 const sessionStore = useSessionStore()
+const parametersStore = useAdminParametersStore()
+const toastStore = useToastStore()
 
 /** the member in the edit dialog, undefined means the dialog is closed */
 const editing = ref<PartyMember>()
@@ -88,7 +92,7 @@ const menuOf = (member: PartyMember): RowMenuItem[] =>
 					label: 'Удалить из пати',
 					icon: 'trash-2',
 					danger: true,
-					select: () => (removing.value = member),
+					select: () => startRemove(member),
 				},
 			]
 
@@ -108,6 +112,9 @@ const fields = computed<FormField[]>(() => [
 		key: 'isAdmin',
 		label: 'Админ пати',
 		type: 'check',
+		...(editing.value?.login === sessionStore.login && {
+			disabledReason: 'Снять админа с себя нельзя',
+		}),
 	},
 	colorField,
 ])
@@ -173,6 +180,45 @@ const onSave = async (values: FormValues) => {
 	})
 
 	if (ok) editing.value = undefined
+}
+
+const removeText = ref('')
+
+const REMOVE_TEXT =
+	'Игрок пропадёт из участников. Его записи в журнале останутся.'
+
+/** the backend makes the earliest joined member an admin when the last one leaves, unless the party turned it off */
+const successionText = async (member: PartyMember) => {
+	const others = current.value.filter((m) => m.login !== member.login)
+
+	if (!member.isAdmin || !others.length || others.some((m) => m.isAdmin)) {
+		return undefined
+	}
+
+	await parametersStore.load()
+
+	const succession = parametersStore.parameters.find(
+		(p) => p.code === 'AdminSuccessionEnabled',
+	)
+
+	if (succession?.value === 'false') return 'В пати не останется админа.'
+
+	const heir = others.reduce((first, m) =>
+		Date.parse(m.joinedDate) < Date.parse(first.joinedDate) ? m : first,
+	)
+
+	return `Админом станет ${heir.login}.`
+}
+
+const startRemove = async (member: PartyMember) => {
+	try {
+		const succession = await successionText(member)
+
+		removeText.value = succession ? `${REMOVE_TEXT} ${succession}` : REMOVE_TEXT
+		removing.value = member
+	} catch (e) {
+		toastStore.error(e)
+	}
 }
 
 const onRemove = () => {
@@ -281,7 +327,7 @@ onMounted(() => store.loadMembers())
 	<ConfirmDialog
 		:open="!!removing"
 		:title="removing ? `Удалить ${removing.login} из пати?` : ''"
-		text="Игрок пропадёт из участников. Его записи в журнале останутся."
+		:text="removeText"
 		cancel-label="Оставить"
 		@close="removing = undefined"
 		@confirm="onRemove"
