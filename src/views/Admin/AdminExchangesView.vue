@@ -279,7 +279,7 @@ watch(
 		:title="
 			editing?.exchange ? `Изменить «${editing.exchange.name}»` : 'Новый обмен'
 		"
-		:submit-label="editing?.exchange ? 'Сохранить' : 'Создать обмен'"
+		:submit-label="editing?.exchange ? 'Сохранить' : 'Создать'"
 		:width="840"
 		:sections
 		:initial

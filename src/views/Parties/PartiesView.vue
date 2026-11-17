@@ -206,7 +206,7 @@ onMounted(async () => {
 			:title="
 				editing?.party ? `Изменить «${editing.party.name}»` : 'Новая пати'
 			"
-			:submit-label="editing?.party ? 'Сохранить' : 'Создать пати'"
+			:submit-label="editing?.party ? 'Сохранить' : 'Создать'"
 			:width="480"
 			:sections="[{ fields }]"
 			:initial

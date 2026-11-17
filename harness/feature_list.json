@@ -58,10 +58,10 @@
 		},
 		{
 			"id": "save-buttons-without-text",
-			"title": "Remove the text from the «Сохранить» buttons. The user's words: remove the text from the Save buttons. The text is set in FormDialog (the default submitLabel), ReviewDialog, WishlistTab, AdminParametersView, AdminRewardsView, AdminSpinCost, and by submit-label in AdminExchangesView, AdminWheelView, CatalogEntryDialog and PartiesView. Open: what stays on the button (an icon only, such as the check icon AdminSpinCost already uses), which buttons count (every «Сохранить», or also «Создать пати», «Добавить пункт» and the like) and how a screen reader gets the name (aria-label).",
+			"title": "Form buttons name only the action",
 			"priority": 11,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-17. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "catalog-player-card",

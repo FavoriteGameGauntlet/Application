@@ -209,6 +209,13 @@
 			"priority": 43,
 			"status": "done",
 			"evidence": "Done 2026-11-16. init.sh passes; a temporary vite page with the real FormDialog in Chromium: the «Свой цвет» circle opens the popover, the square is 214x214, drag, hue click and arrow keys change the hex, Escape and an outside click close only the popover, a wrong hex disables save, a typed palette hex selects its circle and saves lowercase. Not checked: dark theme, WebKitGTK."
+		},
+		{
+			"id": "save-buttons-without-text",
+			"title": "Form buttons name only the action: «Создать», «Сохранить», «Добавить», «Удалить». The user's words, translated: the text «Создать», «Сохранить», «Отменить» stays, remove the rest after it; the dialog title already says what the action is.",
+			"priority": 11,
+			"status": "done",
+			"evidence": "Done 2026-11-17. init.sh passes, prettier on the changed files. Changed: the create buttons of the party, exchange and catalogue forms, «Добавить пункт» of the wheel entry form, «Удалить из пати» of the member removal. Kept: «Изменить цену» (opens the form, it is not inside one). Not checked: the app itself."
 		}
 	]
 }
