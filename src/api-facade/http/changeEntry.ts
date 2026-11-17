@@ -103,10 +103,19 @@ export const toItemEntryText = (
 			: `передать выбранным игрокам выбранный предмет${count}`
 	}
 
-	const text =
-		entry.kind === 'user_item'
-			? `${signOf(entry.amount)}выбранный предмет${count}`
-			: toChangeText(entry, pointTypes)
+	if (entry.kind === 'user_item') {
+		if (entry.amount < 0) {
+			return entry.target === 'chosen'
+				? `удалить у выбранных игроков выбранный предмет${count}`
+				: `удалить выбранный предмет${count}`
+		}
+
+		return entry.target === 'chosen'
+			? `скопировать выбранным игрокам выбранный предмет${count}`
+			: `скопировать выбранный предмет${count}`
+	}
+
+	const text = toChangeText(entry, pointTypes)
 
 	return entry.target === 'chosen' ? `${text} (выбранным игрокам)` : text
 }
