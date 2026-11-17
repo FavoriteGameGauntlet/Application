@@ -1,6 +1,7 @@
 import type {
 	CatalogEntry,
 	CatalogKind,
+	ItemEntryRow,
 	ResourceKind,
 } from '../api-facade/contracts'
 import { formatBounds, formatSpan } from '../utils/format'
@@ -24,6 +25,12 @@ export const catalogViews: { value: CatalogView; label: string }[] = [
 
 export const changeTone = (amount: number): CatalogTone =>
 	amount > 0 ? 'plus' : amount < 0 ? 'minus' : 'plain'
+
+/** an action on a picked copy is not a plain gain or loss, so it has no colour */
+export const itemEntryTone = (row: ItemEntryRow): CatalogTone =>
+	row.kind === 'user-item' || row.kind === 'user-item-transfer'
+		? 'plain'
+		: changeTone(row.amount)
 
 const pointsHeads = ['Название', 'Единицы в журнале', 'Параметры']
 
@@ -71,8 +78,7 @@ export const catalogTags = (
 		case 'items':
 			return (entry.entries ?? []).map((row, i) => ({
 				text: entry.changes?.[i] ?? '',
-				tone:
-					row.kind === 'user-item-transfer' ? 'plain' : changeTone(row.amount),
+				tone: itemEntryTone(row),
 			}))
 		case 'perks':
 			return modifierTags(entry, entry.modifiers?.length ?? 0)

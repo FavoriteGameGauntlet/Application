@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import type { CatalogEntry, ItemEntryRow } from '../api-facade/contracts'
 import { formatSpan } from '../utils/format'
 import { itemConditionLabels } from '../utils/itemCondition'
-import { type CatalogView, changeTone } from './catalogTable'
+import { type CatalogView, changeTone, itemEntryTone } from './catalogTable'
 import UiBadge from './ui/UiBadge.vue'
 import UiIcon from './ui/UiIcon.vue'
 
@@ -19,7 +19,7 @@ const toLines = (rows: ItemEntryRow[], texts: string[]) =>
 	rows.map((row, i) => ({
 		who: row.who === 'chosen' ? 'Цель' : 'Владелец',
 		text: texts[i] ?? '',
-		tone: row.kind === 'user-item-transfer' ? 'plain' : changeTone(row.amount),
+		tone: itemEntryTone(row),
 	}))
 
 const icon = computed(

@@ -2,6 +2,11 @@
 
 Newest entry on top. Record only what was actually verified.
 
+## 2026-11-17 item-entry-form-special-actions
+
+- By the user's answers (all recommended options, special actions not coloured) and the mockup https://claude.ai/artifact/V54ZDUwLv523SQTH9qciTv: in the item-entry rows «Действие» has a second group «Предмет, выбранный игроком» with «Копирует», «Удаляет», «Передаёт»; such a row shows «Выбирает игрок» instead of the resource picker, and a transfer picks «Владелец → цели» or «Цель → владельцу» in «Кто». The resource list lost «Предмет на выбор» and «Передать выбранный предмет». The entry texts say «скопировать … выбранный предмет» and «удалить … выбранный предмет», and the catalogue card and table leave these rows uncoloured (`itemEntryTone`).
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. A temporary vite page (not committed) with the real `RowsEditor` at the dialog content width (564px) in Chromium: switching actions gives `user-item` +/−, `user-item-transfer` and back to a catalogue resource with the first point type, a typed minus is dropped, the transfer direction sets `who`, «Цель → владельцу» is not cut. Not checked: the app itself.
+
 ## 2026-11-17 auth-password-eye
 
 - By the user's answers (the native eye vanished in some cases; our own button; on registration one eye state for both fields, an eye in each) and the mockup https://claude.ai/artifact/799PxQ7gyhLpvGPkvp1KHY: `UiInput` with `type="password"` shows an eye button (`eye` / `eye-off`, Lucide 0.460, added to `assets/icons`) and hides `::-ms-reveal`. The shown state is the `revealed` model, so `AuthView` binds one ref to all its password fields. `type` became a prop of `UiInput`. The box highlight follows `input:focus` (`:has`), so keyboard focus on the eye rings only the button; a mouse click keeps the caret in the field.
@@ -11,11 +16,6 @@ Newest entry on top. Record only what was actually verified.
 
 - By the user's correction of the note: a form button keeps only its verb, because the dialog title names the object. «Создать пати», «Создать обмен» and the four «Создать <kind>» of the catalogue form became «Создать», «Добавить пункт» of the wheel entry form «Добавить», «Удалить из пати» of the member removal «Удалить» (the default of `ConfirmDialog`). «Сохранить» and «Отмена» stay.
 - Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. Not checked: the app itself.
-
-## 2026-11-16 ux-color-picker
-
-- By the user's answers and the approved mockup (https://claude.ai/artifact/G1XdUSsbPCDvjw1F2kLEVw, frames 1–4 after the user tried the always-open frame 5, with a square square): `ColorPicker` keeps the 12 palette circles; a 13th «Свой цвет» circle (a hue wheel, or the custom color once picked) opens a `UiPopover` under the swatch with a 214px saturation/brightness square and a hue slider (pointer and arrow keys, Shift for 10%). The swatch and the hex field stay under the circles. A wrong hex shows «Цвет в формате #rrggbb» at the field and `FormDialog` keeps «Сохранить» off, so the toasts of `AdminMembersView` and `PartiesView` are gone. The circles have Russian names for screen readers. The user merged player-color-form into this feature and asked to drop its entry.
-- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. A temporary vite page (not committed) with the real `FormDialog` and a color field in Chromium: the «Свой цвет» circle opens the popover under the hex row, the square is 214x214, a drag and a hue click change the hex, the arrow keys move the handles without leaving them, Escape and a click outside close the popover and keep the dialog, «#12zz» disables save, « #22B07D » selects «Зелёный» and saves `#22b07d`. Not checked: the app itself, dark theme, WebKitGTK.
 
 ## Open
 

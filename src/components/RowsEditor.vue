@@ -35,21 +35,42 @@ const whoGroups: OptionGroup[] = [
 	},
 ]
 
-const actionGroups: OptionGroup[] = [
+/** in a transfer `who` is the side that gives the copies away */
+const transferWhoGroups: OptionGroup[] = [
 	{
 		options: [
-			{ value: 'get', label: 'Получает' },
-			{ value: 'lose', label: 'Теряет' },
+			{ value: 'self', label: 'Владелец → цели' },
+			{ value: 'chosen', label: 'Цель → владельцу' },
 		],
 	},
 ]
 
-/** a transfer only moves copies, so its action is fixed and its amount has no sign */
-const transferActionGroups: OptionGroup[] = [
-	{ options: [{ value: 'give', label: 'Передаёт' }] },
-]
+type Action = 'get' | 'lose' | 'copy' | 'delete' | 'give'
+
+const catalogActions: OptionGroup = {
+	options: [
+		{ value: 'get', label: 'Получает' },
+		{ value: 'lose', label: 'Теряет' },
+	],
+}
+
+/** the copies these act on are picked by the player when the item is used */
+const pickedActions: OptionGroup = {
+	title: 'Предмет, выбранный игроком',
+	options: [
+		{ value: 'copy', label: 'Копирует' },
+		{ value: 'delete', label: 'Удаляет' },
+		{ value: 'give', label: 'Передаёт' },
+	],
+}
+
+const actionGroups = computed(() =>
+	variant === 'item-entry' ? [catalogActions, pickedActions] : [catalogActions],
+)
 
 const isTransfer = (row: FormRow) => row.kind === 'user-item-transfer'
+
+const isPicked = (row: FormRow) => row.kind === 'user-item' || isTransfer(row)
 
 const resourceOption = (kind: TargetKind, target: CatalogOption) => ({
 	value: `${kind}:${target.id}`,
@@ -71,23 +92,7 @@ const resourceGroups = computed<OptionGroup[]>(() => {
 		},
 		{
 			title: 'Предметы',
-			options: [
-				...t.item.map((o) => resourceOption('item', o)),
-				...(variant === 'item-entry'
-					? [
-							{
-								value: 'user-item',
-								label: 'Предмет на выбор',
-								hint: 'Игрок укажет сам, когда применит',
-							},
-							{
-								value: 'user-item-transfer',
-								label: 'Передать выбранный предмет',
-								hint: 'Копия переходит к другому игроку как есть',
-							},
-						]
-					: []),
-			],
+			options: t.item.map((o) => resourceOption('item', o)),
 		},
 		{
 			title: 'Перки и эффекты',
@@ -106,18 +111,23 @@ const isLose = (row: FormRow) => /^[-−]/.test(row.amount.trim())
 
 const absolute = (row: FormRow) => row.amount.trim().replace(/^[-−]/, '')
 
+const actionOf = (row: FormRow): Action => {
+	if (isTransfer(row)) return 'give'
+	if (row.kind === 'user-item') return isLose(row) ? 'delete' : 'copy'
+
+	return isLose(row) ? 'lose' : 'get'
+}
+
+const toneOf = (row: FormRow) =>
+	isPicked(row) ? undefined : isLose(row) ? 'lose' : 'get'
+
 const resourceOf = (row: FormRow) =>
-	row.kind === 'user-item' || isTransfer(row)
-		? row.kind
-		: row.targetId
-			? `${row.kind}:${row.targetId}`
-			: ''
+	row.targetId ? `${row.kind}:${row.targetId}` : ''
 
 const firstTarget = (kind: string) => store.targets[kind as TargetKind]?.[0]?.id
 
 const addRow = () => {
-	const kind =
-		variant === 'modifier' ? 'points' : variant === 'cost' ? 'item' : 'points'
+	const kind = variant === 'cost' ? 'item' : 'points'
 
 	rows.value.push({
 		kind,
@@ -128,26 +138,37 @@ const addRow = () => {
 }
 
 const setResource = (row: FormRow, value: string) => {
-	if (value === 'user-item' || value === 'user-item-transfer') {
-		row.kind = value
-		row.targetId = ''
+	const [kind, id] = value.split(':')
 
-		if (isTransfer(row)) row.amount = absolute(row)
-	} else {
-		const [kind, id] = value.split(':')
+	row.kind = kind
+	row.targetId = id
 
-		row.kind = kind
-		row.targetId = id
-
-		// a perk or an effect is held once; a taken one keeps its minus
-		if (kind === 'perk' || kind === 'effect') {
-			row.amount = isLose(row) ? '-1' : '1'
-		}
+	// a perk or an effect is held once; a taken one keeps its minus
+	if (kind === 'perk' || kind === 'effect') {
+		row.amount = isLose(row) ? '-1' : '1'
 	}
 }
 
-const setAction = (row: FormRow, action: string) => {
-	row.amount = (action === 'lose' ? '-' : '') + absolute(row)
+const setAction = (row: FormRow, action: Action) => {
+	const amount = absolute(row)
+
+	switch (action) {
+		case 'copy':
+		case 'delete':
+		case 'give':
+			row.kind = action === 'give' ? 'user-item-transfer' : 'user-item'
+			row.targetId = ''
+			row.amount = (action === 'delete' ? '-' : '') + amount
+			return
+	}
+
+	// back from a picked copy the row needs a catalogue resource again
+	if (isPicked(row)) {
+		row.kind = 'points'
+		row.targetId = String(firstTarget('points') ?? '')
+	}
+
+	row.amount = (action === 'lose' ? '-' : '') + amount
 }
 
 /** a typed sign is dropped: the sign belongs to the action */
@@ -156,8 +177,7 @@ const setAmount = (row: FormRow, event: Event) => {
 	const digits = input.value.replace(/^[-−+\s]+/, '')
 
 	input.value = digits
-	row.amount =
-		(hasAction.value && !isTransfer(row) && isLose(row) ? '-' : '') + digits
+	row.amount = (hasAction.value && isLose(row) ? '-' : '') + digits
 }
 
 onMounted(() => store.loadTargets())
@@ -185,26 +205,19 @@ onMounted(() => store.loadTargets())
 				<UiPicker
 					v-if="variant === 'item-entry'"
 					compact
-					:groups="whoGroups"
+					:groups="isTransfer(row) ? transferWhoGroups : whoGroups"
 					:model-value="row.who"
 					aria-label="Кто"
 					@update:model-value="row.who = $event as FormRow['who']"
 				/>
 				<UiPicker
-					v-if="hasAction && isTransfer(row)"
-					compact
-					:groups="transferActionGroups"
-					model-value="give"
-					aria-label="Действие"
-				/>
-				<UiPicker
-					v-else-if="hasAction"
+					v-if="hasAction"
 					compact
 					:groups="actionGroups"
-					:tone="isLose(row) ? 'lose' : 'get'"
-					:model-value="isLose(row) ? 'lose' : 'get'"
+					:tone="toneOf(row)"
+					:model-value="actionOf(row)"
 					aria-label="Действие"
-					@update:model-value="setAction(row, $event)"
+					@update:model-value="setAction(row, $event as Action)"
 				/>
 				<input
 					class="rows__amount"
@@ -213,7 +226,9 @@ onMounted(() => store.loadTargets())
 					aria-label="Количество"
 					@input="setAmount(row, $event)"
 				/>
+				<span v-if="isPicked(row)" class="rows__picked">Выбирает игрок</span>
 				<UiPicker
+					v-else
 					compact
 					search
 					:panel-width="260"
@@ -243,7 +258,7 @@ onMounted(() => store.loadTargets())
 }
 
 .rows--item-entry {
-	grid-template-columns: 124px 124px 56px minmax(0, 1fr) 32px;
+	grid-template-columns: 192px 118px 52px minmax(0, 1fr) 32px;
 }
 
 .rows--change,
@@ -259,6 +274,19 @@ onMounted(() => store.loadTargets())
 	font: 600 13px / 1 var(--font-body);
 	color: var(--text-muted);
 	white-space: nowrap;
+}
+
+.rows__picked {
+	min-width: 0;
+	height: 36px;
+	padding: 0 10px;
+	overflow: hidden;
+	font: 500 14px / 36px var(--font-body);
+	color: var(--text-muted);
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	background: var(--surface-sunken);
+	border-radius: var(--radius-sm);
 }
 
 .rows__amount {
