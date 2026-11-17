@@ -1,5 +1,11 @@
 # Progress log archive
 
+## 2026-11-16 start-on-home
+
+- By the user: the app always starts on the home screen. `initialPathGuard` and `StoreKey.InitialRoute` are gone, the router starts at `/`. By the user's answer, `partyGuard` (after `authGuard`) sends every screen but the login and the party list to the party list while no party is chosen (`parties.isSelected`, new in `Api`, reads the stored choice; logging out clears it). An old `initialRoute` value stays in the users' store file unread.
+- The party list is one screen whether it opens after the login or from the season name in the top bar; only the highlight of the chosen party differs (there is none right after a login).
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. A temporary vite page (not committed) with the real router and guards, the store and `isSelected` faked: `/` with no login went to the login, logged in without a party to the party list, with a party to the home screen. Checked by the user in the app.
+
 ## 2026-11-16 home-tiles-scroll-uses
 
 - By the user's answers (uses in this PR, the card always right of the row) and the approved feed style: the home tiles «Мои очки», «Предметы», «Перки», «Эффекты» (also on the player profile) take the height the grid gives them (`contain: size`, at least 320px for the four) and their rows scroll in `UiScrollArea`. The points tile no longer cuts its list (`useFitCount` is gone, it had no other user). Items show the uses left of all their copies as «N из M» (`groupItems` sums them), active perks «N из M», effects keep the time left.
