@@ -198,8 +198,15 @@
 		},
 		{
 			"id": "rules-ui-catalog-dialog",
-			"title": "Express through the interface the rules that the removed hints of the catalog window stated. Removed: «Свои или общие на пати — выбирается один раз, потом не изменить» (scope of a point type), «Цель игрок выберет сам, когда применит предмет», the hints of both «Игрок выбирает, что применить» switches (item and perk ability), «Способность не меняется после создания: от неё зависит состояние у всех владельцев. Нужна другая — создай новый перк», «Столько событий, заряжающих способность, дают одно использование. 0 — зарядов нет». Ideas: after creation the scope field is shown locked, as the limits of an existing ability already are, with a lock icon and the reason on hover; the locked ability tab has a lock in its title; the charges field gets a unit text after the number («событий на одно использование»); the info mark of rules-ui-wheel-admin on the switches. Open: which of these the user wants.",
+			"title": "Express the rules of the removed catalogue window hints through the interface",
 			"priority": 20,
+			"status": "done",
+			"evidence": "Done 2026-11-18. Full record: harness/archive/features-done.json"
+		},
+		{
+			"id": "perk-charge-triggers",
+			"title": "The ability tab of a new perk sets the triggers of its charges. Today the app sends only chargesMax and no triggers, and the server adds charges only through triggers (POST perks, ability.triggers: action add_charge or reset_charges, an event kind of history, a filter by point type for point_changed and by end state for game_ended), so a perk with charges made in the app never gets one. The user: the server has many triggers, many like those of «Награды». Needs a mockup (AGENTS.md, Design work); the charges field may get the unit «событий на одно использование».",
+			"priority": 20.1,
 			"status": "todo",
 			"evidence": ""
 		},

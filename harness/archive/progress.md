@@ -1,5 +1,10 @@
 # Progress log archive
 
+## 2026-11-17 release-0.9.0
+
+- Version raised to 0.9.0 with `npm version 0.9.0 --no-git-tag-version` (package.json, package-lock.json, tauri.conf.json, Cargo.toml, Cargo.lock).
+- Verified: `bash harness/scripts/init.sh` passes. Not checked: `cargo check` (the cloud container has no GTK dev libraries); the release build on the tag compiles Rust.
+
 ## 2026-11-17 rules-ui-rewards-cost
 
 - By the user's answers (1b, 2a, 3b, 4 nothing; «не надо никаких подсказок»): the save toast of a reward card says only «Награды сохранены». The server reads the reward when the timer or the game ends, so a running timer or game gets the new one; the old «Действуют на следующие …» was wrong, and the comment of `admin.rewards.save` is corrected. The spin cost line of the admin wheel group starts «Применение стоит» and lost its grey note. No link to the timer length; nothing for the copy choice (the payment covers the whole cost, the player picks only which copy).

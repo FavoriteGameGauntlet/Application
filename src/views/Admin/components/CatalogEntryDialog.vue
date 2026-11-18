@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type {
 	CatalogEntry,
 	CatalogEntryInput,
@@ -34,7 +34,7 @@ type Props = {
 	kind: CatalogKind
 	/** undefined is a new entry */
 	entry?: CatalogEntry
-	/** a new point type is created shared by default */
+	/** the page decides whether a new point type is shared; it cannot change later */
 	shared?: boolean
 }
 
@@ -63,6 +63,21 @@ const durationPresets = [
 ]
 
 const columns = (count: number) => `repeat(${count}, minmax(0, 1fr))`
+
+/** rows with nothing in them have nothing to pick from, so their segment is off */
+const hasEntries = ref(false)
+const hasAbilityEntries = ref(false)
+
+const applies = (key: string, hasRows: boolean): FormField => ({
+	key,
+	type: 'segment',
+	label: 'Что применяется',
+	options: [
+		{ value: 'all', label: 'Все' },
+		{ value: 'chosen', label: 'На выбор' },
+	],
+	disabled: !hasRows,
+})
 
 const sections = computed<FormSection[]>(() => {
 	const common: FormField[] = [
@@ -103,19 +118,6 @@ const sections = computed<FormSection[]>(() => {
 					title: 'Правила',
 					columns: columns(2),
 					fields: [
-						...(entry
-							? []
-							: [
-									{
-										key: 'scope',
-										label: 'Считаются',
-										type: 'select' as const,
-										options: [
-											{ value: 'own', label: 'У каждого игрока свои' },
-											{ value: 'shared', label: 'Общие на пати' },
-										],
-									},
-								]),
 						{
 							key: 'visibility',
 							label: 'Кто видит',
@@ -164,11 +166,7 @@ const sections = computed<FormSection[]>(() => {
 							empty:
 								'Что произойдёт, когда игрок применит предмет. Например: владелец получает 10 золота.',
 							addLabel: 'Действие',
-						},
-						{
-							key: 'chooseEntries',
-							type: 'check',
-							label: 'Игрок выбирает, что применить',
+							aside: applies('applies', hasEntries.value),
 						},
 						{
 							key: 'usesMax',
@@ -290,11 +288,7 @@ const sections = computed<FormSection[]>(() => {
 							variant: 'item-entry',
 							required: 'действие способности',
 							addLabel: 'Действие',
-						},
-						{
-							key: 'abilityChooseEntries',
-							type: 'check',
-							label: 'Игрок выбирает, что применить',
+							aside: applies('abilityApplies', hasAbilityEntries.value),
 						},
 					],
 				},
@@ -411,11 +405,11 @@ const initial = computed<FormValues>(() => ({
 	unit2: entry?.unitForms?.several ?? '',
 	unit5: entry?.unitForms?.many ?? '',
 	entries: itemEntriesToForm(entry?.entries ?? []),
-	chooseEntries: entry?.shouldApplyToAll === false,
+	applies: entry?.shouldApplyToAll === false ? 'chosen' : 'all',
 	conditions: [...(entry?.conditions ?? [])],
 	modifiers: modifiersToForm(entry?.modifiers ?? []),
 	abilityEntries: itemEntriesToForm(entry?.ability?.entries ?? []),
-	abilityChooseEntries: entry?.ability?.shouldApplyToAll === false,
+	abilityApplies: entry?.ability?.shouldApplyToAll === false ? 'chosen' : 'all',
 	abilityUsesMax: entry?.ability?.uses ? String(entry.ability.uses.max) : '',
 	abilityUsesStart: entry?.ability?.uses
 		? String(entry.ability.uses.start)
@@ -433,7 +427,6 @@ const initial = computed<FormValues>(() => ({
 	minimum: entry?.minimum != null ? String(entry.minimum) : '',
 	maximum: entry?.maximum != null ? String(entry.maximum) : '',
 	visibility: entry?.isPublic === false ? 'admins' : 'all',
-	scope: shared ? 'shared' : 'own',
 }))
 
 const title = computed(() => (entry ? `Изменить «${entry.name}»` : adds[kind]))
@@ -496,6 +489,12 @@ const readAbility = (
 	}
 }
 
+const onChange = (values: FormValues) => {
+	hasEntries.value = ((values.entries as FormRow[]) ?? []).length > 0
+	hasAbilityEntries.value =
+		((values.abilityEntries as FormRow[]) ?? []).length > 0
+}
+
 const onSave = async (values: FormValues) => {
 	const text = (key: string) => String(values[key] ?? '').trim()
 	const name = text('name')
@@ -553,7 +552,7 @@ const onSave = async (values: FormValues) => {
 		input.maximum = maximum
 		input.isPublic = text('visibility') !== 'admins'
 
-		if (!entry) input.isShared = text('scope') === 'shared'
+		if (!entry) input.isShared = shared
 	}
 
 	if (kind === 'items') {
@@ -587,12 +586,12 @@ const onSave = async (values: FormValues) => {
 		if (needsTargets && !entries.value.some((e) => e.who === 'chosen')) {
 			return invalid(
 				'Нужна выбранная цель',
-				'Условия про цели работают, когда есть строка с целью.',
+				'Условия про цели работают, когда есть строка с выбранным игроком.',
 			)
 		}
 
 		input.entries = entries.value
-		input.shouldApplyToAll = values.chooseEntries !== true
+		input.shouldApplyToAll = text('applies') !== 'chosen'
 		input.usesMax = usesMax
 		input.conditions = conditions
 	}
@@ -639,7 +638,7 @@ const onSave = async (values: FormValues) => {
 			const ability = readAbility(
 				text,
 				entries.value,
-				values.abilityChooseEntries !== true,
+				text('abilityApplies') !== 'chosen',
 			)
 
 			if (typeof ability === 'string')
@@ -662,6 +661,7 @@ const onSave = async (values: FormValues) => {
 		:initial
 		:submit-label
 		@close="emit('close')"
+		@change="onChange"
 		@save="onSave"
 	/>
 </template>

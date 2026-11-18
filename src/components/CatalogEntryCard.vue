@@ -17,7 +17,7 @@ const { view, entry } = defineProps<Props>()
 /** `texts[i]` is the text the facade built for `rows[i]` */
 const toLines = (rows: ItemEntryRow[], texts: string[]) =>
 	rows.map((row, i) => ({
-		who: row.who === 'chosen' ? 'Цель' : 'Владелец',
+		who: row.who === 'chosen' ? 'Выбранный игрок' : 'Владелец',
 		text: texts[i] ?? '',
 		tone: itemEntryTone(row),
 	}))

@@ -2,6 +2,11 @@
 
 Newest entry on top. Record only what was actually verified.
 
+## 2026-11-18 rules-ui-catalog-dialog
+
+- By the user's answers (1 А, 3 Б, 2: triggers exist on the server): a new point type takes its scope from the page (`shared` prop), the select is gone; «Цель» of the rows editor and the catalogue card reads «Выбранный игрок»; the «Игрок выбирает, что применить» checks of the item and the new perk ability are `aside` segments «Все / На выбор» on their rows, off with no rows. Charges stay as they are; trigger editing is the next feature `perk-charge-triggers`.
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. A temporary vite page (not committed) with the real `CatalogEntryDialog` and a mocked store in Chromium: see the evidence in `harness/archive/features-done.json`. Not checked: the app itself, against the backend.
+
 ## 2026-11-18 rules-ui-exchanges
 
 - By the user's answers: the server takes the items, perks and effects of an exchange from the copies the player picks and greys out a card nobody can pay (FavoriteGameGauntlet/Server#219, merged). The player card dashes a pill only where the server refuses (points below the type's minimum, missing copies, effects, perk). The exchange always opens the shared `PaymentDialog` with every item, perk and effect row to pick (`isPicked`, the user's word «окно всегда должно открываться»; the wheel now does the same, the user's answer) (moved from the wheel with `utils/payment.ts`, `Payment`, `CostRef`). The admin window has «Все / На выбор» in the head of each side (`FormField.aside` on `rows`) in place of the switches; the table badge reads «на выбор». «Панель админа» opens the panel on an empty screen (`RouteName.Admin`, the user's ask) instead of «Обмены». Fixed on the way: payment options matched an effect by the copy id; a perk given in an exchange showed as gained.
@@ -11,11 +16,6 @@ Newest entry on top. Record only what was actually verified.
 
 - By the user's answers: the group switch reads «Не повторять применённое»; the server applies it to games too (FavoriteGameGauntlet/Server#218, merge it first). The item window has «Все / На выбор» in the head of «Когда выпал» in place of the «Игрок выбирает, что применить» switch; with no rows it is off and shows its value. «Остальное игрок вносит сам» became «Потом ручное изменение». Nothing for «выпавшая игра становится текущей» and the Enter of the add-row.
 - Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. A temporary vite page (not committed) with the real `AdminWheelView` and mocked stores in Chromium: an item with `shouldApplyToAll` false opens on «На выбор», an item with no rows shows «Все» disabled, adding a row enables the segment. Not checked: the app itself, saving against the backend.
-
-## 2026-11-17 release-0.9.0
-
-- Version raised to 0.9.0 with `npm version 0.9.0 --no-git-tag-version` (package.json, package-lock.json, tauri.conf.json, Cargo.toml, Cargo.lock).
-- Verified: `bash harness/scripts/init.sh` passes. Not checked: `cargo check` (the cloud container has no GTK dev libraries); the release build on the tag compiles Rust.
 
 ## Open
 
