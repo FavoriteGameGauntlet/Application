@@ -1,5 +1,10 @@
 # Progress log archive
 
+## 2026-11-17 rules-ui-rewards-cost
+
+- By the user's answers (1b, 2a, 3b, 4 nothing; «не надо никаких подсказок»): the save toast of a reward card says only «Награды сохранены». The server reads the reward when the timer or the game ends, so a running timer or game gets the new one; the old «Действуют на следующие …» was wrong, and the comment of `admin.rewards.save` is corrected. The spin cost line of the admin wheel group starts «Применение стоит» and lost its grey note. No link to the timer length; nothing for the copy choice (the payment covers the whole cost, the player picks only which copy).
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. A temporary vite page (not committed) with the real `AdminSpinCost` and `AdminRewardsView` and a mocked API in Chromium: the cost line reads «Применение стоит 5 билетов, Свиток переброса» with no note. Not checked: the app itself.
+
 ## 2026-11-17 rules-ui-members
 
 - By the user's answers (1a, 2a, 3b): the member window of the user themself shows «Админ пати» as a disabled switch with «Снять админа с себя нельзя» on hover (`FormField.disabledReason`, for `check`). When the last admin removes themself, the confirmation adds «Админом станет <login>.» (the current member who joined first, as the server picks) or «В пати не останется админа.» when `AdminSuccessionEnabled` is off; the parameters are read at that moment. No hover text on what an admin may do. The empty name and the hex error were already in the interface.

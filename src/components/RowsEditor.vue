@@ -192,6 +192,9 @@ onMounted(() => store.loadTargets())
 		:hint
 		@add="addRow"
 	>
+		<template v-if="$slots.aside" #aside>
+			<slot name="aside" />
+		</template>
 		<div v-if="rows.length" class="rows" :class="`rows--${variant}`">
 			<span v-if="variant === 'item-entry'" class="rows__sub">Кто</span>
 			<span v-if="hasAction" class="rows__sub">Действие</span>

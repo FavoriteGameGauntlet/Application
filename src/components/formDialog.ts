@@ -5,7 +5,7 @@ export type FormField = {
 	 * a single line by default; `check` is a switch, `chips` picks several of
 	 * `options` through a "+" link, `choice` picks one of `options` as a chip,
 	 * `segment` picks one of `options` in a segmented control (for the `aside`
-	 * of a section), `span` is a length as a number and a unit (its value is
+	 * of a section or of a `rows` field), `span` is a length as a number and a unit (its value is
 	 * the seconds), `dates` is a period of days (its value is «2026-11-01/2026-11-30»,
 	 * both days included), `locked` shows `lines` that cannot be edited, `arrow` is
 	 * a sign between two columns and holds no value, `pick` picks some of `options`
@@ -61,6 +61,8 @@ export type FormField = {
 	empty?: string
 	/** for `rows` and `chips`: the text of the "+" link */
 	addLabel?: string
+	/** for `rows`: a `segment` at the end of the title line of the rows, as `FormSection.aside` is for a section */
+	aside?: FormField
 	/** the field stays folded behind a "+ label" link until it has a value or is asked for */
 	optional?: boolean
 	/** the form does not save without it; the noun that the footer names ("название") */

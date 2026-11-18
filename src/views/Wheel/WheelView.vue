@@ -20,11 +20,11 @@ import {
 	formatResource,
 	type Change,
 } from '../../utils/formatResource'
-import { affordableSpins } from '../../utils/spinPayment'
+import { affordableSpins } from '../../utils/payment'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToastStore } from '../../stores/toastStore'
 import SpinEntriesDialog from './components/SpinEntriesDialog.vue'
-import SpinPaymentDialog from './components/SpinPaymentDialog.vue'
+import PaymentDialog from '../../components/PaymentDialog.vue'
 import WheelTape from './components/WheelTape.vue'
 
 const currentGameStore = useCurrentGameStore()
@@ -396,7 +396,8 @@ onBeforeUnmount(() => {
 		@confirm="wheelStore.confirmEntries($event)"
 	/>
 
-	<SpinPaymentDialog
+	<PaymentDialog
+		subject="Прокрут"
 		:choices="wheelStore.pendingChoices"
 		@close="wheelStore.cancelPayment()"
 		@confirm="wheelStore.confirmPayment($event)"

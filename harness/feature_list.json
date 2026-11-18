@@ -191,10 +191,10 @@
 		},
 		{
 			"id": "rules-ui-exchanges",
-			"title": "Express through the interface the rules that the removed captions of the exchanges screens stated. Removed: for the player «Пунктирная рамка — ресурса не хватает, в скобках сколько есть. Обмен недоступен, пока не хватает хотя бы одного»; for the admin «Обе стороны — список изменений, как в «Выдать»», «Удалённый обмен скрывается у игроков, история сохраняется», and the hints of both «Игрок выбирает» switches. Ideas: a dashed pill gets a hover text «не хватает 2, есть 1» and the card says once why the exchange is unavailable, as it already does for a perk the player owns; the delete confirmation of an exchange says that players stop seeing it and the history stays; the switches use the shared info mark of rules-ui-wheel-admin. Open: which of these the user wants.",
+			"title": "Express the rules of the removed captions of the exchanges screens",
 			"priority": 19,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-18. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "rules-ui-catalog-dialog",

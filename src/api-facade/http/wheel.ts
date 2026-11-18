@@ -1,11 +1,11 @@
 import type {
 	Api,
-	SpinPayment,
 	WheelGroup,
 	WheelSource,
 	WheelSpinResult,
 } from '../contracts'
 import { http, type HttpErrorResponse } from '../http'
+import { toPaymentBody } from './payment'
 import {
 	type NamedChangeEntryDto,
 	toChangeText,
@@ -65,13 +65,6 @@ const toSpinResult = (
 		},
 	}
 }
-
-/** the backend names the lists by what they hold, the contract by the kind of the resource */
-const toPaymentBody = ({ items, perks, effects }: SpinPayment) => ({
-	userItemIds: items,
-	perkIds: perks,
-	userEffectIds: effects,
-})
 
 const getGroupRows = async (path: string, groupId: number) =>
 	(
