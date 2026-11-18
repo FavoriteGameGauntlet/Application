@@ -184,10 +184,10 @@
 		},
 		{
 			"id": "rules-ui-wheel-admin",
-			"title": "Express through the interface the rules that the removed captions of the admin wheel screen and its entry window stated. Removed under the table: «Не повторять выпавшее» (an entry does not fall again until the others have), «Вручную» (the player enters the changes after the spin), «Выпавшая игра становится текущей», «Enter в строке внизу добавляет игру и оставляет строку для следующей»; in the window the hints of «Остальное игрок вносит сам» and «Игрок выбирает, что применить». Ideas: the placeholder of the add-row says «Название игры, Enter — добавить»; a switch that has a rule gets an info mark with the text on hover or focus (one shared component for every switch of the app that carried a hint); the group tab of a games group shows what a fallen game does as a quiet line in its header. Open: which of these the user wants.",
+			"title": "Express the rules of the admin wheel screen through the interface",
 			"priority": 18,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-18. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "rules-ui-exchanges",

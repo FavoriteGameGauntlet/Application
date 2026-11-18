@@ -35,6 +35,8 @@ export type FormField = {
 	invalid?: boolean
 	/** for a `check`: the switch is off limits, the text says why on hover */
 	disabledReason?: string
+	/** for a `segment`: the control shows its value but cannot be changed */
+	disabled?: boolean
 	/** for a `line`: the refusal of the last save, red under the field in place of `hint` */
 	error?: string
 	/**

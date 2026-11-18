@@ -1,5 +1,10 @@
 # Progress log archive
 
+## 2026-11-17 rules-ui-members
+
+- By the user's answers (1a, 2a, 3b): the member window of the user themself shows «Админ пати» as a disabled switch with «Снять админа с себя нельзя» on hover (`FormField.disabledReason`, for `check`). When the last admin removes themself, the confirmation adds «Админом станет <login>.» (the current member who joined first, as the server picks) or «В пати не останется админа.» when `AdminSuccessionEnabled` is off; the parameters are read at that moment. No hover text on what an admin may do. The empty name and the hex error were already in the interface.
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. A temporary vite page (not committed) with the real `AdminMembersView` and a mocked API in Chromium: the own switch is disabled with the title, another member's is not; removing self as the last admin names the earliest joined current member (a member who left is skipped), removing another member keeps the old text, with the parameter off the text says the party stays without an admin. Not checked: the app itself, the hover tooltip over the disabled switch in WebView2 and WebKitGTK.
+
 ## 2026-11-17 item-entry-form-special-actions
 
 - By the user's answers (all recommended options, special actions not coloured) and the mockup https://claude.ai/artifact/V54ZDUwLv523SQTH9qciTv: in the item-entry rows «Действие» has a second group «Предмет, выбранный игроком» with «Копирует», «Удаляет», «Передаёт»; such a row shows «Выбирает игрок» instead of the resource picker, and a transfer picks «Владелец → цели» or «Цель → владельцу» in «Кто». The resource list lost «Предмет на выбор» and «Передать выбранный предмет». The entry texts say «скопировать … выбранный предмет» and «удалить … выбранный предмет», and the catalogue card and table leave these rows uncoloured (`itemEntryTone`).

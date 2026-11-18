@@ -350,6 +350,7 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 							v-model="texts[section.aside.key]"
 							:options="section.aside.options ?? []"
 							:label="section.aside.label"
+							:disabled="section.aside.disabled"
 						/>
 						<span v-else class="form__count">{{ countOf(section) }}</span>
 					</template>

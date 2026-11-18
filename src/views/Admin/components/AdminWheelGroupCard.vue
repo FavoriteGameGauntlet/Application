@@ -77,7 +77,7 @@ watch(() => group.id, cancel)
 			<UiSwitch
 				v-if="!group.system"
 				:model-value="group.noRepeat"
-				label="Не повторять выпавшее"
+				label="Не повторять применённое"
 				@update:model-value="store.setNoRepeat(group, $event)"
 			/>
 
