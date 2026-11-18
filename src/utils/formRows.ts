@@ -1,10 +1,13 @@
 import type {
 	ChangeRow,
+	GameEndState,
 	ItemEntryRow,
+	PerkTrigger,
 	PointModifierRow,
 	SpinCostRow,
 } from '../api-facade/contracts'
-import type { FormRow } from '../components/formDialog'
+import type { FormRow, TriggerFormRow } from '../components/formDialog'
+import { triggerFilterOf } from './perkTrigger'
 
 export type Parsed<T> = { value: T[] } | { error: string }
 
@@ -137,3 +140,18 @@ export const parseModifiers = (rows: FormRow[]): Parsed<PointModifierRow> =>
 		pointTypeId: targetId ?? 0,
 		amount,
 	}))
+
+/** an empty filter matches any point type or end state */
+export const parseTriggers = (rows: TriggerFormRow[]): PerkTrigger[] =>
+	rows.map(({ action, eventKind, filter }) => {
+		const narrows = triggerFilterOf(eventKind)
+
+		return {
+			action,
+			eventKind,
+			...(filter &&
+				narrows === 'point-type' && { pointTypeId: Number(filter) }),
+			...(filter &&
+				narrows === 'end-state' && { gameEndState: filter as GameEndState }),
+		}
+	})

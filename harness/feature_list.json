@@ -204,13 +204,6 @@
 			"evidence": "Done 2026-11-18. Full record: harness/archive/features-done.json"
 		},
 		{
-			"id": "perk-charge-triggers",
-			"title": "The ability tab of a new perk sets the triggers of its charges. Today the app sends only chargesMax and no triggers, and the server adds charges only through triggers (POST perks, ability.triggers: action add_charge or reset_charges, an event kind of history, a filter by point type for point_changed and by end state for game_ended), so a perk with charges made in the app never gets one. The user: the server has many triggers, many like those of «Награды». Needs a mockup (AGENTS.md, Design work); the charges field may get the unit «событий на одно использование».",
-			"priority": 20.1,
-			"status": "todo",
-			"evidence": ""
-		},
-		{
 			"id": "rules-ui-player-screens",
 			"title": "Express through the interface the rules that the removed captions of the player screens stated. Removed: the list of players «Очки, предметы и эффекты — в профиле игрока. Нажми на строку, чтобы его открыть»; the shared points «Общие очки принадлежат всей пати. Менять их можно только ручной формой»; the completed games «Оценку и отзыв видят все в пати. Свой отзыв можно поправить в любой момент»; the manual change form, the fix note («Исходная запись не меняется: исправление попадёт в журнал новой записью…») and the plain note («Было → станет» считается по текущим ресурсам игрока, записью с меткой «вручную»). Ideas: a row of the players table gets a chevron and a hover state to show that it opens; the shared points table gets a button to the manual form for admins only; the review window title says who sees the review; the fix window shows the original journal entry as a quiet card above the rows, and the «Было → станет» column head carries the explanation on hover. Open: which of these the user wants.",
 			"priority": 21,

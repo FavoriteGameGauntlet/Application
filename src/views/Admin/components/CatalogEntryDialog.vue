@@ -11,6 +11,7 @@ import type {
 	FormSection,
 	FormTab,
 	FormValues,
+	TriggerFormRow,
 } from '../../../components/formDialog'
 import FormDialog from '../../../components/FormDialog.vue'
 import { useAdminCatalogStore } from '../../../stores/adminCatalogStore'
@@ -22,11 +23,17 @@ import {
 	modifiersToForm,
 	parseItemEntries,
 	parseModifiers,
+	parseTriggers,
 } from '../../../utils/formRows'
+import {
+	triggerActionLabels,
+	triggerEventText,
+} from '../../../utils/perkTrigger'
 import type {
 	ItemCondition,
 	ItemEntryRow,
 	PerkAbility,
+	PerkTrigger,
 } from '../../../api-facade/contracts'
 
 type Props = {
@@ -330,14 +337,26 @@ const sections = computed<FormSection[]>(() => {
 				},
 				{
 					tab: 'ability',
+					title: 'Заряды',
+					columns: '200px',
 					fields: [
 						{
 							key: 'abilityCharges',
-							label: 'Зарядов на одно использование',
+							label: 'На одно использование',
 							numeric: true,
-							optional: true,
-							width: 120,
 							placeholder: '0',
+							when: limited,
+						},
+					],
+				},
+				{
+					tab: 'ability',
+					fields: [
+						{
+							key: 'abilityTriggers',
+							label: 'Триггеры',
+							type: 'triggers',
+							addLabel: 'Триггер',
 							when: limited,
 						},
 					],
@@ -380,6 +399,14 @@ const abilityLimitLines = (ability: PerkAbility) => {
 		lines.push(`Зарядов на одно использование: ${ability.chargesMax}.`)
 	}
 
+	for (const trigger of ability.triggers) {
+		const event = triggerEventText(trigger)
+
+		lines.push(
+			`${triggerActionLabels[trigger.action]}: ${event[0].toLowerCase()}${event.slice(1)}.`,
+		)
+	}
+
 	if (ability.renewalPeriod) {
 		lines.push(
 			`Раз в ${formatSpanExact(ability.renewalPeriod)} возвращается к максимуму.`,
@@ -415,6 +442,7 @@ const initial = computed<FormValues>(() => ({
 		? String(entry.ability.uses.start)
 		: '',
 	abilityCharges: entry?.ability ? String(entry.ability.chargesMax) : '',
+	abilityTriggers: [],
 	abilityRenewal: entry?.ability?.renewalPeriod
 		? String(entry.ability.renewalPeriod)
 		: '',
@@ -442,10 +470,11 @@ const readAbility = (
 	text: (key: string) => string,
 	entries: ItemEntryRow[],
 	shouldApplyToAll: boolean,
+	triggers: PerkTrigger[],
 ): PerkAbility | string => {
 	// without a limit there are no charges and no renewal
 	if (text('abilityLimit') !== 'limited') {
-		return { shouldApplyToAll, entries, chargesMax: 0 }
+		return { shouldApplyToAll, entries, chargesMax: 0, triggers: [] }
 	}
 
 	const charges = text('abilityCharges')
@@ -455,6 +484,14 @@ const readAbility = (
 
 	if (!Number.isInteger(chargesMax) || chargesMax < 0) {
 		return 'Зарядов — целое число, не меньше нуля.'
+	}
+
+	if (chargesMax === 0 && triggers.length > 0) {
+		return 'Триггеры меняют заряды: впиши, сколько зарядов дают одно использование.'
+	}
+
+	if (chargesMax > 0 && !triggers.some((t) => t.action === 'add_charge')) {
+		return 'Заряды копятся только триггером «Добавляет заряд».'
 	}
 
 	if (
@@ -486,6 +523,7 @@ const readAbility = (
 		uses: { max, start },
 		chargesMax,
 		...(renewalPeriod != null && { renewalPeriod }),
+		triggers,
 	}
 }
 
@@ -639,6 +677,7 @@ const onSave = async (values: FormValues) => {
 				text,
 				entries.value,
 				text('abilityApplies') !== 'chosen',
+				parseTriggers(values.abilityTriggers as TriggerFormRow[]),
 			)
 
 			if (typeof ability === 'string')
@@ -660,6 +699,7 @@ const onSave = async (values: FormValues) => {
 		:tabs
 		:initial
 		:submit-label
+		:width="kind === 'perks' ? 680 : undefined"
 		@close="emit('close')"
 		@change="onChange"
 		@save="onSave"

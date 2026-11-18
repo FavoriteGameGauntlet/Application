@@ -1,3 +1,8 @@
+import type {
+	HistoryEventKind,
+	PerkTriggerAction,
+} from '../api-facade/contracts'
+
 export type FormField = {
 	key: string
 	label: string
@@ -10,7 +15,8 @@ export type FormField = {
 	 * both days included), `locked` shows `lines` that cannot be edited, `arrow` is
 	 * a sign between two columns and holds no value, `pick` picks some of `options`
 	 * from a list of rows (the value is the picked `value`s), `rating` is a mark
-	 * from 1 to 10 (its value is the number as a string)
+	 * from 1 to 10 (its value is the number as a string), `triggers` is a list of
+	 * the events that act on the charges of a perk ability
 	 */
 	type?:
 		| 'line'
@@ -29,6 +35,7 @@ export type FormField = {
 		| 'arrow'
 		| 'pick'
 		| 'rating'
+		| 'triggers'
 	placeholder?: string
 	hint?: string
 	/** the `hint` names why the form cannot be filled yet, so it is red */
@@ -59,7 +66,7 @@ export type FormField = {
 	variant?: RowsVariant
 	/** for `rows`: what the rows are for, shown while there are none */
 	empty?: string
-	/** for `rows` and `chips`: the text of the "+" link */
+	/** for `rows`, `triggers` and `chips`: the text of the "+" link */
 	addLabel?: string
 	/** for `rows`: a `segment` at the end of the title line of the rows, as `FormSection.aside` is for a section */
 	aside?: FormField
@@ -126,5 +133,16 @@ export type FormRow = {
 	who: 'self' | 'chosen'
 }
 
-/** `line`, `area`, `select`, `choice`, `segment`, `span`, `dates`, `color` and `rating` give a string, `tags`, `chips` and `pick` a list, `check` a flag, `rows` a list of rows */
-export type FormValues = Record<string, string | string[] | boolean | FormRow[]>
+/** a row of a `triggers` field as the user picks it */
+export type TriggerFormRow = {
+	action: PerkTriggerAction
+	eventKind: HistoryEventKind
+	/** the id of the point type or the end state of the game that narrows the event; empty = any */
+	filter: string
+}
+
+/** `line`, `area`, `select`, `choice`, `segment`, `span`, `dates`, `color` and `rating` give a string, `tags`, `chips` and `pick` a list, `check` a flag, `rows` a list of rows, `triggers` a list of trigger rows */
+export type FormValues = Record<
+	string,
+	string | string[] | boolean | FormRow[] | TriggerFormRow[]
+>

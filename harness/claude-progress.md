@@ -4,7 +4,7 @@ Newest entry on top. Record only what was actually verified.
 
 ## 2026-11-18 rules-ui-catalog-dialog
 
-- By the user's answers (1 А, 3 Б, 2: triggers exist on the server): a new point type takes its scope from the page (`shared` prop), the select is gone; «Цель» of the rows editor and the catalogue card reads «Выбранный игрок»; the «Игрок выбирает, что применить» checks of the item and the new perk ability are `aside` segments «Все / На выбор» on their rows, off with no rows. Charges stay as they are; trigger editing is the next feature `perk-charge-triggers`.
+- By the user's answers (1 А, 3 Б, 2: triggers exist on the server): a new point type takes its scope from the page (`shared` prop), the select is gone; «Цель» of the rows editor and the catalogue card reads «Выбранный игрок»; the «Игрок выбирает, что применить» checks of the item and the new perk ability are `aside` segments «Все / На выбор» on their rows, off with no rows. The ability tab of a new perk sets the charge triggers (`TriggersEditor`, field type `triggers`, labels in `utils/perkTrigger.ts`); the events of a perk's own uses and charges are not offered, since a trigger on them would refire itself on the server.
 - Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. A temporary vite page (not committed) with the real `CatalogEntryDialog` and a mocked store in Chromium: see the evidence in `harness/archive/features-done.json`. Not checked: the app itself, against the backend.
 
 ## 2026-11-18 rules-ui-exchanges

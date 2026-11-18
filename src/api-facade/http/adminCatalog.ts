@@ -141,6 +141,14 @@ const resourceBody = (kind: ResourceCatalogKind, input: CatalogEntryInput) => {
 						...(ability.renewalPeriod !== undefined && {
 							renewalPeriodInSeconds: ability.renewalPeriod,
 						}),
+						triggers: ability.triggers.map(
+							({ action, eventKind, pointTypeId, gameEndState }) => ({
+								action,
+								eventKind,
+								...(pointTypeId !== undefined && { pointTypeId }),
+								...(gameEndState !== undefined && { gameEndState }),
+							}),
+						),
 					},
 				}),
 			}
