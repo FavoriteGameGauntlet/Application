@@ -88,8 +88,13 @@ export const routes: RouteRecordRaw[] = [
 				path: 'admin',
 				// the admin panel has a sidebar of its own, only admins of the party get in
 				meta: { admin: true },
-				redirect: { name: RouteName.AdminExchanges },
 				children: [
+					// the panel opens on its sidebar alone, no section is picked yet
+					{
+						path: '',
+						component: { render: () => null },
+						name: RouteName.Admin,
+					},
 					{
 						path: 'catalog/points',
 						component: AdminCatalogPointsView,

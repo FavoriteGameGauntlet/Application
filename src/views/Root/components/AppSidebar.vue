@@ -159,7 +159,7 @@ const isActive = (item: NavItem) =>
 
 				<RouterLink
 					class="nav-item"
-					:to="{ name: RouteName.AdminExchanges }"
+					:to="{ name: RouteName.Admin }"
 					:title="hint('Панель админа')"
 				>
 					<UiIcon name="shield" :size="18" />

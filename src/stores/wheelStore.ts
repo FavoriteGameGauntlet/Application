@@ -3,17 +3,17 @@ import { computed, ref } from 'vue'
 import { api } from '../api-facade/api'
 import type {
 	ResourceRef,
-	SpinPayment,
+	Payment,
 	WheelGroup,
 	WheelSpinResult,
 } from '../api-facade/contracts'
 import { StoreName } from '../enums/storeName'
 import {
 	buildPayment,
-	needsChoice,
+	isPicked,
 	paymentChoices,
 	type PaymentChoice,
-} from '../utils/spinPayment'
+} from '../utils/payment'
 import { RouteName } from '../router/routeNames'
 import { router } from '../router/router'
 import type { HttpErrorResponse } from '../api-facade/http'
@@ -300,7 +300,7 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		const mine = resourcesStore.byUser[useSessionStore().login]
 		const choices = paymentChoices(cost, mine)
 
-		if (choices.some(needsChoice)) {
+		if (choices.some(isPicked)) {
 			pendingChoices.value = choices
 			return
 		}
@@ -334,7 +334,7 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		pendingEntries.value = null
 	}
 
-	const applySpin = async (applied: WheelSpinResult, payment?: SpinPayment) => {
+	const applySpin = async (applied: WheelSpinResult, payment?: Payment) => {
 		const group = resultGroup.value?.name ?? ''
 		const toast = useToastStore()
 

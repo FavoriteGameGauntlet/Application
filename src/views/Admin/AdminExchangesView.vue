@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import type { AdminExchange, SpinCostRow } from '../../api-facade/contracts'
 import type {
+	FormField,
 	FormRow,
 	FormSection,
 	FormValues,
@@ -25,10 +26,25 @@ const toastStore = useToastStore()
 /** the exchange that the dialog edits; `{}` is a new one, undefined means the dialog is closed */
 const editing = ref<{ exchange?: AdminExchange }>()
 
-/** the two sides with a sign between them, and under each its own switch */
+/** the two sides with a sign between them */
 const sides = 'minmax(0, 1fr) 40px minmax(0, 1fr)'
 
-const sections: FormSection[] = [
+/** a side with no rows has nothing to pick from, so its segment is off */
+const hasSourceRows = ref(false)
+const hasTargetRows = ref(false)
+
+const applies = (key: string, label: string, hasRows: boolean): FormField => ({
+	key,
+	type: 'segment',
+	label,
+	options: [
+		{ value: 'all', label: 'Все' },
+		{ value: 'chosen', label: 'На выбор' },
+	],
+	disabled: !hasRows,
+})
+
+const sections = computed<FormSection[]>(() => [
 	{
 		fields: [
 			{
@@ -55,6 +71,11 @@ const sections: FormSection[] = [
 				type: 'rows',
 				variant: 'cost',
 				addLabel: 'Ресурс',
+				aside: applies(
+					'sourceApplies',
+					'Что игрок отдаёт',
+					hasSourceRows.value,
+				),
 			},
 			{ key: 'arrow', label: '', type: 'arrow' },
 			{
@@ -64,21 +85,23 @@ const sections: FormSection[] = [
 				type: 'rows',
 				variant: 'cost',
 				addLabel: 'Ресурс',
-			},
-			{
-				key: 'chooseSource',
-				type: 'check',
-				label: 'Игрок выбирает, что отдать',
-			},
-			{
-				key: 'chooseTarget',
-				type: 'check',
-				label: 'Игрок выбирает, что получить',
-				column: 3,
+				aside: applies(
+					'targetApplies',
+					'Что игрок получает',
+					hasTargetRows.value,
+				),
 			},
 		],
 	},
-]
+])
+
+const onChange = (values: FormValues) => {
+	hasSourceRows.value = (values.sourceEntries as FormRow[]).length > 0
+	hasTargetRows.value = (values.targetEntries as FormRow[]).length > 0
+}
+
+const appliesOf = (all: boolean | undefined) =>
+	all === false ? 'chosen' : 'all'
 
 const sideRows = (refs: AdminExchange['sourceEntries']): FormRow[] =>
 	changeRowsToForm(
@@ -96,9 +119,11 @@ const initial = computed<FormValues>(() => ({
 	description: editing.value?.exchange?.description ?? '',
 	sourceEntries: sideRows(editing.value?.exchange?.sourceEntries ?? []),
 	targetEntries: sideRows(editing.value?.exchange?.targetEntries ?? []),
-	chooseSource: editing.value?.exchange?.sourceShouldApplyToAll === false,
-	chooseTarget: editing.value?.exchange?.targetShouldApplyToAll === false,
+	sourceApplies: appliesOf(editing.value?.exchange?.sourceShouldApplyToAll),
+	targetApplies: appliesOf(editing.value?.exchange?.targetShouldApplyToAll),
 }))
+
+watch(initial, onChange)
 
 const side = (refs: AdminExchange['sourceEntries']) =>
 	refs.length
@@ -174,9 +199,9 @@ const onSave = async (values: FormValues) => {
 		name,
 		description: String(values.description).trim(),
 		sourceEntries: sourceEntries.value,
-		sourceShouldApplyToAll: values.chooseSource !== true,
+		sourceShouldApplyToAll: values.sourceApplies !== 'chosen',
 		targetEntries: targetEntries.value,
-		targetShouldApplyToAll: values.chooseTarget !== true,
+		targetShouldApplyToAll: values.targetApplies !== 'chosen',
 	}
 
 	if (await store.saveExchange(editing.value?.exchange?.id, input)) {
@@ -233,7 +258,7 @@ watch(
 						<span class="side__head">
 							<span class="side__label">Отдаёт</span>
 							<UiBadge v-if="!row.exchange.sourceShouldApplyToAll" tone="info"
-								>игрок выбирает</UiBadge
+								>на выбор</UiBadge
 							>
 						</span>
 						<span class="pills">
@@ -251,7 +276,7 @@ watch(
 						<span class="side__head">
 							<span class="side__label">Получает</span>
 							<UiBadge v-if="!row.exchange.targetShouldApplyToAll" tone="info"
-								>игрок выбирает</UiBadge
+								>на выбор</UiBadge
 							>
 						</span>
 						<span class="pills">
@@ -284,6 +309,7 @@ watch(
 		:sections
 		:initial
 		@close="editing = undefined"
+		@change="onChange"
 		@save="onSave"
 	/>
 </template>

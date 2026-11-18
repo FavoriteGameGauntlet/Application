@@ -1,18 +1,14 @@
-import type {
-	SpinCostRef,
-	SpinPayment,
-	UserResources,
-} from '../api-facade/contracts'
+import type { CostRef, Payment, UserResources } from '../api-facade/contracts'
 import { formatUsesLeft } from './formatResource'
 
 export type PaymentChoice = {
-	cost: SpinCostRef
+	cost: CostRef
 	/** the copies the user holds that can pay the row; points have none, they are not chosen */
 	options: { id: number; label: string; meta?: string }[]
 }
 
 const optionsOf = (
-	cost: SpinCostRef,
+	cost: CostRef,
 	res: UserResources,
 ): PaymentChoice['options'] => {
 	switch (cost.kind) {
@@ -26,7 +22,7 @@ const optionsOf = (
 				.map((p) => ({ id: p.id, label: p.name }))
 		case 'effect':
 			return res.effects
-				.filter((e) => e.id === cost.id)
+				.filter((e) => e.effectId === cost.id)
 				.map((e) => ({ id: e.id, label: e.name }))
 		case 'points':
 			return []
@@ -34,25 +30,22 @@ const optionsOf = (
 }
 
 export const paymentChoices = (
-	cost: SpinCostRef[],
+	cost: CostRef[],
 	res: UserResources,
 ): PaymentChoice[] => cost.map((c) => ({ cost: c, options: optionsOf(c, res) }))
 
-/** there are more copies than the cost takes, so the user picks which ones go */
-export const needsChoice = (choice: PaymentChoice) =>
-	choice.options.length > choice.cost.amount
+/** the user picks the copies of a row themself, also when they hold just as many as it takes; points are charged by themselves */
+export const isPicked = (choice: PaymentChoice) => choice.cost.kind !== 'points'
 
-/** `picked` holds the ids chosen for the rows that need a choice, by the index of the row */
+/** `picked` holds the ids the user chose, by the index of the row; a row without them gives every copy it lists */
 export const buildPayment = (
 	choices: PaymentChoice[],
 	picked: Record<number, number[]>,
-): SpinPayment => {
-	const payment: SpinPayment = { items: [], perks: [], effects: [] }
+): Payment => {
+	const payment: Payment = { items: [], perks: [], effects: [] }
 
 	choices.forEach((choice, i) => {
-		const ids = needsChoice(choice)
-			? (picked[i] ?? [])
-			: choice.options.map((o) => o.id)
+		const ids = picked[i] ?? choice.options.map((o) => o.id)
 
 		switch (choice.cost.kind) {
 			case 'item':
@@ -71,7 +64,7 @@ export const buildPayment = (
 }
 
 /** how many spins the held resources pay for; undefined when the spin is free */
-export const affordableSpins = (cost: SpinCostRef[], res?: UserResources) => {
+export const affordableSpins = (cost: CostRef[], res?: UserResources) => {
 	if (!cost.length) return undefined
 	if (!res) return 0
 

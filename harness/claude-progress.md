@@ -2,6 +2,11 @@
 
 Newest entry on top. Record only what was actually verified.
 
+## 2026-11-18 rules-ui-exchanges
+
+- By the user's answers: the server takes the items, perks and effects of an exchange from the copies the player picks and greys out a card nobody can pay (FavoriteGameGauntlet/Server#219, merged). The player card dashes a pill only where the server refuses (points below the type's minimum, missing copies, effects, perk). The exchange always opens the shared `PaymentDialog` with every item, perk and effect row to pick (`isPicked`, the user's word «окно всегда должно открываться»; the wheel now does the same, the user's answer) (moved from the wheel with `utils/payment.ts`, `Payment`, `CostRef`). The admin window has «Все / На выбор» in the head of each side (`FormField.aside` on `rows`) in place of the switches; the table badge reads «на выбор». «Панель админа» opens the panel on an empty screen (`RouteName.Admin`, the user's ask) instead of «Обмены». Fixed on the way: payment options matched an effect by the copy id; a perk given in an exchange showed as gained.
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. A temporary vite page (not committed) with the real `ExchangesView` and `AdminExchangesView` and a mocked API in Chromium: dashed «5 золота (2)» with a minimum of 0, plain «3 славы» without one; picking 2 of 3 copies sends `payment.items` [50, 52]; with exactly 2 copies for a cost of 2 the window opens with «Заплатить» off until both are checked; the admin segments open on the stored value and stay off until a row is added. Not checked: the app itself, against the backend, the always-open window of the wheel and the empty admin screen in a browser.
+
 ## 2026-11-18 rules-ui-wheel-admin
 
 - By the user's answers: the group switch reads «Не повторять применённое»; the server applies it to games too (FavoriteGameGauntlet/Server#218, merge it first). The item window has «Все / На выбор» in the head of «Когда выпал» in place of the «Игрок выбирает, что применить» switch; with no rows it is off and shows its value. «Остальное игрок вносит сам» became «Потом ручное изменение». Nothing for «выпавшая игра становится текущей» and the Enter of the add-row.
@@ -11,11 +16,6 @@ Newest entry on top. Record only what was actually verified.
 
 - Version raised to 0.9.0 with `npm version 0.9.0 --no-git-tag-version` (package.json, package-lock.json, tauri.conf.json, Cargo.toml, Cargo.lock).
 - Verified: `bash harness/scripts/init.sh` passes. Not checked: `cargo check` (the cloud container has no GTK dev libraries); the release build on the tag compiles Rust.
-
-## 2026-11-17 rules-ui-rewards-cost
-
-- By the user's answers (1b, 2a, 3b, 4 nothing; «не надо никаких подсказок»): the save toast of a reward card says only «Награды сохранены». The server reads the reward when the timer or the game ends, so a running timer or game gets the new one; the old «Действуют на следующие …» was wrong, and the comment of `admin.rewards.save` is corrected. The spin cost line of the admin wheel group starts «Применение стоит» and lost its grey note. No link to the timer length; nothing for the copy choice (the payment covers the whole cost, the player picks only which copy).
-- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. A temporary vite page (not committed) with the real `AdminSpinCost` and `AdminRewardsView` and a mocked API in Chromium: the cost line reads «Применение стоит 5 билетов, Свиток переброса» with no note. Not checked: the app itself.
 
 ## Open
 

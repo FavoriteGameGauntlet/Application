@@ -2,7 +2,7 @@ import type {
 	PointType,
 	Reward,
 	ResourceRef,
-	SpinCostRef,
+	CostRef,
 } from '../api-facade/contracts'
 import { plural } from './plural'
 
@@ -28,7 +28,7 @@ export const formatUsesLeft = (item: { usesLeft: number; usesMax: number }) =>
 	`осталось ${item.usesLeft} из ${item.usesMax}`
 
 /** «50 золота», «Щит ×2», «перк Коллекционер», «Благословение ×2» */
-export const formatCost = (cost: SpinCostRef, pointTypes: PointType[]) => {
+export const formatCost = (cost: CostRef, pointTypes: PointType[]) => {
 	if (cost.kind === 'points' || cost.kind === 'item')
 		return formatResource(cost, pointTypes)
 

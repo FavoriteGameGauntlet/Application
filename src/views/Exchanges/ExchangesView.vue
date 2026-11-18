@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import type { ExchangeOffer, ResourceRef } from '../../api-facade/contracts'
+import type {
+	CostRef,
+	ExchangeOffer,
+	ExchangeUse,
+	ResourceRef,
+} from '../../api-facade/contracts'
+import PaymentDialog from '../../components/PaymentDialog.vue'
 import UserResourcesPanel from '../../components/UserResourcesPanel.vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiCheckbox from '../../components/ui/UiCheckbox.vue'
@@ -10,12 +16,19 @@ import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import { useExchangesStore } from '../../stores/exchangesStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useSessionStore } from '../../stores/sessionStore'
+import { useToastStore } from '../../stores/toastStore'
 import { formatResource } from '../../utils/formatResource'
+import {
+	buildPayment,
+	type PaymentChoice,
+	paymentChoices,
+} from '../../utils/payment'
 import { countItems } from '../../utils/userItems'
 
 const exchangesStore = useExchangesStore()
 const resourcesStore = useResourcesStore()
 const sessionStore = useSessionStore()
+const toastStore = useToastStore()
 
 const confirming = ref<ExchangeOffer>()
 /** the `entryId`s the user picked on a side that doesn't apply all its entries */
@@ -62,28 +75,48 @@ const mine = computed(() => resourcesStore.byUser[sessionStore.login])
 const text = (ref: ResourceRef) =>
 	formatResource(ref, resourcesStore.pointTypes)
 
-/** how many of the resource the current user has */
+/** how many of the resource the current user has; a perk is held once or not */
 const have = (ref: ResourceRef) => {
-	if (ref.kind === 'points') return mine.value?.points[ref.id] ?? 0
-	if (ref.kind === 'item') {
-		return countItems(mine.value?.items ?? [], ref.id)
+	switch (ref.kind) {
+		case 'points':
+			return mine.value?.points[ref.id] ?? 0
+		case 'item':
+			return countItems(mine.value?.items ?? [], ref.id)
+		case 'perk':
+			return mine.value?.perks.some((p) => p.id === ref.id) ? 1 : 0
+		case 'effect':
+			return (mine.value?.effects ?? []).filter((e) => e.effectId === ref.id)
+				.length
 	}
-
-	return 0
 }
 
+/** a perk or an effect is held once, so an entry of it moves one */
 const amountOf = (ref: ResourceRef) =>
-	ref.kind === 'points' || ref.kind === 'item' ? ref.amount : 0
+	ref.kind === 'points' || ref.kind === 'item' ? ref.amount : 1
+
+/**
+ * the user cannot give it, the same rule as the server's: points only below
+ * the minimum of their type, so a type without one never runs short
+ */
+const isShort = (ref: ResourceRef) => {
+	if (ref.kind !== 'points') return have(ref) < amountOf(ref)
+
+	const minimum = resourcesStore.pointTypes.find(
+		(t) => t.id === ref.id,
+	)?.minimum
+
+	return minimum != null && have(ref) - ref.amount < minimum
+}
 
 const cards = computed(() =>
 	exchangesStore.list.map((exchange) => ({
 		exchange,
 		give: exchange.sourceEntries.map((ref) => {
-			const enough = have(ref) >= amountOf(ref)
+			const short = isShort(ref)
 
 			return {
-				text: enough ? text(ref) : `${text(ref)} (${have(ref)})`,
-				enough,
+				text: short ? `${text(ref)} (${have(ref)})` : text(ref),
+				enough: !short,
 			}
 		}),
 		get: exchange.targetEntries.map(text),
@@ -110,10 +143,10 @@ const confirmRows = computed(() => {
 		if (ref.kind === 'perk') {
 			return {
 				name: `Перк «${ref.name}»`,
-				delta: '+1',
-				was: 'нет',
-				now: 'есть',
-				gain: true,
+				delta: sign > 0 ? '+1' : '−1',
+				was: sign > 0 ? 'нет' : 'есть',
+				now: sign > 0 ? 'есть' : 'нет',
+				gain: sign > 0,
 			}
 		}
 
@@ -129,19 +162,70 @@ const confirmRows = computed(() => {
 	})
 })
 
+/** the exchange waiting for the user to pick the copies that pay for it */
+const paying = ref<{
+	exchange: ExchangeOffer
+	use: ExchangeUse
+	choices: PaymentChoice[]
+}>()
+
+const costOf = (ref: ResourceRef): CostRef => ({
+	kind: ref.kind,
+	id: ref.id,
+	name: ref.name,
+	amount: amountOf(ref),
+})
+
 const onConfirm = async () => {
 	const exchange = confirming.value
 
 	confirming.value = undefined
 
-	if (exchange) {
-		await exchangesStore.execute(exchange, {
-			...(exchange.sourceShouldApplyToAll === false && {
-				sourceEntryIds: pickedSource.value,
-			}),
-			...(exchange.targetShouldApplyToAll === false && {
-				targetEntryIds: pickedTarget.value,
-			}),
+	if (!exchange) return
+
+	const given = applied(
+		exchange.sourceEntries,
+		exchange.sourceShouldApplyToAll,
+		pickedSource.value,
+	)
+	const use: ExchangeUse = {
+		...(exchange.sourceShouldApplyToAll === false && {
+			sourceEntryIds: pickedSource.value,
+		}),
+		...(exchange.targetShouldApplyToAll === false && {
+			targetEntryIds: pickedTarget.value,
+		}),
+	}
+
+	// points are charged by themselves; the rest the user always picks from the copies they hold
+	if (given.every((ref) => ref.kind === 'points')) {
+		await exchangesStore.execute(exchange, use)
+		return
+	}
+
+	try {
+		await resourcesStore.loadMine()
+	} catch (e) {
+		toastStore.error(e)
+		return
+	}
+
+	paying.value = {
+		exchange,
+		use,
+		choices: paymentChoices(given.map(costOf), mine.value!),
+	}
+}
+
+const onPay = async (picked: Record<number, number[]>) => {
+	const pending = paying.value
+
+	paying.value = undefined
+
+	if (pending) {
+		await exchangesStore.execute(pending.exchange, {
+			...pending.use,
+			payment: buildPayment(pending.choices, picked),
 		})
 	}
 }
@@ -277,6 +361,13 @@ onMounted(() => exchangesStore.load())
 			<UiButton :disabled="!canConfirm" @click="onConfirm">Обменять</UiButton>
 		</template>
 	</UiDialog>
+
+	<PaymentDialog
+		subject="Обмен"
+		:choices="paying?.choices ?? null"
+		@close="paying = undefined"
+		@confirm="onPay"
+	/>
 </template>
 
 <style scoped>

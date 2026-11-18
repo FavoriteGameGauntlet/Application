@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import FormDialog from '../../../components/FormDialog.vue'
-import type { FormSection, FormValues } from '../../../components/formDialog'
-import { useResourcesStore } from '../../../stores/resourcesStore'
-import { formatCost } from '../../../utils/formatResource'
-import { needsChoice, type PaymentChoice } from '../../../utils/spinPayment'
+import FormDialog from './FormDialog.vue'
+import type { FormSection, FormValues } from './formDialog'
+import { useResourcesStore } from '../stores/resourcesStore'
+import { formatCost } from '../utils/formatResource'
+import { isPicked, type PaymentChoice } from '../utils/payment'
 
 type Props = {
 	/** set while the dialog is open */
 	choices: PaymentChoice[] | null
+	/** what is paid for, the start of the subtitle: «Прокрут», «Обмен» */
+	subject: string
 }
 
-const { choices } = defineProps<Props>()
+const { choices, subject } = defineProps<Props>()
 
 const emit = defineEmits<{
 	close: []
@@ -26,7 +28,7 @@ const rows = computed(() =>
 	(choices ?? []).map((choice, index) => ({
 		choice,
 		index,
-		choose: needsChoice(choice),
+		choose: isPicked(choice),
 	})),
 )
 
@@ -41,8 +43,8 @@ const subtitle = computed(() => {
 	const all = rows.value.map((r) => costText(r.choice)).join(', ')
 
 	return fixed
-		? `Прокрут стоит ${all}. Спишется само: ${fixed}.`
-		: `Прокрут стоит ${all}.`
+		? `${subject} стоит ${all}. Спишется само: ${fixed}.`
+		: `${subject} стоит ${all}.`
 })
 
 /** the rows with copies to choose from; the rest is taken whole */

@@ -37,11 +37,11 @@ export type ResourceRef = (
 }
 
 /**
- * What a spin of changes costs. Points, items, perks and effects are taken the
- * same way: `amount` is how many of the resource are taken, always positive
- * (a perk or an effect is held once, so its amount is 1).
+ * What a spin of changes or an exchange costs. Points, items, perks and effects
+ * are taken the same way: `amount` is how many of the resource are taken, always
+ * positive (a perk or an effect is held once, so its amount is 1).
  */
-export type SpinCostRef = {
+export type CostRef = {
 	kind: 'points' | 'item' | 'perk' | 'effect'
 	id: number
 	name: string
@@ -145,7 +145,7 @@ export type WheelGroup = {
 	kind: 'wishlist' | 'games' | 'changes'
 	entries: WheelEntry[]
 	/** charged when a spin of the group is applied; empty for a free group */
-	cost: SpinCostRef[]
+	cost: CostRef[]
 }
 
 /** the kind tells where the tape comes from: the items of the group, or the wishlist games */
@@ -380,12 +380,17 @@ export type ItemUse = {
 	userItemIds?: number[]
 }
 
-/** What the user adds to an exchange: who pays, and the entries of a side that doesn't apply to all. */
+/**
+ * What the user adds to an exchange: who pays, the entries of a side that
+ * doesn't apply to all, and the payment of the items, perks and effects of the
+ * chosen cost.
+ */
 export type ExchangeUse = {
 	/** the users who pay instead of the one making the exchange */
 	targetLogins?: Login[]
 	sourceEntryIds?: number[]
 	targetEntryIds?: number[]
+	payment?: Payment
 }
 
 /**
@@ -394,7 +399,7 @@ export type ExchangeUse = {
  * payment of the cost.
  */
 export type WheelApply = {
-	payment?: SpinPayment
+	payment?: Payment
 	targetLogins?: Login[]
 	entryIds?: number[]
 }
@@ -635,7 +640,7 @@ export type SystemParameter = {
 }
 
 export type SpinCostRow = {
-	kind: SpinCostRef['kind']
+	kind: CostRef['kind']
 	/** id of the point type, item, perk or effect */
 	targetId: number
 	/** positive, the backend keeps it as a negative change */
@@ -643,10 +648,10 @@ export type SpinCostRow = {
 }
 
 /**
- * What the user gives for a spin of changes: the ids of the chosen copies of the
- * items, of the perks and of the effects. Points are not chosen.
+ * What the user gives for a cost (a spin of changes, an exchange): the ids of the
+ * chosen copies of the items, of the perks and of the effects. Points are not chosen.
  */
-export type SpinPayment = {
+export type Payment = {
 	items: number[]
 	perks: number[]
 	effects: number[]
@@ -943,7 +948,8 @@ export type Api = {
 		/**
 		 * Backend: POST {party}/exchanges/catalog/{id}/use. With `targetLogins` the
 		 * source side is what the named users lose and the target side is what the
-		 * user making the exchange gains.
+		 * user making the exchange gains. A payment that does not cover the items,
+		 * perks and effects of the chosen cost exactly answers 409 INVALID_PAYMENT.
 		 */
 		execute: (
 			id: number,

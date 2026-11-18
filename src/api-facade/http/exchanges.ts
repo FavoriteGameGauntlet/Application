@@ -3,6 +3,7 @@ import { http } from '../http'
 import { type NamedChangeEntryDto, toResourceRef } from './changeEntry'
 import { currentLogin, partyPath } from './context'
 import { latestOwnEntry } from './journal'
+import { toPaymentBody } from './payment'
 import { resources } from './resources'
 import { fromCostRow, fromGainRow } from './rows'
 
@@ -50,9 +51,9 @@ export const exchanges: Api['exchanges'] = {
 			)
 		).body.map((e) => ({ ...e, ...toSides(e) })),
 
-	execute: async (id, use) => {
+	execute: async (id, { payment, ...use } = {}) => {
 		await http.post(`${await partyPath()}/exchanges/catalog/${id}/use`, {
-			body: use ?? {},
+			body: { ...use, ...(payment && { payment: toPaymentBody(payment) }) },
 		})
 
 		return {

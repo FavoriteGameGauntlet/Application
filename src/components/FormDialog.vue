@@ -74,9 +74,13 @@ const unfolded = reactive<Record<string, boolean>>({})
 /** the elements of the unfolded fields, to put the focus into the one just asked for */
 const fieldEls: Record<string, HTMLElement | null> = {}
 
-const allFields = computed(() =>
-	sections.flatMap((s) => (s.aside ? [s.aside, ...s.fields] : s.fields)),
-)
+/** the fields of a section with the segments at the ends of its title lines */
+const fieldsOf = (section: FormSection) => [
+	...(section.aside ? [section.aside] : []),
+	...section.fields.flatMap((f) => (f.aside ? [f, f.aside] : [f])),
+]
+
+const allFields = computed(() => sections.flatMap(fieldsOf))
 
 /** the rows and the columns need more room than a single line */
 const dialogWidth = computed(
@@ -211,7 +215,7 @@ const missingIn = (inSections: FormSection[]) => [
 	...new Set(
 		inSections
 			.filter(inShownTab)
-			.flatMap((s) => (s.aside ? [s.aside, ...s.fields] : s.fields))
+			.flatMap(fieldsOf)
 			.filter(
 				(f) =>
 					f.required &&
@@ -426,7 +430,16 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 									:hint="field.hint"
 									:empty="field.empty"
 									:add-label="field.addLabel"
-								/>
+								>
+									<template v-if="field.aside" #aside>
+										<UiSegmented
+											v-model="texts[field.aside.key]"
+											:options="field.aside.options ?? []"
+											:label="field.aside.label"
+											:disabled="field.aside.disabled"
+										/>
+									</template>
+								</RowsEditor>
 
 								<UiField
 									v-else-if="field.type === 'chips'"
