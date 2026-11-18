@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import type {
 	AdminWheelEntry,
 	AdminWheelGroup,
 } from '../../api-facade/contracts'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
 import type {
-	FormField,
 	FormRow,
+	FormSection,
 	FormValues,
 } from '../../components/formDialog'
 import { changeRowsToForm, parseChangeRows } from '../../utils/formRows'
@@ -59,54 +59,79 @@ const foundEntries = computed(() => {
 	)
 })
 
-const fields = computed<FormField[]>(() => {
+/** the rows of the open dialog: with none there is nothing to choose from */
+const hasRows = ref(false)
+
+const sections = computed<FormSection[]>(() => {
 	// a game has only a name, the backend takes nothing else for it
 	if (!isChanges.value) {
 		return [
 			{
-				key: 'name',
-				label: 'Игра',
-				required: 'название',
-				placeholder: 'Hades',
+				fields: [
+					{
+						key: 'name',
+						label: 'Игра',
+						required: 'название',
+						placeholder: 'Hades',
+					},
+				],
 			},
 		]
 	}
 
 	return [
 		{
-			key: 'name',
-			label: 'Название',
-			required: 'название',
-			placeholder: '+50 золота',
+			fields: [
+				{
+					key: 'name',
+					label: 'Название',
+					required: 'название',
+					placeholder: '+50 золота',
+				},
+				{
+					key: 'description',
+					label: 'Описание',
+					type: 'area',
+					optional: true,
+					placeholder: 'Что произойдёт — так увидят игроки',
+				},
+			],
 		},
 		{
-			key: 'description',
-			label: 'Описание',
-			type: 'area',
-			optional: true,
-			placeholder: 'Что произойдёт — так увидят игроки',
-		},
-		{
-			key: 'entries',
-			label: 'Когда выпал',
-			required: 'действие',
-			requiredUnless: { key: 'isManualChange', is: true },
-			type: 'rows',
-			variant: 'change',
-			addLabel: 'Действие',
-		},
-		{
-			key: 'isManualChange',
-			type: 'check',
-			label: 'Остальное игрок вносит сам',
-		},
-		{
-			key: 'chooseEntries',
-			type: 'check',
-			label: 'Игрок выбирает, что применить',
+			title: 'Когда выпал',
+			aside: {
+				key: 'applies',
+				type: 'segment',
+				label: 'Что применяется',
+				options: [
+					{ value: 'all', label: 'Все' },
+					{ value: 'chosen', label: 'На выбор' },
+				],
+				disabled: !hasRows.value,
+			},
+			fields: [
+				{
+					key: 'entries',
+					label: '',
+					required: 'действие',
+					requiredUnless: { key: 'isManualChange', is: true },
+					type: 'rows',
+					variant: 'change',
+					addLabel: 'Действие',
+				},
+				{
+					key: 'isManualChange',
+					type: 'check',
+					label: 'Потом ручное изменение',
+				},
+			],
 		},
 	]
 })
+
+const onChange = (values: FormValues) => {
+	hasRows.value = (values.entries as FormRow[] | undefined)?.length !== 0
+}
 
 const initial = computed<FormValues>(() => {
 	const current = dialog.value
@@ -116,7 +141,7 @@ const initial = computed<FormValues>(() => {
 		description: '',
 		entries: [],
 		isManualChange: false,
-		chooseEntries: false,
+		applies: 'all',
 	}
 
 	if (current?.entry) {
@@ -124,10 +149,14 @@ const initial = computed<FormValues>(() => {
 		values.description = current.entry.description ?? ''
 		values.entries = changeRowsToForm(current.entry.entries)
 		values.isManualChange = current.entry.isManualChange
-		values.chooseEntries = !current.entry.shouldApplyToAll
+		values.applies = current.entry.shouldApplyToAll ? 'all' : 'chosen'
 	}
 
 	return values
+})
+
+watch(initial, (values) => {
+	hasRows.value = (values.entries as FormRow[]).length > 0
 })
 
 const dialogTitle = computed(() => {
@@ -168,7 +197,7 @@ const onSave = async (values: FormValues) => {
 		description,
 		entries: entries.value,
 		isManualChange,
-		shouldApplyToAll: values.chooseEntries !== true,
+		shouldApplyToAll: values.applies !== 'chosen',
 	}
 
 	if (await store.saveEntry(group.value, current?.entry, input))
@@ -371,10 +400,11 @@ onMounted(() => store.load())
 		:title="dialogTitle"
 		:subtitle="dialogSubtitle"
 		:submit-label
-		:sections="[{ fields }]"
+		:sections
 		:initial
 		@close="dialog = undefined"
 		@save="onSave"
+		@change="onChange"
 	/>
 
 	<ConfirmDialog

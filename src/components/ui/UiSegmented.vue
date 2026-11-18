@@ -2,6 +2,7 @@
 type Props = {
 	options: { value: string; label: string }[]
 	label?: string
+	disabled?: boolean
 }
 
 defineProps<Props>()
@@ -19,6 +20,7 @@ const model = defineModel<string>({ default: '' })
 			type="button"
 			role="radio"
 			:aria-checked="o.value === model"
+			:disabled
 			@click="model = o.value"
 		>
 			{{ o.label }}
@@ -43,6 +45,11 @@ const model = defineModel<string>({ default: '' })
 	color: var(--text-muted);
 	border-radius: var(--radius-sm);
 	cursor: pointer;
+}
+
+.ui-segmented__opt:disabled {
+	cursor: default;
+	opacity: 0.45;
 }
 
 .ui-segmented__opt--on {
