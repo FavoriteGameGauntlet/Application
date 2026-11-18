@@ -42,7 +42,7 @@ export const triggerEventGroups: {
 		options: [
 			{ value: 'item_added', label: 'Получен предмет' },
 			{ value: 'item_uses_changed', label: 'Использован предмет' },
-			{ value: 'item_removed', label: 'Предмет убран' },
+			{ value: 'item_removed', label: 'Предмет удалён' },
 			{ value: 'item_transferred', label: 'Предмет передан' },
 			{ value: 'item_limit_reached', label: 'Предмет не поместился' },
 		],
@@ -51,9 +51,9 @@ export const triggerEventGroups: {
 		title: 'Перки и эффекты',
 		options: [
 			{ value: 'perk_added', label: 'Получен перк' },
-			{ value: 'perk_removed', label: 'Перк убран' },
-			{ value: 'effect_added', label: 'Наложен эффект' },
-			{ value: 'effect_removed', label: 'Эффект снят' },
+			{ value: 'perk_removed', label: 'Перк удалён' },
+			{ value: 'effect_added', label: 'Получен эффект' },
+			{ value: 'effect_removed', label: 'Эффект удалён' },
 		],
 	},
 	{
