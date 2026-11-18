@@ -4,18 +4,16 @@ import FormDialog from './FormDialog.vue'
 import type { FormSection, FormValues } from './formDialog'
 import { useResourcesStore } from '../stores/resourcesStore'
 import { formatCost } from '../utils/formatResource'
-import { needsChoice, type PaymentChoice } from '../utils/payment'
+import { isPicked, type PaymentChoice } from '../utils/payment'
 
 type Props = {
 	/** set while the dialog is open */
 	choices: PaymentChoice[] | null
 	/** what is paid for, the start of the subtitle: «Прокрут», «Обмен» */
 	subject: string
-	/** the user picks the copies of every row, also when they hold just as many as it takes */
-	pickAll?: boolean
 }
 
-const { choices, subject, pickAll = false } = defineProps<Props>()
+const { choices, subject } = defineProps<Props>()
 
 const emit = defineEmits<{
 	close: []
@@ -30,7 +28,7 @@ const rows = computed(() =>
 	(choices ?? []).map((choice, index) => ({
 		choice,
 		index,
-		choose: pickAll ? choice.cost.kind !== 'points' : needsChoice(choice),
+		choose: isPicked(choice),
 	})),
 )
 

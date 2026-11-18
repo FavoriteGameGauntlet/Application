@@ -34,9 +34,8 @@ export const paymentChoices = (
 	res: UserResources,
 ): PaymentChoice[] => cost.map((c) => ({ cost: c, options: optionsOf(c, res) }))
 
-/** there are more copies than the cost takes, so the user picks which ones go */
-export const needsChoice = (choice: PaymentChoice) =>
-	choice.options.length > choice.cost.amount
+/** the user picks the copies of a row themself, also when they hold just as many as it takes; points are charged by themselves */
+export const isPicked = (choice: PaymentChoice) => choice.cost.kind !== 'points'
 
 /** `picked` holds the ids the user chose, by the index of the row; a row without them gives every copy it lists */
 export const buildPayment = (

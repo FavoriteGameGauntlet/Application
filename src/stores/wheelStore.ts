@@ -10,7 +10,7 @@ import type {
 import { StoreName } from '../enums/storeName'
 import {
 	buildPayment,
-	needsChoice,
+	isPicked,
 	paymentChoices,
 	type PaymentChoice,
 } from '../utils/payment'
@@ -300,7 +300,7 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		const mine = resourcesStore.byUser[useSessionStore().login]
 		const choices = paymentChoices(cost, mine)
 
-		if (choices.some(needsChoice)) {
+		if (choices.some(isPicked)) {
 			pendingChoices.value = choices
 			return
 		}

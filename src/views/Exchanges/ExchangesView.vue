@@ -364,7 +364,6 @@ onMounted(() => exchangesStore.load())
 
 	<PaymentDialog
 		subject="Обмен"
-		pick-all
 		:choices="paying?.choices ?? null"
 		@close="paying = undefined"
 		@confirm="onPay"
