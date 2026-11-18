@@ -30,7 +30,7 @@ const whoGroups: OptionGroup[] = [
 	{
 		options: [
 			{ value: 'self', label: 'Владелец' },
-			{ value: 'chosen', label: 'Цель' },
+			{ value: 'chosen', label: 'Выбранный игрок' },
 		],
 	},
 ]
@@ -39,8 +39,8 @@ const whoGroups: OptionGroup[] = [
 const transferWhoGroups: OptionGroup[] = [
 	{
 		options: [
-			{ value: 'self', label: 'Владелец → цели' },
-			{ value: 'chosen', label: 'Цель → владельцу' },
+			{ value: 'self', label: 'Владелец → выбранному' },
+			{ value: 'chosen', label: 'Выбранный → владельцу' },
 		],
 	},
 ]

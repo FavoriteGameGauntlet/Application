@@ -1,4 +1,9 @@
-import type { CatalogEntry, PointType, ResourceKind } from '../contracts'
+import type {
+	CatalogEntry,
+	PerkTrigger,
+	PointType,
+	ResourceKind,
+} from '../contracts'
 import { http } from '../http'
 import {
 	type NamedItemEntryDto,
@@ -41,6 +46,8 @@ export type PerkDto = {
 		chargesMax: number
 		/** ISO 8601 duration */
 		renewalPeriod?: string
+		/** `pointTypeName` is null for a removed point type */
+		triggers: PerkTrigger[]
 	}
 }
 
@@ -103,6 +110,7 @@ export const toCatalogEntry = <K extends ResourceKind>(
 						...(ability.renewalPeriod && {
 							renewalPeriod: toSeconds(ability.renewalPeriod),
 						}),
+						triggers: ability.triggers,
 					},
 				}),
 				...(ability?.uses && { usesMax: ability.uses.max }),

@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import type { CatalogEntry, ItemEntryRow } from '../api-facade/contracts'
 import { formatSpan } from '../utils/format'
 import { itemConditionLabels } from '../utils/itemCondition'
+import { triggerActionLabels, triggerEventText } from '../utils/perkTrigger'
 import { type CatalogView, changeTone, itemEntryTone } from './catalogTable'
 import UiBadge from './ui/UiBadge.vue'
 import UiIcon from './ui/UiIcon.vue'
@@ -17,7 +18,7 @@ const { view, entry } = defineProps<Props>()
 /** `texts[i]` is the text the facade built for `rows[i]` */
 const toLines = (rows: ItemEntryRow[], texts: string[]) =>
 	rows.map((row, i) => ({
-		who: row.who === 'chosen' ? 'Цель' : 'Владелец',
+		who: row.who === 'chosen' ? 'Выбранный игрок' : 'Владелец',
 		text: texts[i] ?? '',
 		tone: itemEntryTone(row),
 	}))
@@ -224,6 +225,13 @@ const units = computed(() => {
 						</div>
 					</template>
 				</div>
+				<template v-if="ability.triggers.length">
+					<span class="label">Триггеры</span>
+					<div v-for="(t, i) in ability.triggers" :key="i" class="line">
+						<span class="label">{{ triggerActionLabels[t.action] }}</span>
+						<span class="line__text">{{ triggerEventText(t) }}</span>
+					</div>
+				</template>
 			</section>
 			<span v-else class="hint">
 				<UiIcon name="info" :size="18" />

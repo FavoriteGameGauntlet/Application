@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type {
 	CatalogEntry,
 	CatalogEntryInput,
@@ -11,6 +11,7 @@ import type {
 	FormSection,
 	FormTab,
 	FormValues,
+	TriggerFormRow,
 } from '../../../components/formDialog'
 import FormDialog from '../../../components/FormDialog.vue'
 import { useAdminCatalogStore } from '../../../stores/adminCatalogStore'
@@ -22,11 +23,17 @@ import {
 	modifiersToForm,
 	parseItemEntries,
 	parseModifiers,
+	parseTriggers,
 } from '../../../utils/formRows'
+import {
+	triggerActionLabels,
+	triggerEventText,
+} from '../../../utils/perkTrigger'
 import type {
 	ItemCondition,
 	ItemEntryRow,
 	PerkAbility,
+	PerkTrigger,
 } from '../../../api-facade/contracts'
 
 type Props = {
@@ -34,7 +41,7 @@ type Props = {
 	kind: CatalogKind
 	/** undefined is a new entry */
 	entry?: CatalogEntry
-	/** a new point type is created shared by default */
+	/** the page decides whether a new point type is shared; it cannot change later */
 	shared?: boolean
 }
 
@@ -63,6 +70,21 @@ const durationPresets = [
 ]
 
 const columns = (count: number) => `repeat(${count}, minmax(0, 1fr))`
+
+/** rows with nothing in them have nothing to pick from, so their segment is off */
+const hasEntries = ref(false)
+const hasAbilityEntries = ref(false)
+
+const applies = (key: string, hasRows: boolean): FormField => ({
+	key,
+	type: 'segment',
+	label: 'Что применяется',
+	options: [
+		{ value: 'all', label: 'Все' },
+		{ value: 'chosen', label: 'На выбор' },
+	],
+	disabled: !hasRows,
+})
 
 const sections = computed<FormSection[]>(() => {
 	const common: FormField[] = [
@@ -103,19 +125,6 @@ const sections = computed<FormSection[]>(() => {
 					title: 'Правила',
 					columns: columns(2),
 					fields: [
-						...(entry
-							? []
-							: [
-									{
-										key: 'scope',
-										label: 'Считаются',
-										type: 'select' as const,
-										options: [
-											{ value: 'own', label: 'У каждого игрока свои' },
-											{ value: 'shared', label: 'Общие на пати' },
-										],
-									},
-								]),
 						{
 							key: 'visibility',
 							label: 'Кто видит',
@@ -164,11 +173,7 @@ const sections = computed<FormSection[]>(() => {
 							empty:
 								'Что произойдёт, когда игрок применит предмет. Например: владелец получает 10 золота.',
 							addLabel: 'Действие',
-						},
-						{
-							key: 'chooseEntries',
-							type: 'check',
-							label: 'Игрок выбирает, что применить',
+							aside: applies('applies', hasEntries.value),
 						},
 						{
 							key: 'usesMax',
@@ -290,11 +295,7 @@ const sections = computed<FormSection[]>(() => {
 							variant: 'item-entry',
 							required: 'действие способности',
 							addLabel: 'Действие',
-						},
-						{
-							key: 'abilityChooseEntries',
-							type: 'check',
-							label: 'Игрок выбирает, что применить',
+							aside: applies('abilityApplies', hasAbilityEntries.value),
 						},
 					],
 				},
@@ -336,14 +337,26 @@ const sections = computed<FormSection[]>(() => {
 				},
 				{
 					tab: 'ability',
+					title: 'Заряды',
+					columns: '200px',
 					fields: [
 						{
 							key: 'abilityCharges',
-							label: 'Зарядов на одно использование',
+							label: 'На одно использование',
 							numeric: true,
-							optional: true,
-							width: 120,
 							placeholder: '0',
+							when: limited,
+						},
+					],
+				},
+				{
+					tab: 'ability',
+					fields: [
+						{
+							key: 'abilityTriggers',
+							label: 'Триггеры',
+							type: 'triggers',
+							addLabel: 'Триггер',
 							when: limited,
 						},
 					],
@@ -386,6 +399,14 @@ const abilityLimitLines = (ability: PerkAbility) => {
 		lines.push(`Зарядов на одно использование: ${ability.chargesMax}.`)
 	}
 
+	for (const trigger of ability.triggers) {
+		const event = triggerEventText(trigger)
+
+		lines.push(
+			`${triggerActionLabels[trigger.action]}: ${event[0].toLowerCase()}${event.slice(1)}.`,
+		)
+	}
+
 	if (ability.renewalPeriod) {
 		lines.push(
 			`Раз в ${formatSpanExact(ability.renewalPeriod)} возвращается к максимуму.`,
@@ -411,16 +432,17 @@ const initial = computed<FormValues>(() => ({
 	unit2: entry?.unitForms?.several ?? '',
 	unit5: entry?.unitForms?.many ?? '',
 	entries: itemEntriesToForm(entry?.entries ?? []),
-	chooseEntries: entry?.shouldApplyToAll === false,
+	applies: entry?.shouldApplyToAll === false ? 'chosen' : 'all',
 	conditions: [...(entry?.conditions ?? [])],
 	modifiers: modifiersToForm(entry?.modifiers ?? []),
 	abilityEntries: itemEntriesToForm(entry?.ability?.entries ?? []),
-	abilityChooseEntries: entry?.ability?.shouldApplyToAll === false,
+	abilityApplies: entry?.ability?.shouldApplyToAll === false ? 'chosen' : 'all',
 	abilityUsesMax: entry?.ability?.uses ? String(entry.ability.uses.max) : '',
 	abilityUsesStart: entry?.ability?.uses
 		? String(entry.ability.uses.start)
 		: '',
 	abilityCharges: entry?.ability ? String(entry.ability.chargesMax) : '',
+	abilityTriggers: [],
 	abilityRenewal: entry?.ability?.renewalPeriod
 		? String(entry.ability.renewalPeriod)
 		: '',
@@ -433,7 +455,6 @@ const initial = computed<FormValues>(() => ({
 	minimum: entry?.minimum != null ? String(entry.minimum) : '',
 	maximum: entry?.maximum != null ? String(entry.maximum) : '',
 	visibility: entry?.isPublic === false ? 'admins' : 'all',
-	scope: shared ? 'shared' : 'own',
 }))
 
 const title = computed(() => (entry ? `Изменить «${entry.name}»` : adds[kind]))
@@ -449,10 +470,11 @@ const readAbility = (
 	text: (key: string) => string,
 	entries: ItemEntryRow[],
 	shouldApplyToAll: boolean,
+	triggers: PerkTrigger[],
 ): PerkAbility | string => {
 	// without a limit there are no charges and no renewal
 	if (text('abilityLimit') !== 'limited') {
-		return { shouldApplyToAll, entries, chargesMax: 0 }
+		return { shouldApplyToAll, entries, chargesMax: 0, triggers: [] }
 	}
 
 	const charges = text('abilityCharges')
@@ -462,6 +484,14 @@ const readAbility = (
 
 	if (!Number.isInteger(chargesMax) || chargesMax < 0) {
 		return 'Зарядов — целое число, не меньше нуля.'
+	}
+
+	if (chargesMax === 0 && triggers.length > 0) {
+		return 'Триггеры меняют заряды: впиши, сколько зарядов дают одно использование.'
+	}
+
+	if (chargesMax > 0 && !triggers.some((t) => t.action === 'add_charge')) {
+		return 'Заряды копятся только триггером «Добавляет заряд».'
 	}
 
 	if (
@@ -493,7 +523,14 @@ const readAbility = (
 		uses: { max, start },
 		chargesMax,
 		...(renewalPeriod != null && { renewalPeriod }),
+		triggers,
 	}
+}
+
+const onChange = (values: FormValues) => {
+	hasEntries.value = ((values.entries as FormRow[]) ?? []).length > 0
+	hasAbilityEntries.value =
+		((values.abilityEntries as FormRow[]) ?? []).length > 0
 }
 
 const onSave = async (values: FormValues) => {
@@ -553,7 +590,7 @@ const onSave = async (values: FormValues) => {
 		input.maximum = maximum
 		input.isPublic = text('visibility') !== 'admins'
 
-		if (!entry) input.isShared = text('scope') === 'shared'
+		if (!entry) input.isShared = shared
 	}
 
 	if (kind === 'items') {
@@ -587,12 +624,12 @@ const onSave = async (values: FormValues) => {
 		if (needsTargets && !entries.value.some((e) => e.who === 'chosen')) {
 			return invalid(
 				'Нужна выбранная цель',
-				'Условия про цели работают, когда есть строка с целью.',
+				'Условия про цели работают, когда есть строка с выбранным игроком.',
 			)
 		}
 
 		input.entries = entries.value
-		input.shouldApplyToAll = values.chooseEntries !== true
+		input.shouldApplyToAll = text('applies') !== 'chosen'
 		input.usesMax = usesMax
 		input.conditions = conditions
 	}
@@ -639,7 +676,8 @@ const onSave = async (values: FormValues) => {
 			const ability = readAbility(
 				text,
 				entries.value,
-				values.abilityChooseEntries !== true,
+				text('abilityApplies') !== 'chosen',
+				parseTriggers(values.abilityTriggers as TriggerFormRow[]),
 			)
 
 			if (typeof ability === 'string')
@@ -661,7 +699,9 @@ const onSave = async (values: FormValues) => {
 		:tabs
 		:initial
 		:submit-label
+		:width="kind === 'perks' ? 680 : undefined"
 		@close="emit('close')"
+		@change="onChange"
 		@save="onSave"
 	/>
 </template>

@@ -505,6 +505,23 @@ export type PerkAbility = {
 	chargesMax: number
 	/** restores the uses to the maximum once this time has passed since they last changed */
 	renewalPeriod?: Seconds
+	/** the events that add or reset the charges; empty without charges */
+	triggers: PerkTrigger[]
+}
+
+/** what a trigger does to the charges of the ability */
+export type PerkTriggerAction = 'add_charge' | 'reset_charges'
+
+/** an event of the holder that acts on the charges of the ability */
+export type PerkTrigger = {
+	action: PerkTriggerAction
+	eventKind: HistoryEventKind
+	/** `point_changed` only: just this point type; not set = any */
+	pointTypeId?: number
+	/** read only: the name of `pointTypeId`, null for a removed point type */
+	pointTypeName?: string | null
+	/** `game_ended` only: just a game that ended this way; not set = any */
+	gameEndState?: GameEndState
 }
 
 export type CatalogEntry = {

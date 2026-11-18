@@ -2,6 +2,7 @@
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import ColorPicker from './ColorPicker.vue'
 import RowsEditor from './RowsEditor.vue'
+import TriggersEditor from './TriggersEditor.vue'
 import UiAddLink from './ui/UiAddLink.vue'
 import UiButton from './ui/UiButton.vue'
 import UiChoiceChips from './ui/UiChoiceChips.vue'
@@ -29,6 +30,7 @@ import type {
 	FormSection,
 	FormTab,
 	FormValues,
+	TriggerFormRow,
 } from './formDialog'
 
 type Props = {
@@ -69,6 +71,7 @@ const lists = reactive<Record<string, string[]>>({})
 const flags = reactive<Record<string, boolean>>({})
 const drafts = reactive<Record<string, string>>({})
 const rowLists = reactive<Record<string, FormRow[]>>({})
+const triggerLists = reactive<Record<string, TriggerFormRow[]>>({})
 /** the optional fields that are unfolded */
 const unfolded = reactive<Record<string, boolean>>({})
 /** the elements of the unfolded fields, to put the focus into the one just asked for */
@@ -109,6 +112,10 @@ const initField = (field: FormField) => {
 		rowLists[field.key] = Array.isArray(value)
 			? (value as FormRow[]).map((row) => ({ ...row }))
 			: []
+	} else if (field.type === 'triggers') {
+		triggerLists[field.key] = Array.isArray(value)
+			? (value as TriggerFormRow[]).map((row) => ({ ...row }))
+			: []
 	} else {
 		texts[field.key] = typeof value === 'string' ? value : ''
 		unfolded[field.key] = !field.optional || texts[field.key] !== ''
@@ -122,7 +129,9 @@ const isStarted = (field: FormField) =>
 			? field.key in flags
 			: field.type === 'rows'
 				? field.key in rowLists
-				: field.key in texts
+				: field.type === 'triggers'
+					? field.key in triggerLists
+					: field.key in texts
 
 /** what of a `pick` list the user can still see: a pick of an option that is gone does not count */
 const pickedOf = (field: FormField) =>
@@ -195,6 +204,7 @@ const isSectionShown = (section: FormSection) =>
 
 const isFilled = (field: FormField) => {
 	if (field.type === 'rows') return !!rowLists[field.key]?.length
+	if (field.type === 'triggers') return !!triggerLists[field.key]?.length
 	if (field.type === 'pick') {
 		const picked = pickedOf(field).length
 
@@ -275,6 +285,8 @@ const valuesNow = () => {
 			values[field.key] = flags[field.key]
 		} else if (field.type === 'rows') {
 			values[field.key] = rowLists[field.key].map((row) => ({ ...row }))
+		} else if (field.type === 'triggers') {
+			values[field.key] = triggerLists[field.key].map((row) => ({ ...row }))
 		} else {
 			values[field.key] = texts[field.key]
 		}
@@ -440,6 +452,13 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 										/>
 									</template>
 								</RowsEditor>
+
+								<TriggersEditor
+									v-else-if="field.type === 'triggers'"
+									v-model="triggerLists[field.key]"
+									:label="field.label"
+									:add-label="field.addLabel"
+								/>
 
 								<UiField
 									v-else-if="field.type === 'chips'"
