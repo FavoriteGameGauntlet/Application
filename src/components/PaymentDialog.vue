@@ -11,9 +11,11 @@ type Props = {
 	choices: PaymentChoice[] | null
 	/** what is paid for, the start of the subtitle: «Прокрут», «Обмен» */
 	subject: string
+	/** the user picks the copies of every row, also when they hold just as many as it takes */
+	pickAll?: boolean
 }
 
-const { choices, subject } = defineProps<Props>()
+const { choices, subject, pickAll = false } = defineProps<Props>()
 
 const emit = defineEmits<{
 	close: []
@@ -28,7 +30,7 @@ const rows = computed(() =>
 	(choices ?? []).map((choice, index) => ({
 		choice,
 		index,
-		choose: needsChoice(choice),
+		choose: pickAll ? choice.cost.kind !== 'points' : needsChoice(choice),
 	})),
 )
 

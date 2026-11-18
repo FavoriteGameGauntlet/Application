@@ -20,7 +20,6 @@ import { useToastStore } from '../../stores/toastStore'
 import { formatResource } from '../../utils/formatResource'
 import {
 	buildPayment,
-	needsChoice,
 	type PaymentChoice,
 	paymentChoices,
 } from '../../utils/payment'
@@ -198,7 +197,7 @@ const onConfirm = async () => {
 		}),
 	}
 
-	// points are charged by themselves, the rest is paid with the copies the user holds
+	// points are charged by themselves; the rest the user always picks from the copies they hold
 	if (given.every((ref) => ref.kind === 'points')) {
 		await exchangesStore.execute(exchange, use)
 		return
@@ -211,17 +210,11 @@ const onConfirm = async () => {
 		return
 	}
 
-	const choices = paymentChoices(given.map(costOf), mine.value!)
-
-	if (choices.some(needsChoice)) {
-		paying.value = { exchange, use, choices }
-		return
+	paying.value = {
+		exchange,
+		use,
+		choices: paymentChoices(given.map(costOf), mine.value!),
 	}
-
-	await exchangesStore.execute(exchange, {
-		...use,
-		payment: buildPayment(choices, {}),
-	})
 }
 
 const onPay = async (picked: Record<number, number[]>) => {
@@ -371,6 +364,7 @@ onMounted(() => exchangesStore.load())
 
 	<PaymentDialog
 		subject="Обмен"
+		pick-all
 		:choices="paying?.choices ?? null"
 		@close="paying = undefined"
 		@confirm="onPay"

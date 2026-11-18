@@ -38,7 +38,7 @@ export const paymentChoices = (
 export const needsChoice = (choice: PaymentChoice) =>
 	choice.options.length > choice.cost.amount
 
-/** `picked` holds the ids chosen for the rows that need a choice, by the index of the row */
+/** `picked` holds the ids the user chose, by the index of the row; a row without them gives every copy it lists */
 export const buildPayment = (
 	choices: PaymentChoice[],
 	picked: Record<number, number[]>,
@@ -46,9 +46,7 @@ export const buildPayment = (
 	const payment: Payment = { items: [], perks: [], effects: [] }
 
 	choices.forEach((choice, i) => {
-		const ids = needsChoice(choice)
-			? (picked[i] ?? [])
-			: choice.options.map((o) => o.id)
+		const ids = picked[i] ?? choice.options.map((o) => o.id)
 
 		switch (choice.cost.kind) {
 			case 'item':
