@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, useTemplateRef } from 'vue'
+import { computed, ref, useId, useTemplateRef } from 'vue'
 import {
 	PERIOD_PRESETS,
 	compareDays,
@@ -27,6 +27,8 @@ const { label } = defineProps<Props>()
 
 /** «2026-11-01/2026-11-30» */
 const model = defineModel<string>({ default: '' })
+
+const id = useId()
 
 const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 
@@ -114,13 +116,17 @@ const isPreset = (end: (start: Day) => Day) =>
 		</div>
 
 		<div class="date-range__fields">
+			<span :id="`${id}-start`" class="date-range__end">Первый день</span>
+			<span></span>
+			<span :id="`${id}-end`" class="date-range__end">Последний день</span>
+
 			<button
 				ref="startButton"
 				class="date-range__field"
 				:class="{ 'date-range__field--on': picking === 'start' }"
 				type="button"
 				aria-haspopup="dialog"
-				aria-label="Начало"
+				:aria-labelledby="`${id}-start`"
 				@click="toggle('start')"
 			>
 				<UiIcon name="calendar" :size="18" color="var(--text-muted)" />
@@ -135,7 +141,7 @@ const isPreset = (end: (start: Day) => Day) =>
 				:class="{ 'date-range__field--on': picking === 'end' }"
 				type="button"
 				aria-haspopup="dialog"
-				aria-label="Конец"
+				:aria-labelledby="`${id}-end`"
 				@click="toggle('end')"
 			>
 				<UiIcon name="calendar" :size="18" color="var(--text-muted)" />
@@ -250,7 +256,12 @@ const isPreset = (end: (start: Day) => Day) =>
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr);
 	align-items: center;
-	gap: 8px;
+	gap: 6px 8px;
+}
+
+.date-range__end {
+	font: var(--type-body-sm);
+	color: var(--text-muted);
 }
 
 .date-range__field {

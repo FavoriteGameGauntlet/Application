@@ -116,7 +116,7 @@ const fields = computed<FormField[]>(() => [
 			disabledReason: 'Снять админа с себя нельзя',
 		}),
 	},
-	colorField,
+	{ ...colorField, login: editing.value?.login },
 ])
 
 const initial = computed<FormValues>(() => ({

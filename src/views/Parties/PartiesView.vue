@@ -10,6 +10,7 @@ import UiBadge from '../../components/ui/UiBadge.vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import { RouteName } from '../../router/routeNames'
+import { useAuthStore } from '../../stores/authStore'
 import { usePartiesStore } from '../../stores/partiesStore'
 import { useToastStore } from '../../stores/toastStore'
 import {
@@ -26,6 +27,7 @@ import { nextMemberColor } from '../../utils/memberColor'
 import { plural } from '../../utils/plural'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const partiesStore = usePartiesStore()
 const toastStore = useToastStore()
 
@@ -72,6 +74,7 @@ const fields = computed<FormField[]>(() => [
 					key: 'color',
 					type: 'color' as const,
 					label: 'Твой цвет',
+					login: authStore.login,
 				},
 			]),
 ])

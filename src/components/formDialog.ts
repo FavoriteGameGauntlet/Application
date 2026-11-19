@@ -82,6 +82,8 @@ export type FormField = {
 	width?: number
 	/** in a section with `columns`: the column the field sits in, counted from 1; the next free one by default */
 	column?: number
+	/** for `color`: the login on the avatar that shows the color */
+	login?: string
 	/** for `locked` */
 	lines?: string[]
 	/** the field is shown only while the `check` field `key` is `is`, or the `line`, `select`, `choice` or `segment` field holds `is` */

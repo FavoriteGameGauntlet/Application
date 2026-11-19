@@ -212,10 +212,10 @@
 		},
 		{
 			"id": "rules-ui-parties-window",
-			"title": "Express through the interface the rules that the removed hints of the party window stated. Removed: «Последний день входит в пати. После него она завершится», «Цвет твоего аватара в этой пати. Админ потом может его поменять». Ideas: the period field shows the end date as «до 30 ноября включительно» next to the count of days; the color field shows an avatar preview with the login in the chosen color. Open: which of these the user wants.",
+			"title": "Express the rules of the party window through its fields",
 			"priority": 22,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-19. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "points-diff-column-title",
