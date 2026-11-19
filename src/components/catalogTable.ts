@@ -4,6 +4,7 @@ import type {
 	ItemEntryRow,
 	ResourceKind,
 } from '../api-facade/contracts'
+import { applyModeFacts } from '../utils/applyMode'
 import { formatBounds, formatSpan } from '../utils/format'
 import { itemConditionLabels } from '../utils/itemCondition'
 
@@ -106,7 +107,7 @@ export const catalogFacts = (view: CatalogView, entry: CatalogEntry) => {
 		case 'items':
 			return [
 				`Использований: ${entry.usesMax ?? 1}`,
-				`Применение: ${entry.shouldApplyToAll === false ? 'игрок выбирает' : 'всё сразу'}`,
+				`Применение: ${applyModeFacts[entry.applyMode ?? 'all'] ?? 'всё сразу'}`,
 				...(entry.conditions ?? []).map(
 					(c) => `Условие: ${itemConditionLabels[c].label.toLowerCase()}`,
 				),

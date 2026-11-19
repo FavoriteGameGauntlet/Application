@@ -104,7 +104,7 @@ const resourceBody = (kind: ResourceCatalogKind, input: CatalogEntryInput) => {
 				name,
 				description,
 				usesMax: input.usesMax ?? 1,
-				shouldApplyToAll: input.shouldApplyToAll ?? true,
+				applyMode: input.applyMode ?? 'all',
 				entries: (input.entries ?? []).map(fromItemEntryRow),
 				conditions: input.conditions ?? [],
 			}
@@ -134,7 +134,7 @@ const resourceBody = (kind: ResourceCatalogKind, input: CatalogEntryInput) => {
 				}),
 				...(ability && {
 					ability: {
-						shouldApplyToAll: ability.shouldApplyToAll,
+						applyMode: ability.applyMode,
 						entries: ability.entries.map(fromItemEntryRow),
 						...(ability.uses && { uses: ability.uses }),
 						chargesMax: ability.chargesMax,

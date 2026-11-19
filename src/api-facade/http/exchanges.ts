@@ -1,4 +1,9 @@
-import type { AdminExchangeInput, Api, ExchangeOffer } from '../contracts'
+import type {
+	AdminExchangeInput,
+	Api,
+	ApplyMode,
+	ExchangeOffer,
+} from '../contracts'
 import { http } from '../http'
 import { type NamedChangeEntryDto, toResourceRef } from './changeEntry'
 import { currentLogin, partyPath } from './context'
@@ -11,9 +16,9 @@ type ExchangeDto = {
 	id: number
 	name: string
 	description: string
-	sourceShouldApplyToAll: boolean
+	sourceApplyMode: ApplyMode
 	sourceEntries: NamedChangeEntryDto[]
-	targetShouldApplyToAll: boolean
+	targetApplyMode: ApplyMode
 	targetEntries: NamedChangeEntryDto[]
 }
 
@@ -31,15 +36,15 @@ const toBody = ({
 	name,
 	description,
 	sourceEntries,
-	sourceShouldApplyToAll,
+	sourceApplyMode,
 	targetEntries,
-	targetShouldApplyToAll,
+	targetApplyMode,
 }: AdminExchangeInput) => ({
 	name,
 	description,
-	sourceShouldApplyToAll,
+	sourceApplyMode,
 	sourceEntries: sourceEntries.map(fromCostRow),
-	targetShouldApplyToAll,
+	targetApplyMode,
 	targetEntries: targetEntries.map(fromGainRow),
 })
 

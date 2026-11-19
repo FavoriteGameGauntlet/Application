@@ -16,6 +16,7 @@ import type {
 import FormDialog from '../../../components/FormDialog.vue'
 import { useAdminCatalogStore } from '../../../stores/adminCatalogStore'
 import { useToastStore } from '../../../stores/toastStore'
+import { applyModeOptions } from '../../../utils/applyMode'
 import { formatSpanExact, parseSpan } from '../../../utils/format'
 import { itemConditionLabels } from '../../../utils/itemCondition'
 import {
@@ -30,6 +31,7 @@ import {
 	triggerEventText,
 } from '../../../utils/perkTrigger'
 import type {
+	ApplyMode,
 	ItemCondition,
 	ItemEntryRow,
 	PerkAbility,
@@ -79,10 +81,7 @@ const applies = (key: string, hasRows: boolean): FormField => ({
 	key,
 	type: 'segment',
 	label: 'Что применяется',
-	options: [
-		{ value: 'all', label: 'Все' },
-		{ value: 'chosen', label: 'На выбор' },
-	],
+	options: applyModeOptions,
 	disabled: !hasRows,
 })
 
@@ -432,11 +431,11 @@ const initial = computed<FormValues>(() => ({
 	unit2: entry?.unitForms?.several ?? '',
 	unit5: entry?.unitForms?.many ?? '',
 	entries: itemEntriesToForm(entry?.entries ?? []),
-	applies: entry?.shouldApplyToAll === false ? 'chosen' : 'all',
+	applies: entry?.applyMode ?? 'all',
 	conditions: [...(entry?.conditions ?? [])],
 	modifiers: modifiersToForm(entry?.modifiers ?? []),
 	abilityEntries: itemEntriesToForm(entry?.ability?.entries ?? []),
-	abilityApplies: entry?.ability?.shouldApplyToAll === false ? 'chosen' : 'all',
+	abilityApplies: entry?.ability?.applyMode ?? 'all',
 	abilityUsesMax: entry?.ability?.uses ? String(entry.ability.uses.max) : '',
 	abilityUsesStart: entry?.ability?.uses
 		? String(entry.ability.uses.start)
@@ -469,12 +468,12 @@ const invalid = (title: string, text: string) => {
 const readAbility = (
 	text: (key: string) => string,
 	entries: ItemEntryRow[],
-	shouldApplyToAll: boolean,
+	applyMode: ApplyMode,
 	triggers: PerkTrigger[],
 ): PerkAbility | string => {
 	// without a limit there are no charges and no renewal
 	if (text('abilityLimit') !== 'limited') {
-		return { shouldApplyToAll, entries, chargesMax: 0, triggers: [] }
+		return { applyMode, entries, chargesMax: 0, triggers: [] }
 	}
 
 	const charges = text('abilityCharges')
@@ -518,7 +517,7 @@ const readAbility = (
 	}
 
 	return {
-		shouldApplyToAll,
+		applyMode,
 		entries,
 		uses: { max, start },
 		chargesMax,
@@ -629,7 +628,7 @@ const onSave = async (values: FormValues) => {
 		}
 
 		input.entries = entries.value
-		input.shouldApplyToAll = text('applies') !== 'chosen'
+		input.applyMode = text('applies') as ApplyMode
 		input.usesMax = usesMax
 		input.conditions = conditions
 	}
@@ -676,7 +675,7 @@ const onSave = async (values: FormValues) => {
 			const ability = readAbility(
 				text,
 				entries.value,
-				text('abilityApplies') !== 'chosen',
+				text('abilityApplies') as ApplyMode,
 				parseTriggers(values.abilityTriggers as TriggerFormRow[]),
 			)
 

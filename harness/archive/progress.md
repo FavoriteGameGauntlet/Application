@@ -1,5 +1,10 @@
 # Progress log archive
 
+## 2026-11-18 rules-ui-catalog-dialog
+
+- By the user's answers (1 А, 3 Б, 2: triggers exist on the server): a new point type takes its scope from the page (`shared` prop), the select is gone; «Цель» of the rows editor and the catalogue card reads «Выбранный игрок»; the «Игрок выбирает, что применить» checks of the item and the new perk ability are `aside` segments «Все / На выбор» on their rows, off with no rows. The ability tab of a new perk sets the charge triggers (`TriggersEditor`, field type `triggers`, labels in `utils/perkTrigger.ts`); the events of a perk's own uses and charges are not offered, since a trigger on them would refire itself on the server.
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. A temporary vite page (not committed) with the real `CatalogEntryDialog` and a mocked store in Chromium: see the evidence in `harness/archive/features-done.json`. Not checked: the app itself, against the backend.
+
 ## 2026-11-18 rules-ui-exchanges
 
 - By the user's answers: the server takes the items, perks and effects of an exchange from the copies the player picks and greys out a card nobody can pay (FavoriteGameGauntlet/Server#219, merged). The player card dashes a pill only where the server refuses (points below the type's minimum, missing copies, effects, perk). The exchange always opens the shared `PaymentDialog` with every item, perk and effect row to pick (`isPicked`, the user's word «окно всегда должно открываться»; the wheel now does the same, the user's answer) (moved from the wheel with `utils/payment.ts`, `Payment`, `CostRef`). The admin window has «Все / На выбор» in the head of each side (`FormField.aside` on `rows`) in place of the switches; the table badge reads «на выбор». «Панель админа» opens the panel on an empty screen (`RouteName.Admin`, the user's ask) instead of «Обмены». Fixed on the way: payment options matched an effect by the copy id; a perk given in an exchange showed as gained.

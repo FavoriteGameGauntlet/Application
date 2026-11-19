@@ -1,4 +1,5 @@
 import type {
+	ApplyMode,
 	Api,
 	WheelGroup,
 	WheelSource,
@@ -34,7 +35,7 @@ type WheelGroupRowDto = {
 	name: string
 	description?: string
 	isManualChange?: boolean
-	shouldApplyToAll?: boolean
+	applyMode?: ApplyMode
 	entries?: NamedChangeEntryDto[]
 }
 
@@ -113,8 +114,8 @@ const getGroups = async (): Promise<WheelGroup[]> => {
 						description: row.description,
 					}),
 					isManualChange: row.isManualChange === true,
-					...(row.shouldApplyToAll !== undefined && {
-						shouldApplyToAll: row.shouldApplyToAll,
+					...(row.applyMode !== undefined && {
+						applyMode: row.applyMode,
 					}),
 					entries: (row.entries ?? []).map((entry) => ({
 						...toResourceRef(entry),

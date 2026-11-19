@@ -1,4 +1,6 @@
+import { picksEntries } from './applyMode'
 import type {
+	ApplyMode,
 	ItemCondition,
 	ItemEntryRow,
 	Login,
@@ -70,20 +72,20 @@ export const useSlots = (
 export const needsUseForm = (
 	entries: ItemEntryRow[] | undefined,
 	holder: Login,
-	shouldApplyToAll = true,
+	applyMode: ApplyMode,
 ) =>
 	!!entries &&
-	(!shouldApplyToAll ||
+	(picksEntries(applyMode) ||
 		needsTargets(entries) ||
 		useSlots(entries, holder, []).length > 0)
 
 /** the entries a use applies: all of them, or the ones the user picked by `entryId` */
 export const appliedEntries = (
 	entries: ItemEntryRow[],
-	shouldApplyToAll: boolean,
+	applyMode: ApplyMode,
 	pickedIds: number[],
 ) =>
-	shouldApplyToAll
+	!picksEntries(applyMode)
 		? entries
 		: entries.filter(
 				(e) => e.entryId !== undefined && pickedIds.includes(e.entryId),

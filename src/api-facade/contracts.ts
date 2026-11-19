@@ -20,6 +20,12 @@ export type UserStatus = 'playing' | 'paused' | 'offline'
 /** `created` is a timer that is not started yet: the server creates it when a game starts */
 export type TimerState = 'created' | 'running' | 'paused'
 
+/**
+ * Which entries of a change one use applies: `all` every entry, `any` the
+ * entries the user picks (at least one), `one` the single entry the user picks.
+ */
+export type ApplyMode = 'all' | 'any' | 'one'
+
 /** every entity is identified by an integer id, the name is only for display */
 export type ResourceRef = (
 	| { kind: 'points'; id: number; name: string; amount: number }
@@ -29,7 +35,7 @@ export type ResourceRef = (
 ) & {
 	/**
 	 * the id of the entry among the entries of its change; a user who picks the
-	 * entries to apply (`shouldApplyToAll` is false) names them by it
+	 * entries to apply (`applyMode` is not `all`) names them by it
 	 */
 	entryId?: number
 	/** the entry with its sign as text («−1 золото»), set where the user picks among entries and the amount alone would hide the sign */
@@ -126,8 +132,8 @@ export type WheelEntry = {
 	description?: string
 	/** the manual change form has to be opened after the entry is applied */
 	isManualChange?: boolean
-	/** false: the user picks which of `entries` to apply; changes only */
-	shouldApplyToAll?: boolean
+	/** changes only */
+	applyMode?: ApplyMode
 	/** changes that are applied automatically, there may be some next to isManualChange */
 	entries?: ResourceRef[]
 }
@@ -199,8 +205,7 @@ export type UserItem = {
 	description: string
 	usesLeft: number
 	usesMax: number
-	/** false: the user picks which of the entries to apply, each time */
-	shouldApplyToAll: boolean
+	applyMode: ApplyMode
 	/** what using the copy does; decides whether the user names targets and picks copies */
 	entries?: ItemEntryRow[]
 	/** what has to hold for the item to be used */
@@ -219,8 +224,8 @@ export type Perk = {
 	usesMax?: number
 	/** active perks only: what using the ability does */
 	abilityEntries?: ItemEntryRow[]
-	/** active perks only, false: the user picks which of the entries to apply */
-	abilityShouldApplyToAll?: boolean
+	/** active perks only */
+	abilityApplyMode?: ApplyMode
 }
 
 export type Effect = {
@@ -334,12 +339,10 @@ export type ExchangeOffer = {
 	sourceEntries: ResourceRef[]
 	/** what the user gets */
 	targetEntries: ResourceRef[]
-	/** false: the user picks which of `sourceEntries` to give */
-	sourceShouldApplyToAll: boolean
-	/** false: the user picks which of `targetEntries` to get */
-	targetShouldApplyToAll: boolean
+	sourceApplyMode: ApplyMode
+	targetApplyMode: ApplyMode
 	available: boolean
-	unavailableReason?: 'insufficient' | 'perk_owned'
+	unavailableReason?: 'nothing_to_pick' | 'insufficient' | 'perk_owned'
 }
 
 // 9. Manual changes
@@ -374,7 +377,7 @@ export type ManualRequest = {
  * entries.
  */
 export type ItemUse = {
-	/** the `entryId`s to apply; required when `shouldApplyToAll` is false, not accepted otherwise */
+	/** the `entryId`s to apply; one or more for `any`, exactly one for `one`, none for `all` */
 	entryIds?: number[]
 	targetLogins?: Login[]
 	userItemIds?: number[]
@@ -494,8 +497,7 @@ export type PointModifierRow = {
 
 /** What the holder of a perk can do on their own. */
 export type PerkAbility = {
-	/** false: the user picks which of the entries to apply, each time */
-	shouldApplyToAll: boolean
+	applyMode: ApplyMode
 	entries: ItemEntryRow[]
 	/** read only: the text of `entries`, built by the facade from the resource names in the response */
 	changes?: string[]
@@ -552,8 +554,8 @@ export type CatalogEntry = {
 	perkKind?: 'active' | 'passive'
 	/** items: what using the item does */
 	entries?: ItemEntryRow[]
-	/** items, false: the user picks which of the entries to apply, each time */
-	shouldApplyToAll?: boolean
+	/** items */
+	applyMode?: ApplyMode
 	/** items */
 	conditions?: ItemCondition[]
 	/** effects, perks: point changes applied while it is active or held */
@@ -576,8 +578,8 @@ export type AdminExchange = {
 	description: string
 	sourceEntries: ResourceRef[]
 	targetEntries: ResourceRef[]
-	sourceShouldApplyToAll: boolean
-	targetShouldApplyToAll: boolean
+	sourceApplyMode: ApplyMode
+	targetApplyMode: ApplyMode
 	deleted: boolean
 }
 
@@ -586,12 +588,10 @@ export type AdminExchangeInput = {
 	description: string
 	/** what the user gives, amounts are positive */
 	sourceEntries: SpinCostRow[]
-	/** false: the user picks which of the entries to give */
-	sourceShouldApplyToAll: boolean
+	sourceApplyMode: ApplyMode
 	/** what the user gets, amounts are positive */
 	targetEntries: SpinCostRow[]
-	/** false: the user picks which of the entries to get */
-	targetShouldApplyToAll: boolean
+	targetApplyMode: ApplyMode
 }
 
 export type AdminWheelEntry = {
@@ -604,8 +604,7 @@ export type AdminWheelEntry = {
 	entries: ChangeRow[]
 	/** the user makes a change by hand after the item fell, see `manual` */
 	isManualChange: boolean
-	/** false: the user who gets the item picks which of the entries to apply */
-	shouldApplyToAll: boolean
+	applyMode: ApplyMode
 }
 
 export type AdminWheelGroup = {
@@ -848,7 +847,7 @@ export type Api = {
 		 * doesn't fit the cost. Without it the server takes the most used copies.
 		 * `targetLogins` is required for a group of changes (422
 		 * WHEEL_TARGETS_INVALID without it), not allowed for a game or the wishlist.
-		 * `entryIds` is required for an item with `shouldApplyToAll` false and not
+		 * `entryIds` is required for an item with `applyMode` `any` or `one` (exactly one for `one`) and not
 		 * accepted otherwise (422 WHEEL_ENTRIES_INVALID).
 		 *
 		 * Backend: POST {party}/wheel/groups/{groupId}/spins/last/apply, the
@@ -1066,11 +1065,7 @@ export type Api = {
 				entryId: number | undefined,
 				input: Pick<
 					AdminWheelEntry,
-					| 'name'
-					| 'description'
-					| 'entries'
-					| 'isManualChange'
-					| 'shouldApplyToAll'
+					'name' | 'description' | 'entries' | 'isManualChange' | 'applyMode'
 				>,
 			) => Promise<void>
 			removeEntry: (groupId: number, entryId: number) => Promise<void>

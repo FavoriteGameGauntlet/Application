@@ -1,4 +1,5 @@
 import type {
+	ApplyMode,
 	Api,
 	Effect,
 	ISODate,
@@ -39,7 +40,7 @@ type UserItemDto = {
 	description: string
 	usesMax: number
 	usesLeft: number
-	shouldApplyToAll: boolean
+	applyMode: ApplyMode
 	entries: NamedItemEntryDto[]
 	conditions: ItemCondition[]
 }
@@ -50,7 +51,7 @@ type UserPerkDto = {
 	description: string
 	modifiers: NamedPointModifierDto[]
 	ability?: {
-		shouldApplyToAll: boolean
+		applyMode: ApplyMode
 		entries: NamedItemEntryDto[]
 		uses?: { max: number; start: number }
 		usesLeft?: number
@@ -84,7 +85,7 @@ const toUserItem = (dto: UserItemDto, pointTypes: PointType[]): UserItem => ({
 		dto.description,
 	usesLeft: dto.usesLeft,
 	usesMax: dto.usesMax,
-	shouldApplyToAll: dto.shouldApplyToAll,
+	applyMode: dto.applyMode,
 	entries: toUseEntries(dto.entries, pointTypes),
 	conditions: dto.conditions,
 })
@@ -102,7 +103,7 @@ const toUserPerk = (dto: UserPerkDto, pointTypes: PointType[]): Perk => {
 		...(ability?.usesLeft !== undefined && { usesLeft: ability.usesLeft }),
 		...(ability && {
 			abilityEntries: toUseEntries(ability.entries, pointTypes),
-			abilityShouldApplyToAll: ability.shouldApplyToAll,
+			abilityApplyMode: ability.applyMode,
 		}),
 	}
 }

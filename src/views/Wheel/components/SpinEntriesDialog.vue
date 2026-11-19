@@ -1,28 +1,34 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { ResourceRef } from '../../../api-facade/contracts'
+import type { ApplyMode, ResourceRef } from '../../../api-facade/contracts'
 import UiButton from '../../../components/ui/UiButton.vue'
-import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
+import UiPickList from '../../../components/ui/UiPickList.vue'
+import { isPickComplete, pickLimit } from '../../../utils/applyMode'
 
 type Props = {
 	/** the entries of the item that fell; set while the dialog is open */
 	entries: ResourceRef[] | null
+	/** how many of the entries the user picks */
+	applyMode?: ApplyMode
 }
 
-const { entries } = defineProps<Props>()
+const { entries, applyMode } = defineProps<Props>()
 
 const emit = defineEmits<{ close: []; confirm: [entryIds: number[]] }>()
 
-const picked = ref<number[]>([])
+const picked = ref<string[]>([])
 
-const canConfirm = computed(() => picked.value.length > 0)
+const pickedIds = computed(() => picked.value.map(Number))
 
-const toggle = (entryId: number, on: boolean) => {
-	picked.value = on
-		? [...picked.value, entryId]
-		: picked.value.filter((x) => x !== entryId)
-}
+const canConfirm = computed(() => isPickComplete(applyMode, pickedIds.value))
+
+const options = computed(() =>
+	(entries ?? []).map((entry) => ({
+		value: String(entry.entryId),
+		label: entry.text ?? entry.name,
+	})),
+)
 
 watch(
 	() => entries,
@@ -41,21 +47,24 @@ watch(
 	>
 		<div class="dialog">
 			<div class="dialog__block">
-				<span class="label">Отметь изменения, которые сработают</span>
+				<span class="label">{{
+					applyMode === 'one'
+						? 'Выбери изменение, которое сработает'
+						: 'Отметь изменения, которые сработают'
+				}}</span>
 
-				<UiCheckbox
-					v-for="entry in entries"
-					:key="entry.entryId"
-					:label="entry.text ?? entry.name"
-					:model-value="picked.includes(entry.entryId!)"
-					@update:model-value="toggle(entry.entryId!, $event)"
+				<UiPickList
+					v-model="picked"
+					:options="options"
+					:limit="pickLimit(applyMode)"
+					label="Что применить"
 				/>
 			</div>
 		</div>
 
 		<template #footer>
 			<UiButton variant="ghost" @click="emit('close')">Отмена</UiButton>
-			<UiButton :disabled="!canConfirm" @click="emit('confirm', [...picked])">
+			<UiButton :disabled="!canConfirm" @click="emit('confirm', pickedIds)">
 				Применить
 			</UiButton>
 		</template>

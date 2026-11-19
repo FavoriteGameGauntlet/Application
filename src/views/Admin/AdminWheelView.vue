@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import type {
+	ApplyMode,
 	AdminWheelEntry,
 	AdminWheelGroup,
 } from '../../api-facade/contracts'
@@ -10,6 +11,7 @@ import type {
 	FormSection,
 	FormValues,
 } from '../../components/formDialog'
+import { applyModeFacts, applyModeOptions } from '../../utils/applyMode'
 import { changeRowsToForm, parseChangeRows } from '../../utils/formRows'
 import FormDialog from '../../components/FormDialog.vue'
 import { changeTone } from '../../components/catalogTable'
@@ -103,10 +105,7 @@ const sections = computed<FormSection[]>(() => {
 				key: 'applies',
 				type: 'segment',
 				label: 'Что применяется',
-				options: [
-					{ value: 'all', label: 'Все' },
-					{ value: 'chosen', label: 'На выбор' },
-				],
+				options: applyModeOptions,
 				disabled: !hasRows.value,
 			},
 			fields: [
@@ -149,7 +148,7 @@ const initial = computed<FormValues>(() => {
 		values.description = current.entry.description ?? ''
 		values.entries = changeRowsToForm(current.entry.entries)
 		values.isManualChange = current.entry.isManualChange
-		values.applies = current.entry.shouldApplyToAll ? 'all' : 'chosen'
+		values.applies = current.entry.applyMode
 	}
 
 	return values
@@ -197,7 +196,7 @@ const onSave = async (values: FormValues) => {
 		description,
 		entries: entries.value,
 		isManualChange,
-		shouldApplyToAll: values.applies !== 'chosen',
+		applyMode: values.applies as ApplyMode,
 	}
 
 	if (await store.saveEntry(group.value, current?.entry, input))
@@ -259,7 +258,7 @@ const addGame = async (name: string) => {
 		description: '',
 		entries: [],
 		isManualChange: false,
-		shouldApplyToAll: true,
+		applyMode: 'all',
 	})
 
 	if (added) newGame.value = ''
@@ -364,9 +363,9 @@ onMounted(() => store.load())
 									<span v-if="entry.isManualChange" class="fact"
 										>ручное изменение</span
 									>
-									<span v-if="!entry.shouldApplyToAll" class="fact"
-										>на выбор</span
-									>
+									<span v-if="applyModeFacts[entry.applyMode]" class="fact">{{
+										applyModeFacts[entry.applyMode]
+									}}</span>
 								</div>
 							</template>
 						</UiRowMenu>

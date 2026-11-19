@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { CatalogEntry, ItemEntryRow } from '../api-facade/contracts'
+import { applyModeLines, picksEntries } from '../utils/applyMode'
 import { formatSpan } from '../utils/format'
 import { itemConditionLabels } from '../utils/itemCondition'
 import { triggerActionLabels, triggerEventText } from '../utils/perkTrigger'
@@ -123,16 +124,10 @@ const units = computed(() => {
 				</div>
 				<span class="hint">
 					<UiIcon
-						:name="
-							entry.shouldApplyToAll === false ? 'check-circle-2' : 'check'
-						"
+						:name="picksEntries(entry.applyMode) ? 'check-circle-2' : 'check'"
 						:size="18"
 					/>
-					{{
-						entry.shouldApplyToAll === false
-							? 'Игрок сам отмечает, какие строки применить'
-							: 'Все строки применяются сразу'
-					}}
+					{{ applyModeLines[entry.applyMode ?? 'all'] }}
 				</span>
 			</section>
 
@@ -190,14 +185,10 @@ const units = computed(() => {
 				</div>
 				<span class="hint">
 					<UiIcon
-						:name="ability.shouldApplyToAll ? 'check' : 'check-circle-2'"
+						:name="picksEntries(ability.applyMode) ? 'check-circle-2' : 'check'"
 						:size="18"
 					/>
-					{{
-						ability.shouldApplyToAll
-							? 'Все строки применяются сразу'
-							: 'Игрок сам отмечает, какие строки применить'
-					}}
+					{{ applyModeLines[ability.applyMode] }}
 				</span>
 				<div class="stats">
 					<div v-if="!ability.uses" class="stat">
