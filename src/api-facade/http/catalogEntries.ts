@@ -1,4 +1,5 @@
 import type {
+	ApplyMode,
 	CatalogEntry,
 	PerkTrigger,
 	PointType,
@@ -19,7 +20,7 @@ export type ItemDto = {
 	name: string
 	description: string
 	usesMax: number
-	shouldApplyToAll: boolean
+	applyMode: ApplyMode
 	entries: NamedItemEntryDto[]
 	conditions: NonNullable<CatalogEntry['conditions']>
 }
@@ -40,7 +41,7 @@ export type PerkDto = {
 	modifiers: NamedPointModifierDto[]
 	/** left out for a perk that is only a passive one */
 	ability?: {
-		shouldApplyToAll: boolean
+		applyMode: ApplyMode
 		entries: NamedItemEntryDto[]
 		uses?: { max: number; start: number }
 		chargesMax: number
@@ -80,7 +81,7 @@ export const toCatalogEntry = <K extends ResourceKind>(
 				...base,
 				changes: item.entries.map((e) => toItemEntryText(e, pointTypes)),
 				entries: item.entries.map(toItemEntryRow),
-				shouldApplyToAll: item.shouldApplyToAll,
+				applyMode: item.applyMode,
 				conditions: item.conditions,
 				usesMax: item.usesMax,
 			}
@@ -102,7 +103,7 @@ export const toCatalogEntry = <K extends ResourceKind>(
 				perkKind: ability ? 'active' : 'passive',
 				...(ability && {
 					ability: {
-						shouldApplyToAll: ability.shouldApplyToAll,
+						applyMode: ability.applyMode,
 						entries: ability.entries.map(toItemEntryRow),
 						changes: abilityChanges,
 						...(ability.uses && { uses: ability.uses }),

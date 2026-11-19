@@ -392,6 +392,7 @@ onBeforeUnmount(() => {
 
 	<SpinEntriesDialog
 		:entries="wheelStore.pendingEntries"
+		:apply-mode="wheelStore.resultEntry?.applyMode"
 		@close="wheelStore.cancelEntries()"
 		@confirm="wheelStore.confirmEntries($event)"
 	/>

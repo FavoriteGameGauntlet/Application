@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import type {
+	ApplyMode,
 	ItemCondition,
 	ItemEntryRow,
 	ItemUse,
@@ -15,6 +16,7 @@ import type {
 import { useMembersStore } from '../../../stores/membersStore'
 import { useResourcesStore } from '../../../stores/resourcesStore'
 import { useSessionStore } from '../../../stores/sessionStore'
+import { picksEntries, pickLimit } from '../../../utils/applyMode'
 import { formatUsesLeft } from '../../../utils/formatResource'
 import {
 	allowedTargets,
@@ -29,8 +31,7 @@ export type UseSubject = {
 	title: string
 	text: string
 	entries: ItemEntryRow[]
-	/** false: the user picks which of the entries to apply */
-	shouldApplyToAll: boolean
+	applyMode: ApplyMode
 	conditions: ItemCondition[]
 	/** the copy that is being used can be neither taken away nor copied by its own use */
 	excludeCopyId?: number
@@ -60,13 +61,13 @@ const pickedEntryIds = computed(() =>
 	listOf(current.value, 'entries').map(Number),
 )
 
-const choosesEntries = computed(() => subject?.shouldApplyToAll === false)
+const choosesEntries = computed(() => picksEntries(subject?.applyMode))
 
 /** targets and copies concern the applied entries only */
 const entries = computed(() =>
 	appliedEntries(
 		subject?.entries ?? [],
-		!choosesEntries.value,
+		subject?.applyMode ?? 'all',
 		pickedEntryIds.value,
 	),
 )
@@ -224,6 +225,7 @@ const sections = computed<FormSection[]>(() => {
 					key: 'entries',
 					label: 'Что применить',
 					type: 'pick',
+					limit: pickLimit(subject?.applyMode),
 					required: 'пункт',
 					options: (subject?.entries ?? []).map((e) => ({
 						value: String(e.entryId),

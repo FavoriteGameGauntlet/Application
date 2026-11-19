@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import type {
+	ApplyMode,
 	CostRef,
 	ExchangeOffer,
 	ExchangeUse,
@@ -9,14 +10,15 @@ import type {
 import PaymentDialog from '../../components/PaymentDialog.vue'
 import UserResourcesPanel from '../../components/UserResourcesPanel.vue'
 import UiButton from '../../components/ui/UiButton.vue'
-import UiCheckbox from '../../components/ui/UiCheckbox.vue'
 import UiDialog from '../../components/ui/UiDialog.vue'
 import UiIcon from '../../components/ui/UiIcon.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
+import UiPickList from '../../components/ui/UiPickList.vue'
 import { useExchangesStore } from '../../stores/exchangesStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToastStore } from '../../stores/toastStore'
+import { isPickComplete, pickLimit, picksEntries } from '../../utils/applyMode'
 import { formatResource } from '../../utils/formatResource'
 import {
 	buildPayment,
@@ -31,42 +33,43 @@ const sessionStore = useSessionStore()
 const toastStore = useToastStore()
 
 const confirming = ref<ExchangeOffer>()
-/** the `entryId`s the user picked on a side that doesn't apply all its entries */
-const pickedSource = ref<number[]>([])
-const pickedTarget = ref<number[]>([])
+/** the `entryId`s the user picked on a side that doesn't apply all its entries, as the pick list holds them */
+const pickedSourceValues = ref<string[]>([])
+const pickedTargetValues = ref<string[]>([])
+const pickedSource = computed(() => pickedSourceValues.value.map(Number))
+const pickedTarget = computed(() => pickedTargetValues.value.map(Number))
 
 const open = (exchange: ExchangeOffer) => {
-	pickedSource.value = []
-	pickedTarget.value = []
+	pickedSourceValues.value = []
+	pickedTargetValues.value = []
 	confirming.value = exchange
 }
 
-const toggle = (side: 'source' | 'target', entryId: number, on: boolean) => {
-	const picked = side === 'source' ? pickedSource : pickedTarget
-
-	picked.value = on
-		? [...picked.value, entryId]
-		: picked.value.filter((x) => x !== entryId)
-}
-
 /** the entries of a side that the exchange applies */
-const applied = (refs: ResourceRef[], all: boolean, picked: number[]) =>
-	all
+const applied = (refs: ResourceRef[], mode: ApplyMode, picked: number[]) =>
+	!picksEntries(mode)
 		? refs
 		: refs.filter((r) => r.entryId !== undefined && picked.includes(r.entryId))
 
-const choosesSource = computed(
-	() => confirming.value?.sourceShouldApplyToAll === false,
+const choosesSource = computed(() =>
+	picksEntries(confirming.value?.sourceApplyMode),
 )
-const choosesTarget = computed(
-	() => confirming.value?.targetShouldApplyToAll === false,
+const choosesTarget = computed(() =>
+	picksEntries(confirming.value?.targetApplyMode),
 )
 
 const canConfirm = computed(
 	() =>
-		(!choosesSource.value || pickedSource.value.length > 0) &&
-		(!choosesTarget.value || pickedTarget.value.length > 0),
+		isPickComplete(confirming.value?.sourceApplyMode, pickedSource.value) &&
+		isPickComplete(confirming.value?.targetApplyMode, pickedTarget.value),
 )
+
+/** the entries of a side as rows of the pick list */
+const pickOptions = (refs: ResourceRef[] | undefined) =>
+	(refs ?? []).map((entry) => ({
+		value: String(entry.entryId),
+		label: text(entry),
+	}))
 
 const selectedUser = ref(sessionStore.login)
 
@@ -131,12 +134,12 @@ const confirmRows = computed(() => {
 	return [
 		...applied(
 			exchange.sourceEntries,
-			exchange.sourceShouldApplyToAll,
+			exchange.sourceApplyMode,
 			pickedSource.value,
 		).map((ref) => ({ ref, sign: -1 })),
 		...applied(
 			exchange.targetEntries,
-			exchange.targetShouldApplyToAll,
+			exchange.targetApplyMode,
 			pickedTarget.value,
 		).map((ref) => ({ ref, sign: 1 })),
 	].map(({ ref, sign }) => {
@@ -185,14 +188,14 @@ const onConfirm = async () => {
 
 	const given = applied(
 		exchange.sourceEntries,
-		exchange.sourceShouldApplyToAll,
+		exchange.sourceApplyMode,
 		pickedSource.value,
 	)
 	const use: ExchangeUse = {
-		...(exchange.sourceShouldApplyToAll === false && {
+		...(picksEntries(exchange.sourceApplyMode) && {
 			sourceEntryIds: pickedSource.value,
 		}),
-		...(exchange.targetShouldApplyToAll === false && {
+		...(picksEntries(exchange.targetApplyMode) && {
 			targetEntryIds: pickedTarget.value,
 		}),
 	}
@@ -298,6 +301,12 @@ onMounted(() => exchangesStore.load())
 					>
 						Перк уже есть, второй раз не купить.
 					</span>
+					<span
+						v-else-if="card.exchange.unavailableReason === 'nothing_to_pick'"
+						class="card__why"
+					>
+						В обмене не из чего выбрать.
+					</span>
 				</div>
 			</div>
 
@@ -315,23 +324,21 @@ onMounted(() => exchangesStore.load())
 		<div class="dialog">
 			<div v-if="choosesSource" class="dialog__pick">
 				<span class="label">Что отдать</span>
-				<UiCheckbox
-					v-for="entry in confirming?.sourceEntries"
-					:key="entry.entryId"
-					:label="text(entry)"
-					:model-value="pickedSource.includes(entry.entryId!)"
-					@update:model-value="toggle('source', entry.entryId!, $event)"
+				<UiPickList
+					v-model="pickedSourceValues"
+					:options="pickOptions(confirming?.sourceEntries)"
+					:limit="pickLimit(confirming?.sourceApplyMode)"
+					label="Что отдать"
 				/>
 			</div>
 
 			<div v-if="choosesTarget" class="dialog__pick">
 				<span class="label">Что получить</span>
-				<UiCheckbox
-					v-for="entry in confirming?.targetEntries"
-					:key="entry.entryId"
-					:label="text(entry)"
-					:model-value="pickedTarget.includes(entry.entryId!)"
-					@update:model-value="toggle('target', entry.entryId!, $event)"
+				<UiPickList
+					v-model="pickedTargetValues"
+					:options="pickOptions(confirming?.targetEntries)"
+					:limit="pickLimit(confirming?.targetApplyMode)"
+					label="Что получить"
 				/>
 			</div>
 

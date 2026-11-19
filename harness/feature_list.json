@@ -254,10 +254,10 @@
 		},
 		{
 			"id": "single-choice-entries",
-			"title": "Where the user picks what to apply (an item use, a perk ability use, an exchange, the apply of a wheel spin), only one entry can be picked. The user's answer «везде»; the exchange window also shows that only one can be picked. Today the exchange window has its own checkboxes and the use window uses UiPickList with several picks. A single choice control states the rule, so no caption. Depends on the Server feature single-choice-entries.",
+			"title": "Single pick of one entry as a third apply mode",
 			"priority": 28,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-19. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "home-recent-events",

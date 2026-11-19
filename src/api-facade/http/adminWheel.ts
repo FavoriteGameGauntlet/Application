@@ -1,4 +1,10 @@
-import type { AdminWheelGroup, Api, PointType, SpinCostRow } from '../contracts'
+import type {
+	AdminWheelGroup,
+	Api,
+	ApplyMode,
+	PointType,
+	SpinCostRow,
+} from '../contracts'
 import { http } from '../http'
 import { type NamedChangeEntryDto, toChangeText } from './changeEntry'
 import { getPointTypes, partyPath } from './context'
@@ -19,7 +25,7 @@ type WheelGroupRowDto = {
 	name: string
 	description?: string
 	isManualChange?: boolean
-	shouldApplyToAll?: boolean
+	applyMode?: ApplyMode
 	entries?: NamedChangeEntryDto[]
 }
 
@@ -62,7 +68,7 @@ const toAdminGroup = (
 		changes: (row.entries ?? []).map((e) => toChangeText(e, pointTypes)),
 		entries: (row.entries ?? []).map(toChangeRow),
 		isManualChange: row.isManualChange === true,
-		shouldApplyToAll: row.shouldApplyToAll !== false,
+		applyMode: row.applyMode ?? 'all',
 	})),
 })
 
@@ -163,8 +169,7 @@ export const adminWheel: Pick<
 
 	saveEntry: async (groupId, entryId, input) => {
 		const { kind } = await findGroup(groupId)
-		const { name, description, isManualChange, shouldApplyToAll, entries } =
-			input
+		const { name, description, isManualChange, applyMode, entries } = input
 		const path = `${await partyPath()}/wheel/catalog/groups/${groupId}/rows`
 
 		// a group of games takes only the name of the game
@@ -174,7 +179,7 @@ export const adminWheel: Pick<
 						name,
 						...(description && { description }),
 						isManualChange,
-						shouldApplyToAll,
+						applyMode,
 						entries: entries.map(fromChangeRow),
 					}
 				: { name }

@@ -279,6 +279,13 @@
 			"priority": 22,
 			"status": "done",
 			"evidence": "Done 2026-11-19. By the user's answers (dates: А; color: the square beside the hex field becomes the avatar): the dates field labels its two days «Первый день» and «Последний день»; ColorPicker shows UiUserAvatar with the login in place of the plain swatch, in the party window (own login) and in the member edit window (the member's login); the admin add window shows the avatar without initials. Verified: bash harness/scripts/init.sh passes, prettier on the changed files. A temporary vite page (not committed) with the real FormDialog in Chromium: the labels sit above the two date buttons, the avatar «J» takes the chosen color, the custom color popover still opens under it. Not checked: the app itself, against the backend."
+		},
+		{
+			"id": "single-choice-entries",
+			"title": "A change has three apply modes (the user's correction on 2026-11-19: the pick of several stays, the single pick is new): all, any (several, as before) and one (exactly one). Every place that has the choice reads and sends applyMode in place of shouldApplyToAll: item use, perk ability use, both sides of an exchange, the apply of a wheel spin. Depended on FavoriteGameGauntlet/Server#221 and FavoriteGameGauntlet/Database#74 (merged).",
+			"priority": 28,
+			"status": "done",
+			"evidence": "Done 2026-11-19. By the user's answers (1 А, 2 А, 3 А): the admin segment of an item, a perk ability, an exchange side and a wheel row reads «Все / Несколько / Одна» (`utils/applyMode.ts` holds the labels, the pick limit and the completeness check for every screen); the use window, the exchange window and the wheel entries window pick through `UiPickList`, a radio list for `one`; an exchange card with `nothing_to_pick` says «В обмене не из чего выбрать.»; the catalogue card, table and admin rows name the mode. Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. A temporary vite page (not committed) in Chromium: the wheel entries window with `one` keeps one pick of two clicks and turns «Применить» on, with `any` keeps two; the admin segment shows three positions. Not checked: the app itself, against the backend."
 		}
 	]
 }

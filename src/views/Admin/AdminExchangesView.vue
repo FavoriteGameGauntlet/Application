@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { AdminExchange, SpinCostRow } from '../../api-facade/contracts'
+import type {
+	AdminExchange,
+	ApplyMode,
+	SpinCostRow,
+} from '../../api-facade/contracts'
 import type {
 	FormField,
 	FormRow,
@@ -15,6 +19,7 @@ import UiSwitch from '../../components/ui/UiSwitch.vue'
 import { useAdminCatalogStore } from '../../stores/adminCatalogStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useToastStore } from '../../stores/toastStore'
+import { applyModeFacts, applyModeOptions } from '../../utils/applyMode'
 import { formatResource } from '../../utils/formatResource'
 import { changeRowsToForm, parseCostRows } from '../../utils/formRows'
 import AdminListHeader from './components/AdminListHeader.vue'
@@ -37,10 +42,7 @@ const applies = (key: string, label: string, hasRows: boolean): FormField => ({
 	key,
 	type: 'segment',
 	label,
-	options: [
-		{ value: 'all', label: 'Все' },
-		{ value: 'chosen', label: 'На выбор' },
-	],
+	options: applyModeOptions,
 	disabled: !hasRows,
 })
 
@@ -100,9 +102,6 @@ const onChange = (values: FormValues) => {
 	hasTargetRows.value = (values.targetEntries as FormRow[]).length > 0
 }
 
-const appliesOf = (all: boolean | undefined) =>
-	all === false ? 'chosen' : 'all'
-
 const sideRows = (refs: AdminExchange['sourceEntries']): FormRow[] =>
 	changeRowsToForm(
 		refs.map(
@@ -119,8 +118,8 @@ const initial = computed<FormValues>(() => ({
 	description: editing.value?.exchange?.description ?? '',
 	sourceEntries: sideRows(editing.value?.exchange?.sourceEntries ?? []),
 	targetEntries: sideRows(editing.value?.exchange?.targetEntries ?? []),
-	sourceApplies: appliesOf(editing.value?.exchange?.sourceShouldApplyToAll),
-	targetApplies: appliesOf(editing.value?.exchange?.targetShouldApplyToAll),
+	sourceApplies: editing.value?.exchange?.sourceApplyMode ?? 'all',
+	targetApplies: editing.value?.exchange?.targetApplyMode ?? 'all',
 }))
 
 watch(initial, onChange)
@@ -199,9 +198,9 @@ const onSave = async (values: FormValues) => {
 		name,
 		description: String(values.description).trim(),
 		sourceEntries: sourceEntries.value,
-		sourceShouldApplyToAll: values.sourceApplies !== 'chosen',
+		sourceApplyMode: values.sourceApplies as ApplyMode,
 		targetEntries: targetEntries.value,
-		targetShouldApplyToAll: values.targetApplies !== 'chosen',
+		targetApplyMode: values.targetApplies as ApplyMode,
 	}
 
 	if (await store.saveExchange(editing.value?.exchange?.id, input)) {
@@ -257,8 +256,10 @@ watch(
 					<div class="side">
 						<span class="side__head">
 							<span class="side__label">Отдаёт</span>
-							<UiBadge v-if="!row.exchange.sourceShouldApplyToAll" tone="info"
-								>на выбор</UiBadge
+							<UiBadge
+								v-if="applyModeFacts[row.exchange.sourceApplyMode]"
+								tone="info"
+								>{{ applyModeFacts[row.exchange.sourceApplyMode] }}</UiBadge
 							>
 						</span>
 						<span class="pills">
@@ -275,8 +276,10 @@ watch(
 					<div class="side">
 						<span class="side__head">
 							<span class="side__label">Получает</span>
-							<UiBadge v-if="!row.exchange.targetShouldApplyToAll" tone="info"
-								>на выбор</UiBadge
+							<UiBadge
+								v-if="applyModeFacts[row.exchange.targetApplyMode]"
+								tone="info"
+								>{{ applyModeFacts[row.exchange.targetApplyMode] }}</UiBadge
 							>
 						</span>
 						<span class="pills">

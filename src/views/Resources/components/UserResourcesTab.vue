@@ -53,7 +53,7 @@ const openItem = (item: UserItem) => {
 			title: `Использовать «${item.name}»`,
 			text: item.description,
 			entries: item.entries ?? [],
-			shouldApplyToAll: item.shouldApplyToAll,
+			applyMode: item.applyMode,
 			conditions: item.conditions ?? [],
 			excludeCopyId: item.id,
 		},
@@ -67,7 +67,7 @@ const usePerk = (perk: Perk) => {
 		!needsUseForm(
 			perk.abilityEntries,
 			sessionStore.login,
-			perk.abilityShouldApplyToAll,
+			perk.abilityApplyMode ?? 'all',
 		)
 	) {
 		return resourcesStore.usePerk(perk.id, perk.name)
@@ -78,7 +78,7 @@ const usePerk = (perk: Perk) => {
 			title: `Использовать «${perk.name}»`,
 			text: perk.description,
 			entries: perk.abilityEntries ?? [],
-			shouldApplyToAll: perk.abilityShouldApplyToAll ?? true,
+			applyMode: perk.abilityApplyMode ?? 'all',
 			conditions: [],
 		},
 		run: (use) => resourcesStore.usePerk(perk.id, perk.name, use),

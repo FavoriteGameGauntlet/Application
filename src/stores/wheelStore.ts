@@ -8,6 +8,7 @@ import type {
 	WheelSpinResult,
 } from '../api-facade/contracts'
 import { StoreName } from '../enums/storeName'
+import { picksEntries } from '../utils/applyMode'
 import {
 	buildPayment,
 	isPicked,
@@ -277,7 +278,7 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 
 		const entry = resultEntry.value
 
-		if (entry?.shouldApplyToAll === false && !pickedEntryIds.value) {
+		if (picksEntries(entry?.applyMode) && !pickedEntryIds.value) {
 			pendingEntries.value = entry.entries ?? []
 			return
 		}
