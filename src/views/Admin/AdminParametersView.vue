@@ -5,7 +5,7 @@ import type { FormField, FormValues } from '../../components/formDialog'
 import FormDialog from '../../components/FormDialog.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
 import UiRowMenu, { type RowMenuItem } from '../../components/ui/UiRowMenu.vue'
-import { useAdminParametersStore } from '../../stores/adminParametersStore'
+import { useParametersStore } from '../../stores/parametersStore'
 import { useToastStore } from '../../stores/toastStore'
 import {
 	checkParameterValue,
@@ -13,7 +13,7 @@ import {
 } from '../../utils/systemParameter'
 import AdminListHeader from './components/AdminListHeader.vue'
 
-const store = useAdminParametersStore()
+const store = useParametersStore()
 const toastStore = useToastStore()
 
 /** the parameter in the edit dialog, undefined means the dialog is closed */

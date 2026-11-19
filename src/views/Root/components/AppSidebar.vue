@@ -69,7 +69,9 @@ const isAdminArea = computed(
 
 /** the manual change form belongs to the screen it was opened from */
 const manualParent = computed(() =>
-	manualStore.draft?.kind === 'fix' ? RouteName.Resources : RouteName.Wheel,
+	manualStore.draft?.kind === 'fix' || manualStore.draft?.kind === 'shared'
+		? RouteName.Resources
+		: RouteName.Wheel,
 )
 
 const isActive = (item: NavItem) =>

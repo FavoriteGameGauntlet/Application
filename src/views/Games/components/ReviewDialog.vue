@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import type { GameHistoryEntry } from '../../../api-facade/contracts'
 import FormDialog from '../../../components/FormDialog.vue'
 import type { FormSection, FormValues } from '../../../components/formDialog'
@@ -9,6 +9,7 @@ import UiRating from '../../../components/ui/UiRating.vue'
 import UiUserAvatar from '../../../components/ui/UiUserAvatar.vue'
 import { useCompletedStore } from '../../../stores/completedStore'
 import { useMembersStore } from '../../../stores/membersStore'
+import { useParametersStore } from '../../../stores/parametersStore'
 import { formatDuration, formatPeriod } from '../../../utils/format'
 
 type Props = {
@@ -26,6 +27,7 @@ const emit = defineEmits<{ close: [] }>()
 
 const completedStore = useCompletedStore()
 const membersStore = useMembersStore()
+const parametersStore = useParametersStore()
 
 const editing = ref(false)
 
@@ -36,10 +38,18 @@ watch(
 	},
 )
 
-/** «Твоя игра», «24 ч 10 м», «03.11 → 09.11»: a line each */
+/** admins see every review; the members only when the party lets them */
+const title = computed(() =>
+	parametersStore.isOn('GameReviewsVisibleToMembers')
+		? 'Отзыв для всей пати'
+		: 'Отзыв для админов',
+)
+
+/** «Hades», «Твоя игра», «24 ч 10 м», «03.11 → 09.11»: a line each */
 const subtitle = computed(() =>
 	game
 		? [
+				game.name,
 				own ? 'Твоя игра' : login,
 				formatDuration(game.timeSpent),
 				formatPeriod(game.startedDate, game.endedDate),
@@ -84,12 +94,15 @@ const onSave = async (values: FormValues) => {
 		reviewComment: (values.comment as string).trim(),
 	})
 }
+
+// an admin may have changed who sees the reviews since the last read
+onMounted(() => parametersStore.load())
 </script>
 
 <template>
 	<FormDialog
 		:open="!!game && editing"
-		:title="game?.name ?? ''"
+		:title
 		:subtitle
 		:sections
 		:initial
@@ -100,7 +113,7 @@ const onSave = async (values: FormValues) => {
 
 	<UiDialog
 		:open="!!game && !editing"
-		:title="game?.name"
+		:title
 		:subtitle
 		:width="480"
 		@close="emit('close')"

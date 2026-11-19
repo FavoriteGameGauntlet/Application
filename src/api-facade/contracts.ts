@@ -1014,6 +1014,14 @@ export type Api = {
 		/** whether a party is chosen; logging out clears the choice */
 		isSelected: () => Promise<boolean>
 	}
+	/** members read the settings of the party, only admins change them */
+	parameters: {
+		list: () => Promise<SystemParameter[]>
+		/** `code` is `SystemParameter.code`; 422 SYSTEM_PARAMETER_INVALID_VALUE */
+		save: (code: string, value: string) => Promise<void>
+		/** the party goes back to the default value */
+		reset: (code: string) => Promise<void>
+	}
 	admin: {
 		// Backend: the catalogs are the create/update/delete/restore addresses of
 		// points/types, items, effects and perks (`/removed` lists the deleted).
@@ -1080,13 +1088,6 @@ export type Api = {
 			get: () => Promise<Rewards>
 			/** a timer or a game gets the reward that is set when it ends */
 			save: (rewards: Rewards) => Promise<void>
-		}
-		parameters: {
-			list: () => Promise<SystemParameter[]>
-			/** `code` is `SystemParameter.code`; 422 SYSTEM_PARAMETER_INVALID_VALUE */
-			save: (code: string, value: string) => Promise<void>
-			/** the party goes back to the default value */
-			reset: (code: string) => Promise<void>
 		}
 		members: {
 			list: () => Promise<PartyMember[]>

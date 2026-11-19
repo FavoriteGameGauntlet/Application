@@ -7,7 +7,7 @@ import UiCountBadge from '../../components/ui/UiCountBadge.vue'
 import UiChoiceChips from '../../components/ui/UiChoiceChips.vue'
 import UiInput from '../../components/ui/UiInput.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
-import UiRowMenu, { type RowMenuItem } from '../../components/ui/UiRowMenu.vue'
+import UiIcon from '../../components/ui/UiIcon.vue'
 import UiUserAvatar from '../../components/ui/UiUserAvatar.vue'
 import { RouteName } from '../../router/routeNames'
 import { useMembersStore } from '../../stores/membersStore'
@@ -67,10 +67,6 @@ function openProfile(m: Member) {
 	router.push({ name: RouteName.UserDetail, params: { login: m.user.login } })
 }
 
-const menuOf = (m: Member): RowMenuItem[] => [
-	{ label: 'Открыть профиль', icon: 'user', select: () => openProfile(m) },
-]
-
 onMounted(() => membersStore.load())
 </script>
 
@@ -108,17 +104,19 @@ onMounted(() => membersStore.load())
 				<span role="columnheader">Сыграно ↓</span>
 				<span role="columnheader" class="right">Пройдено</span>
 				<span role="columnheader" class="right">Прокруты</span>
+				<span></span>
 			</div>
 
-			<UiRowMenu
+			<div
 				v-for="member in rows"
 				:key="member.user.login"
 				class="row row--body"
 				:class="{ 'row--me': member.user.login === sessionStore.login }"
 				role="row"
-				label="Действия с игроком"
-				:items="menuOf(member)"
+				tabindex="0"
+				:aria-label="`Открыть профиль: ${member.displayName ?? member.user.login}`"
 				@click="openProfile(member)"
+				@keydown.enter="openProfile(member)"
 			>
 				<span class="user" role="cell">
 					<UiUserAvatar
@@ -162,7 +160,8 @@ onMounted(() => membersStore.load())
 				</span>
 				<span class="num right" role="cell">{{ member.completedCount }}</span>
 				<span class="num right" role="cell">{{ member.spinsCount }}</span>
-			</UiRowMenu>
+				<UiIcon class="chevron" name="chevron-right" :size="18" />
+			</div>
 
 			<div v-if="!rows.length" class="empty">
 				{{ members.length ? 'Никого не нашлось.' : 'В пати пока нет игроков.' }}
@@ -213,11 +212,11 @@ onMounted(() => membersStore.load())
 	display: grid;
 	grid-template-columns:
 		minmax(0, 1.5fr) 116px minmax(0, 1.2fr) minmax(0, 1.3fr)
-		84px 84px;
+		84px 84px 18px;
 	gap: 16px;
 	align-items: center;
 	box-sizing: border-box;
-	padding: 12px 60px 12px 20px;
+	padding: 12px 20px;
 }
 
 .row--head {
@@ -231,8 +230,22 @@ onMounted(() => membersStore.load())
 
 .row--body {
 	min-height: 64px;
+	position: relative;
 	border-top: 1px solid var(--border-subtle);
 	cursor: pointer;
+}
+
+.row--body:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: -2px;
+}
+
+.chevron {
+	color: var(--text-muted);
+}
+
+.row--body:hover .chevron {
+	color: var(--text-strong);
 }
 
 .row--body:not(.row--me):hover {

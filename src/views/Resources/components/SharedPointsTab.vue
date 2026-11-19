@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import type { PointType } from '../../../api-facade/contracts'
-import UiRowMenu, {
-	type RowMenuItem,
-} from '../../../components/ui/UiRowMenu.vue'
+import UiButton from '../../../components/ui/UiButton.vue'
 import { useJournalStore } from '../../../stores/journalStore'
 import { useManualStore } from '../../../stores/manualStore'
 import { useResourcesStore } from '../../../stores/resourcesStore'
@@ -57,18 +55,6 @@ const rows = computed(() =>
 	}),
 )
 
-const menu = computed<RowMenuItem[]>(() =>
-	sessionStore.isAdmin
-		? [
-				{
-					label: 'Ручное изменение',
-					icon: 'pencil',
-					select: () => manualStore.startFree(),
-				},
-			]
-		: [],
-)
-
 watch(
 	() => journalStore.revision,
 	() => resourcesStore.loadSharedPoints(),
@@ -79,6 +65,16 @@ watch(
 </script>
 
 <template>
+	<div v-if="sessionStore.isAdmin" class="bar">
+		<UiButton
+			variant="outline"
+			size="sm"
+			icon="pencil"
+			@click="manualStore.startShared()"
+			>Ручное изменение</UiButton
+		>
+	</div>
+
 	<div class="table" role="table" aria-label="Общие очки пати">
 		<div class="row row--head" role="row">
 			<span role="columnheader">Тип</span>
@@ -86,18 +82,11 @@ watch(
 			<span role="columnheader" class="right">Сейчас</span>
 		</div>
 
-		<UiRowMenu
+		<div
 			v-for="row in rows"
 			:key="row.type.id"
 			class="row row--body"
 			role="row"
-			:label="
-				sessionStore.isAdmin
-					? 'Действия с общими очками'
-					: 'Общие очки меняет админ ручной формой'
-			"
-			:items="menu"
-			:disabled="!menu.length"
 		>
 			<span class="col" role="cell">
 				<span class="name">{{ row.type.name }}</span>
@@ -121,13 +110,18 @@ watch(
 				<span class="value">{{ row.value }}</span>
 				<span class="text">{{ row.unit }}</span>
 			</span>
-		</UiRowMenu>
+		</div>
 
 		<div v-if="!rows.length" class="empty">В пати нет общих очков.</div>
 	</div>
 </template>
 
 <style scoped>
+.bar {
+	display: flex;
+	justify-content: flex-end;
+}
+
 .table {
 	overflow: hidden;
 	background: var(--surface-card);
@@ -142,7 +136,7 @@ watch(
 	gap: 24px;
 	align-items: center;
 	box-sizing: border-box;
-	padding: 12px 60px 12px 20px;
+	padding: 12px 20px;
 }
 
 .row--head {

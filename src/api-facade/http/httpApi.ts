@@ -1,6 +1,6 @@
 import type { Api } from '../contracts'
 import { adminCatalog } from './adminCatalog'
-import { adminParameters } from './adminParameters'
+import { parameters } from './parameters'
 import { adminRewards } from './adminRewards'
 import { adminWheel } from './adminWheel'
 import { auth } from './auth'
@@ -30,12 +30,12 @@ export const httpApi: Api = {
 	manual,
 	presence,
 	parties,
+	parameters,
 	admin: {
 		catalog: adminCatalog,
 		exchanges: adminExchanges,
 		rewards: adminRewards,
 		wheel: adminWheel,
 		members: adminMembers,
-		parameters: adminParameters,
 	},
 }
