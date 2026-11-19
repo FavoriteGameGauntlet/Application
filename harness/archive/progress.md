@@ -1,5 +1,10 @@
 # Progress log archive
 
+## 2026-11-18 rules-ui-wheel-admin
+
+- By the user's answers: the group switch reads «Не повторять применённое»; the server applies it to games too (FavoriteGameGauntlet/Server#218, merge it first). The item window has «Все / На выбор» in the head of «Когда выпал» in place of the «Игрок выбирает, что применить» switch; with no rows it is off and shows its value. «Остальное игрок вносит сам» became «Потом ручное изменение». Nothing for «выпавшая игра становится текущей» and the Enter of the add-row.
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. A temporary vite page (not committed) with the real `AdminWheelView` and mocked stores in Chromium: an item with `shouldApplyToAll` false opens on «На выбор», an item with no rows shows «Все» disabled, adding a row enables the segment. Not checked: the app itself, saving against the backend.
+
 ## 2026-11-17 release-0.9.0
 
 - Version raised to 0.9.0 with `npm version 0.9.0 --no-git-tag-version` (package.json, package-lock.json, tauri.conf.json, Cargo.toml, Cargo.lock).

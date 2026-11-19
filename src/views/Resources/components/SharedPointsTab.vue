@@ -1,20 +1,13 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import type { PointType } from '../../../api-facade/contracts'
-import UiRowMenu, {
-	type RowMenuItem,
-} from '../../../components/ui/UiRowMenu.vue'
 import { useJournalStore } from '../../../stores/journalStore'
-import { useManualStore } from '../../../stores/manualStore'
 import { useResourcesStore } from '../../../stores/resourcesStore'
-import { useSessionStore } from '../../../stores/sessionStore'
 import { formatBounds } from '../../../utils/format'
 import { plural } from '../../../utils/plural'
 
 const resourcesStore = useResourcesStore()
-const sessionStore = useSessionStore()
 const journalStore = useJournalStore()
-const manualStore = useManualStore()
 
 const formatValue = (n: number) =>
 	`${n < 0 ? '−' : ''}${Math.abs(n).toLocaleString('ru-RU')}`
@@ -57,18 +50,6 @@ const rows = computed(() =>
 	}),
 )
 
-const menu = computed<RowMenuItem[]>(() =>
-	sessionStore.isAdmin
-		? [
-				{
-					label: 'Ручное изменение',
-					icon: 'pencil',
-					select: () => manualStore.startFree(),
-				},
-			]
-		: [],
-)
-
 watch(
 	() => journalStore.revision,
 	() => resourcesStore.loadSharedPoints(),
@@ -86,18 +67,11 @@ watch(
 			<span role="columnheader" class="right">Сейчас</span>
 		</div>
 
-		<UiRowMenu
+		<div
 			v-for="row in rows"
 			:key="row.type.id"
 			class="row row--body"
 			role="row"
-			:label="
-				sessionStore.isAdmin
-					? 'Действия с общими очками'
-					: 'Общие очки меняет админ ручной формой'
-			"
-			:items="menu"
-			:disabled="!menu.length"
 		>
 			<span class="col" role="cell">
 				<span class="name">{{ row.type.name }}</span>
@@ -121,7 +95,7 @@ watch(
 				<span class="value">{{ row.value }}</span>
 				<span class="text">{{ row.unit }}</span>
 			</span>
-		</UiRowMenu>
+		</div>
 
 		<div v-if="!rows.length" class="empty">В пати нет общих очков.</div>
 	</div>
@@ -142,7 +116,7 @@ watch(
 	gap: 24px;
 	align-items: center;
 	box-sizing: border-box;
-	padding: 12px 60px 12px 20px;
+	padding: 12px 20px;
 }
 
 .row--head {

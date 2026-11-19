@@ -40,7 +40,9 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 	const startFix = async (entry: JournalEntry) => {
 		const logins = useMembersStore().users.map((p) => p.login)
 		const actor = logins.includes(entry.actor) ? entry.actor : undefined
-		const affected = entry.changes.find((c) => c.login && logins.includes(c.login))?.login
+		const affected = entry.changes.find(
+			(c) => c.login && logins.includes(c.login),
+		)?.login
 
 		draft.value = {
 			kind: 'fix',
@@ -71,10 +73,13 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 
 		switch (kind) {
 			case 'fix':
-				await router.push({ name: RouteName.Resources, params: { tab: 'history' } })
+				await router.push({
+					name: RouteName.Resources,
+					params: { tab: 'history' },
+				})
 				break
 			case 'free':
-				await router.push({ name: RouteName.AdminExchanges })
+				await router.push({ name: RouteName.Admin })
 				break
 			default:
 				await router.push({ name: RouteName.Wheel })

@@ -2,7 +2,7 @@ import type { Api, SystemParameter } from '../contracts'
 import { http } from '../http'
 import { partyPath } from './context'
 
-export const adminParameters: Api['admin']['parameters'] = {
+export const parameters: Api['parameters'] = {
 	list: async () =>
 		(
 			await http.get<{ response: SystemParameter[] }>(

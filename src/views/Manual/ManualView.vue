@@ -328,8 +328,8 @@ onMounted(async () => {
 
 		<div class="layout">
 			<div class="main">
-				<div v-if="draft.kind === 'fix'" class="card">
-					<div class="card__label">Исправляемая запись</div>
+				<div v-if="draft.kind === 'fix'" class="card card--quiet">
+					<div class="card__label">Исходная запись</div>
 					<div class="entry entry--head">
 						<span>Когда</span>
 						<span>Кто и через что</span>
@@ -416,7 +416,7 @@ onMounted(async () => {
 						/>
 						<div class="row__result">
 							<div class="row__preview">
-								<span class="row__label">Было → станет</span>
+								<span class="row__label">Сейчас → станет</span>
 								<span class="row__values">
 									<span class="row__was">{{ view.result.was }}</span>
 									<span class="row__arrow">→</span>
@@ -448,7 +448,9 @@ onMounted(async () => {
 						<UiButton variant="outline" @click="manualStore.close()"
 							>Отмена</UiButton
 						>
-						<UiButton icon="check" @click="onApply">Применить</UiButton>
+						<UiButton icon="check" @click="onApply">{{
+							draft.kind === 'fix' ? 'Добавить исправление' : 'Применить'
+						}}</UiButton>
 					</div>
 				</div>
 			</div>
@@ -505,6 +507,15 @@ onMounted(async () => {
 	border: 1px solid var(--border-subtle);
 	border-radius: var(--radius-lg);
 	box-shadow: var(--shadow-1);
+}
+
+.card--quiet {
+	background: var(--surface-sunken);
+	box-shadow: none;
+}
+
+.card--quiet .entry--head {
+	background: transparent;
 }
 
 .card__label {

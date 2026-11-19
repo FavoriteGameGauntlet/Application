@@ -8,7 +8,7 @@ import UiBadge from '../../components/ui/UiBadge.vue'
 import UiChoiceChips from '../../components/ui/UiChoiceChips.vue'
 import UiRowMenu, { type RowMenuItem } from '../../components/ui/UiRowMenu.vue'
 import UiUserAvatar from '../../components/ui/UiUserAvatar.vue'
-import { useAdminParametersStore } from '../../stores/adminParametersStore'
+import { useParametersStore } from '../../stores/parametersStore'
 import { useAdminSettingsStore } from '../../stores/adminSettingsStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToastStore } from '../../stores/toastStore'
@@ -20,7 +20,7 @@ type Filter = 'all' | 'admins' | 'players' | 'left'
 
 const store = useAdminSettingsStore()
 const sessionStore = useSessionStore()
-const parametersStore = useAdminParametersStore()
+const parametersStore = useParametersStore()
 const toastStore = useToastStore()
 
 /** the member in the edit dialog, undefined means the dialog is closed */

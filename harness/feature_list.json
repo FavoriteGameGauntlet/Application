@@ -205,10 +205,10 @@
 		},
 		{
 			"id": "rules-ui-player-screens",
-			"title": "Express through the interface the rules that the removed captions of the player screens stated. Removed: the list of players «Очки, предметы и эффекты — в профиле игрока. Нажми на строку, чтобы его открыть»; the shared points «Общие очки принадлежат всей пати. Менять их можно только ручной формой»; the completed games «Оценку и отзыв видят все в пати. Свой отзыв можно поправить в любой момент»; the manual change form, the fix note («Исходная запись не меняется: исправление попадёт в журнал новой записью…») and the plain note («Было → станет» считается по текущим ресурсам игрока, записью с меткой «вручную»). Ideas: a row of the players table gets a chevron and a hover state to show that it opens; the shared points table gets a button to the manual form for admins only; the review window title says who sees the review; the fix window shows the original journal entry as a quiet card above the rows, and the «Было → станет» column head carries the explanation on hover. Open: which of these the user wants.",
+			"title": "Express the rules of the player screens through the interface",
 			"priority": 21,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-19. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "rules-ui-parties-window",
