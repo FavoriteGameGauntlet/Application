@@ -7,6 +7,7 @@ import { SCALES, useScaleStore } from '../stores/scaleStore'
 import { useThemeStore } from '../stores/themeStore'
 import { useTimerSoundStore } from '../stores/timerSoundStore'
 import UiIcon from './ui/UiIcon.vue'
+import UiIconButton from './ui/UiIconButton.vue'
 import UiSelect from './ui/UiSelect.vue'
 import UiSwitch from './ui/UiSwitch.vue'
 import UiUserAvatar from './ui/UiUserAvatar.vue'
@@ -70,6 +71,32 @@ const onLogOut = () => {
 				/>
 			</div>
 
+			<div class="user-menu__sound">
+				<UiIconButton
+					size="sm"
+					:icon="timerSoundStore.isPlaying ? 'pause' : 'play'"
+					:label="timerSoundStore.isPlaying ? 'Остановить' : 'Послушать'"
+					@click="timerSoundStore.preview()"
+				/>
+
+				<span class="user-menu__sound-name" :title="timerSoundStore.customName">
+					{{ timerSoundStore.customName ?? 'Стандартный звук' }}
+				</span>
+
+				<UiIconButton
+					v-if="timerSoundStore.customName"
+					size="sm"
+					icon="x"
+					label="Вернуть стандартный звук"
+					@click="timerSoundStore.reset()"
+				/>
+			</div>
+
+			<div class="user-menu__item" @click="timerSoundStore.choose()">
+				<UiIcon name="plus" :size="16" />
+				Свой звук таймера
+			</div>
+
 			<div class="user-menu__item" @click="themeStore.toggle()">
 				<UiIcon :name="themeStore.isDark ? 'sun' : 'moon'" :size="16" />
 				{{ themeStore.isDark ? 'Светлая тема' : 'Тёмная тема' }}
@@ -118,7 +145,7 @@ const onLogOut = () => {
 	right: 0;
 	display: flex;
 	flex-direction: column;
-	width: 200px;
+	width: 240px;
 	padding: 4px;
 	background: var(--surface-card);
 	border: 1px solid var(--border-subtle);
@@ -134,6 +161,24 @@ const onLogOut = () => {
 	justify-content: space-between;
 	padding: 0 4px 0 12px;
 	cursor: default;
+}
+
+.user-menu__sound {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	height: 40px;
+	padding: 0 4px;
+	font: 600 14px / 1 var(--font-body);
+	color: var(--text-body);
+}
+
+.user-menu__sound-name {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .user-menu__scale {

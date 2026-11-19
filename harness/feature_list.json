@@ -282,10 +282,10 @@
 		},
 		{
 			"id": "timer-end-sound",
-			"title": "Play a sound when the timer ends. Open: the sound file (it goes next to the other assets), whether it plays when the window is hidden or minimized, and whether the user can turn it off.",
+			"title": "Play a sound when the timer ends, with the user's own sound",
 			"priority": 32,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-19. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "catalog-wheel-entries",

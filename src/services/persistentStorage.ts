@@ -9,6 +9,7 @@ export enum StoreKey {
 	MiniWidth = 'miniWidth',
 	SidebarCollapsed = 'sidebarCollapsed',
 	TimerSound = 'timerSound',
+	TimerSoundName = 'timerSoundName',
 }
 
 export type StoredData = Partial<{
@@ -24,6 +25,8 @@ export type StoredData = Partial<{
 	[StoreKey.SidebarCollapsed]: boolean
 	/** whether the end of the timer plays a sound on this computer */
 	[StoreKey.TimerSound]: boolean
+	/** the file name of the user's own timer sound; none means the app's sound */
+	[StoreKey.TimerSoundName]: string
 }>
 
 const defaults: StoredData = {
@@ -35,6 +38,7 @@ const defaults: StoredData = {
 	[StoreKey.MiniWidth]: undefined,
 	[StoreKey.SidebarCollapsed]: undefined,
 	[StoreKey.TimerSound]: undefined,
+	[StoreKey.TimerSoundName]: undefined,
 } as const
 
 let store: Store | null = null
