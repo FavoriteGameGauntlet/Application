@@ -9,13 +9,16 @@ import {
 } from '../utils/memberColor'
 import UiInput from './ui/UiInput.vue'
 import UiPopover from './ui/UiPopover.vue'
+import UiUserAvatar from './ui/UiUserAvatar.vue'
 
 type Props = {
 	label: string
 	hint?: string
+	/** the avatar beside the hex field shows the color on this login */
+	login?: string
 }
 
-const { label, hint } = defineProps<Props>()
+const { label, hint, login } = defineProps<Props>()
 
 /** lowercase hex once valid; the form does not save an invalid one */
 const color = defineModel<string>({ required: true })
@@ -154,11 +157,9 @@ const percent = (value: number) => `${Math.round(value * 100)}%`
 		</div>
 
 		<div class="picker__hex">
-			<span
-				ref="preview"
-				class="picker__preview"
-				:style="{ background: shown }"
-			></span>
+			<span ref="preview" class="picker__preview">
+				<UiUserAvatar :name="login" :color="shown" :size="40" />
+			</span>
 
 			<div class="picker__input">
 				<UiInput
@@ -326,11 +327,8 @@ const percent = (value: number) => `${Math.round(value * 100)}%`
 }
 
 .picker__preview {
+	display: flex;
 	flex: none;
-	width: 44px;
-	height: 44px;
-	border: 1px solid var(--border-subtle);
-	border-radius: var(--radius-sm);
 }
 
 .picker__input {
