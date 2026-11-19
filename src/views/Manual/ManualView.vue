@@ -47,8 +47,6 @@ const parentLabel = computed(() => {
 			return 'История'
 		case 'free':
 			return 'Панель админа'
-		case 'shared':
-			return 'Общие очки'
 		default:
 			return 'Колесо'
 	}
@@ -115,10 +113,10 @@ const actionOptions = (type: RowType) =>
 				{ value: 'revoke', label: 'Забрать' },
 			]
 
-const newRow = (who: Login, type: RowType = 'points'): Row => ({
+const newRow = (who: Login): Row => ({
 	who,
-	type,
-	resId: resourceOptions(type)[0]?.value ?? '',
+	type: 'points',
+	resId: resourceOptions('points')[0]?.value ?? '',
 	act: 'plus',
 	n: '',
 })
@@ -312,14 +310,7 @@ onMounted(async () => {
 		resourcesStore.loadCatalog('effects'),
 	])
 
-	if (current.kind !== 'fix') {
-		rows.value = [
-			newRow(
-				sessionStore.login,
-				current.kind === 'shared' ? 'shared-points' : 'points',
-			),
-		]
-	}
+	if (current.kind !== 'fix') rows.value = [newRow(sessionStore.login)]
 })
 </script>
 

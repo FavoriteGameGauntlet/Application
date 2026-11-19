@@ -31,13 +31,8 @@ type FreeDraft = {
 	kind: 'free'
 }
 
-/** an admin changes the shared points from their table; the form starts with a row of them */
-type SharedDraft = {
-	kind: 'shared'
-}
-
 /** what the manual change form is opened for */
-export type ManualDraft = FixDraft | WheelDraft | FreeDraft | SharedDraft
+export type ManualDraft = FixDraft | WheelDraft | FreeDraft
 
 export const useManualStore = defineStore(StoreName.Manual, () => {
 	const draft = ref<ManualDraft | null>(null)
@@ -70,12 +65,6 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 		await router.push({ name: RouteName.Manual })
 	}
 
-	const startShared = async () => {
-		draft.value = { kind: 'shared' }
-
-		await router.push({ name: RouteName.Manual })
-	}
-
 	/** goes back to where the form was opened from */
 	const close = async () => {
 		const kind = draft.value?.kind
@@ -91,12 +80,6 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 				break
 			case 'free':
 				await router.push({ name: RouteName.Admin })
-				break
-			case 'shared':
-				await router.push({
-					name: RouteName.Resources,
-					params: { tab: 'shared' },
-				})
 				break
 			default:
 				await router.push({ name: RouteName.Wheel })
@@ -128,5 +111,5 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 		}
 	}
 
-	return { draft, startFix, startWheel, startFree, startShared, close, apply }
+	return { draft, startFix, startWheel, startFree, close, apply }
 })

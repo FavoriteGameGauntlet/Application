@@ -1,18 +1,13 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import type { PointType } from '../../../api-facade/contracts'
-import UiButton from '../../../components/ui/UiButton.vue'
 import { useJournalStore } from '../../../stores/journalStore'
-import { useManualStore } from '../../../stores/manualStore'
 import { useResourcesStore } from '../../../stores/resourcesStore'
-import { useSessionStore } from '../../../stores/sessionStore'
 import { formatBounds } from '../../../utils/format'
 import { plural } from '../../../utils/plural'
 
 const resourcesStore = useResourcesStore()
-const sessionStore = useSessionStore()
 const journalStore = useJournalStore()
-const manualStore = useManualStore()
 
 const formatValue = (n: number) =>
 	`${n < 0 ? '−' : ''}${Math.abs(n).toLocaleString('ru-RU')}`
@@ -65,16 +60,6 @@ watch(
 </script>
 
 <template>
-	<div v-if="sessionStore.isAdmin" class="bar">
-		<UiButton
-			variant="outline"
-			size="sm"
-			icon="pencil"
-			@click="manualStore.startShared()"
-			>Ручное изменение</UiButton
-		>
-	</div>
-
 	<div class="table" role="table" aria-label="Общие очки пати">
 		<div class="row row--head" role="row">
 			<span role="columnheader">Тип</span>
@@ -117,11 +102,6 @@ watch(
 </template>
 
 <style scoped>
-.bar {
-	display: flex;
-	justify-content: flex-end;
-}
-
 .table {
 	overflow: hidden;
 	background: var(--surface-card);
