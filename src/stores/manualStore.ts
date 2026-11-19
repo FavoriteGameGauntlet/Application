@@ -90,7 +90,7 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 				})
 				break
 			case 'free':
-				await router.push({ name: RouteName.AdminExchanges })
+				await router.push({ name: RouteName.Admin })
 				break
 			case 'shared':
 				await router.push({
