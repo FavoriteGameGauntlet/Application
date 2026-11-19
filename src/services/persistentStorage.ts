@@ -8,6 +8,7 @@ export enum StoreKey {
 	Scale = 'scale',
 	MiniWidth = 'miniWidth',
 	SidebarCollapsed = 'sidebarCollapsed',
+	TimerSound = 'timerSound',
 }
 
 export type StoredData = Partial<{
@@ -21,6 +22,8 @@ export type StoredData = Partial<{
 	/** width of the mini window in px at the interface scale of 100%, the height follows the ratio */
 	[StoreKey.MiniWidth]: number
 	[StoreKey.SidebarCollapsed]: boolean
+	/** whether the end of the timer plays a sound on this computer */
+	[StoreKey.TimerSound]: boolean
 }>
 
 const defaults: StoredData = {
@@ -31,6 +34,7 @@ const defaults: StoredData = {
 	[StoreKey.Scale]: undefined,
 	[StoreKey.MiniWidth]: undefined,
 	[StoreKey.SidebarCollapsed]: undefined,
+	[StoreKey.TimerSound]: undefined,
 } as const
 
 let store: Store | null = null

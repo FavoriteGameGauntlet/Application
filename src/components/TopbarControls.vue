@@ -5,14 +5,17 @@ import { useAuthStore } from '../stores/authStore'
 import { useMembersStore } from '../stores/membersStore'
 import { SCALES, useScaleStore } from '../stores/scaleStore'
 import { useThemeStore } from '../stores/themeStore'
+import { useTimerSoundStore } from '../stores/timerSoundStore'
 import UiIcon from './ui/UiIcon.vue'
 import UiSelect from './ui/UiSelect.vue'
+import UiSwitch from './ui/UiSwitch.vue'
 import UiUserAvatar from './ui/UiUserAvatar.vue'
 
 const authStore = useAuthStore()
 const membersStore = useMembersStore()
 const scaleStore = useScaleStore()
 const themeStore = useThemeStore()
+const timerSoundStore = useTimerSoundStore()
 
 const scaleOptions = SCALES.map((s) => ({ value: String(s), label: `${s}%` }))
 
@@ -33,7 +36,11 @@ const onLogOut = () => {
 <template>
 	<div ref="userMenu" class="user-menu">
 		<div class="user-menu__trigger" @click="menuOpen = !menuOpen">
-			<UiUserAvatar :name="login" :color="membersStore.colorOf(login)" :size="28" />
+			<UiUserAvatar
+				:name="login"
+				:color="membersStore.colorOf(login)"
+				:size="28"
+			/>
 			{{ login }}
 			<UiIcon name="chevron-down" :size="16" />
 		</div>
@@ -51,6 +58,16 @@ const onLogOut = () => {
 						@update:model-value="scaleStore.set(Number($event))"
 					/>
 				</div>
+			</div>
+
+			<div class="user-menu__setting">
+				Звук таймера
+
+				<UiSwitch
+					aria-label="Звук окончания таймера"
+					:model-value="timerSoundStore.enabled"
+					@update:model-value="timerSoundStore.setEnabled($event)"
+				/>
 			</div>
 
 			<div class="user-menu__item" @click="themeStore.toggle()">
