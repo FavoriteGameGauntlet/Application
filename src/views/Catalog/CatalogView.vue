@@ -46,13 +46,7 @@ const entriesOf = (tab: CatalogView): CatalogEntry[] | undefined => {
 		.map((type) => ({ ...type, deleted: false }))
 }
 
-const tabs = computed(() => [
-	...catalogViews.map((tab) => ({
-		...tab,
-		count: entriesOf(tab.value)?.length,
-	})),
-	{ value: 'wheel', label: 'Колесо' },
-])
+const tabs = [...catalogViews, { value: 'wheel', label: 'Колесо' }]
 
 const entries = computed(() => entriesOf(listView.value))
 

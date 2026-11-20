@@ -6,6 +6,7 @@ Newest entry on top. Record only what was actually verified.
 
 - By the user's answer («такую же как у админа, но без возможности редактирования»): the player catalogue has a «Колесо» tab with the layout of the admin wheel screen and no editing: «Пункты / Игры», the groups, the group card (the no-repeat switch is off for a player, the spin cost), the table of items with search and no row menu. The admin screen is built from the same shared components. `api.wheel.catalog(kind)` reads `/wheel/catalog/groups` and their rows, which any member may read, so the Server feature wheel-rows-for-members needs no change; `WheelCatalogGroup` (was `AdminWheelGroup`) carries `cost`, and the separate `admin.wheel.spinCost` read is gone.
 - Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. A temporary vite page (not committed) with stubbed data in Chromium: the catalogue tab with both kinds, the admin screen and the cost window look as before. Not checked: the app itself, against the backend.
+- On the user's word (2026-11-20): the catalogue tabs show no counts. Checked by eslint and vue-tsc only.
 
 ## 2026-11-19 timer-end-sound
 
