@@ -71,7 +71,7 @@ const ring = computed(
 				</div>
 
 				<UiButton full-width icon="square" @click="timerSoundStore.stop()">
-					Остановить звук
+					Стоп
 				</UiButton>
 			</template>
 

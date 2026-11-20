@@ -155,9 +155,14 @@ const onCancel = () => {
 				<UiIcon name="volume-2" :size="22" />
 			</span>
 
+			<!-- the same rows as the clock, so the card keeps its height -->
 			<div class="timer__info">
-				<span class="label">Таймер</span>
-				<span class="timer__done">Время вышло</span>
+				<span class="current-game__label-row">
+					<span class="label">Таймер</span>
+				</span>
+				<span class="timer__time">
+					<span class="timer__done">Время вышло</span>
+				</span>
 			</div>
 
 			<div class="timer__spacer"></div>
@@ -167,7 +172,7 @@ const onCancel = () => {
 				icon="square"
 				@click="timerSoundStore.stop()"
 			>
-				Остановить звук
+				Стоп
 			</UiButton>
 		</div>
 
@@ -464,6 +469,8 @@ const onCancel = () => {
 }
 
 .timer__time {
+	/* a fixed line, so the clock and «Время вышло» keep the card at one height */
+	height: 28px;
 	display: flex;
 	align-items: baseline;
 	gap: 8px;
