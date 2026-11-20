@@ -566,11 +566,15 @@ export type CatalogEntry = {
 	holdersTotal?: number
 }
 
-/** `changes` is the text of `entries`, `modifiers` and `ability`, the backend builds it */
+/**
+ * `changes` is the text of `entries`, `modifiers` and `ability`, the backend
+ * builds it. For an existing perk a left-out `ability` keeps the saved one and
+ * null removes it; a saved ability resets the uses and charges of every holder.
+ */
 export type CatalogEntryInput = Omit<
 	CatalogEntry,
-	'id' | 'deleted' | 'holdersTotal' | 'changes'
->
+	'id' | 'deleted' | 'holdersTotal' | 'changes' | 'ability'
+> & { ability?: PerkAbility | null }
 
 export type AdminExchange = {
 	id: number

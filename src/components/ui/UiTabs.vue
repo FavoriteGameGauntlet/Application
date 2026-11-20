@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import UiIcon from './UiIcon.vue'
 
 type Item =
 	| string
@@ -10,8 +9,6 @@ type Item =
 			count?: number
 			/** a red dot: something in the tab still needs filling */
 			mark?: boolean
-			/** a lock: the tab can be read, not edited */
-			locked?: boolean
 	  }
 
 type Props = {
@@ -56,14 +53,6 @@ const normalizedItems = computed(() =>
 				role="img"
 				aria-label="Нужно заполнить"
 			></span>
-			<span
-				v-if="item.locked"
-				class="ui-tabs__lock"
-				role="img"
-				aria-label="Не редактируется"
-			>
-				<UiIcon name="lock" :size="15" />
-			</span>
 		</button>
 	</div>
 </template>
@@ -107,10 +96,6 @@ const normalizedItems = computed(() =>
 
 .ui-tabs--compact.ui-tabs--underline .ui-tabs__tab {
 	height: 40px;
-}
-
-.ui-tabs__lock {
-	display: inline-flex;
 }
 
 .ui-tabs__mark {

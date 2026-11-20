@@ -25,11 +25,8 @@ import {
 	parseItemEntries,
 	parseModifiers,
 	parseTriggers,
+	triggersToForm,
 } from '../../../utils/formRows'
-import {
-	triggerActionLabels,
-	triggerEventText,
-} from '../../../utils/perkTrigger'
 import type {
 	ApplyMode,
 	ItemCondition,
@@ -234,42 +231,6 @@ const sections = computed<FormSection[]>(() => {
 
 			const perkFields = [...common, modifiers]
 
-			// the backend refuses to change the ability: the state of every holder depends on it
-			if (entry) {
-				const { ability } = entry
-
-				// a perk without an ability has nothing to show on a second tab
-				if (!ability) return [{ fields: perkFields }]
-
-				return [
-					{ tab: 'perk', fields: perkFields },
-					{
-						tab: 'ability',
-						title: 'Когда игрок применяет',
-						fields: [
-							{
-								key: 'abilityEntriesText',
-								type: 'locked',
-								label: 'Когда игрок применяет',
-								lines: ability.changes ?? [],
-							},
-						],
-					},
-					{
-						tab: 'ability',
-						title: 'Сколько раз',
-						fields: [
-							{
-								key: 'abilityLimitsText',
-								type: 'locked',
-								label: 'Сколько раз',
-								lines: abilityLimitLines(ability),
-							},
-						],
-					},
-				]
-			}
-
 			const limited = { key: 'abilityLimit', is: 'limited' }
 
 			return [
@@ -280,7 +241,7 @@ const sections = computed<FormSection[]>(() => {
 						{
 							key: 'abilityOn',
 							type: 'check',
-							label: 'Игрок применяет перк сам',
+							label: 'Активируемая способность',
 						},
 					],
 				},
@@ -370,12 +331,6 @@ const tabs = computed<FormTab[] | undefined>(() => {
 
 	const perk = { key: 'perk', label: 'Перк' }
 
-	if (entry) {
-		return entry.ability
-			? [perk, { key: 'ability', label: 'Способность', locked: true }]
-			: undefined
-	}
-
 	return [
 		perk,
 		{
@@ -385,35 +340,6 @@ const tabs = computed<FormTab[] | undefined>(() => {
 		},
 	]
 })
-
-/** what the ability of an existing perk allows, as the lines of the locked tab */
-const abilityLimitLines = (ability: PerkAbility) => {
-	if (!ability.uses) return ['Сколько угодно.']
-
-	const lines = [
-		`До ${ability.uses.max} раз, новый владелец начинает с ${ability.uses.start}.`,
-	]
-
-	if (ability.chargesMax > 0) {
-		lines.push(`Зарядов на одно использование: ${ability.chargesMax}.`)
-	}
-
-	for (const trigger of ability.triggers) {
-		const event = triggerEventText(trigger)
-
-		lines.push(
-			`${triggerActionLabels[trigger.action]}: ${event[0].toLowerCase()}${event.slice(1)}.`,
-		)
-	}
-
-	if (ability.renewalPeriod) {
-		lines.push(
-			`Раз в ${formatSpanExact(ability.renewalPeriod)} возвращается к максимуму.`,
-		)
-	}
-
-	return lines
-}
 
 /** the preset that holds the length of the effect, or `custom` for a length without a chip */
 const durationPresetOf = (duration: number | null | undefined) => {
@@ -441,7 +367,7 @@ const initial = computed<FormValues>(() => ({
 		? String(entry.ability.uses.start)
 		: '',
 	abilityCharges: entry?.ability ? String(entry.ability.chargesMax) : '',
-	abilityTriggers: [],
+	abilityTriggers: triggersToForm(entry?.ability?.triggers ?? []),
 	abilityRenewal: entry?.ability?.renewalPeriod
 		? String(entry.ability.renewalPeriod)
 		: '',
@@ -524,6 +450,23 @@ const readAbility = (
 		...(renewalPeriod != null && { renewalPeriod }),
 		triggers,
 	}
+}
+
+/** the ability the form describes, null for a perk without one, or the text of what is wrong */
+const abilityOf = (values: FormValues): PerkAbility | null | string => {
+	if (values.abilityOn !== true) return null
+
+	const text = (key: string) => String(values[key] ?? '').trim()
+	const entries = parseItemEntries(values.abilityEntries as FormRow[])
+
+	if ('error' in entries) return entries.error
+
+	return readAbility(
+		text,
+		entries.value,
+		text('abilityApplies') as ApplyMode,
+		parseTriggers(values.abilityTriggers as TriggerFormRow[]),
+	)
 }
 
 const onChange = (values: FormValues) => {
@@ -664,26 +607,18 @@ const onSave = async (values: FormValues) => {
 
 		input.modifiers = modifiers.value
 
-		// the ability of an existing perk is locked and the backend does not change it;
-		// a new perk is active when the player may use it, otherwise passive
-		if (!entry && values.abilityOn === true) {
-			const entries = parseItemEntries(values.abilityEntries as FormRow[])
+		const ability = abilityOf(values)
 
-			if ('error' in entries)
-				return invalid('Проверь способность', entries.error)
+		if (typeof ability === 'string')
+			return invalid('Проверь способность', ability)
 
-			const ability = readAbility(
-				text,
-				entries.value,
-				text('abilityApplies') as ApplyMode,
-				parseTriggers(values.abilityTriggers as TriggerFormRow[]),
-			)
-
-			if (typeof ability === 'string')
-				return invalid('Проверь способность', ability)
-
+		// a saved ability resets the uses and charges of every holder, so an
+		// existing perk sends it only when the admin changed it
+		if (
+			!entry ||
+			JSON.stringify(ability) !== JSON.stringify(abilityOf(initial.value))
+		)
 			input.ability = ability
-		}
 	}
 
 	if (await store.saveEntry(kind, entry?.id, input)) emit('close')

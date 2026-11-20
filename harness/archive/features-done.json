@@ -300,6 +300,13 @@
 			"priority": 33,
 			"status": "done",
 			"evidence": "Done 2026-11-20. By the user's answer («такую же как у админа, но без возможности редактирования»): the player catalogue has a «Колесо» tab that repeats the admin wheel screen without editing (Пункты / Игры, groups, group card with the spin cost, the items table with search). The admin screen and the tab share WheelGroupList, WheelGroupCard and WheelEntryTable. api.wheel.catalog reads /wheel/catalog/groups and their rows, open to any member, so the Server feature wheel-rows-for-members needs no change. Verified: init.sh passes; a temporary vite page (not committed) with stubbed data in Chromium showed the tab for both kinds and the admin screen and its cost window unchanged. Not checked: the app itself, against the backend."
+		},
+		{
+			"id": "perk-ability-edit",
+			"title": "The ability tab of an existing perk can be edited in the admin catalogue. The user's answer: allow the edit. Today the tab is locked. The lock part of rules-ui-catalog-dialog goes away with it. Depends on the Server feature perk-ability-edit.",
+			"priority": 34,
+			"status": "done",
+			"evidence": "Done 2026-11-20. The edit window of a perk is the create window: «Активируемая способность» on the first tab and the editable «Способность» tab; the ability is sent only when it changed, null when the switch is off (FavoriteGameGauntlet/Server#222). eslint and vue-tsc pass. Not checked: the app itself, against the backend."
 		}
 	]
 }

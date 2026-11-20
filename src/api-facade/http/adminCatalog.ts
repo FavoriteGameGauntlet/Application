@@ -199,15 +199,13 @@ export const adminCatalog: Pick<
 			return toPointTypeEntry(type)
 		}
 
-		// the ability of a perk cannot be changed
 		const body: Record<string, unknown> = { ...resourceBody(kind, input) }
-
-		delete body.ability
 
 		// a field left out keeps its value, so clearing one is sent explicitly
 		if (kind === 'effects' || kind === 'perks')
 			body.modifiers = body.modifiers ?? []
 		if (kind === 'effects') body.durationInSeconds = input.duration ?? null
+		if (kind === 'perks' && input.ability === null) body.ability = null
 
 		const [{ body: dto }, pointTypes] = await Promise.all([
 			http.patch<{ response: CatalogDto[ResourceKind] }>(path, { body }),

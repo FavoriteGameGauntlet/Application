@@ -259,7 +259,6 @@ const tabItems = computed(() =>
 	visibleTabs.value.map((t) => ({
 		value: t.key,
 		label: t.label,
-		locked: t.locked,
 		mark: missingIn(sections.filter((s) => tabOf(s) === t.key)).length > 0,
 	})),
 )
@@ -408,10 +407,6 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 									<span v-if="field.hint" class="form__note form__check-hint">{{
 										field.hint
 									}}</span>
-								</div>
-
-								<div v-else-if="field.type === 'locked'" class="form__locked">
-									<p v-for="(line, j) in field.lines" :key="j">{{ line }}</p>
 								</div>
 
 								<UiField
@@ -668,18 +663,6 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
-}
-
-.form__locked {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-	font: var(--type-body);
-	color: var(--text-body);
-}
-
-.form__locked p {
-	margin: 0;
 }
 
 .form__label {
