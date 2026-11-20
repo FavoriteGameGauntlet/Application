@@ -286,6 +286,13 @@
 			"priority": 28,
 			"status": "done",
 			"evidence": "Done 2026-11-19. By the user's answers (1 А, 2 А, 3 А): the admin segment of an item, a perk ability, an exchange side and a wheel row reads «Все / Несколько / Одна» (`utils/applyMode.ts` holds the labels, the pick limit and the completeness check for every screen); the use window, the exchange window and the wheel entries window pick through `UiPickList`, a radio list for `one`; an exchange card with `nothing_to_pick` says «В обмене не из чего выбрать.»; the catalogue card, table and admin rows name the mode. Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. A temporary vite page (not committed) in Chromium: the wheel entries window with `one` keeps one pick of two clicks and turns «Применить» on, with `any` keeps two; the admin segment shows three positions. Not checked: the app itself, against the backend."
+		},
+		{
+			"id": "timer-end-sound",
+			"title": "Play a sound when the timer ends. Open: the sound file (it goes next to the other assets), whether it plays when the window is hidden or minimized, and whether the user can turn it off. The user's addition (2026-11-19): a user can pick their own sound file.",
+			"priority": 32,
+			"status": "done",
+			"evidence": "Done 2026-11-19. By the user's answers (1 Б: the user's own file, 2 А: plays in a hidden or minimized window, 3 А: a switch in the user menu; plus the user's own sound, copied into the app data folder, played whole and stopped when the window gets focus): `timerSoundStore` plays `assets/sounds/timer-end.mp3` or the user's file at the end of the timer; a one-shot timeout wakes the end in a hidden window; the menu has «Звук таймера», listen/stop, the file name with a reset and «Свой звук таймера». Verified: `bash harness/scripts/init.sh` passes, `cargo check` passes, prettier on the changed files. A temporary vite page (not committed, Tauri modules stubbed) in Chromium: the menu with the standard and a long custom name; listen starts and the window focus stops it; a running timer at zero plays the sound; with the switch off nothing plays. Not checked: the app itself (file window, copy, playback of a custom file, sound in a minimized window on Windows and Linux); the user checks it."
 		}
 	]
 }

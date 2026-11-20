@@ -3,18 +3,12 @@ import { computed, ref, useTemplateRef } from 'vue'
 import { useClickOutside } from '../composables/useClickOutside'
 import { useAuthStore } from '../stores/authStore'
 import { useMembersStore } from '../stores/membersStore'
-import { SCALES, useScaleStore } from '../stores/scaleStore'
-import { useThemeStore } from '../stores/themeStore'
 import UiIcon from './ui/UiIcon.vue'
-import UiSelect from './ui/UiSelect.vue'
 import UiUserAvatar from './ui/UiUserAvatar.vue'
+import UserSettingsDialog from './UserSettingsDialog.vue'
 
 const authStore = useAuthStore()
 const membersStore = useMembersStore()
-const scaleStore = useScaleStore()
-const themeStore = useThemeStore()
-
-const scaleOptions = SCALES.map((s) => ({ value: String(s), label: `${s}%` }))
 
 /** the party screen has no session yet, only the stored login */
 const login = computed(() => authStore.login ?? '')
@@ -23,6 +17,13 @@ const menuOpen = ref(false)
 const userMenu = useTemplateRef('userMenu')
 
 useClickOutside(userMenu, () => (menuOpen.value = false))
+
+const settingsOpen = ref(false)
+
+const onOpenSettings = () => {
+	menuOpen.value = false
+	settingsOpen.value = true
+}
 
 const onLogOut = () => {
 	menuOpen.value = false
@@ -33,38 +34,28 @@ const onLogOut = () => {
 <template>
 	<div ref="userMenu" class="user-menu">
 		<div class="user-menu__trigger" @click="menuOpen = !menuOpen">
-			<UiUserAvatar :name="login" :color="membersStore.colorOf(login)" :size="28" />
+			<UiUserAvatar
+				:name="login"
+				:color="membersStore.colorOf(login)"
+				:size="28"
+			/>
 			{{ login }}
 			<UiIcon name="chevron-down" :size="16" />
 		</div>
 
 		<div v-if="menuOpen" class="user-menu__popup">
-			<div class="user-menu__setting">
-				Масштаб
-
-				<div class="user-menu__scale">
-					<UiSelect
-						compact
-						aria-label="Масштаб интерфейса"
-						:options="scaleOptions"
-						:model-value="String(scaleStore.scale)"
-						@update:model-value="scaleStore.set(Number($event))"
-					/>
-				</div>
+			<div class="user-menu__item" @click="onOpenSettings">
+				<UiIcon name="settings" :size="16" />
+				Настройки
 			</div>
-
-			<div class="user-menu__item" @click="themeStore.toggle()">
-				<UiIcon :name="themeStore.isDark ? 'sun' : 'moon'" :size="16" />
-				{{ themeStore.isDark ? 'Светлая тема' : 'Тёмная тема' }}
-			</div>
-
-			<span class="user-menu__divider"></span>
 
 			<div class="user-menu__item" @click="onLogOut">
 				<UiIcon name="log-out" :size="16" />
 				Выйти
 			</div>
 		</div>
+
+		<UserSettingsDialog :open="settingsOpen" @close="settingsOpen = false" />
 	</div>
 </template>
 
@@ -74,8 +65,7 @@ const onLogOut = () => {
 }
 
 .user-menu__trigger,
-.user-menu__item,
-.user-menu__setting {
+.user-menu__item {
 	display: flex;
 	align-items: center;
 	gap: 10px;
@@ -111,21 +101,5 @@ const onLogOut = () => {
 
 .user-menu__item {
 	padding: 0 12px;
-}
-
-.user-menu__setting {
-	justify-content: space-between;
-	padding: 0 4px 0 12px;
-	cursor: default;
-}
-
-.user-menu__scale {
-	width: 96px;
-}
-
-.user-menu__divider {
-	height: 1px;
-	margin: 4px 0;
-	background: var(--border-subtle);
 }
 </style>

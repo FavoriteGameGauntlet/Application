@@ -9,6 +9,7 @@ export const enum StoreName {
 	Members = 'members',
 	CurrentGame = 'current-game',
 	Timer = 'timer',
+	TimerSound = 'timer-sound',
 	Wishlist = 'wishlist',
 	Completed = 'completed',
 	Wheel = 'wheel',

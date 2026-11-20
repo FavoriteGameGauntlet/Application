@@ -1,5 +1,6 @@
 mod aspect_ratio;
 mod http;
+mod timer_sound;
 
 use tauri::Manager;
 
@@ -27,6 +28,7 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .setup(|app| {
             app.manage(http::Http::new(app.handle())?);
@@ -39,7 +41,10 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet,
             aspect_ratio::set_aspect_ratio,
-            http::http_request
+            http::http_request,
+            timer_sound::timer_sound_save,
+            timer_sound::timer_sound_read,
+            timer_sound::timer_sound_clear
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

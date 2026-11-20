@@ -2,14 +2,17 @@
 import { computed, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
 import AppLogo from '../../../components/AppLogo.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiIcon from '../../../components/ui/UiIcon.vue'
 import UiIconButton from '../../../components/ui/UiIconButton.vue'
 import { useCurrentGameStore } from '../../../stores/currentGameStore'
 import { MINI_SIZE, useMiniModeStore } from '../../../stores/miniModeStore'
+import { useTimerSoundStore } from '../../../stores/timerSoundStore'
 import { useTimerStore } from '../../../stores/timerStore'
 
 const currentGameStore = useCurrentGameStore()
 const miniModeStore = useMiniModeStore()
 const timerStore = useTimerStore()
+const timerSoundStore = useTimerSoundStore()
 
 const root = useTemplateRef('root')
 
@@ -61,7 +64,18 @@ const ring = computed(
 				@click="miniModeStore.toggle()"
 			/>
 
-			<div class="mini__clock">
+			<template v-if="timerSoundStore.ringing">
+				<div class="mini__clock mini__clock--ringing">
+					<UiIcon name="volume-2" :size="56" color="var(--accent)" />
+					<span class="mini__done">Время вышло</span>
+				</div>
+
+				<UiButton full-width icon="square" @click="timerSoundStore.stop()">
+					Стоп
+				</UiButton>
+			</template>
+
+			<div v-else class="mini__clock">
 				<svg class="mini__ring" viewBox="0 0 176 176" aria-hidden="true">
 					<circle
 						cx="88"
@@ -101,6 +115,7 @@ const ring = computed(
 			</div>
 
 			<UiButton
+				v-if="!timerSoundStore.ringing"
 				full-width
 				:icon="timerStore.isRunning ? 'pause' : 'play'"
 				:disabled="!hasGame"
@@ -154,6 +169,24 @@ const ring = computed(
 	width: 176px;
 	height: 176px;
 	pointer-events: none;
+}
+
+.mini__clock--ringing {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 16px;
+	background: var(--surface-sunken);
+	border-radius: 50%;
+}
+
+.mini__done {
+	font: 800 22px / 1.1 var(--font-display);
+	text-align: center;
+	letter-spacing: var(--tracking-display);
+	text-transform: uppercase;
+	color: var(--text-strong);
 }
 
 .mini__ring {

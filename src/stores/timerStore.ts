@@ -9,6 +9,7 @@ import { useCurrentGameStore } from './currentGameStore'
 import { useJournalStore } from './journalStore'
 import { useMembersStore } from './membersStore'
 import { useResourcesStore } from './resourcesStore'
+import { useTimerSoundStore } from './timerSoundStore'
 import { useToastStore } from './toastStore'
 
 const DEFAULT_GOAL = 7200
@@ -126,16 +127,38 @@ export const useTimerStore = defineStore(StoreName.Timer, () => {
 		syncing = false
 	}
 
+	/** a hidden window may wake its interval once a minute, so the end gets a timeout of its own */
+	let endTimeout: ReturnType<typeof setTimeout> | undefined
+
+	const scheduleEnd = () => {
+		clearTimeout(endTimeout)
+		if (timer.value?.state !== 'running') return
+
+		const endsAt = receivedAt.value + timer.value.remainingTime * 1000
+
+		endTimeout = setTimeout(
+			() => {
+				now.value = Date.now()
+			},
+			Math.max(0, endsAt - Date.now()),
+		)
+	}
+
 	const init = () => {
 		setInterval(() => {
 			now.value = Date.now()
 		}, 1000)
 
+		watch(timer, scheduleEnd)
+
 		// the server finishes the timer within a second after the end and starts the next one
 		watch(
 			() => timer.value?.state === 'running' && remaining.value === 0,
 			(ended) => {
-				if (ended) void syncFinished()
+				if (!ended) return
+
+				void useTimerSoundStore().play()
+				void syncFinished()
 			},
 		)
 	}

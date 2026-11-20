@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useClickOutside } from '../composables/useClickOutside'
 import { RouteName } from '../router/routeNames'
 import { useCurrentGameStore } from '../stores/currentGameStore'
+import { useTimerSoundStore } from '../stores/timerSoundStore'
 import { useTimerStore } from '../stores/timerStore'
 import { useWheelStore } from '../stores/wheelStore'
 import { formatHours } from '../utils/format'
@@ -23,6 +24,7 @@ defineProps<Props>()
 const router = useRouter()
 const currentGameStore = useCurrentGameStore()
 const timerStore = useTimerStore()
+const timerSoundStore = useTimerSoundStore()
 const wheelStore = useWheelStore()
 
 const card = useTemplateRef('card')
@@ -148,7 +150,33 @@ const onCancel = () => {
 			</UiButton>
 		</div>
 
-		<div v-if="withTimer" class="timer">
+		<div v-if="withTimer && timerSoundStore.ringing" class="timer">
+			<span class="timer__bell">
+				<UiIcon name="volume-2" :size="22" />
+			</span>
+
+			<!-- the same rows as the clock, so the card keeps its height -->
+			<div class="timer__info">
+				<span class="current-game__label-row">
+					<span class="label">Таймер</span>
+				</span>
+				<span class="timer__time">
+					<span class="timer__done">Время вышло</span>
+				</span>
+			</div>
+
+			<div class="timer__spacer"></div>
+
+			<UiButton
+				class="timer__toggle"
+				icon="square"
+				@click="timerSoundStore.stop()"
+			>
+				Стоп
+			</UiButton>
+		</div>
+
+		<div v-else-if="withTimer" class="timer">
 			<svg
 				class="timer__ring"
 				width="44"
@@ -410,6 +438,25 @@ const onCancel = () => {
 	border-top: 1px solid var(--border-subtle);
 }
 
+.timer__bell {
+	display: flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	color: var(--accent);
+	background: var(--surface-sunken);
+	border-radius: 50%;
+}
+
+.timer__done {
+	font: 800 24px / 1 var(--font-display);
+	letter-spacing: var(--tracking-display);
+	text-transform: uppercase;
+	color: var(--text-strong);
+}
+
 .timer__ring {
 	flex: none;
 	transform: rotate(-90deg);
@@ -422,6 +469,8 @@ const onCancel = () => {
 }
 
 .timer__time {
+	/* a fixed line, so the clock and «Время вышло» keep the card at one height */
+	height: 28px;
 	display: flex;
 	align-items: baseline;
 	gap: 8px;
