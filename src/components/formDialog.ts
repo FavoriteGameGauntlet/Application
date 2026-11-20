@@ -12,7 +12,7 @@ export type FormField = {
 	 * `segment` picks one of `options` in a segmented control (for the `aside`
 	 * of a section or of a `rows` field), `span` is a length as a number and a unit (its value is
 	 * the seconds), `dates` is a period of days (its value is «2026-11-01/2026-11-30»,
-	 * both days included), `locked` shows `lines` that cannot be edited, `arrow` is
+	 * both days included), `arrow` is
 	 * a sign between two columns and holds no value, `pick` picks some of `options`
 	 * from a list of rows (the value is the picked `value`s), `rating` is a mark
 	 * from 1 to 10 (its value is the number as a string), `triggers` is a list of
@@ -31,7 +31,6 @@ export type FormField = {
 		| 'segment'
 		| 'span'
 		| 'dates'
-		| 'locked'
 		| 'arrow'
 		| 'pick'
 		| 'rating'
@@ -84,8 +83,6 @@ export type FormField = {
 	column?: number
 	/** for `color`: the login on the avatar that shows the color */
 	login?: string
-	/** for `locked` */
-	lines?: string[]
 	/** the field is shown only while the `check` field `key` is `is`, or the `line`, `select`, `choice` or `segment` field holds `is` */
 	when?: { key: string; is: string | boolean }
 }
@@ -112,8 +109,6 @@ export type FormSection = {
 export type FormTab = {
 	key: string
 	label: string
-	/** the tab can be read, not edited */
-	locked?: boolean
 	when?: { key: string; is: string | boolean }
 }
 

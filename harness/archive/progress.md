@@ -1,5 +1,10 @@
 # Progress log archive
 
+## 2026-11-19 single-choice-entries
+
+- By the user's answers (1 А, 2 А, 3 А): a change has `applyMode` `all | any | one` in place of `shouldApplyToAll` (FavoriteGameGauntlet/Server#221, FavoriteGameGauntlet/Database#74, merged). The admin segment reads «Все / Несколько / Одна»; the use, exchange and wheel entries windows pick through `UiPickList`, a radio list for `one`; an exchange with `nothing_to_pick` says «В обмене не из чего выбрать.». `utils/applyMode.ts` holds the labels and the pick rules.
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. A temporary vite page (not committed) with the real `SpinEntriesDialog` and `FormDialog` in Chromium. Not checked: the app itself, against the backend.
+
 ## 2026-11-19 rules-ui-parties-window
 
 - By the user's answers (dates: А; color: the avatar replaces the square, no other preview): the dates field labels its days «Первый день» and «Последний день»; the color picker shows the avatar with the login in place of the swatch beside the hex field, in the party window and the member window.

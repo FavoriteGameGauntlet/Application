@@ -296,10 +296,10 @@
 		},
 		{
 			"id": "perk-ability-edit",
-			"title": "The ability tab of an existing perk can be edited in the admin catalogue. The user's answer: allow the edit. Today the tab is locked. The lock part of rules-ui-catalog-dialog goes away with it. Depends on the Server feature perk-ability-edit.",
+			"title": "The ability of an existing perk can be edited in the admin catalogue",
 			"priority": 34,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-20. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "user-avatars",
