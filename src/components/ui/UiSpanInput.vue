@@ -25,8 +25,8 @@ const groups = [
 
 const amount = ref('')
 const unit = ref(String(SPAN_STEPS[0].seconds))
-/** what this component wrote itself: it must not be split into units again */
-let written = model.value
+/** what this component wrote itself: it must not be split into units again; the first value is always read */
+let written: string | undefined
 
 const read = (seconds: string) => {
 	if (seconds === '') {
@@ -64,6 +64,7 @@ watch([amount, unit], write)
 
 const clear = () => {
 	amount.value = ''
+	write()
 }
 </script>
 
