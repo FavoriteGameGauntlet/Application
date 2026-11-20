@@ -1,6 +1,8 @@
 import type {
 	ApplyMode,
 	Api,
+	PointType,
+	WheelCatalogGroup,
 	WheelGroup,
 	WheelSource,
 	WheelSpinResult,
@@ -14,6 +16,7 @@ import {
 } from './changeEntry'
 import { currentLogin, getPointTypes, partyPath } from './context'
 import { latestOwnEntry } from './journal'
+import { toChangeRow } from './rows'
 
 type RolledWheelRowDto = {
 	name: string
@@ -28,6 +31,11 @@ type WheelGroupDto = {
 	kind: 'game' | 'changes' | 'wishlist'
 	/** what one spin costs, the amounts are negative */
 	cost: NamedChangeEntryDto[]
+}
+
+export type WheelCatalogGroupDto = WheelGroupDto & {
+	/** an item the user has already applied is left out of their next spins */
+	shouldCheckHistory: boolean
 }
 
 type WheelGroupRowDto = {
@@ -90,6 +98,67 @@ const getPoolNames = async (
 	return (await getGroupRows(path, groupId)).map((row) => row.name)
 }
 
+/** the cost of a spin, the backend sends it with negative amounts */
+const toCost = (entries: NamedChangeEntryDto[]) =>
+	entries.map((entry) => ({
+		...toResourceRef(entry),
+		amount: Math.abs(entry.amount),
+	}))
+
+/** a wishlist comes with no rows, its games are the player's own */
+export const toCatalogGroup = (
+	group: WheelCatalogGroupDto,
+	rows: WheelGroupRowDto[],
+	pointTypes: PointType[],
+): WheelCatalogGroup => ({
+	id: group.id,
+	// the backend names the wishlist group of a member itself, in English
+	name: group.kind === 'wishlist' ? 'Список желаемого' : group.name,
+	kind: group.kind === 'changes' ? 'changes' : 'games',
+	system: group.kind === 'wishlist',
+	noRepeat: group.shouldCheckHistory,
+	cost: toCost(group.cost),
+	entries: rows.map((row) => ({
+		id: row.id,
+		name: row.name,
+		...(row.description !== undefined && { description: row.description }),
+		changes: (row.entries ?? []).map((e) => toChangeText(e, pointTypes)),
+		entries: (row.entries ?? []).map(toChangeRow),
+		isManualChange: row.isManualChange === true,
+		applyMode: row.applyMode ?? 'all',
+	})),
+})
+
+/** the groups of games and of changes of the party, the wishlists are not in the catalogue */
+export const getCatalogGroups = async () =>
+	(
+		await http.get<{ response: WheelCatalogGroupDto[] }>(
+			`${await partyPath()}/wheel/catalog/groups`,
+		)
+	).body
+
+const getCatalog = async (
+	kind: WheelCatalogGroup['kind'],
+): Promise<WheelCatalogGroup[]> => {
+	const path = await partyPath()
+	const [groups, pointTypes] = await Promise.all([
+		getCatalogGroups(),
+		getPointTypes(),
+	])
+
+	return Promise.all(
+		groups
+			.filter((g) => (g.kind === 'changes') === (kind === 'changes'))
+			.map(async (group) => {
+				const { body: rows } = await http.get<{
+					response: WheelGroupRowDto[]
+				}>(`${path}/wheel/catalog/groups/${group.id}/rows`)
+
+				return toCatalogGroup(group, rows, pointTypes)
+			}),
+	)
+}
+
 const getGroups = async (): Promise<WheelGroup[]> => {
 	const path = await partyPath()
 	const [{ body: groups }, pointTypes] = await Promise.all([
@@ -122,11 +191,7 @@ const getGroups = async (): Promise<WheelGroup[]> => {
 						text: toChangeText(entry, pointTypes),
 					})),
 				})),
-				cost: group.cost.map((entry) => {
-					const ref = toResourceRef(entry)
-
-					return { ...ref, amount: 'amount' in ref ? ref.amount : 1 }
-				}),
+				cost: toCost(group.cost),
 			}
 		}),
 	)
@@ -138,6 +203,8 @@ const isLastSpinMissing = (e: unknown) =>
 
 export const wheel: Api['wheel'] = {
 	groups: getGroups,
+
+	catalog: getCatalog,
 
 	spin: async (source) => {
 		const path = await partyPath()

@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import type { AdminWheelGroup } from '../../../api-facade/contracts'
+import type { WheelCatalogGroup } from '../../../api-facade/contracts'
+import WheelGroupCard from '../../../components/WheelGroupCard.vue'
 import UiIconButton from '../../../components/ui/UiIconButton.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
-import UiSwitch from '../../../components/ui/UiSwitch.vue'
 import { useAdminWheelStore } from '../../../stores/adminWheelStore'
 import AdminSpinCost from './AdminSpinCost.vue'
 
-const { group } = defineProps<{ group: AdminWheelGroup }>()
+const { group } = defineProps<{ group: WheelCatalogGroup }>()
 
 const emit = defineEmits<{ remove: [] }>()
 
@@ -52,10 +52,10 @@ watch(() => group.id, cancel)
 </script>
 
 <template>
-	<div class="card">
-		<div class="card__head">
-			<div v-if="isRenaming" class="card__rename">
-				<div class="card__input">
+	<WheelGroupCard :group editable @no-repeat="store.setNoRepeat(group, $event)">
+		<template v-if="isRenaming" #name>
+			<div class="rename">
+				<div class="rename__input">
 					<UiInput
 						v-model="draft"
 						compact
@@ -72,82 +72,44 @@ watch(() => group.id, cancel)
 				/>
 				<UiIconButton icon="x" label="Отменить" @click="cancel" />
 			</div>
-			<span v-else class="card__name">{{ group.name }}</span>
+		</template>
 
-			<UiSwitch
-				v-if="!group.system"
-				:model-value="group.noRepeat"
-				label="Не повторять применённое"
-				@update:model-value="store.setNoRepeat(group, $event)"
+		<template v-if="!group.system && !isRenaming" #actions>
+			<UiIconButton
+				icon="pencil"
+				label="Переименовать группу"
+				@click="startRename"
 			/>
+			<UiIconButton
+				icon="trash-2"
+				label="Удалить группу"
+				@click="emit('remove')"
+			/>
+		</template>
 
-			<div class="card__spacer"></div>
+		<template #cost-action>
+			<AdminSpinCost :key="group.id" :group />
+		</template>
 
-			<template v-if="!group.system && !isRenaming">
-				<UiIconButton
-					icon="pencil"
-					label="Переименовать группу"
-					@click="startRename"
-				/>
-				<UiIconButton
-					icon="trash-2"
-					label="Удалить группу"
-					@click="emit('remove')"
-				/>
-			</template>
-		</div>
-
-		<AdminSpinCost v-if="group.kind === 'changes'" :key="group.id" :group />
-
-		<p v-if="group.system" class="card__text">
+		<p v-if="group.system" class="text">
 			Список желаемого у каждого игрока свой. Игры в него добавляют сами игроки
 			на экране «Игры», здесь список не редактируется.
 		</p>
-	</div>
+	</WheelGroupCard>
 </template>
 
 <style scoped>
-.card {
-	display: flex;
-	flex-direction: column;
-	gap: 14px;
-	padding: 16px 20px;
-	background: var(--surface-card);
-	border: 1px solid var(--border-subtle);
-	border-radius: var(--radius-lg);
-	box-shadow: var(--shadow-1);
-}
-
-.card__head {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 8px 16px;
-	min-height: 36px;
-}
-
-.card__name {
-	min-width: 0;
-	font: 700 20px / 1.2 var(--font-body);
-	color: var(--text-strong);
-	overflow-wrap: anywhere;
-}
-
-.card__rename {
+.rename {
 	display: flex;
 	align-items: center;
 	gap: 4px;
 }
 
-.card__input {
+.rename__input {
 	width: 260px;
 }
 
-.card__spacer {
-	flex: 1;
-}
-
-.card__text {
+.text {
 	margin: 0;
 	padding-top: 14px;
 	font: var(--type-body-sm);

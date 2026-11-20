@@ -293,6 +293,13 @@
 			"priority": 32,
 			"status": "done",
 			"evidence": "Done 2026-11-19. By the user's answers (1 Б: the user's own file, 2 А: plays in a hidden or minimized window, 3 А: a switch in the user menu; plus the user's own sound, copied into the app data folder, played whole and stopped when the window gets focus): `timerSoundStore` plays `assets/sounds/timer-end.mp3` or the user's file at the end of the timer; a one-shot timeout wakes the end in a hidden window; the menu has «Звук таймера», listen/stop, the file name with a reset and «Свой звук таймера». Verified: `bash harness/scripts/init.sh` passes, `cargo check` passes, prettier on the changed files. A temporary vite page (not committed, Tauri modules stubbed) in Chromium: the menu with the standard and a long custom name; listen starts and the window focus stops it; a running timer at zero plays the sound; with the switch off nothing plays. Not checked: the app itself (file window, copy, playback of a custom file, sound in a minimized window on Windows and Linux); the user checks it."
+		},
+		{
+			"id": "catalog-wheel-entries",
+			"title": "The player catalogue gets a wheel section with every item of every group. The user's answer: all items. Depends on the Server feature wheel-rows-for-members.",
+			"priority": 33,
+			"status": "done",
+			"evidence": "Done 2026-11-20. By the user's answer («такую же как у админа, но без возможности редактирования»): the player catalogue has a «Колесо» tab that repeats the admin wheel screen without editing (Пункты / Игры, groups, group card with the spin cost, the items table with search). The admin screen and the tab share WheelGroupList, WheelGroupCard and WheelEntryTable. api.wheel.catalog reads /wheel/catalog/groups and their rows, open to any member, so the Server feature wheel-rows-for-members needs no change. Verified: init.sh passes; a temporary vite page (not committed) with stubbed data in Chromium showed the tab for both kinds and the admin screen and its cost window unchanged. Not checked: the app itself, against the backend."
 		}
 	]
 }
