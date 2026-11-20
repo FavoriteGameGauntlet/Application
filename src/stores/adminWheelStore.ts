@@ -2,16 +2,16 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { api } from '../api-facade/api'
 import type {
-	AdminWheelEntry,
-	AdminWheelGroup,
+	WheelCatalogEntry,
+	WheelCatalogGroup,
 	SpinCostRow,
 } from '../api-facade/contracts'
 import { StoreName } from '../enums/storeName'
 import { useToastStore } from './toastStore'
 
 export const useAdminWheelStore = defineStore(StoreName.AdminWheel, () => {
-	const kind = ref<AdminWheelGroup['kind']>('changes')
-	const groups = ref<AdminWheelGroup[]>([])
+	const kind = ref<WheelCatalogGroup['kind']>('changes')
+	const groups = ref<WheelCatalogGroup[]>([])
 	const groupId = ref<number>()
 
 	const group = computed(
@@ -26,7 +26,7 @@ export const useAdminWheelStore = defineStore(StoreName.AdminWheel, () => {
 		if (requested === kind.value) groups.value = loaded
 	}
 
-	const setKind = async (value: AdminWheelGroup['kind']) => {
+	const setKind = async (value: WheelCatalogGroup['kind']) => {
 		kind.value = value
 		groupId.value = undefined
 		groups.value = []
@@ -69,27 +69,27 @@ export const useAdminWheelStore = defineStore(StoreName.AdminWheel, () => {
 		return ok
 	}
 
-	const renameGroup = (target: AdminWheelGroup, name: string) =>
+	const renameGroup = (target: WheelCatalogGroup, name: string) =>
 		run(() => api.admin.wheel.renameGroup(target.id, name), {
 			title: 'Сохранено',
 			text: name,
 		})
 
-	const removeGroup = (target: AdminWheelGroup) =>
+	const removeGroup = (target: WheelCatalogGroup) =>
 		run(() => api.admin.wheel.removeGroup(target.id), {
 			title: 'Группа удалена',
 			text: target.name,
 			tone: 'info',
 		})
 
-	const setNoRepeat = (target: AdminWheelGroup, value: boolean) =>
+	const setNoRepeat = (target: WheelCatalogGroup, value: boolean) =>
 		run(() => api.admin.wheel.setNoRepeat(target.id, value))
 
 	const saveEntry = (
-		target: AdminWheelGroup,
-		entry: AdminWheelEntry | undefined,
+		target: WheelCatalogGroup,
+		entry: WheelCatalogEntry | undefined,
 		input: Pick<
-			AdminWheelEntry,
+			WheelCatalogEntry,
 			'name' | 'description' | 'entries' | 'isManualChange' | 'applyMode'
 		>,
 	) =>
@@ -98,32 +98,19 @@ export const useAdminWheelStore = defineStore(StoreName.AdminWheel, () => {
 			text: input.name,
 		})
 
-	const removeEntry = (target: AdminWheelGroup, entry: AdminWheelEntry) =>
+	const removeEntry = (target: WheelCatalogGroup, entry: WheelCatalogEntry) =>
 		run(() => api.admin.wheel.removeEntry(target.id, entry.id), {
 			title: 'Пункт удалён',
 			text: entry.name,
 			tone: 'info',
 		})
 
-	const loadSpinCost = (target: AdminWheelGroup) =>
-		api.admin.wheel.spinCost(target.id)
-
-	const saveSpinCost = async (target: AdminWheelGroup, rows: SpinCostRow[]) => {
-		const toastStore = useToastStore()
-
-		try {
-			await api.admin.wheel.saveSpinCost(target.id, rows)
-			toastStore.show(
-				rows.length ? 'Цена сохранена' : 'Прокрут бесплатный',
-				target.name,
-				rows.length ? 'success' : 'info',
-			)
-			return true
-		} catch (e) {
-			toastStore.error(e)
-			return false
-		}
-	}
+	const saveSpinCost = (target: WheelCatalogGroup, rows: SpinCostRow[]) =>
+		run(() => api.admin.wheel.saveSpinCost(target.id, rows), {
+			title: rows.length ? 'Цена сохранена' : 'Прокрут бесплатный',
+			text: target.name,
+			tone: rows.length ? 'success' : 'info',
+		})
 
 	return {
 		kind,
@@ -131,7 +118,6 @@ export const useAdminWheelStore = defineStore(StoreName.AdminWheel, () => {
 		groupId,
 		group,
 		load,
-		loadSpinCost,
 		saveSpinCost,
 		setKind,
 		addGroup,

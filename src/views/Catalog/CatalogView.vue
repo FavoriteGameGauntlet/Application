@@ -13,10 +13,16 @@ import UiInput from '../../components/ui/UiInput.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiTabs from '../../components/ui/UiTabs.vue'
 import { useResourcesStore } from '../../stores/resourcesStore'
+import CatalogWheel from './components/CatalogWheel.vue'
 
 const resourcesStore = useResourcesStore()
 
-const view = ref<CatalogView>('points')
+/** the wheel has a layout of its own, the same as the admin screen of the wheel */
+type Tab = CatalogView | 'wheel'
+
+const view = ref<Tab>('points')
+/** the tab of the list and the card; the wheel tab keeps the last one */
+const listView = ref<CatalogView>('points')
 const query = ref('')
 /** the open entry of each tab, so a tab keeps it when the user comes back */
 const selected = ref<Partial<Record<CatalogView, number>>>({})
@@ -40,28 +46,29 @@ const entriesOf = (tab: CatalogView): CatalogEntry[] | undefined => {
 		.map((type) => ({ ...type, deleted: false }))
 }
 
-const tabs = computed(() =>
-	catalogViews.map((tab) => ({ ...tab, count: entriesOf(tab.value)?.length })),
-)
+const tabs = [...catalogViews, { value: 'wheel', label: 'Колесо' }]
 
-const entries = computed(() => entriesOf(view.value))
+const entries = computed(() => entriesOf(listView.value))
 
 const rows = computed(() =>
 	filterCatalogEntries(entries.value ?? [], query.value).map((entry) => ({
 		entry,
-		...catalogSummary(view.value, entry),
+		...catalogSummary(listView.value, entry),
 	})),
 )
 
 const current = computed(
 	() =>
-		rows.value.find((row) => row.entry.id === selected.value[view.value]) ??
+		rows.value.find((row) => row.entry.id === selected.value[listView.value]) ??
 		rows.value[0],
 )
 
 watch(
 	view,
 	() => {
+		if (view.value === 'wheel') return
+
+		listView.value = view.value
 		query.value = ''
 
 		const kind = catalogKindOf(view.value)
@@ -79,10 +86,12 @@ watch(
 		<UiTabs
 			:model-value="view"
 			:items="tabs"
-			@update:model-value="view = $event as CatalogView"
+			@update:model-value="view = $event as Tab"
 		/>
 
-		<div class="layout">
+		<CatalogWheel v-if="view === 'wheel'" />
+
+		<div v-else class="layout">
 			<div class="panel">
 				<div class="panel__search">
 					<UiInput
@@ -94,7 +103,7 @@ watch(
 					/>
 				</div>
 				<div class="panel__head">
-					<span>{{ listTitles[view] }}</span>
+					<span>{{ listTitles[listView] }}</span>
 					<span class="panel__count">{{ rows.length }}</span>
 				</div>
 				<button
@@ -104,7 +113,7 @@ watch(
 					:class="{ 'row--on': row.entry.id === current?.entry.id }"
 					type="button"
 					:aria-pressed="row.entry.id === current?.entry.id"
-					@click="selected[view] = row.entry.id"
+					@click="selected[listView] = row.entry.id"
 				>
 					<span class="row__main">
 						<span class="row__name">{{ row.entry.name }}</span>
@@ -126,8 +135,8 @@ watch(
 			<div class="panel panel--card">
 				<CatalogEntryCard
 					v-if="current"
-					:key="`${view}-${current.entry.id}`"
-					:view="view"
+					:key="`${listView}-${current.entry.id}`"
+					:view="listView"
 					:entry="current.entry"
 				/>
 				<div v-else-if="entries" class="panel__empty">

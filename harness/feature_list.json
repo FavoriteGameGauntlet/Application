@@ -289,10 +289,10 @@
 		},
 		{
 			"id": "catalog-wheel-entries",
-			"title": "The player catalogue gets a wheel section with every item of every group. The user's answer: all items. Depends on the Server feature wheel-rows-for-members.",
+			"title": "Add the wheel tab to the player catalogue",
 			"priority": 33,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-20. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "perk-ability-edit",

@@ -1,5 +1,10 @@
 # Progress log archive
 
+## 2026-11-19 rules-ui-parties-window
+
+- By the user's answers (dates: А; color: the avatar replaces the square, no other preview): the dates field labels its days «Первый день» and «Последний день»; the color picker shows the avatar with the login in place of the swatch beside the hex field, in the party window and the member window.
+- Verified: `bash harness/scripts/init.sh` passes, prettier on the changed files. A temporary vite page (not committed) with the real `FormDialog` in Chromium. Not checked: the app itself, against the backend.
+
 ## 2026-11-19 rules-ui-player-screens
 
 - By the user's answers (the manual form from a page stays for admins; the review title reads the party setting): players list rows open the profile with a chevron in place of «⋯»; «Общие очки» has no entry to the manual form and no row menus (the user's word: no button for anybody); the review window title is «Отзыв для всей пати» / «Отзыв для админов» from `GameReviewsVisibleToMembers` (system parameters are now `api.parameters` and `parametersStore`, readable by members); the fix form shows «Исходная запись» as a quiet card and applies with «Добавить исправление»; the rows column reads «Сейчас → станет». Fixed on the way (the user's report): the free manual form went back to «Обмены» after applying or cancelling; it returns to the empty admin screen.

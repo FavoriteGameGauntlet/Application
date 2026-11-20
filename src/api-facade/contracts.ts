@@ -594,7 +594,7 @@ export type AdminExchangeInput = {
 	targetApplyMode: ApplyMode
 }
 
-export type AdminWheelEntry = {
+export type WheelCatalogEntry = {
 	id: number
 	name: string
 	description?: string
@@ -607,14 +607,16 @@ export type AdminWheelEntry = {
 	applyMode: ApplyMode
 }
 
-export type AdminWheelGroup = {
+export type WheelCatalogGroup = {
 	id: number
 	name: string
 	kind: Exclude<WheelGroup['kind'], 'wishlist'>
 	/** the wishlist group: the entries are the games of the users, nothing to edit */
 	system: boolean
 	noRepeat: boolean
-	entries: AdminWheelEntry[]
+	/** what applying a spin costs; empty for a free group and for games */
+	cost: CostRef[]
+	entries: WheelCatalogEntry[]
 }
 
 /**
@@ -855,6 +857,15 @@ export type Api = {
 		 * starts the game, creates its timer and removes the wishlist entry, a
 		 * spin of changes applies its `entries`.
 		 */
+		/**
+		 * The catalogue of the wheel for any member: every item of every group of
+		 * the kind, also the ones the user has already applied in a group with no
+		 * repeats. The wishlists are not in it.
+		 *
+		 * Backend: GET {party}/wheel/catalog/groups and GET
+		 * {party}/wheel/catalog/groups/{groupId}/rows
+		 */
+		catalog: (kind: WheelCatalogGroup['kind']) => Promise<WheelCatalogGroup[]>
 		apply: (
 			groupId: number,
 			use?: WheelApply,
@@ -1051,11 +1062,11 @@ export type Api = {
 			restore: (id: number) => Promise<void>
 		}
 		wheel: {
-			groups: (kind: AdminWheelGroup['kind']) => Promise<AdminWheelGroup[]>
+			groups: (kind: WheelCatalogGroup['kind']) => Promise<WheelCatalogGroup[]>
 			createGroup: (
-				kind: AdminWheelGroup['kind'],
+				kind: WheelCatalogGroup['kind'],
 				name: string,
-			) => Promise<AdminWheelGroup>
+			) => Promise<WheelCatalogGroup>
 			renameGroup: (groupId: number, name: string) => Promise<void>
 			setNoRepeat: (groupId: number, noRepeat: boolean) => Promise<void>
 			removeGroup: (groupId: number) => Promise<void>
@@ -1064,19 +1075,18 @@ export type Api = {
 				groupId: number,
 				entryId: number | undefined,
 				input: Pick<
-					AdminWheelEntry,
+					WheelCatalogEntry,
 					'name' | 'description' | 'entries' | 'isManualChange' | 'applyMode'
 				>,
 			) => Promise<void>
 			removeEntry: (groupId: number, entryId: number) => Promise<void>
 			/**
 			 * Every group of changes has a cost of its own, the games are free. An
-			 * empty list makes a spin of the group free.
+			 * empty list makes a spin of the group free. The cost is read with the
+			 * group, see `wheel.catalog`.
 			 *
-			 * Backend: PUT {party}/wheel/catalog/groups/{groupId}/spin-cost, the cost is
-			 * read from GET {party}/wheel/catalog/groups (negative amounts there)
+			 * Backend: PUT {party}/wheel/catalog/groups/{groupId}/spin-cost
 			 */
-			spinCost: (groupId: number) => Promise<SpinCostRow[]>
 			saveSpinCost: (groupId: number, rows: SpinCostRow[]) => Promise<void>
 		}
 		rewards: {
