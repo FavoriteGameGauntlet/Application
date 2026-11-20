@@ -63,10 +63,11 @@ export const useTimerSoundStore = defineStore(StoreName.TimerSound, () => {
 		playing.value = undefined
 	}
 
-	const start = async () => {
+	const start = async (loop: boolean) => {
 		stop()
 
 		const audio = new Audio(await source())
+		audio.loop = loop
 		audio.addEventListener('ended', () => {
 			if (playing.value === audio) playing.value = undefined
 		})
@@ -76,14 +77,15 @@ export const useTimerSoundStore = defineStore(StoreName.TimerSound, () => {
 		await audio.play().catch(stop)
 	}
 
+	/** repeats until the window gets focus; a window that has it already gets the sound once, or nothing would stop it */
 	const play = () => {
-		if (enabled.value) void start()
+		if (enabled.value) void start(!document.hasFocus())
 	}
 
 	/** the button in the menu: listen to the sound, or stop it */
 	const preview = () => {
 		if (playing.value) stop()
-		else void start()
+		else void start(false)
 	}
 
 	const choose = async () => {
