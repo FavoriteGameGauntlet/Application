@@ -6,6 +6,7 @@ Newest entry on top. Record only what was actually verified.
 
 - By the user's answers (1 Б, 2 А, 3 А, plus the user's own sound; played whole, stopped when the window gets focus): `timerSoundStore` plays the sound at the end of the timer; the user menu has «Звук таймера», listen, the file name with a reset and «Свой звук таймера». The file is copied by `src-tauri/src/timer_sound.rs` (up to 5 МБ) into the app data folder; `plugin-dialog` added, `media-src 'self' blob:` in the CSP.
 - Verified: `bash harness/scripts/init.sh` passes, `cargo check` passes, prettier on the changed files. A temporary vite page (not committed) in Chromium: menu, listen and stop on focus, sound at the timer end, nothing with the switch off. Not checked: the app itself; the user checks the file window, a custom file and the sound in a minimized window.
+- Added on the user's word (2026-11-20): the end of the session (the cookie lives a day) sends the user to the login with no error toast; `isSessionExpired` in `api-facade/sessionExpired.ts` is shared by the interceptor and `toast.error`. Checked by eslint and vue-tsc only.
 
 ## 2026-11-19 single-choice-entries
 

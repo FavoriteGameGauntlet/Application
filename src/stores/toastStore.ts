@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { HttpErrorResponse } from '../api-facade/http'
+import { isSessionExpired } from '../api-facade/sessionExpired'
 import { StoreName } from '../enums/storeName'
 
 export type ToastTone = 'success' | 'info' | 'danger'
@@ -25,13 +26,17 @@ export const useToastStore = defineStore(StoreName.Toast, () => {
 		timeout = setTimeout(close, TOAST_DURATION_MS)
 	}
 
-	const error = (e: unknown) =>
+	const error = (e: unknown) => {
+		// the interceptor has already sent the user to the login
+		if (isSessionExpired(e)) return
+
 		show(
 			'Ошибка',
 			(e as Partial<HttpErrorResponse>).body?.message ??
 				'Что-то пошло не так. Попробуй ещё раз.',
 			'danger',
 		)
+	}
 
 	return { toast, show, error, close }
 })
