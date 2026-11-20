@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { SCALES, useScaleStore } from '../stores/scaleStore'
 import { Theme, useThemeStore } from '../stores/themeStore'
-import { useTimerSoundStore } from '../stores/timerSoundStore'
+import { TimerSoundStop, useTimerSoundStore } from '../stores/timerSoundStore'
 import UiButton from './ui/UiButton.vue'
 import UiDialog from './ui/UiDialog.vue'
 import UiFormSection from './ui/UiFormSection.vue'
@@ -21,6 +21,11 @@ const sound = useTimerSoundStore()
 const themeOptions = [
 	{ value: Theme.Light, label: 'Светлая' },
 	{ value: Theme.Dark, label: 'Тёмная' },
+]
+
+const stopOptions = [
+	{ value: TimerSoundStop.Focus, label: 'При возврате в FGG' },
+	{ value: TimerSoundStop.Button, label: 'Кнопкой в таймере' },
 ]
 
 const scaleOptions = SCALES.map((s) => ({ value: String(s), label: `${s}%` }))
@@ -80,6 +85,20 @@ const onClose = () => {
 						:model-value="sound.repeat"
 						@update:model-value="sound.setRepeat($event)"
 					/>
+				</div>
+
+				<div class="settings__row">
+					Остановка звука
+					<div class="settings__control settings__control--wide">
+						<UiSelect
+							compact
+							aria-label="Остановка звука"
+							:disabled="!sound.enabled"
+							:options="stopOptions"
+							:model-value="sound.stopMode"
+							@update:model-value="sound.setStopMode($event as TimerSoundStop)"
+						/>
+					</div>
 				</div>
 
 				<div class="settings__source">
@@ -144,6 +163,10 @@ const onClose = () => {
 
 .settings__control {
 	width: 120px;
+}
+
+.settings__control--wide {
+	width: 220px;
 }
 
 .settings__divider {

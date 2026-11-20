@@ -157,7 +157,7 @@ export const useTimerStore = defineStore(StoreName.Timer, () => {
 			(ended) => {
 				if (!ended) return
 
-				useTimerSoundStore().play()
+				void useTimerSoundStore().play()
 				void syncFinished()
 			},
 		)

@@ -75,6 +75,11 @@ const normalizedOptions = computed(() =>
 	cursor: pointer;
 }
 
+.ui-select__control:disabled {
+	cursor: not-allowed;
+	opacity: 0.45;
+}
+
 .ui-select__control:focus {
 	border-color: var(--border-strong);
 	box-shadow: var(--shadow-focus);

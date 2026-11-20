@@ -14,6 +14,12 @@ const SOUND_TYPES: Record<string, string> = {
 	wav: 'audio/wav',
 }
 
+/** what stops the end sound: the user coming back to the window, or only the button of the timer form */
+export enum TimerSoundStop {
+	Focus = 'focus',
+	Button = 'button',
+}
+
 const extensionOf = (name: string) => name.split('.').pop()?.toLowerCase() ?? ''
 
 /** the sound of the end of the timer; the choice lives on this computer, like the theme */
@@ -34,6 +40,18 @@ export const useTimerSoundStore = defineStore(StoreName.TimerSound, () => {
 
 	const setRepeat = (value: boolean) => {
 		storedRepeat.value = value
+	}
+
+	const { state: storedStop } = usePersistentRef(StoreKey.TimerSoundStop)
+
+	const stopMode = computed(() =>
+		storedStop.value === TimerSoundStop.Button
+			? TimerSoundStop.Button
+			: TimerSoundStop.Focus,
+	)
+
+	const setStopMode = (value: TimerSoundStop) => {
+		storedStop.value = value
 	}
 
 	/** the object URL of the user's file, read once */
@@ -64,10 +82,13 @@ export const useTimerSoundStore = defineStore(StoreName.TimerSound, () => {
 	}
 
 	const playing = shallowRef<HTMLAudioElement>()
+	/** the sound is the end of the timer, not a preview; the timer forms show the stop in place of the clock */
+	const ringing = ref(false)
 
 	const stop = () => {
 		playing.value?.pause()
 		playing.value = undefined
+		ringing.value = false
 	}
 
 	const start = async (loop: boolean) => {
@@ -76,7 +97,7 @@ export const useTimerSoundStore = defineStore(StoreName.TimerSound, () => {
 		const audio = new Audio(await source())
 		audio.loop = loop
 		audio.addEventListener('ended', () => {
-			if (playing.value === audio) playing.value = undefined
+			if (playing.value === audio) stop()
 		})
 		playing.value = audio
 
@@ -84,12 +105,18 @@ export const useTimerSoundStore = defineStore(StoreName.TimerSound, () => {
 		await audio.play().catch(stop)
 	}
 
-	/** repeats until the window gets focus; a window that has it already gets the sound once, or nothing would stop it */
-	const play = () => {
-		if (enabled.value) void start(repeat.value && !document.hasFocus())
+	/** a focused window never gets the focus that stops the sound, so there it repeats only until the button */
+	const play = async () => {
+		if (!enabled.value) return
+
+		await start(
+			repeat.value &&
+				(stopMode.value === TimerSoundStop.Button || !document.hasFocus()),
+		)
+		if (playing.value) ringing.value = true
 	}
 
-	/** the button in the menu: listen to the sound, or stop it */
+	/** the button in the settings: listen to the sound, or stop it */
 	const preview = () => {
 		if (playing.value) stop()
 		else void start(false)
@@ -131,7 +158,9 @@ export const useTimerSoundStore = defineStore(StoreName.TimerSound, () => {
 
 	const init = () => {
 		// the sound is a call to come back; once the user is here, it has done its job
-		window.addEventListener('focus', stop)
+		window.addEventListener('focus', () => {
+			if (stopMode.value === TimerSoundStop.Focus) stop()
+		})
 	}
 
 	return {
@@ -139,9 +168,12 @@ export const useTimerSoundStore = defineStore(StoreName.TimerSound, () => {
 		setEnabled,
 		repeat,
 		setRepeat,
+		stopMode,
+		setStopMode,
 		customName,
 		chooseError,
 		isPlaying: computed(() => !!playing.value),
+		ringing,
 		play,
 		preview,
 		stop,
