@@ -14,8 +14,8 @@ export const useThemeStore = defineStore(StoreName.Theme, () => {
 
 	const isDark = computed(() => theme.value !== Theme.Light)
 
-	const toggle = () => {
-		theme.value = isDark.value ? Theme.Light : Theme.Dark
+	const set = (value: Theme) => {
+		theme.value = value
 	}
 
 	const init = () => {
@@ -24,5 +24,5 @@ export const useThemeStore = defineStore(StoreName.Theme, () => {
 		})
 	}
 
-	return { theme, isDark, toggle, init }
+	return { theme, isDark, set, init }
 })

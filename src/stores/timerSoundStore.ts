@@ -1,12 +1,11 @@
 import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import { defineStore } from 'pinia'
-import { computed, shallowRef } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 import defaultSound from '../assets/sounds/timer-end.mp3'
 import { usePersistentRef } from '../composables/usePersistentRef'
 import { StoreName } from '../enums/storeName'
 import { StoreKey } from '../services/persistentStorage'
-import { useToastStore } from './toastStore'
 
 /** the types the file window offers; the copy keeps no extension, so the stored name gives the type */
 const SOUND_TYPES: Record<string, string> = {
@@ -27,6 +26,14 @@ export const useTimerSoundStore = defineStore(StoreName.TimerSound, () => {
 
 	const setEnabled = (value: boolean) => {
 		storedEnabled.value = value
+	}
+
+	const { state: storedRepeat } = usePersistentRef(StoreKey.TimerSoundRepeat)
+
+	const repeat = computed(() => storedRepeat.value !== false)
+
+	const setRepeat = (value: boolean) => {
+		storedRepeat.value = value
 	}
 
 	/** the object URL of the user's file, read once */
@@ -79,7 +86,7 @@ export const useTimerSoundStore = defineStore(StoreName.TimerSound, () => {
 
 	/** repeats until the window gets focus; a window that has it already gets the sound once, or nothing would stop it */
 	const play = () => {
-		if (enabled.value) void start(!document.hasFocus())
+		if (enabled.value) void start(repeat.value && !document.hasFocus())
 	}
 
 	/** the button in the menu: listen to the sound, or stop it */
@@ -87,6 +94,9 @@ export const useTimerSoundStore = defineStore(StoreName.TimerSound, () => {
 		if (playing.value) stop()
 		else void start(false)
 	}
+
+	/** why the last chosen file was not taken; the settings show it under the button */
+	const chooseError = ref<string>()
 
 	const choose = async () => {
 		const path = await open({
@@ -97,22 +107,21 @@ export const useTimerSoundStore = defineStore(StoreName.TimerSound, () => {
 		try {
 			await invoke('timer_sound_save', { path })
 		} catch (e) {
-			useToastStore().show(
-				'Звук не выбран',
+			chooseError.value =
 				e === 'too_large'
 					? 'Файл больше 5 МБ.'
-					: 'Не получилось скопировать файл.',
-				'danger',
-			)
+					: 'Не получилось скопировать файл.'
 			return
 		}
 
+		chooseError.value = undefined
 		stop()
 		forgetCustom()
 		customName.value = path.split(/[\\/]/).pop()
 	}
 
 	const reset = async () => {
+		chooseError.value = undefined
 		stop()
 		forgetCustom()
 		customName.value = undefined
@@ -128,10 +137,14 @@ export const useTimerSoundStore = defineStore(StoreName.TimerSound, () => {
 	return {
 		enabled,
 		setEnabled,
+		repeat,
+		setRepeat,
 		customName,
+		chooseError,
 		isPlaying: computed(() => !!playing.value),
 		play,
 		preview,
+		stop,
 		choose,
 		reset,
 		init,
