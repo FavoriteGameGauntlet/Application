@@ -303,9 +303,9 @@
 		},
 		{
 			"id": "user-avatars",
-			"title": "A user uploads their own avatar, and UiUserAvatar shows it everywhere (it already takes src, today only the initials show). The client checks the size limits of the API documentation before the upload. Depends on the Server feature user-avatars; where the upload lives (profile, a menu) goes through the design of AGENTS.md.",
+			"title": "A party admin uploads a member's avatar by clicking their avatar in the member edit dialog. Validate the file against the API limits and show the picture everywhere the client shows that member's avatar.",
 			"priority": 35,
-			"status": "todo",
+			"status": "in_progress",
 			"evidence": ""
 		},
 		{
