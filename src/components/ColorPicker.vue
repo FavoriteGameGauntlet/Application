@@ -16,9 +16,10 @@ type Props = {
 	hint?: string
 	/** the avatar beside the hex field shows the color on this login */
 	login?: string
+	avatarUrl?: string | null
 }
 
-const { label, hint, login } = defineProps<Props>()
+const { label, hint, login, avatarUrl } = defineProps<Props>()
 
 /** lowercase hex once valid; the form does not save an invalid one */
 const color = defineModel<string>({ required: true })
@@ -158,7 +159,13 @@ const percent = (value: number) => `${Math.round(value * 100)}%`
 
 		<div class="picker__hex">
 			<span ref="preview" class="picker__preview">
-				<UiUserAvatar :name="login" :color="shown" :size="40" />
+				<UiUserAvatar
+					:name="login"
+					:color="shown"
+					:src="avatarUrl"
+					:ring="!!avatarUrl"
+					:size="40"
+				/>
 			</span>
 
 			<div class="picker__input">

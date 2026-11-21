@@ -27,6 +27,8 @@ type RawResponse = {
 	body: string
 }
 
+type ImageBody = { contentType: string; bytes: number[] }
+
 const parseBody = (body: string) => {
 	try {
 		return body.length ? JSON.parse(body) : body
@@ -38,7 +40,7 @@ const parseBody = (body: string) => {
 
 const makeRequest = async <T extends object | string = object | string>(
 	url: string,
-	opts: { method: string; body?: string },
+	opts: { method: string; body?: string; image?: ImageBody },
 ): Promise<HttpResponse<T>> => {
 	const fullUrl = API_URL + url
 	const method = opts.method
@@ -55,6 +57,7 @@ const makeRequest = async <T extends object | string = object | string>(
 			method,
 			url: fullUrl,
 			body: opts.body,
+			image: opts.image,
 		})
 		const responseBody: T = parseBody(response.body)
 
@@ -114,6 +117,14 @@ const withMethod =
 
 export const http = {
 	put: withMethod('PUT'),
+	putImage: async (url: string, file: File) =>
+		makeRequest(url, {
+			method: 'PUT',
+			image: {
+				contentType: file.type,
+				bytes: Array.from(new Uint8Array(await file.arrayBuffer())),
+			},
+		}),
 	patch: withMethod('PATCH'),
 	delete: withMethod('DELETE'),
 

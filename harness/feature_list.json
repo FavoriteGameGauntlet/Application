@@ -305,8 +305,8 @@
 			"id": "user-avatars",
 			"title": "A party admin uploads a member's avatar by clicking their avatar in the member edit dialog. Validate the file against the API limits and show the picture everywhere the client shows that member's avatar.",
 			"priority": 35,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-21. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "ux-field-errors",

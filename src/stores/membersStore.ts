@@ -5,7 +5,10 @@ import type { Login, Member } from '../api-facade/contracts'
 import { StoreName } from '../enums/storeName'
 
 export const useMembersStore = defineStore(StoreName.Members, () => {
-	const list = ref<Member[]>([])
+	const all = ref<Member[]>([])
+	let loadId = 0
+
+	const list = computed(() => all.value.filter((member) => !member.leftDate))
 
 	const users = computed(() => list.value.map((m) => m.user))
 
@@ -13,11 +16,17 @@ export const useMembersStore = defineStore(StoreName.Members, () => {
 	const colorOf = (login: Login) =>
 		users.value.find((p) => p.login === login)?.color ?? 'var(--user-1)'
 
+	const avatarOf = (login: Login) =>
+		all.value.find((member) => member.user.login === login)?.user.avatarUrl
+
 	const load = async () => {
-		list.value = await api.members.list()
+		const id = ++loadId
+		const members = await api.members.list()
+
+		if (id === loadId) all.value = members
 	}
 
 	const get = (login: Login) => api.members.get(login)
 
-	return { list, users, colorOf, load, get }
+	return { list, users, colorOf, avatarOf, load, get }
 })

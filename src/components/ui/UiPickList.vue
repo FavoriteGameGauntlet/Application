@@ -9,6 +9,7 @@ export type PickOption = {
 	meta?: string
 	/** a player: the row starts with an avatar of this color */
 	color?: string
+	avatarUrl?: string | null
 	/** the row is shown but cannot be picked; `meta` can say why */
 	disabled?: boolean
 }
@@ -79,6 +80,7 @@ const toggle = (option: PickOption) => {
 				v-if="o.color"
 				:name="o.label"
 				:color="o.color"
+				:src="o.avatarUrl"
 				:size="26"
 			/>
 			<span class="ui-pick-list__label">{{ o.label }}</span>

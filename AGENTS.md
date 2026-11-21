@@ -41,7 +41,7 @@ npx vue-tsc --noEmit    # types, .vue files included
 npx prettier -w <files> # format only the changed files
 ```
 
-`npm run build` = `vue-tsc --noEmit && vite build`. To check Rust, run `cargo check` in `src-tauri/`. Run the whole app (`npm run tauri dev`) only for changes in `src-tauri/` or window behaviour.
+`npm run build` = `vue-tsc --noEmit && vite build`. The agent checks Rust with `cargo check` in `src-tauri/`. The user runs `npm run tauri dev` to verify the window when a change touches `src-tauri/` or window behaviour.
 
 ## Plan before edits
 
@@ -119,7 +119,7 @@ When the user asks for a design (a screen, a form, a table, a layout), don't gue
 
 - The target behaviour is implemented.
 - `bash harness/scripts/init.sh` passes.
-- If `src-tauri/` changed: `cargo check` passes and the window behaviour was checked by running the app.
+- If `src-tauri/` changed, `cargo check` passes. The user verifies window behaviour. Record that check as pending until the user reports the result.
 - If the change broke a rule written in `harness/ARCHITECTURE.md`, that file is updated. Most changes don't need it.
 - If the `Api` contract changed: it is checked against the backend documentation, the implementation in `api-facade/http/` and every place that uses it are updated.
 - Evidence is recorded in `harness/feature_list.json` or `harness/claude-progress.md`.

@@ -122,6 +122,7 @@ onMounted(() => membersStore.load())
 					<UiUserAvatar
 						:name="member.user.login"
 						:color="member.user.color"
+						:src="member.user.avatarUrl"
 						:size="28"
 					/>
 					<span class="user__text">

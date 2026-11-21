@@ -95,6 +95,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 						>
 							{{ line }}
 						</div>
+						<slot name="title-after" />
 					</div>
 					<UiIconButton
 						type="button"
@@ -190,6 +191,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 .ui-dialog__title--plain {
 	text-transform: none;
+	overflow-wrap: anywhere;
 }
 
 .ui-dialog__subtitle {

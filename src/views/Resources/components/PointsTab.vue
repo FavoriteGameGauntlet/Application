@@ -10,6 +10,7 @@ import UiRowMenu, {
 import UiUserAvatar from '../../../components/ui/UiUserAvatar.vue'
 import { RouteName } from '../../../router/routeNames'
 import { useJournalStore } from '../../../stores/journalStore'
+import { useMembersStore } from '../../../stores/membersStore'
 import { useResourcesStore } from '../../../stores/resourcesStore'
 import { useSessionStore } from '../../../stores/sessionStore'
 import { formatBounds } from '../../../utils/format'
@@ -18,6 +19,7 @@ const router = useRouter()
 const resourcesStore = useResourcesStore()
 const sessionStore = useSessionStore()
 const journalStore = useJournalStore()
+const membersStore = useMembersStore()
 
 const query = ref('')
 const selectedType = ref<number | undefined>(
@@ -195,6 +197,7 @@ watch(() => journalStore.revision, resourcesStore.loadStandings, {
 						<UiUserAvatar
 							:name="row.standing.user.login"
 							:color="row.standing.user.color"
+							:src="membersStore.avatarOf(row.standing.user.login)"
 							:size="28"
 						/>
 						<span class="user__name">{{ row.standing.user.login }}</span>

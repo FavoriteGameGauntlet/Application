@@ -247,6 +247,7 @@ function showEntry(id: number) {
 						<UiUserAvatar
 							:name="row.entry.actor"
 							:color="membersStore.colorOf(row.entry.actor)"
+							:src="membersStore.avatarOf(row.entry.actor)"
 							:size="24"
 						/>
 						<span class="who__login">{{ row.entry.actor }}</span>

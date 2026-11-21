@@ -23,13 +23,19 @@ const sessionStore = useSessionStore()
 			{{ sessionStore.season?.name }}
 		</button>
 
-		<UiBadge tone="navy">{{ sessionStore.isAdmin ? 'админ' : 'игрок' }}</UiBadge>
+		<UiBadge tone="navy">{{
+			sessionStore.isAdmin ? 'админ' : 'игрок'
+		}}</UiBadge>
 
 		<div class="topbar__spacer"></div>
 
-		<UiIconButton icon="minimize-2" label="Мини-режим" @click="miniModeStore.toggle()" />
+		<UiIconButton
+			icon="minimize-2"
+			label="Мини-режим"
+			@click="miniModeStore.toggle()"
+		/>
 
-		<TopbarControls />
+		<TopbarControls in-party />
 	</header>
 </template>
 

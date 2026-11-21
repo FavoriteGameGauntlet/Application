@@ -11,12 +11,11 @@ import {
 } from './context'
 
 const toPartyMember = (m: MemberDto): PartyMember => ({
-	login: m.login,
+	...userRefOf([m], m.login),
 	displayName: m.displayName ?? null,
 	joinedDate: m.joinedDate,
 	leftDate: m.leftDate ?? null,
 	isAdmin: m.isAdmin,
-	color: m.color,
 })
 
 export const session: Pick<Api['session'], 'getMe' | 'getSeason'> = {
@@ -123,6 +122,13 @@ export const adminMembers: Api['admin']['members'] = {
 		if (!member) throw new Error('The member is not found')
 
 		return toPartyMember(member)
+	},
+
+	changeAvatar: async (login, file) => {
+		await http.putImage(
+			`${await partyPath()}/members/${encodeURIComponent(login)}/avatar`,
+			file,
+		)
 	},
 
 	remove: async (login) => {

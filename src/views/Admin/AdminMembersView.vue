@@ -1,17 +1,19 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import type { PartyMember } from '../../api-facade/contracts'
+import { computed, onMounted, ref, shallowRef, useTemplateRef } from 'vue'
+import type { Login, PartyMember } from '../../api-facade/contracts'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
 import type { FormField, FormValues } from '../../components/formDialog'
 import FormDialog from '../../components/FormDialog.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
 import UiChoiceChips from '../../components/ui/UiChoiceChips.vue'
+import UiIcon from '../../components/ui/UiIcon.vue'
 import UiRowMenu, { type RowMenuItem } from '../../components/ui/UiRowMenu.vue'
 import UiUserAvatar from '../../components/ui/UiUserAvatar.vue'
 import { useParametersStore } from '../../stores/parametersStore'
 import { useAdminSettingsStore } from '../../stores/adminSettingsStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToastStore } from '../../stores/toastStore'
+import { AVATAR_ACCEPT, avatarFileError } from '../../utils/avatar'
 import { formatDate } from '../../utils/format'
 import { nextMemberColor } from '../../utils/memberColor'
 import AdminListHeader from './components/AdminListHeader.vue'
@@ -23,8 +25,14 @@ const sessionStore = useSessionStore()
 const parametersStore = useParametersStore()
 const toastStore = useToastStore()
 
-/** the member in the edit dialog, undefined means the dialog is closed */
-const editing = ref<PartyMember>()
+const editingLogin = ref<Login>()
+const editing = computed(() =>
+	store.members.find((member) => member.login === editingLogin.value),
+)
+const avatarInput = useTemplateRef<HTMLInputElement>('avatar-input')
+const avatarError = ref<string>()
+const avatarUpload = shallowRef<Promise<void>>()
+const saving = ref(false)
 const removing = ref<PartyMember>()
 const isAdding = ref(false)
 /** the refusal of the last «Добавить», for the login that was typed */
@@ -86,7 +94,10 @@ const menuOf = (member: PartyMember): RowMenuItem[] =>
 				{
 					label: 'Изменить',
 					icon: 'pencil',
-					select: () => (editing.value = member),
+					select: () => {
+						avatarError.value = undefined
+						editingLogin.value = member.login
+					},
 				},
 				{
 					label: 'Удалить из пати',
@@ -116,7 +127,11 @@ const fields = computed<FormField[]>(() => [
 			disabledReason: 'Снять админа с себя нельзя',
 		}),
 	},
-	{ ...colorField, login: editing.value?.login },
+	{
+		...colorField,
+		login: editing.value?.login,
+		avatarUrl: editing.value?.avatarUrl,
+	},
 ])
 
 const initial = computed<FormValues>(() => ({
@@ -171,15 +186,53 @@ const onAdd = async (values: FormValues) => {
 const onSave = async (values: FormValues) => {
 	const member = editing.value
 
-	if (!member) return
+	if (!member || saving.value) return
 
-	const ok = await store.updateMember(member, {
-		displayName: String(values.displayName).trim() || null,
-		isAdmin: values.isAdmin === true,
-		color: String(values.color),
-	})
+	saving.value = true
 
-	if (ok) editing.value = undefined
+	try {
+		await avatarUpload.value
+
+		const ok = await store.updateMember(member, {
+			displayName: String(values.displayName).trim() || null,
+			isAdmin: values.isAdmin === true,
+			color: String(values.color),
+		})
+
+		if (ok && editingLogin.value === member.login)
+			editingLogin.value = undefined
+	} finally {
+		saving.value = false
+	}
+}
+
+const uploadAvatar = async (login: Login, file: File) => {
+	const error = await avatarFileError(file)
+
+	if (error) {
+		if (editingLogin.value === login) avatarError.value = error
+		return
+	}
+
+	await store.changeMemberAvatar(login, file)
+}
+
+const onAvatarFile = async (event: Event) => {
+	const input = event.currentTarget as HTMLInputElement
+	const file = input.files?.[0]
+	const login = editingLogin.value
+	input.value = ''
+
+	if (!file || !login || avatarUpload.value || saving.value) return
+
+	avatarError.value = undefined
+	avatarUpload.value = uploadAvatar(login, file)
+
+	try {
+		await avatarUpload.value
+	} finally {
+		avatarUpload.value = undefined
+	}
 }
 
 const removeText = ref('')
@@ -265,7 +318,12 @@ onMounted(() => store.loadMembers())
 				:items="menuOf(member)"
 			>
 				<div class="cell user" role="cell">
-					<UiUserAvatar :name="member.login" :color="member.color" :size="28" />
+					<UiUserAvatar
+						:name="member.login"
+						:color="member.color"
+						:src="member.avatarUrl"
+						:size="28"
+					/>
 					<span class="user__login">{{ member.login }}</span>
 					<UiBadge v-if="member.login === sessionStore.login" tone="accent"
 						>ты</UiBadge
@@ -316,11 +374,42 @@ onMounted(() => store.loadMembers())
 		plain-title
 		:sections="[{ fields }]"
 		:initial
-		@close="editing = undefined"
+		@close="editingLogin = undefined"
 		@save="onSave"
 	>
 		<template v-if="editing" #lead>
-			<UiUserAvatar :name="editing.login" :color="editing.color" :size="36" />
+			<button
+				type="button"
+				class="avatar-upload"
+				:disabled="!!avatarUpload || saving"
+				:aria-busy="!!avatarUpload"
+				:aria-label="editing.avatarUrl ? 'Заменить аватар' : 'Загрузить аватар'"
+				:aria-describedby="avatarError ? 'avatar-upload-error' : undefined"
+				@click="avatarInput?.click()"
+			>
+				<UiUserAvatar
+					:name="editing.login"
+					:color="editing.color"
+					:src="editing.avatarUrl"
+					:size="36"
+				/>
+				<span class="avatar-upload__overlay" aria-hidden="true">
+					<span v-if="avatarUpload" class="avatar-upload__spinner"></span>
+					<UiIcon v-else name="upload" :size="16" />
+				</span>
+			</button>
+			<input
+				ref="avatar-input"
+				type="file"
+				:accept="AVATAR_ACCEPT"
+				hidden
+				@change="onAvatarFile"
+			/>
+		</template>
+		<template v-if="avatarError" #title-after>
+			<span id="avatar-upload-error" class="avatar-upload__error" role="alert">
+				{{ avatarError }}
+			</span>
 		</template>
 	</FormDialog>
 
@@ -339,6 +428,67 @@ onMounted(() => store.loadMembers())
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
+}
+
+.avatar-upload {
+	position: relative;
+	display: inline-flex;
+	flex: none;
+	padding: 0;
+	border: 0;
+	background: none;
+	cursor: pointer;
+}
+
+.avatar-upload:focus-visible {
+	box-shadow: var(--shadow-focus);
+}
+
+.avatar-upload:disabled {
+	cursor: default;
+}
+
+.avatar-upload__overlay {
+	position: absolute;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	clip-path: var(--hex-clip);
+	background: var(--surface-overlay);
+	color: var(--fgg-mist);
+	opacity: 0;
+}
+
+.avatar-upload:not(:disabled):hover .avatar-upload__overlay,
+.avatar-upload:focus-visible .avatar-upload__overlay,
+.avatar-upload[aria-busy='true'] .avatar-upload__overlay {
+	opacity: 1;
+}
+
+.avatar-upload__spinner {
+	width: 16px;
+	height: 16px;
+	border: 2px solid currentColor;
+	border-right-color: transparent;
+	border-radius: 50%;
+	animation: avatar-upload-spin 800ms linear infinite;
+}
+
+@keyframes avatar-upload-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.avatar-upload__spinner {
+		animation: none;
+	}
+}
+
+.avatar-upload__error {
+	color: var(--danger);
+	font: var(--type-body-sm);
 }
 
 .table {

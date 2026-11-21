@@ -54,18 +54,27 @@ const stats = computed(() => [
 		<div v-if="member" class="header">
 			<span class="header__accent" :style="{ background: color }"></span>
 
-			<UiUserAvatar :name="login" :color="color" :size="48" />
+			<UiUserAvatar
+				:name="login"
+				:color="color"
+				:src="member.user.avatarUrl"
+				:size="48"
+			/>
 
 			<div class="header__info">
 				<span class="header__name-row">
-					<span class="header__name" :title="login">{{ member.displayName ?? login }}</span>
+					<span class="header__name" :title="login">{{
+						member.displayName ?? login
+					}}</span>
 					<UiBadge :tone="userStatusView[member.status].tone" dot>
 						{{ userStatusView[member.status].label }}
 					</UiBadge>
 				</span>
 				<span class="header__now">
 					Текущая игра:
-					<span class="header__game">{{ member.currentGame ?? 'нет игры' }}</span>
+					<span class="header__game">{{
+						member.currentGame ?? 'нет игры'
+					}}</span>
 				</span>
 			</div>
 

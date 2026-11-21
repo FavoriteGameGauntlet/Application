@@ -265,6 +265,7 @@ const onAdd = async () => {
 					<UiUserAvatar
 						:name="game.addedBy"
 						:color="membersStore.colorOf(game.addedBy)"
+						:src="membersStore.avatarOf(game.addedBy)"
 						:size="24"
 					/>
 					<span class="author__login">{{ game.addedBy }}</span>
