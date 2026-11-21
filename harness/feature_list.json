@@ -403,8 +403,8 @@
 			"id": "linux-native-packages",
 			"title": "Publish DEB and RPM packages with Linux releases",
 			"priority": 49,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-21. Full record: harness/archive/features-done.json"
 		}
 	]
 }
