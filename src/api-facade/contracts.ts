@@ -9,6 +9,7 @@ export type UserRef = {
 	login: Login
 	/** the color the client chose when the member joined, lowercase hex: `#ffb000` */
 	color: string
+	avatarUrl: string | null
 }
 
 /**
@@ -319,6 +320,7 @@ export type JournalPage = { items: JournalEntry[]; nextCursor?: string }
 
 export type Member = {
 	user: UserRef
+	leftDate: ISODate | null
 	/** the name the admins of the party gave the member; null = the login is shown */
 	displayName: string | null
 	status: UserStatus
@@ -679,15 +681,12 @@ export type Payment = {
 	effects: number[]
 }
 
-export type PartyMember = {
-	login: Login
+export type PartyMember = UserRef & {
 	displayName: string | null
 	joinedDate: ISODate
 	/** null for a current member; a member who left can be restored */
 	leftDate: ISODate | null
 	isAdmin: boolean
-	/** lowercase hex: `#ffb000` */
-	color: string
 }
 
 // Backend addresses (localhost:8080/scalar) are noted as "Backend:" above the
@@ -968,7 +967,7 @@ export type Api = {
 		list: (query: JournalQuery) => Promise<JournalPage>
 	}
 	members: {
-		/** Backend: GET {party}/members */
+		/** Backend: GET {party}/members, including former members. */
 		list: () => Promise<Member[]>
 		/** Backend: GET {party}/members/{login}, the same member as in the list */
 		get: (login: Login) => Promise<Member>
@@ -1107,6 +1106,8 @@ export type Api = {
 				login: Login,
 				input: { displayName: string | null; isAdmin: boolean; color: string },
 			) => Promise<PartyMember>
+			/** Backend: PUT {party}/members/{login}/avatar with the image as the body. */
+			changeAvatar: (login: Login, file: File) => Promise<void>
 			/** when the last admin leaves, the member who joined first becomes an admin */
 			remove: (login: Login) => Promise<void>
 			/** brings back a member who left, 409 MEMBER_NOT_REMOVED for a current one */

@@ -152,7 +152,12 @@ const emptyText = computed(
 					:class="{ 'user--on': p.login === selected }"
 					@click="selected = p.login"
 				>
-					<UiUserAvatar :name="p.login" :color="p.color" :size="22" />
+					<UiUserAvatar
+						:name="p.login"
+						:color="p.color"
+						:src="p.avatarUrl"
+						:size="22"
+					/>
 					<span class="user__name">{{ p.label }}</span>
 					<span class="user__count">{{ p.count }}</span>
 				</div>
@@ -164,6 +169,7 @@ const emptyText = computed(
 				<UiUserAvatar
 					:name="selected"
 					:color="membersStore.colorOf(selected)"
+					:src="membersStore.avatarOf(selected)"
 					:size="36"
 				/>
 				<span class="who__name">{{ selected }}</span>

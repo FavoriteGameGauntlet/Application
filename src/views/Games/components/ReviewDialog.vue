@@ -122,6 +122,7 @@ onMounted(() => parametersStore.load())
 			<UiUserAvatar
 				:name="login"
 				:color="membersStore.colorOf(login)"
+				:src="membersStore.avatarOf(login)"
 				:size="36"
 			/>
 		</template>

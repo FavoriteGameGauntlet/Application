@@ -56,6 +56,7 @@ export type FormField = {
 		hint?: string
 		meta?: string
 		color?: string
+		avatarUrl?: string | null
 		/** a `pick` row that is shown but cannot be picked */
 		disabled?: boolean
 	}[]
@@ -83,6 +84,8 @@ export type FormField = {
 	column?: number
 	/** for `color`: the login on the avatar that shows the color */
 	login?: string
+	/** for `color`: the picture inside the preview of the selected color */
+	avatarUrl?: string | null
 	/** the field is shown only while the `check` field `key` is `is`, or the `line`, `select`, `choice` or `segment` field holds `is` */
 	when?: { key: string; is: string | boolean }
 }

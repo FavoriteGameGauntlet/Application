@@ -15,21 +15,19 @@ The structure of `src/`, the domain (parties, wheel, resources, journal, admin) 
 ## Starting work
 
 1. Switch to `master`, update it (`git pull`) and create a new branch from it; work only there. Don't read the commit history.
-2. Read `harness/claude-progress.md` for the latest verified state and the next step.
-3. Read `harness/feature_list.json` and pick the unfinished feature with the lowest `priority`. If the user names a task themselves, work on it and add it to the list following "Required artifacts".
-4. Run `bash harness/scripts/init.sh` (eslint, vue-tsc) from the repo root. It only checks and never rewrites files. If it fails, fix that first.
+2. Read `harness/feature_list.json` and pick the unfinished feature with the lowest `priority`. If the user names a task themselves, work on it and add it to the list following "Required artifacts".
+3. Run `bash harness/scripts/init.sh` (eslint, vue-tsc) from the repo root. It only checks and never rewrites files. If it fails, fix that first.
 
 ## Required artifacts
 
 - `harness/feature_list.json`: source of truth for feature state.
-- `harness/claude-progress.md`: session log and verified status.
 - `harness/scripts/init.sh`: standard startup and verification path.
 
 `harness/feature_list.json` format: `{"features": [{"id", "title", "priority", "status", "evidence"}]}`. `status` is `todo`, `in_progress` or `done`. `evidence` is empty until the feature is verified.
 
 Status transitions: `todo` becomes `in_progress` when you start the feature (set it in the first commit of the branch). `in_progress` becomes `done` when the work is finished: the Definition of Done is met and the evidence is recorded. A check only the user can make does not hold the status back: the agent does not run the app, so `evidence` says what was checked and what was not, and a later word of the user ("Checked by the user") is added to it.
 
-`harness/archive/features-done.json` holds the full entries of done features and is not read at startup. When a feature is done, move its full entry there and leave in `feature_list.json` the `id`, a one-line `title`, the `priority`, `done` and an `evidence` like "Done <date>. Full record: harness/archive/features-done.json". Create the `archive/` folder with the first done feature. `claude-progress.md` keeps the three newest entries and any open blocker; older entries go to `harness/archive/progress.md`, newest on top.
+Keep `harness/archive/` locally. Git ignores this directory. Its `features-done.json` holds the full entries of done features and is not read at startup. When a feature is done, move its full entry there and leave in `feature_list.json` the `id`, a one-line `title`, the `priority`, `done` and an `evidence` like "Done <date>. Full record: harness/archive/features-done.json". Create the local archive with the first done feature.
 
 ## Checks
 
@@ -41,7 +39,7 @@ npx vue-tsc --noEmit    # types, .vue files included
 npx prettier -w <files> # format only the changed files
 ```
 
-`npm run build` = `vue-tsc --noEmit && vite build`. To check Rust, run `cargo check` in `src-tauri/`. Run the whole app (`npm run tauri dev`) only for changes in `src-tauri/` or window behaviour.
+`npm run build` = `vue-tsc --noEmit && vite build`. The agent checks Rust with `cargo check` in `src-tauri/`. The user runs `npm run tauri dev` to verify the window when a change touches `src-tauri/` or window behaviour.
 
 ## Plan before edits
 
@@ -64,7 +62,7 @@ The plan has no list of components, `Api` methods, fields, routes or `StoreKey` 
 
 When the user asks for a design (a screen, a form, a table, a layout), don't guess the layout in code and don't iterate on it in the repository.
 
-1. Make a mockup first, as a Claude Artifact (preferred) or a separate file outside the source tree. Hand it to a separate agent so the main context stays small. Build it with the design system of the app, the Artifact "Favorite Game Gauntlet" (https://claude.ai/artifact/S3qWLPo4bp6J62R7JpxvbK): its colors, fonts, components and icons, not values copied from the code. Start the mockup from the Artifact type "Design" and attach that design system. Give the agent the neighbouring screens as a reference for what the screen contains, and realistic data, including the awkward cases (long text, empty values, errors).
+1. Make a mockup first, as a Claude Artifact of type "Design" (preferred) or a separate file outside the source tree. Hand it to a separate agent so the main context stays small. Use the colors, fonts, components and icons from the [Favorite Game Gauntlet DesignSystem repository](https://github.com/FavoriteGameGauntlet/DesignSystem). Give the agent the neighbouring screens as a reference for what the screen contains, and realistic data, including the awkward cases (long text, empty values, errors).
 2. Look at the rendered mockup yourself before showing it. Do not run the app or a dev server for this: the user may have `npm run tauri dev` open on port 1420. Never stop or kill a process you did not start.
 3. Give the user the link and ask them to look. Write code only after they answer.
 
@@ -119,20 +117,18 @@ When the user asks for a design (a screen, a form, a table, a layout), don't gue
 
 - The target behaviour is implemented.
 - `bash harness/scripts/init.sh` passes.
-- If `src-tauri/` changed: `cargo check` passes and the window behaviour was checked by running the app.
+- If `src-tauri/` changed, `cargo check` passes. The user verifies window behaviour. Record that check as pending until the user reports the result.
 - If the change broke a rule written in `harness/ARCHITECTURE.md`, that file is updated. Most changes don't need it.
 - If the `Api` contract changed: it is checked against the backend documentation, the implementation in `api-facade/http/` and every place that uses it are updated.
-- Evidence is recorded in `harness/feature_list.json` or `harness/claude-progress.md`.
+- Evidence is recorded in the feature entry in `harness/feature_list.json` or the local `harness/archive/features-done.json`.
 - The repository can still be started the standard way.
 
 ## End of session
 
-1. Update `harness/claude-progress.md`.
-2. Update `harness/feature_list.json`: the status and `evidence` of the feature.
-3. Record unresolved risks and blockers.
-4. Commit on a branch with a clear message once the work is in a safe state.
-5. Push the branch and open a PR against `master` with `gh pr create`, following "Pull requests". Do it once the Definition of Done is met, so "What was checked" lists real checks. Report the PR link. Don't merge it.
-6. Leave the repository in a state where `bash harness/scripts/init.sh` can be run immediately.
+1. Update the feature status in `harness/feature_list.json` and record evidence, unresolved risks and blockers in the feature entry.
+2. Commit on a branch with a clear message once the work is in a safe state.
+3. Push the branch and open a PR against `master` with `gh pr create`, following "Pull requests". Do it once the Definition of Done is met, so "What was checked" lists real checks. Report the PR link. Don't merge it.
+4. Leave the repository in a state where `bash harness/scripts/init.sh` can be run immediately.
 
 ## Watch out
 

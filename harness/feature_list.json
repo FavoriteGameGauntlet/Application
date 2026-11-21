@@ -303,10 +303,10 @@
 		},
 		{
 			"id": "user-avatars",
-			"title": "A user uploads their own avatar, and UiUserAvatar shows it everywhere (it already takes src, today only the initials show). The client checks the size limits of the API documentation before the upload. Depends on the Server feature user-avatars; where the upload lives (profile, a menu) goes through the design of AGENTS.md.",
+			"title": "Party admins upload member avatars. The member profile shows a larger preview on hover or focus.",
 			"priority": 35,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-21. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "ux-field-errors",

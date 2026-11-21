@@ -7,6 +7,8 @@ import UiIcon from './ui/UiIcon.vue'
 import UiUserAvatar from './ui/UiUserAvatar.vue'
 import UserSettingsDialog from './UserSettingsDialog.vue'
 
+const { inParty } = defineProps<{ inParty?: boolean }>()
+
 const authStore = useAuthStore()
 const membersStore = useMembersStore()
 
@@ -37,6 +39,7 @@ const onLogOut = () => {
 			<UiUserAvatar
 				:name="login"
 				:color="membersStore.colorOf(login)"
+				:src="inParty ? membersStore.avatarOf(login) : undefined"
 				:size="28"
 			/>
 			{{ login }}

@@ -44,6 +44,7 @@ export type MemberDto = {
 	leftDate: ISODate | null
 	/** lowercase hex */
 	color: string
+	avatarUrl: string | null
 	status: UserStatus
 	/** the name of the current game */
 	currentGame: string | null
@@ -62,10 +63,15 @@ export const getAllMembers = async () =>
 export const getMembers = async () =>
 	(await getAllMembers()).filter((m) => !m.leftDate)
 
-export const userRefOf = (members: MemberDto[], login: Login): UserRef => ({
-	login,
-	color: members.find((m) => m.login === login)?.color ?? FALLBACK_COLOR,
-})
+export const userRefOf = (members: MemberDto[], login: Login): UserRef => {
+	const member = members.find((m) => m.login === login)
+
+	return {
+		login,
+		color: member?.color ?? FALLBACK_COLOR,
+		avatarUrl: member?.avatarUrl ?? null,
+	}
+}
 
 export const getPointTypes = async () =>
 	(

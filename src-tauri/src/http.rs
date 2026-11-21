@@ -6,7 +6,7 @@
 
 use reqwest::{header, redirect, Method, Url};
 use reqwest_cookie_store::CookieStoreMutex;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::{
     fs::File,
     io::{BufReader, BufWriter},
@@ -35,6 +35,13 @@ pub struct HttpResponse {
     status: u16,
     status_text: String,
     body: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImageBody {
+    content_type: String,
+    bytes: Vec<u8>,
 }
 
 fn is_allowed(url: &Url) -> bool {
@@ -88,6 +95,7 @@ pub async fn http_request(
     method: String,
     url: String,
     body: Option<String>,
+    image: Option<ImageBody>,
 ) -> Result<HttpResponse, String> {
     let url = Url::parse(&url).map_err(|e| e.to_string())?;
     if !is_allowed(&url) {
@@ -95,13 +103,18 @@ pub async fn http_request(
     }
     let method = Method::from_bytes(method.as_bytes()).map_err(|e| e.to_string())?;
 
-    let mut request = state
-        .client
-        .request(method, url)
-        .header(header::CONTENT_TYPE, "application/json");
-    if let Some(body) = body {
-        request = request.body(body);
-    }
+    let request = state.client.request(method, url);
+    let request = if let Some(image) = image {
+        request
+            .header(header::CONTENT_TYPE, image.content_type)
+            .body(image.bytes)
+    } else {
+        let request = request.header(header::CONTENT_TYPE, "application/json");
+        match body {
+            Some(body) => request.body(body),
+            None => request,
+        }
+    };
 
     let response = request.send().await.map_err(|e| e.to_string())?;
     let status = response.status();

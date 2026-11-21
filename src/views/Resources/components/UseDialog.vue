@@ -250,7 +250,8 @@ const sections = computed<FormSection[]>(() => {
 					options: candidates.value.map((m) => ({
 						value: m.user.login,
 						label: m.displayName ?? m.user.login,
-						color: membersStore.colorOf(m.user.login),
+						color: m.user.color,
+						avatarUrl: m.user.avatarUrl,
 						...(lacksCopies(m.user.login, takesFromTargets.value) && {
 							disabled: true,
 							meta: 'нечего забрать',
@@ -290,7 +291,8 @@ const sections = computed<FormSection[]>(() => {
 							return {
 								value: login,
 								label: m.displayName ?? login,
-								color: membersStore.colorOf(login),
+								color: m.user.color,
+								avatarUrl: m.user.avatarUrl,
 								...(blocked && {
 									disabled: true,
 									meta: holdsUsedCopy(login, row.slot.itemId)

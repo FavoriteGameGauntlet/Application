@@ -8,7 +8,7 @@ Ask the user for the version before starting. A new feature means a minor bump (
 
 1. Branch from an up-to-date `master` (`release-<version>`, no slashes).
 2. `npm version <x> --no-git-tag-version`. The `--no-git-tag-version` flag matters: the tag goes on `master` after the merge, not on the branch. The script syncs `tauri.conf.json`, `Cargo.toml` and `Cargo.lock`. Never edit the version by hand.
-3. Run `bash harness/scripts/init.sh` and `cargo check` in `src-tauri/`. Add a short entry to `harness/claude-progress.md`.
+3. Run `bash harness/scripts/init.sh` and `cargo check` in `src-tauri/`.
 4. Commit (`Bump the version to <x>`), push, open the PR following "Pull requests" in `AGENTS.md`.
 5. Merge only on the user's word: `gh pr merge <N> --merge`, so the history keeps a merge commit. Then `git checkout master && git pull`.
 6. Tag `v<x>` on that `master` and push it: `git tag v<x> && git push origin v<x>`. Create tags only when the user asked for a release.

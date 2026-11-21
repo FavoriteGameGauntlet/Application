@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 type Props = {
 	name?: string
 	color?: string
 	size?: number
-	src?: string
+	src?: string | null
 	ring?: boolean
 }
 
@@ -16,6 +16,16 @@ const {
 	src,
 	ring,
 } = defineProps<Props>()
+
+const emit = defineEmits<{ imageLoad: [src: string] }>()
+
+const failedSrc = ref<string>()
+const showImage = computed(() => src && src !== failedSrc.value)
+
+const onImageError = (event: Event) => {
+	failedSrc.value =
+		(event.currentTarget as HTMLImageElement).getAttribute('src') ?? undefined
+}
 
 const initials = computed(() =>
 	name
@@ -33,7 +43,11 @@ const initials = computed(() =>
 		:title="name"
 		:style="{ width: `${size}px`, height: `${size * 1.1}px` }"
 	>
-		<span v-if="ring" class="ui-user-avatar__layer" :style="{ inset: '-3px', background: color }"></span>
+		<span
+			v-if="ring"
+			class="ui-user-avatar__layer"
+			:style="{ inset: '-3px', background: color }"
+		></span>
 		<span
 			class="ui-user-avatar__layer"
 			:style="{ background: ring ? 'var(--surface-card)' : color }"
@@ -42,11 +56,19 @@ const initials = computed(() =>
 			class="ui-user-avatar__layer ui-user-avatar__face"
 			:style="{
 				inset: ring ? '3px' : '0',
-				background: src ? `center / cover url(${src})` : color,
+				background: color,
 				fontSize: `${Math.round(size * 0.36)}px`,
 			}"
 		>
-			{{ src ? '' : initials }}
+			<img
+				v-if="showImage && src"
+				:key="src"
+				:src
+				alt=""
+				@load="emit('imageLoad', src)"
+				@error="onImageError"
+			/>
+			<template v-else>{{ initials }}</template>
 		</span>
 	</span>
 </template>
@@ -72,5 +94,11 @@ const initials = computed(() =>
 	font-weight: 800;
 	line-height: 1;
 	color: var(--fgg-navy);
+}
+
+.ui-user-avatar__face img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
 }
 </style>

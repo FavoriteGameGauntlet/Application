@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { Member } from '../../api-facade/contracts'
 import PlayerEvents from '../../components/PlayerEvents.vue'
 import ResourceTiles from '../../components/ResourceTiles.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
+import UiPopover from '../../components/ui/UiPopover.vue'
 import UiUserAvatar from '../../components/ui/UiUserAvatar.vue'
 import { RouteName } from '../../router/routeNames'
 import { useMembersStore } from '../../stores/membersStore'
@@ -20,18 +21,55 @@ const login = computed(() => route.params.login as string)
 const color = computed(() => membersStore.colorOf(login.value))
 
 const member = ref<Member>()
+const avatarSrc = computed(() => member.value?.user.avatarUrl)
+const avatarAnchor = useTemplateRef<HTMLElement>('avatar-anchor')
+const loadedAvatar = ref<string>()
+const avatarHovered = ref(false)
+const avatarFocused = ref(false)
+let avatarLeaveTimer: ReturnType<typeof setTimeout> | undefined
+
+const canPreview = computed(
+	() => !!avatarSrc.value && loadedAvatar.value === avatarSrc.value,
+)
+const previewOpen = computed(
+	() => canPreview.value && (avatarHovered.value || avatarFocused.value),
+)
+
+const enterAvatarPreview = () => {
+	clearTimeout(avatarLeaveTimer)
+	avatarHovered.value = true
+}
+
+const leaveAvatarPreview = () => {
+	clearTimeout(avatarLeaveTimer)
+	// Crossing the gap to the popover counts as staying over the preview.
+	avatarLeaveTimer = setTimeout(() => (avatarHovered.value = false), 120)
+}
+
+const closeAvatarPreview = () => {
+	clearTimeout(avatarLeaveTimer)
+	avatarHovered.value = false
+	avatarFocused.value = false
+}
+
+onBeforeUnmount(() => clearTimeout(avatarLeaveTimer))
 
 watch(
 	login,
-	async () => {
+	async (currentLogin, _, onCleanup) => {
+		let current = true
+		onCleanup(() => (current = false))
+
+		closeAvatarPreview()
+		loadedAvatar.value = undefined
 		member.value = undefined
 
 		const [loaded] = await Promise.all([
-			membersStore.get(login.value),
-			resourcesStore.loadUser(login.value),
+			membersStore.get(currentLogin),
+			resourcesStore.loadUser(currentLogin),
 		])
 
-		member.value = loaded
+		if (current) member.value = loaded
 	},
 	{ immediate: true },
 )
@@ -54,18 +92,61 @@ const stats = computed(() => [
 		<div v-if="member" class="header">
 			<span class="header__accent" :style="{ background: color }"></span>
 
-			<UiUserAvatar :name="login" :color="color" :size="48" />
+			<span
+				ref="avatar-anchor"
+				class="header__avatar"
+				:tabindex="canPreview ? 0 : undefined"
+				:aria-describedby="previewOpen ? 'profile-avatar-preview' : undefined"
+				@mouseenter="enterAvatarPreview"
+				@mouseleave="leaveAvatarPreview"
+				@focus="avatarFocused = true"
+				@blur="avatarFocused = false"
+			>
+				<UiUserAvatar
+					title=""
+					:name="login"
+					:color="color"
+					:src="avatarSrc"
+					:size="48"
+					@image-load="loadedAvatar = $event"
+				/>
+			</span>
+
+			<UiPopover
+				:open="previewOpen"
+				:anchor="avatarAnchor"
+				:min-width="240"
+				@close="closeAvatarPreview"
+			>
+				<div
+					id="profile-avatar-preview"
+					role="tooltip"
+					@mouseenter="enterAvatarPreview"
+					@mouseleave="leaveAvatarPreview"
+				>
+					<img
+						class="avatar-preview"
+						:src="avatarSrc ?? undefined"
+						:alt="`Аватар ${login}`"
+						@error="loadedAvatar = undefined"
+					/>
+				</div>
+			</UiPopover>
 
 			<div class="header__info">
 				<span class="header__name-row">
-					<span class="header__name" :title="login">{{ member.displayName ?? login }}</span>
+					<span class="header__name" :title="login">{{
+						member.displayName ?? login
+					}}</span>
 					<UiBadge :tone="userStatusView[member.status].tone" dot>
 						{{ userStatusView[member.status].label }}
 					</UiBadge>
 				</span>
 				<span class="header__now">
 					Текущая игра:
-					<span class="header__game">{{ member.currentGame ?? 'нет игры' }}</span>
+					<span class="header__game">{{
+						member.currentGame ?? 'нет игры'
+					}}</span>
 				</span>
 			</div>
 
@@ -126,6 +207,24 @@ const stats = computed(() => [
 	width: 40px;
 	height: 4px;
 	border-radius: 0 0 2px 2px;
+}
+
+.header__avatar {
+	display: inline-flex;
+	flex: none;
+	border-radius: var(--radius-sm);
+}
+
+.header__avatar:focus-visible {
+	box-shadow: var(--shadow-focus);
+}
+
+.avatar-preview {
+	display: block;
+	width: 100%;
+	max-height: 224px;
+	border-radius: var(--radius-sm);
+	object-fit: contain;
 }
 
 .header__info {

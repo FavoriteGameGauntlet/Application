@@ -22,13 +22,17 @@ export const useAdminSettingsStore = defineStore(
 			game_rerolled: [],
 		})
 		const members = ref<PartyMember[]>([])
+		let membersLoadId = 0
 
 		const loadRewards = async () => {
 			rewards.value = await api.admin.rewards.get()
 		}
 
 		const loadMembers = async () => {
-			members.value = await api.admin.members.list()
+			const id = ++membersLoadId
+			const loaded = await api.admin.members.list()
+
+			if (id === membersLoadId) members.value = loaded
 		}
 
 		const saveRewards = async (
@@ -118,6 +122,18 @@ export const useAdminSettingsStore = defineStore(
 			}
 		}
 
+		const changeMemberAvatar = async (login: Login, file: File) => {
+			const toast = useToastStore()
+
+			try {
+				await api.admin.members.changeAvatar(login, file)
+				await Promise.all([loadMembers(), useMembersStore().load()])
+				toast.show('Аватар обновлён', login)
+			} catch (e) {
+				toast.error(e)
+			}
+		}
+
 		const restoreMember = async (member: PartyMember) => {
 			const toast = useToastStore()
 
@@ -138,6 +154,7 @@ export const useAdminSettingsStore = defineStore(
 			saveRewards,
 			addMember,
 			updateMember,
+			changeMemberAvatar,
 			removeMember,
 			restoreMember,
 		}

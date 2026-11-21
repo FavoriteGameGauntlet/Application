@@ -347,6 +347,10 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 			<slot name="lead" />
 		</template>
 
+		<template v-if="$slots['title-after']" #title-after>
+			<slot name="title-after" />
+		</template>
+
 		<template v-if="visibleTabs.length > 1" #tabs>
 			<UiTabs
 				:model-value="currentTab"
@@ -428,6 +432,7 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 									:label="field.label"
 									:hint="field.hint"
 									:login="field.login"
+									:avatar-url="field.avatarUrl"
 								/>
 
 								<RowsEditor
