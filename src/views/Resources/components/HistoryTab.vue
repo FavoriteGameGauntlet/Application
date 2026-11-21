@@ -6,10 +6,11 @@ import type {
 	JournalQuery,
 	ResourceRef,
 } from '../../../api-facade/contracts'
+import UiButton from '../../../components/ui/UiButton.vue'
 import UiFilterSelect from '../../../components/ui/UiFilterSelect.vue'
 import UiRowMenu from '../../../components/ui/UiRowMenu.vue'
 import UiUserAvatar from '../../../components/ui/UiUserAvatar.vue'
-import { useJournalStore } from '../../../stores/journalStore'
+import { useJournalPages } from '../../../composables/useJournalPages'
 import { useManualStore } from '../../../stores/manualStore'
 import { useMembersStore } from '../../../stores/membersStore'
 import {
@@ -32,7 +33,6 @@ type Props = {
 
 const { user } = defineProps<Props>()
 
-const journalStore = useJournalStore()
 const membersStore = useMembersStore()
 const manualStore = useManualStore()
 
@@ -90,8 +90,6 @@ const specs = computed(() => [
 	},
 ])
 
-const entries = ref<JournalEntry[]>([])
-
 /** the filter picks a kind of resource: a list of single entities would run to hundreds of options */
 const toResource = (value: string): JournalQuery['resource'] => {
 	const found = resourceKinds.find((k) => k.value === value)
@@ -106,21 +104,36 @@ watch(
 	},
 )
 
-watch(
-	[filters, () => journalStore.revision],
-	async () => {
-		const page = await journalStore.fetch({
-			user: filters.user || undefined,
-			resource: toResource(filters.resource),
-			sourceEventKinds: journalSourceGroups.find(
-				(g) => g.value === filters.source,
-			)?.kinds,
-			from: new Date(Date.now() - PERIOD_MS[filters.period]).toISOString(),
-		})
+const { entries, cursor, pending, failed, ended, more, retry } =
+	useJournalPages(() => ({
+		user: filters.user || undefined,
+		resource: toResource(filters.resource),
+		sourceEventKinds: journalSourceGroups.find(
+			(g) => g.value === filters.source,
+		)?.kinds,
+		periodMs: PERIOD_MS[filters.period],
+	}))
 
-		entries.value = page.items
+const moreTarget = useTemplateRef<HTMLElement>('moreTarget')
+watch(
+	[moreTarget, cursor],
+	([target, nextCursor], _, onCleanup) => {
+		if (!target) return
+
+		// Observe again after each page so a short table can keep filling the viewport.
+		const observer = new IntersectionObserver(([entry]) => {
+			if (
+				entry?.isIntersecting &&
+				target === moreTarget.value &&
+				nextCursor === cursor.value
+			) {
+				void more()
+			}
+		})
+		observer.observe(target)
+		onCleanup(() => observer.disconnect())
 	},
-	{ immediate: true },
+	{ flush: 'post' },
 )
 
 const dayTitle = (day: string) => {
@@ -136,7 +149,7 @@ const dayTitle = (day: string) => {
 const toneOf = (text: string) =>
 	text.startsWith('+') ? 'plus' : text.startsWith('−') ? 'minus' : undefined
 
-/** the corrected entry is outside the period when it is not in the list */
+/** the original entry may still be on an older page */
 const fixOf = ({ correctsEntryId }: JournalEntry) => {
 	if (correctsEntryId === undefined) return undefined
 
@@ -217,7 +230,13 @@ function showEntry(id: number) {
 		<UiCountBadge class="bar__count" :value="entries.length" />
 	</div>
 
-	<div ref="table" class="table" role="table" aria-label="Журнал">
+	<div
+		ref="table"
+		class="table"
+		role="table"
+		aria-label="Журнал"
+		:aria-busy="!!pending"
+	>
 		<div class="row row--head" role="row">
 			<span role="columnheader">Время</span>
 			<span role="columnheader">Кто и через что</span>
@@ -283,7 +302,22 @@ function showEntry(id: number) {
 			</UiRowMenu>
 		</template>
 
-		<div v-if="!entries.length" class="empty">Под эти фильтры ничего нет.</div>
+		<div v-if="ended && !entries.length" class="empty">
+			Под эти фильтры ничего нет.
+		</div>
+		<div v-if="failed" class="empty" role="row">
+			<div role="cell">
+				<UiButton type="button" variant="outline" size="sm" @click="retry">
+					Повторить загрузку
+				</UiButton>
+			</div>
+		</div>
+		<div
+			v-else-if="cursor"
+			ref="moreTarget"
+			class="table__end"
+			aria-hidden="true"
+		></div>
 	</div>
 </template>
 
@@ -300,11 +334,19 @@ function showEntry(id: number) {
 }
 
 .table {
+	position: relative;
 	overflow: hidden;
 	background: var(--surface-card);
 	border: 1px solid var(--border-subtle);
 	border-radius: var(--radius-lg);
 	box-shadow: var(--shadow-1);
+}
+
+.table__end {
+	position: absolute;
+	inset: auto 0 0;
+	height: min(var(--space-20), 100%);
+	pointer-events: none;
 }
 
 .row {
