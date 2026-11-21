@@ -6,6 +6,7 @@ Newest entry on top. Record only what was actually verified.
 
 - A party admin selects an image by clicking the avatar in the member edit dialog. Hover and keyboard focus show the upload icon. A successful upload refreshes the member data used across the app. AGENTS.md links to DesignSystem and assigns window verification to the user.
 - ESLint, vue-tsc and cargo check passed. Prettier formatted the changed files. Checked the request and response fields against Scalar Parties. The user checks the Tauri window and upload against the backend.
+- By the user's request, the member profile shows the complete avatar on hover or focus. Moving onto the photo keeps the preview open. Escape dismisses it. ESLint and vue-tsc passed. The desktop preview is pending user verification.
 
 ## 2026-11-20 perk-ability-edit
 

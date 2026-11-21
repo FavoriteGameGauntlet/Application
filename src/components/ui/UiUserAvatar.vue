@@ -17,6 +17,8 @@ const {
 	ring,
 } = defineProps<Props>()
 
+const emit = defineEmits<{ imageLoad: [src: string] }>()
+
 const failedSrc = ref<string>()
 const showImage = computed(() => src && src !== failedSrc.value)
 
@@ -63,6 +65,7 @@ const initials = computed(() =>
 				:key="src"
 				:src
 				alt=""
+				@load="emit('imageLoad', src)"
 				@error="onImageError"
 			/>
 			<template v-else>{{ initials }}</template>

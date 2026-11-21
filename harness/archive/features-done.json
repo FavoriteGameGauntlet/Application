@@ -310,10 +310,10 @@
 		},
 		{
 			"id": "user-avatars",
-			"title": "A party admin uploads a member's avatar by clicking their avatar in the member edit dialog. Validate the file against the API limits and show the picture everywhere the client shows that member's avatar.",
+			"title": "A party admin uploads a member's avatar by clicking it in the member edit dialog. Validate the file against the API limits, show the picture wherever the avatar appears and open a larger preview on hover or focus in the member profile.",
 			"priority": 35,
 			"status": "done",
-			"evidence": "Done 2026-11-21. The user approved admin-only upload from the member edit dialog and a hover overlay on the avatar itself. The client validates PNG, JPEG or WebP, at most 512 KiB and 64 to 1024 pixels per side. The Parties specification documents the admin request, raw image body and avatarUrl. ESLint, vue-tsc and cargo check passed. Prettier formatted the changed files. The user checks the Tauri window and upload against the backend."
+			"evidence": "Done 2026-11-21. The user approved admin-only upload from the member edit dialog and a hover overlay on the avatar itself. The client validates PNG, JPEG or WebP, at most 512 KiB and 64 to 1024 pixels per side. The Parties specification documents the admin request, raw image body and avatarUrl. The member profile opens an uncropped preview of a loaded avatar on hover or focus. ESLint and vue-tsc passed after adding the preview. Cargo check passed for the upload transport. Prettier formatted the changed files. The user checks the Tauri window, upload and profile preview."
 		}
 	]
 }
