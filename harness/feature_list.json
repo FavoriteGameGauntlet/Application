@@ -277,7 +277,7 @@
 			"id": "history-paging",
 			"title": "The history tab loads older events as the user scrolls down. Today only the last 20 events show. HistoryTab reads one page with the default limit of 20 and ignores nextCursor of GET history.",
 			"priority": 31,
-			"status": "todo",
+			"status": "in_progress",
 			"evidence": ""
 		},
 		{
