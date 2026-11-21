@@ -103,6 +103,7 @@ const stats = computed(() => [
 				@blur="avatarFocused = false"
 			>
 				<UiUserAvatar
+					title=""
 					:name="login"
 					:color="color"
 					:src="avatarSrc"
