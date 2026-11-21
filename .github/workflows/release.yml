@@ -13,9 +13,9 @@ jobs:
         include:
           - platform: windows-latest
             args: ''
-          # the oldest image Tauri supports, so the AppImage runs on older glibc too
+          # Build Linux packages against an older glibc for wider compatibility.
           - platform: ubuntu-22.04
-            args: '--bundles appimage'
+            args: '--bundles appimage,deb,rpm'
     runs-on: ${{ matrix.platform }}
     permissions:
       contents: write
@@ -48,7 +48,7 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: '${{ github.ref_name }}'
-          releaseBody: 'Для установки на Windows скачайте только файл `_x64-setup.exe`, на Linux — только файл `.AppImage`. Остальные не трогайте, они используются для автообновления.'
+          releaseBody: 'Для Windows скачайте `_x64-setup.exe`. Для Fedora используйте `.rpm`, для Debian и Ubuntu используйте `.deb`. Для запуска на Linux без установки скачайте `.AppImage`.'
           releaseDraft: false
           prerelease: true
           args: ${{ matrix.args }}

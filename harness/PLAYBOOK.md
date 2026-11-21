@@ -12,9 +12,9 @@ Ask the user for the version before starting. A new feature means a minor bump (
 4. Commit (`Bump the version to <x>`), push, open the PR following "Pull requests" in `AGENTS.md`.
 5. Merge only on the user's word: `gh pr merge <N> --merge`, so the history keeps a merge commit. Then `git checkout master && git pull`.
 6. Tag `v<x>` on that `master` and push it: `git tag v<x> && git push origin v<x>`. Create tags only when the user asked for a release.
-7. `.github/workflows/release.yml` builds Windows (NSIS) and Linux (AppImage) on the tag. Find the run with `gh run list --workflow=release.yml --limit 1` and wait for it with `gh run watch <id> --exit-status`.
+7. `.github/workflows/release.yml` builds Windows (NSIS) and Linux (AppImage, DEB and RPM) on the tag. Find the run with `gh run list --workflow=release.yml --limit 1` and wait for it with `gh run watch <id> --exit-status`.
 8. The workflow creates the release as a prerelease with one sentence about installing. When the build succeeds, replace the description and clear the flag: `gh release edit v<x> --prerelease=false --latest --notes-file <file>`. Leave `--prerelease=false` out if the user wants a prerelease.
-9. Check the result with `gh release view v<x> --json isPrerelease,assets,body`. The assets are the `_x64-setup.exe`, the `.AppImage`, their `.sig` files and `latest.json` (used by the auto-updater).
+9. Check the result with `gh release view v<x> --json isPrerelease,assets,body`. Expect `_x64-setup.exe`, `.AppImage`, `.deb`, `.rpm`, their `.sig` files and `latest.json`. The auto-updater uses a separate entry for each installer format.
 
 ### Release description
 
@@ -34,7 +34,7 @@ Structure, as in popular repositories:
 ## Исправления
 - What was broken and no longer is.
 
-Для установки на Windows скачайте только файл `_x64-setup.exe`, на Linux только файл `.AppImage`. Остальные не трогайте, они используются для автообновления.
+Для Windows скачайте `_x64-setup.exe`. Для Fedora используйте `.rpm`, для Debian и Ubuntu используйте `.deb`. Для запуска на Linux без установки скачайте `.AppImage`. Файлы `.sig` и `latest.json` используются для автообновления.
 ```
 
 A change goes into one section only. Drop a section that has no items. Follow `antislop:antislop-copywriting` (no em dashes, no filler). Keep the installation sentence at the end of every release.
