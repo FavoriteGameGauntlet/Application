@@ -303,13 +303,20 @@ const why = computed(() => {
 
 const onApply = () => manualStore.apply(rows.value.map(toChange))
 
+/** an inventory in the store may be old, so each one is read once per opening */
+const refreshed = new Set<Login>()
+
 watch(
 	() => rows.value.map((r) => r.who),
 	(logins) => {
-		for (const login of new Set(logins)) {
-			if (!resourcesStore.byUser[login]) resourcesStore.loadUser(login)
+		for (const login of logins) {
+			if (refreshed.has(login)) continue
+
+			refreshed.add(login)
+			resourcesStore.loadUser(login)
 		}
 	},
+	{ immediate: true },
 )
 
 onMounted(async () => {

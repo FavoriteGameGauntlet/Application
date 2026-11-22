@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import type { CatalogOption, ChangeRow } from '../api-facade/contracts'
 import { useAdminCatalogStore } from '../stores/adminCatalogStore'
 import type { FormProblem, FormRow, RowsVariant } from './formDialog'
@@ -184,8 +184,6 @@ const setAmount = (row: FormRow, event: Event) => {
 	input.value = digits
 	row.amount = (hasAction.value && isLose(row) ? '-' : '') + digits
 }
-
-onMounted(() => store.loadTargets())
 </script>
 
 <template>

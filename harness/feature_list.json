@@ -468,6 +468,27 @@
 			"priority": 57,
 			"status": "done",
 			"evidence": "Done 2026-11-22. Full record: harness/archive/features-done.json"
+		},
+		{
+			"id": "fresh-resource-lists",
+			"title": "Testers: «Надо обновлять список ресурсов при открытии любой формы». The admin forms (catalogue window, wheel entry, exchange, spin cost) read the lists of point types, items, perks, effects and exchanges once per app run, so what another admin added is missing until a restart. Read them on every opening of a form; the manual change form reads the inventories of its players on every opening too.",
+			"priority": 58,
+			"status": "done",
+			"evidence": "Done 2026-11-22. FormDialog reads the catalogue lists when it opens with rows or triggers, the editors of one form share the request, the old list stays until the new one comes. ManualView reads each player's inventory once per opening. eslint and vue-tsc pass. Not checked: the running app against the backend (pending the user)."
+		},
+		{
+			"id": "wheel-special-actions",
+			"title": "Testers: «Реализовать специальные действия во всех местах», part 1 (user chose wheel and manual change). The rows «Когда выпал» of a wheel entry get the column «Кто» and the actions «Копирует», «Удаляет», «Передаёт» of a player-picked item, as the item entries have; the wheel result asks which copies and which player. Rewards and exchanges stay without them: nobody picks there. Needs fgg-database and fgg-server first.",
+			"priority": 59,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "manual-special-actions",
+			"title": "Testers: «Реализовать специальные действия во всех местах», part 2. The manual change moves to the common RowsEditor (its part of ux-one-rows-editor) and gets the same actions over a copy the admin picks. Needs fgg-database and fgg-server first.",
+			"priority": 60,
+			"status": "todo",
+			"evidence": ""
 		}
 	]
 }
