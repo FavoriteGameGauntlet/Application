@@ -19,6 +19,7 @@ import { useAdminCatalogStore } from '../../../stores/adminCatalogStore'
 import { applyModeOptions } from '../../../utils/applyMode'
 import { formatSpanExact, parseSpan } from '../../../utils/format'
 import { itemConditionLabels } from '../../../utils/itemCondition'
+import { actsOnChosen } from '../../../utils/itemUse'
 import {
 	itemEntriesToForm,
 	modifiersToForm,
@@ -523,7 +524,7 @@ const checks = computed<FormCheck[]>(() => {
 					check: (values) =>
 						(values.conditions as ItemCondition[]).some((c) =>
 							c.startsWith('target_'),
-						) && !rowsOf(values, 'entries').some((r) => r.who === 'chosen')
+						) && !rowsOf(values, 'entries').some(actsOnChosen)
 							? 'Для условий про цели должна быть строка с выбранным игроком'
 							: undefined,
 				},

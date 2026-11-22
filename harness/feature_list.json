@@ -438,8 +438,8 @@
 			"id": "item-transfer-target-conditions",
 			"title": "Bug from the testers: an item whose only entry for the chosen players is the transfer «Передаёт: Владелец → выбранному» can't be saved with a target condition («Не на себя», «Цель в сети», «Цель не в сети»). The check of the items form in CatalogEntryDialog looks for a row with who 'chosen', but in this transfer the chosen players receive the copies while who is 'self'. A transfer row counts as acting on the chosen players. Needs the same fix in fgg-server (validateConditions) first.",
 			"priority": 53,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-22. actsOnChosen in utils/itemUse.ts counts a transfer row as acting on the chosen players; the items form check, needsTargets and UseDialog use it. eslint and vue-tsc passed. The form was not opened in the app (user check pending). Server side: FavoriteGameGauntlet/Server#227."
 		},
 		{
 			"id": "perk-ability-no-entries",
