@@ -21,6 +21,7 @@ export type ItemDto = {
 	description: string
 	usesMax: number
 	applyMode: ApplyMode
+	isManualChange: boolean
 	entries: NamedItemEntryDto[]
 	conditions: NonNullable<CatalogEntry['conditions']>
 }
@@ -42,6 +43,7 @@ export type PerkDto = {
 	/** left out for a perk that is only a passive one */
 	ability?: {
 		applyMode: ApplyMode
+		isManualChange: boolean
 		entries: NamedItemEntryDto[]
 		uses?: { max: number; start: number }
 		chargesMax: number
@@ -82,6 +84,7 @@ export const toCatalogEntry = <K extends ResourceKind>(
 				changes: item.entries.map((e) => toItemEntryText(e, pointTypes)),
 				entries: item.entries.map(toItemEntryRow),
 				applyMode: item.applyMode,
+				isManualChange: item.isManualChange,
 				conditions: item.conditions,
 				usesMax: item.usesMax,
 			}
@@ -104,6 +107,7 @@ export const toCatalogEntry = <K extends ResourceKind>(
 				...(ability && {
 					ability: {
 						applyMode: ability.applyMode,
+						isManualChange: ability.isManualChange,
 						entries: ability.entries.map(toItemEntryRow),
 						changes: abilityChanges,
 						...(ability.uses && { uses: ability.uses }),

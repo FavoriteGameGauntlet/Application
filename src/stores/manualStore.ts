@@ -26,13 +26,22 @@ type WheelDraft = {
 	description: string
 }
 
+/** the holder used an item or the ability of a perk that is followed by a manual change */
+type UseDraft = {
+	kind: 'use'
+	/** the tab of the resources the form goes back to */
+	source: 'items' | 'perks'
+	name: string
+	description: string
+}
+
 /** an admin changes the resources of the party with no reason from the wheel or the journal */
 type FreeDraft = {
 	kind: 'free'
 }
 
 /** what the manual change form is opened for */
-export type ManualDraft = FixDraft | WheelDraft | FreeDraft
+export type ManualDraft = FixDraft | WheelDraft | UseDraft | FreeDraft
 
 export const useManualStore = defineStore(StoreName.Manual, () => {
 	const draft = ref<ManualDraft | null>(null)
@@ -59,6 +68,12 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 		await router.push({ name: RouteName.Manual })
 	}
 
+	const startUse = async (use: Omit<UseDraft, 'kind'>) => {
+		draft.value = { kind: 'use', ...use }
+
+		await router.push({ name: RouteName.Manual })
+	}
+
 	const startFree = async () => {
 		draft.value = { kind: 'free' }
 
@@ -67,15 +82,21 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 
 	/** goes back to where the form was opened from */
 	const close = async () => {
-		const kind = draft.value?.kind
+		const current = draft.value
 
 		draft.value = null
 
-		switch (kind) {
+		switch (current?.kind) {
 			case 'fix':
 				await router.push({
 					name: RouteName.Resources,
 					params: { tab: 'history' },
+				})
+				break
+			case 'use':
+				await router.push({
+					name: RouteName.Resources,
+					params: { tab: current.source },
 				})
 				break
 			case 'free':
@@ -111,5 +132,5 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 		}
 	}
 
-	return { draft, startFix, startWheel, startFree, close, apply }
+	return { draft, startFix, startWheel, startUse, startFree, close, apply }
 })
