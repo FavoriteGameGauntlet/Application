@@ -87,6 +87,31 @@ const showResult = computed(
 	() => !!wheelStore.shownResult && !wheelStore.spinning && !wheelStore.loading,
 )
 
+/** the result keeps what it does to itself until the player opens it, as in the generator the testers know */
+const resultOpen = ref(false)
+
+const resultHasBody = computed(
+	() =>
+		!!wheelStore.result?.result.description ||
+		resultChanges.value.length > 0 ||
+		!!wheelStore.result?.result.isManualChange,
+)
+
+const resultClosed = computed(() => resultHasBody.value && !resultOpen.value)
+
+// every new result, another group and a new visit of the screen start closed
+watch(
+	() => wheelStore.shownResult,
+	() => {
+		resultOpen.value = false
+	},
+)
+
+const onResultAction = () => {
+	if (resultClosed.value) resultOpen.value = true
+	else wheelStore.apply()
+}
+
 // the tickets count the spins the user's resources pay for; set up here, not in
 // onMounted, so the first frame is already the empty one
 resourcesStore.loadMine().catch((e) => useToastStore().error(e))
@@ -356,8 +381,38 @@ onBeforeUnmount(() => {
 			<div v-if="showResult && wheelStore.result" class="result">
 				<span class="result__accent"></span>
 
-				<div class="result__body">
+				<div class="result__head">
 					<div class="result__name">{{ wheelStore.result.result.name }}</div>
+					<div class="result__actions">
+						<UiButton
+							variant="outline"
+							class="result__action"
+							@click="wheelStore.discardResult()"
+						>
+							Сбросить
+						</UiButton>
+						<UiButton class="result__action" @click="onResultAction">
+							{{
+								resultClosed
+									? 'Показать'
+									: wheelStore.resultStartsGame
+										? 'Взять игру'
+										: 'Применить'
+							}}
+						</UiButton>
+					</div>
+				</div>
+
+				<button
+					v-if="resultClosed"
+					type="button"
+					class="result__spoiler"
+					aria-label="Показать"
+					@click="resultOpen = true"
+				>
+					<UiIcon name="eye-off" :size="24" />
+				</button>
+				<div v-else-if="resultHasBody" class="result__body">
 					<div v-if="wheelStore.result.result.description" class="result__desc">
 						{{ wheelStore.result.result.description }}
 					</div>
@@ -376,15 +431,6 @@ onBeforeUnmount(() => {
 						<UiBadge tone="info" dot>Ручное изменение</UiBadge>
 						<span>после применения нужно внести ручное изменение</span>
 					</div>
-				</div>
-
-				<div class="result__actions">
-					<UiButton variant="outline" @click="wheelStore.discardResult()">
-						Сбросить
-					</UiButton>
-					<UiButton @click="wheelStore.apply()">
-						{{ wheelStore.resultStartsGame ? 'Взять игру' : 'Применить' }}
-					</UiButton>
 				</div>
 			</div>
 		</Transition>
@@ -577,9 +623,8 @@ onBeforeUnmount(() => {
 .result {
 	position: relative;
 	display: flex;
-	flex-wrap: wrap;
-	gap: 24px;
-	align-items: center;
+	flex-direction: column;
+	gap: 12px;
 	padding: 20px;
 	background: var(--surface-card);
 	border: 1px solid var(--border-subtle);
@@ -597,19 +642,57 @@ onBeforeUnmount(() => {
 	border-radius: 0 0 2px 2px;
 }
 
+/* the buttons stand opposite the name and never move when the body opens */
+.result__head {
+	display: flex;
+	gap: 24px;
+	align-items: center;
+}
+
+.result__name {
+	flex: 1;
+	min-width: 0;
+	font: var(--type-h3);
+	letter-spacing: var(--tracking-display);
+	text-transform: uppercase;
+	color: var(--text-strong);
+}
+
+.result__actions {
+	display: flex;
+	flex: none;
+	align-items: center;
+	gap: 8px;
+}
+
+/* both buttons share one width, whatever the label */
+.result__action {
+	width: 136px;
+}
+
 .result__body {
 	display: flex;
-	flex: 1 1 420px;
 	flex-direction: column;
 	gap: 8px;
 	min-width: 0;
 }
 
-.result__name {
-	font: var(--type-h3);
-	letter-spacing: var(--tracking-display);
-	text-transform: uppercase;
-	color: var(--text-strong);
+/* one plate for every entry: neither its size nor its colour tells what is under it */
+.result__spoiler {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 64px;
+	padding: 0;
+	color: var(--text-subtle);
+	cursor: pointer;
+	background: var(--surface-sunken);
+	border: none;
+	border-radius: var(--radius-md);
+}
+
+.result__spoiler:hover {
+	color: var(--text-muted);
 }
 
 .result__desc {
@@ -629,13 +712,6 @@ onBeforeUnmount(() => {
 	gap: 8px;
 	font: var(--type-caption);
 	color: var(--text-muted);
-}
-
-.result__actions {
-	display: flex;
-	flex: none;
-	align-items: center;
-	gap: 8px;
 }
 
 .result-enter-active {
