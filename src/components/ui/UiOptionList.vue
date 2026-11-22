@@ -56,7 +56,7 @@ onMounted(async () => {
 			<UiIcon name="search" :size="15" />
 			<input
 				v-model="query"
-				placeholder="Найти"
+				placeholder="Найти…"
 				aria-label="Найти"
 				@keydown.enter.prevent="pickFirst"
 			/>

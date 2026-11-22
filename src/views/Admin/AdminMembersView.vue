@@ -291,7 +291,7 @@ onMounted(() => store.loadMembers())
 <template>
 	<div class="members">
 		<ListHead title="Участники и права" @add="openAdd" />
-		<ListBar v-model:query="query" placeholder="Найти участника…">
+		<ListBar v-model:query="query">
 			<UiChoiceChips
 				v-model="filter"
 				:options="filters"

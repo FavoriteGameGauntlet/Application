@@ -126,7 +126,7 @@ watch(() => journalStore.revision, resourcesStore.loadStandings, {
 			<span class="label panel__label">Типы очков</span>
 			<UiInput
 				v-model="query"
-				placeholder="Найти тип…"
+				placeholder="Найти…"
 				icon="search"
 				aria-label="Поиск по типам очков"
 			/>

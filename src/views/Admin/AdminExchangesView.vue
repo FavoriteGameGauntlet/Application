@@ -215,7 +215,7 @@ watch(
 <template>
 	<div class="exchanges">
 		<ListHead title="Обмены" :count @add="editing = {}" />
-		<ListBar v-model:query="query" placeholder="Найти обмен…">
+		<ListBar v-model:query="query">
 			<UiSwitch v-model="store.showDeleted" label="Показать удалённые" />
 		</ListBar>
 

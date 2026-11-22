@@ -9,6 +9,7 @@ import type {
 } from '../../api-facade/contracts'
 import PaymentDialog from '../../components/PaymentDialog.vue'
 import UserResourcesPanel from '../../components/UserResourcesPanel.vue'
+import UiBadge from '../../components/ui/UiBadge.vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiDialog from '../../components/ui/UiDialog.vue'
 import UiIcon from '../../components/ui/UiIcon.vue'
@@ -18,7 +19,12 @@ import { useExchangesStore } from '../../stores/exchangesStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToastStore } from '../../stores/toastStore'
-import { isPickComplete, pickLimit, picksEntries } from '../../utils/applyMode'
+import {
+	applyModeFacts,
+	isPickComplete,
+	pickLimit,
+	picksEntries,
+} from '../../utils/applyMode'
 import { formatResource } from '../../utils/formatResource'
 import {
 	buildPayment,
@@ -264,7 +270,14 @@ onMounted(() => exchangesStore.load())
 
 					<div class="card__flow">
 						<div class="side">
-							<span class="label">Отдаёшь</span>
+							<span class="side__head">
+								<span class="label">Отдаёшь</span>
+								<UiBadge
+									v-if="applyModeFacts[card.exchange.sourceApplyMode]"
+									tone="info"
+									>{{ applyModeFacts[card.exchange.sourceApplyMode] }}</UiBadge
+								>
+							</span>
 							<div class="pills">
 								<span
 									v-for="pill in card.give"
@@ -282,7 +295,14 @@ onMounted(() => exchangesStore.load())
 						</span>
 
 						<div class="side">
-							<span class="label">Получаешь</span>
+							<span class="side__head">
+								<span class="label">Получаешь</span>
+								<UiBadge
+									v-if="applyModeFacts[card.exchange.targetApplyMode]"
+									tone="info"
+									>{{ applyModeFacts[card.exchange.targetApplyMode] }}</UiBadge
+								>
+							</span>
 							<div class="pills">
 								<span
 									v-for="pill in card.get"
@@ -458,6 +478,13 @@ onMounted(() => exchangesStore.load())
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
+}
+
+.side__head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 22px;
 }
 
 .label {

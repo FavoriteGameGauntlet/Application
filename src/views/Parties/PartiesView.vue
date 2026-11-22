@@ -15,6 +15,7 @@ import { usePartiesStore } from '../../stores/partiesStore'
 import { useToastStore } from '../../stores/toastStore'
 import {
 	PERIOD_PRESETS,
+	compareDays,
 	dayOf,
 	endOfDayIso,
 	joinPeriod,
@@ -31,10 +32,14 @@ const authStore = useAuthStore()
 const partiesStore = usePartiesStore()
 const toastStore = useToastStore()
 
+/** a party status is only `active` or `finished`, so a party that has not started yet is told by its start day */
+const isUpcoming = (party: Party) =>
+	compareDays(dayOf(party.startsAt), today()) > 0
+
 const meta = (party: Party) => {
 	const members = `${party.membersCount} ${plural(party.membersCount, ['участник', 'участника', 'участников'])}`
 
-	if (party.status === 'active')
+	if (party.status === 'active' && !isUpcoming(party))
 		return [members, `до ${formatDate(party.endsAt)}`]
 
 	return [
@@ -43,11 +48,19 @@ const meta = (party: Party) => {
 	]
 }
 
+const stateOf = (party: Party) => {
+	if (isUpcoming(party)) return { label: 'скоро', tone: 'neutral' } as const
+
+	return party.status === 'active'
+		? ({ label: 'идёт', tone: 'success' } as const)
+		: ({ label: 'завершён', tone: 'neutral' } as const)
+}
+
 const items = computed(() =>
 	partiesStore.list.map((party) => ({
 		party,
 		meta: meta(party),
-		active: party.status === 'active',
+		state: stateOf(party),
 	})),
 )
 
@@ -174,8 +187,8 @@ onMounted(async () => {
 					<div class="card__info">
 						<span class="card__head">
 							<span class="card__name">{{ item.party.name }}</span>
-							<UiBadge :tone="item.active ? 'success' : 'neutral'">
-								{{ item.active ? 'идёт' : 'завершён' }}
+							<UiBadge :tone="item.state.tone">
+								{{ item.state.label }}
 							</UiBadge>
 							<UiBadge tone="navy">
 								{{ item.party.role === 'admin' ? 'админ' : 'игрок' }}

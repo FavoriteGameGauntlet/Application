@@ -112,7 +112,7 @@ onMounted(async () => {
 <template>
 	<div class="parameters">
 		<ListHead title="Системные параметры" no-add />
-		<ListBar v-model:query="query" placeholder="Найти параметр…" />
+		<ListBar v-model:query="query" />
 
 		<div class="table" role="table" aria-label="Системные параметры">
 			<div class="table__row table__row--head" role="row">
