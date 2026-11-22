@@ -146,7 +146,7 @@ const emptyText = computed(() => {
 </script>
 
 <template>
-	<ListBar v-model:query="query" placeholder="Найти в списке желаемого…">
+	<ListBar v-model:query="query">
 		<!-- the player of the tab -->
 		<slot />
 		<UiSwitch v-if="mine" v-model="showRemoved" label="Показать удалённые" />
