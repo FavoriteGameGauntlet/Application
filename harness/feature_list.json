@@ -464,9 +464,9 @@
 		},
 		{
 			"id": "wheel-result-collapsed",
-			"title": "Testers: on the «Колесо» screen the card of the entry that fell shows its name, and its description and changes stay hidden until the player clicks the card, as in the old generator the testers used. The user's answer: the names stay visible, the whole body with the description and the changes opens on a click.",
+			"title": "Hide the description and changes of the wheel result until the player opens it",
 			"priority": 57,
-			"status": "todo",
+			"status": "in_progress",
 			"evidence": ""
 		}
 	]

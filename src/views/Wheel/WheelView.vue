@@ -87,6 +87,31 @@ const showResult = computed(
 	() => !!wheelStore.shownResult && !wheelStore.spinning && !wheelStore.loading,
 )
 
+/** the result keeps what it does to itself until the player opens it, as in the generator the testers know */
+const resultOpen = ref(false)
+
+const resultHasBody = computed(
+	() =>
+		!!wheelStore.result?.result.description ||
+		resultChanges.value.length > 0 ||
+		!!wheelStore.result?.result.isManualChange,
+)
+
+const resultClosed = computed(() => resultHasBody.value && !resultOpen.value)
+
+// every new result, another group and a new visit of the screen start closed
+watch(
+	() => wheelStore.shownResult,
+	() => {
+		resultOpen.value = false
+	},
+)
+
+const onResultAction = () => {
+	if (resultClosed.value) resultOpen.value = true
+	else wheelStore.apply()
+}
+
 // the tickets count the spins the user's resources pay for; set up here, not in
 // onMounted, so the first frame is already the empty one
 resourcesStore.loadMine().catch((e) => useToastStore().error(e))
@@ -356,12 +381,40 @@ onBeforeUnmount(() => {
 			<div v-if="showResult && wheelStore.result" class="result">
 				<span class="result__accent"></span>
 
-				<div class="result__body">
-					<div class="result__name">{{ wheelStore.result.result.name }}</div>
-					<div v-if="wheelStore.result.result.description" class="result__desc">
+				<div
+					class="result__body"
+					:class="{ 'result__body--closed': resultClosed }"
+					@click="resultClosed && (resultOpen = true)"
+				>
+					<button
+						v-if="resultHasBody"
+						type="button"
+						class="result__head"
+						:aria-expanded="resultOpen"
+						@click.stop="resultOpen = !resultOpen"
+					>
+						<span class="result__name">{{
+							wheelStore.result.result.name
+						}}</span>
+						<UiIcon
+							:name="resultOpen ? 'chevron-up' : 'chevron-down'"
+							:size="20"
+							class="result__chevron"
+						/>
+					</button>
+					<div v-else class="result__name">
+						{{ wheelStore.result.result.name }}
+					</div>
+					<div
+						v-if="!resultClosed && wheelStore.result.result.description"
+						class="result__desc"
+					>
 						{{ wheelStore.result.result.description }}
 					</div>
-					<div v-if="resultChanges.length" class="result__changes">
+					<div
+						v-if="!resultClosed && resultChanges.length"
+						class="result__changes"
+					>
 						<UiChange
 							v-for="(change, i) in resultChanges"
 							:key="i"
@@ -370,7 +423,7 @@ onBeforeUnmount(() => {
 						>
 					</div>
 					<div
-						v-if="wheelStore.result.result.isManualChange"
+						v-if="!resultClosed && wheelStore.result.result.isManualChange"
 						class="result__manual"
 					>
 						<UiBadge tone="info" dot>Ручное изменение</UiBadge>
@@ -382,8 +435,14 @@ onBeforeUnmount(() => {
 					<UiButton variant="outline" @click="wheelStore.discardResult()">
 						Сбросить
 					</UiButton>
-					<UiButton @click="wheelStore.apply()">
-						{{ wheelStore.resultStartsGame ? 'Взять игру' : 'Применить' }}
+					<UiButton @click="onResultAction">
+						{{
+							resultClosed
+								? 'Показать'
+								: wheelStore.resultStartsGame
+									? 'Взять игру'
+									: 'Применить'
+						}}
 					</UiButton>
 				</div>
 			</div>
@@ -603,6 +662,33 @@ onBeforeUnmount(() => {
 	flex-direction: column;
 	gap: 8px;
 	min-width: 0;
+}
+
+.result__body--closed {
+	cursor: pointer;
+}
+
+.result__head {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	align-self: flex-start;
+	max-width: 100%;
+	padding: 0;
+	font: inherit;
+	color: inherit;
+	text-align: left;
+	cursor: pointer;
+	background: none;
+	border: none;
+}
+
+.result__chevron {
+	color: var(--text-muted);
+}
+
+.result__head:hover .result__chevron {
+	color: var(--text-strong);
 }
 
 .result__name {
