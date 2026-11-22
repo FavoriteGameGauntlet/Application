@@ -429,10 +429,10 @@
 		},
 		{
 			"id": "search-placeholder-upcoming-party",
-			"title": "Search placeholder «Найти…» and the «скоро» party badge",
+			"title": "Search placeholder «Найти…», the «скоро» party badge and the apply mode badges on the player exchanges screen",
 			"priority": 52,
 			"status": "done",
-			"evidence": "Done 2026-11-22. eslint and vue-tsc pass. Every search field shows «Найти…»; the party card shows a grey «скоро» badge and the period when the start day is after today. The app was not run by the agent; pending the user's check."
+			"evidence": "Done 2026-11-22. eslint and vue-tsc pass. Every search field shows «Найти…»; the party card shows a grey «скоро» badge and the period when the start day is after today; the player exchange cards show «на выбор» / «одна на выбор» next to «Отдаёшь» and «Получаешь», as in the admin panel. The app was not run by the agent; pending the user's check."
 		}
 	]
 }
