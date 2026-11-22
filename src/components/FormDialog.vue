@@ -489,6 +489,7 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 									:hint="field.hint"
 									:login="field.login"
 									:avatar-url="field.avatarUrl"
+									:invalid="!!problemOf(field)"
 								/>
 
 								<RowsEditor
