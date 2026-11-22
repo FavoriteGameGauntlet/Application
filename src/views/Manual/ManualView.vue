@@ -78,7 +78,10 @@ const SHARED_WHO = [{ value: '', label: 'Вся пати' }]
 const userOptions = computed(() =>
 	membersStore.users.map((p) => ({
 		value: p.login,
-		label: p.login === sessionStore.login ? `${p.login} (ты)` : p.login,
+		label:
+			p.login === sessionStore.login
+				? `${membersStore.nameOf(p.login)} (ты)`
+				: membersStore.nameOf(p.login),
 	})),
 )
 
@@ -352,7 +355,9 @@ onMounted(async () => {
 						<span class="entry__time">{{ formatMoment(draft.entry.at) }}</span>
 						<span class="entry__who">
 							<span class="entry__actor-row">
-								<span class="entry__actor">{{ draft.entry.actor }}</span>
+								<span class="entry__actor">{{
+									membersStore.nameOf(draft.entry.actor)
+								}}</span>
 							</span>
 							<JournalSourceLabel
 								:source="draft.entry.source"
@@ -367,7 +372,13 @@ onMounted(async () => {
 									change.login === sessionStore.login ? 'accent' : 'neutral'
 								"
 							>
-								{{ change.login ? `${change.login}: ` : '' }}{{ change.text }}
+								{{ change.login ? `${membersStore.nameOf(change.login)}: ` : ''
+								}}{{ change.text
+								}}{{
+									change.receiver
+										? ` → ${membersStore.nameOf(change.receiver)}`
+										: ''
+								}}
 							</UiBadge>
 						</span>
 					</div>

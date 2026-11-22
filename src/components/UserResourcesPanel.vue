@@ -38,7 +38,10 @@ const selected = computed(() => resourcesStore.byUser[user.value])
 const userOptions = computed(() =>
 	membersStore.users.map((p) => ({
 		value: p.login,
-		label: p.login === sessionStore.login ? `${p.login} (ты)` : p.login,
+		label:
+			p.login === sessionStore.login
+				? `${membersStore.nameOf(p.login)} (ты)`
+				: membersStore.nameOf(p.login),
 	})),
 )
 

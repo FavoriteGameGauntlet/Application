@@ -9,6 +9,7 @@ import type {
 import type { HttpErrorResponse } from '../api-facade/http'
 import { StoreName } from '../enums/storeName'
 import { useSessionStore } from './sessionStore'
+import { useMembersStore } from './membersStore'
 import { useToastStore } from './toastStore'
 
 export const useWishlistStore = defineStore(StoreName.Wishlist, () => {
@@ -34,7 +35,10 @@ export const useWishlistStore = defineStore(StoreName.Wishlist, () => {
 		name: string,
 	): Promise<'added' | 'exists' | 'picked' | 'failed'> => {
 		const toast = useToastStore()
-		const owner = login === useSessionStore().login ? '' : ` ${login}`
+		const owner =
+			login === useSessionStore().login
+				? ''
+				: ` ${useMembersStore().nameOf(login)}`
 
 		try {
 			const game = await api.wishlist.add(login, name)

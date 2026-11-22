@@ -170,7 +170,9 @@ const showsEmpty = computed(() => ended && !loading && !entries.length)
 				></span>
 				<div class="event__body">
 					<div class="event__head">
-						<span class="event__who">{{ entry.actor }}</span>
+						<span class="event__who">{{
+							membersStore.nameOf(entry.actor)
+						}}</span>
 						<span class="event__time">{{
 							formatMoment(entry.at).replace('сегодня ', '')
 						}}</span>
@@ -187,8 +189,17 @@ const showsEmpty = computed(() => ended && !loading && !entries.length)
 						@mouseenter="hover(() => cardOfChange(change), $event)"
 						@mouseleave="leaveChange(entry, $event)"
 					>
-						<span class="event__user">{{ change.login }}</span>
-						<span class="event__text">{{ change.text }}</span>
+						<span class="event__user">{{
+							change.login && membersStore.nameOf(change.login)
+						}}</span>
+						<span class="event__text"
+							>{{ change.text
+							}}{{
+								change.receiver
+									? ` → ${membersStore.nameOf(change.receiver)}`
+									: ''
+							}}</span
+						>
 					</div>
 				</div>
 			</div>

@@ -74,7 +74,7 @@ const fields = computed<FormField[]>(() => [
 					key: 'color',
 					type: 'color' as const,
 					label: 'Твой цвет',
-					login: authStore.login,
+					name: authStore.login,
 				},
 			]),
 ])

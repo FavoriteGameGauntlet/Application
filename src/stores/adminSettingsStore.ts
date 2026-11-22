@@ -92,8 +92,9 @@ export const useAdminSettingsStore = defineStore(
 
 			try {
 				await api.admin.members.update(member.login, input)
-				toast.show('Сохранено', member.login)
 				await Promise.all([loadMembers(), useMembersStore().load()])
+				// after the reload, so a renamed member is named by the new name
+				toast.show('Сохранено', useMembersStore().nameOf(member.login))
 				return true
 			} catch (e) {
 				if (codeOf(e) === 'OWN_ADMIN_RIGHTS_REVOKE') {
@@ -115,7 +116,11 @@ export const useAdminSettingsStore = defineStore(
 
 			try {
 				await api.admin.members.remove(member.login)
-				toast.show('Удалён из пати', member.login, 'info')
+				toast.show(
+					'Удалён из пати',
+					useMembersStore().nameOf(member.login),
+					'info',
+				)
 				await Promise.all([loadMembers(), useMembersStore().load()])
 			} catch (e) {
 				toast.error(e)
@@ -128,7 +133,7 @@ export const useAdminSettingsStore = defineStore(
 			try {
 				await api.admin.members.changeAvatar(login, file)
 				await Promise.all([loadMembers(), useMembersStore().load()])
-				toast.show('Аватар обновлён', login)
+				toast.show('Аватар обновлён', useMembersStore().nameOf(login))
 			} catch (e) {
 				toast.error(e)
 			}
@@ -139,7 +144,10 @@ export const useAdminSettingsStore = defineStore(
 
 			try {
 				await api.admin.members.restore(member.login)
-				toast.show('Игрок вернулся в пати', member.login)
+				toast.show(
+					'Игрок вернулся в пати',
+					useMembersStore().nameOf(member.login),
+				)
 				await Promise.all([loadMembers(), useMembersStore().load()])
 			} catch (e) {
 				toast.error(e)

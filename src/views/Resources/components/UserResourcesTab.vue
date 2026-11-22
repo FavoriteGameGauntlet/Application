@@ -107,10 +107,18 @@ const users = computed(() => {
 	const q = query.value.trim().toLowerCase()
 
 	return membersStore.users
-		.filter((p) => !q || p.login.includes(q))
+		.filter(
+			(p) =>
+				!q ||
+				p.login.toLowerCase().includes(q) ||
+				membersStore.nameOf(p.login).toLowerCase().includes(q),
+		)
 		.map((p) => ({
 			...p,
-			label: p.login === sessionStore.login ? `${p.login} (ты)` : p.login,
+			label:
+				p.login === sessionStore.login
+					? `${membersStore.nameOf(p.login)} (ты)`
+					: membersStore.nameOf(p.login),
 			count: resourcesStore.summaries[kind]?.find((s) => s.login === p.login)
 				?.count,
 		}))
@@ -153,7 +161,7 @@ const emptyText = computed(
 					@click="selected = p.login"
 				>
 					<UiUserAvatar
-						:name="p.login"
+						:name="membersStore.nameOf(p.login)"
 						:color="p.color"
 						:src="p.avatarUrl"
 						:size="22"
@@ -167,7 +175,7 @@ const emptyText = computed(
 		<div class="content">
 			<div class="who">
 				<UiUserAvatar
-					:name="selected"
+					:name="membersStore.nameOf(selected)"
 					:color="membersStore.colorOf(selected)"
 					:src="membersStore.avatarOf(selected)"
 					:size="36"

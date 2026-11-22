@@ -23,10 +23,13 @@ const tab = ref(tabs[0])
 
 /** the current user comes first, the list opens on their own games */
 const users = computed(() => [
-	{ value: sessionStore.login, label: sessionStore.login },
+	{
+		value: sessionStore.login,
+		label: membersStore.nameOf(sessionStore.login),
+	},
 	...membersStore.users
 		.filter((p) => p.login !== sessionStore.login)
-		.map((p) => ({ value: p.login, label: p.login })),
+		.map((p) => ({ value: p.login, label: membersStore.nameOf(p.login) })),
 ])
 
 /** whose lists the tabs show */

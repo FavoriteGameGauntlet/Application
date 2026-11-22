@@ -19,6 +19,7 @@ const resourcesStore = useResourcesStore()
 
 const login = computed(() => route.params.login as string)
 const color = computed(() => membersStore.colorOf(login.value))
+const name = computed(() => membersStore.nameOf(login.value))
 
 const member = ref<Member>()
 const avatarSrc = computed(() => member.value?.user.avatarUrl)
@@ -86,7 +87,7 @@ const stats = computed(() => [
 		<div class="breadcrumbs">
 			<RouterLink :to="{ name: RouteName.Users }">Участники</RouterLink>
 			<span>/</span>
-			<span class="breadcrumbs__current">{{ login }}</span>
+			<span class="breadcrumbs__current">{{ name }}</span>
 		</div>
 
 		<div v-if="member" class="header">
@@ -104,7 +105,7 @@ const stats = computed(() => [
 			>
 				<UiUserAvatar
 					title=""
-					:name="login"
+					:name
 					:color="color"
 					:src="avatarSrc"
 					:size="48"
@@ -127,7 +128,7 @@ const stats = computed(() => [
 					<img
 						class="avatar-preview"
 						:src="avatarSrc ?? undefined"
-						:alt="`Аватар ${login}`"
+						:alt="`Аватар ${name}`"
 						@error="loadedAvatar = undefined"
 					/>
 				</div>
@@ -135,9 +136,7 @@ const stats = computed(() => [
 
 			<div class="header__info">
 				<span class="header__name-row">
-					<span class="header__name" :title="login">{{
-						member.displayName ?? login
-					}}</span>
+					<span class="header__name" :title="login">{{ name }}</span>
 					<UiBadge :tone="userStatusView[member.status].tone" dot>
 						{{ userStatusView[member.status].label }}
 					</UiBadge>

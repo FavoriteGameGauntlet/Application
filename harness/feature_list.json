@@ -419,6 +419,13 @@
 			"priority": 50,
 			"status": "done",
 			"evidence": "Done 2026-11-22. Full record: harness/archive/features-done.json"
+		},
+		{
+			"id": "display-names",
+			"title": "Show the member's party name instead of the login everywhere in the party",
+			"priority": 51,
+			"status": "done",
+			"evidence": "Done 2026-11-22. eslint and vue-tsc pass. The name comes from membersStore.nameOf (login when empty). The login stays on the login form, the party screen, the admin members table and the login line under the name in «Участники». The screens were not run by the agent; pending the user's check in the app."
 		}
 	]
 }

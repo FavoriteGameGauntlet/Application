@@ -76,14 +76,20 @@ const toChange = (
 		kind === 'item' ? { kind, id, name, amount: 1 } : { kind, id, name }
 	const label = formatResource(resource, pointTypes)
 
-	const text =
-		change.eventKind === 'item_transferred'
-			? `${label} → ${change.receiverLogin ?? '?'}`
-			: change.eventKind.endsWith('_added')
-				? `+${label}`
-				: change.eventKind.endsWith('_removed')
-					? `−${label}`
-					: `${label} (использование)`
+	if (change.eventKind === 'item_transferred') {
+		return {
+			login,
+			text: label,
+			resource,
+			...(change.receiverLogin && { receiver: change.receiverLogin }),
+		}
+	}
+
+	const text = change.eventKind.endsWith('_added')
+		? `+${label}`
+		: change.eventKind.endsWith('_removed')
+			? `−${label}`
+			: `${label} (использование)`
 
 	return { login, text, resource }
 }

@@ -298,6 +298,8 @@ export type JournalEntry = {
 		login: Login | null
 		text: string
 		resource?: ResourceRef
+		/** who got the item of a transfer; the screen shows their name after the text */
+		receiver?: Login
 	}[]
 }
 

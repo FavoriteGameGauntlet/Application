@@ -19,6 +19,11 @@ export const useMembersStore = defineStore(StoreName.Members, () => {
 	const avatarOf = (login: Login) =>
 		all.value.find((member) => member.user.login === login)?.user.avatarUrl
 
+	/** the party name of a member, the login when the admin gave none; left members keep theirs for the journal */
+	const nameOf = (login: Login) =>
+		all.value.find((member) => member.user.login === login)?.displayName ??
+		login
+
 	const load = async () => {
 		const id = ++loadId
 		const members = await api.members.list()
@@ -28,5 +33,5 @@ export const useMembersStore = defineStore(StoreName.Members, () => {
 
 	const get = (login: Login) => api.members.get(login)
 
-	return { list, users, colorOf, avatarOf, load, get }
+	return { list, users, colorOf, avatarOf, nameOf, load, get }
 })
