@@ -226,6 +226,11 @@ const sections = computed<FormSection[]>(() => {
 							check: (values) =>
 								problemOf(parseItemEntries(rowsOf(values, 'entries'))),
 						},
+						{
+							key: 'isManualChange',
+							type: 'check',
+							label: 'Потом ручное изменение',
+						},
 						wholeField(
 							{
 								key: 'usesMax',
@@ -337,6 +342,11 @@ const sections = computed<FormSection[]>(() => {
 							aside: applies('abilityApplies', hasAbilityEntries.value),
 							check: (values) =>
 								problemOf(parseItemEntries(rowsOf(values, 'abilityEntries'))),
+						},
+						{
+							key: 'abilityIsManualChange',
+							type: 'check',
+							label: 'Потом ручное изменение',
 						},
 					],
 				},
@@ -458,10 +468,12 @@ const initial = computed<FormValues>(() => ({
 	unit5: entry?.unitForms?.many ?? '',
 	entries: itemEntriesToForm(entry?.entries ?? []),
 	applies: entry?.applyMode ?? 'all',
+	isManualChange: entry?.isManualChange ?? false,
 	conditions: [...(entry?.conditions ?? [])],
 	modifiers: modifiersToForm(entry?.modifiers ?? []),
 	abilityEntries: itemEntriesToForm(entry?.ability?.entries ?? []),
 	abilityApplies: entry?.ability?.applyMode ?? 'all',
+	abilityIsManualChange: entry?.ability?.isManualChange ?? false,
 	abilityUsesMax: entry?.ability?.uses ? String(entry.ability.uses.max) : '',
 	abilityUsesStart: entry?.ability?.uses
 		? String(entry.ability.uses.start)
@@ -559,19 +571,21 @@ const abilityOf = (values: FormValues): PerkAbility | null => {
 	if (values.abilityOn !== true) return null
 
 	const applyMode = textOf(values, 'abilityApplies') as ApplyMode
+	const isManualChange = values.abilityIsManualChange === true
 	const entries: ItemEntryRow[] = parsedRows(
 		parseItemEntries(rowsOf(values, 'abilityEntries')),
 	)
 
 	// without a limit there are no charges and no renewal
 	if (textOf(values, 'abilityLimit') !== 'limited') {
-		return { applyMode, entries, chargesMax: 0, triggers: [] }
+		return { applyMode, isManualChange, entries, chargesMax: 0, triggers: [] }
 	}
 
 	const renewalPeriod = numberOf(values, 'abilityRenewal')
 
 	return {
 		applyMode,
+		isManualChange,
 		entries,
 		uses: {
 			max: Number(textOf(values, 'abilityUsesMax')),
@@ -611,6 +625,7 @@ const onSave = async (values: FormValues) => {
 	if (kind === 'items') {
 		input.entries = parsedRows(parseItemEntries(rowsOf(values, 'entries')))
 		input.applyMode = textOf(values, 'applies') as ApplyMode
+		input.isManualChange = values.isManualChange === true
 		input.usesMax = Number(textOf(values, 'usesMax'))
 		input.conditions = values.conditions as ItemCondition[]
 	}

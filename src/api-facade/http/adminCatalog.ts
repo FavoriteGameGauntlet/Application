@@ -105,6 +105,7 @@ const resourceBody = (kind: ResourceCatalogKind, input: CatalogEntryInput) => {
 				description,
 				usesMax: input.usesMax ?? 1,
 				applyMode: input.applyMode ?? 'all',
+				isManualChange: input.isManualChange ?? false,
 				entries: (input.entries ?? []).map(fromItemEntryRow),
 				conditions: input.conditions ?? [],
 			}
@@ -135,6 +136,7 @@ const resourceBody = (kind: ResourceCatalogKind, input: CatalogEntryInput) => {
 				...(ability && {
 					ability: {
 						applyMode: ability.applyMode,
+						isManualChange: ability.isManualChange,
 						entries: ability.entries.map(fromItemEntryRow),
 						...(ability.uses && { uses: ability.uses }),
 						chargesMax: ability.chargesMax,

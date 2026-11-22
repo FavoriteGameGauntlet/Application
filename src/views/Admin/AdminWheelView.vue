@@ -101,8 +101,6 @@ const sections = computed<FormSection[]>(() => {
 				{
 					key: 'entries',
 					label: '',
-					required: 'действие',
-					requiredUnless: { key: 'isManualChange', is: true },
 					type: 'rows',
 					variant: 'change',
 					addLabel: 'Действие',

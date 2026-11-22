@@ -452,8 +452,8 @@
 			"id": "item-perk-manual-change",
 			"title": "Testers and the user: the «Потом ручное изменение» check of a wheel entry also exists for an item and for the ability of a perk in the catalogue window. After the player uses such an item or ability, the manual change form opens, as after a wheel entry with isManualChange; the rows stop being required when the check is on, as for a wheel entry. The catalogue card shows the flag. Needs fgg-server and fgg-database first.",
 			"priority": 55,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-22. Catalogue window has the check for items and perk abilities, the catalogue card shows a «Потом ручное изменение» line, using such an item or perk opens the manual change form and goes back to the resources tab. eslint and vue-tsc pass. Not checked: the running app against the backend (pending the user)."
 		},
 		{
 			"id": "perk-trigger-exchange-filter",

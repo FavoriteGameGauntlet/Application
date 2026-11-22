@@ -41,6 +41,7 @@ type UserItemDto = {
 	usesMax: number
 	usesLeft: number
 	applyMode: ApplyMode
+	isManualChange: boolean
 	entries: NamedItemEntryDto[]
 	conditions: ItemCondition[]
 }
@@ -52,6 +53,7 @@ type UserPerkDto = {
 	modifiers: NamedPointModifierDto[]
 	ability?: {
 		applyMode: ApplyMode
+		isManualChange: boolean
 		entries: NamedItemEntryDto[]
 		uses?: { max: number; start: number }
 		usesLeft?: number
@@ -86,6 +88,7 @@ const toUserItem = (dto: UserItemDto, pointTypes: PointType[]): UserItem => ({
 	usesLeft: dto.usesLeft,
 	usesMax: dto.usesMax,
 	applyMode: dto.applyMode,
+	isManualChange: dto.isManualChange,
 	entries: toUseEntries(dto.entries, pointTypes),
 	conditions: dto.conditions,
 })
@@ -104,6 +107,7 @@ const toUserPerk = (dto: UserPerkDto, pointTypes: PointType[]): Perk => {
 		...(ability && {
 			abilityEntries: toUseEntries(ability.entries, pointTypes),
 			abilityApplyMode: ability.applyMode,
+			abilityIsManualChange: ability.isManualChange,
 		}),
 	}
 }

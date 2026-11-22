@@ -70,7 +70,7 @@ const usePerk = (perk: Perk) => {
 			perk.abilityApplyMode ?? 'all',
 		)
 	) {
-		return resourcesStore.usePerk(perk.id, perk.name)
+		return resourcesStore.usePerk(perk)
 	}
 
 	using.value = {
@@ -81,7 +81,7 @@ const usePerk = (perk: Perk) => {
 			applyMode: perk.abilityApplyMode ?? 'all',
 			conditions: [],
 		},
-		run: (use) => resourcesStore.usePerk(perk.id, perk.name, use),
+		run: (use) => resourcesStore.usePerk(perk, use),
 	}
 }
 

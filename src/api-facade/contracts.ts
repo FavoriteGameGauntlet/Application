@@ -207,6 +207,8 @@ export type UserItem = {
 	usesLeft: number
 	usesMax: number
 	applyMode: ApplyMode
+	/** the manual change form has to be opened after the copy is used */
+	isManualChange: boolean
 	/** what using the copy does; decides whether the user names targets and picks copies */
 	entries?: ItemEntryRow[]
 	/** what has to hold for the item to be used */
@@ -227,6 +229,8 @@ export type Perk = {
 	abilityEntries?: ItemEntryRow[]
 	/** active perks only */
 	abilityApplyMode?: ApplyMode
+	/** active perks only: the manual change form has to be opened after the ability is used */
+	abilityIsManualChange?: boolean
 }
 
 export type Effect = {
@@ -502,6 +506,8 @@ export type PointModifierRow = {
 /** What the holder of a perk can do on their own. */
 export type PerkAbility = {
 	applyMode: ApplyMode
+	/** the manual change form has to be opened after a use */
+	isManualChange: boolean
 	entries: ItemEntryRow[]
 	/** read only: the text of `entries`, built by the facade from the resource names in the response */
 	changes?: string[]
@@ -560,6 +566,8 @@ export type CatalogEntry = {
 	entries?: ItemEntryRow[]
 	/** items */
 	applyMode?: ApplyMode
+	/** items: the manual change form has to be opened after a use */
+	isManualChange?: boolean
 	/** items */
 	conditions?: ItemCondition[]
 	/** effects, perks: point changes applied while it is active or held */

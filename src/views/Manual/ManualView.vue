@@ -45,6 +45,8 @@ const parentLabel = computed(() => {
 			return 'История'
 		case 'free':
 			return 'Панель админа'
+		case 'use':
+			return draft.value.source === 'items' ? 'Предметы' : 'Перки'
 		default:
 			return 'Колесо'
 	}
@@ -55,7 +57,9 @@ const currentLabel = computed(() => {
 
 	if (current?.kind === 'fix') return 'Исправление'
 
-	return current?.kind === 'wheel' ? current.name : 'Ручное изменение'
+	return current?.kind === 'wheel' || current?.kind === 'use'
+		? current.name
+		: 'Ручное изменение'
 })
 
 const rows = ref<Row[]>([])
@@ -390,6 +394,19 @@ onMounted(async () => {
 					<span class="hero__group">{{ draft.group }}</span>
 					<span class="hero__name">{{ draft.name }}</span>
 					<span class="hero__desc">{{ draft.description }}</span>
+				</div>
+
+				<div v-else-if="draft.kind === 'use'" class="hero">
+					<span class="hero__accent"></span>
+					<span class="card__label">{{
+						draft.source === 'items'
+							? 'Использован предмет'
+							: 'Использован перк'
+					}}</span>
+					<span class="hero__name">{{ draft.name }}</span>
+					<span v-if="draft.description" class="hero__desc">{{
+						draft.description
+					}}</span>
 				</div>
 
 				<div class="card">

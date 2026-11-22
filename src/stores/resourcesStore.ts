@@ -6,6 +6,8 @@ import type {
 	CatalogOption,
 	ItemUse,
 	Login,
+	Perk,
+	UserItem,
 	UserResources,
 	PointsStanding,
 	PointType,
@@ -14,6 +16,7 @@ import type {
 } from '../api-facade/contracts'
 import { StoreName } from '../enums/storeName'
 import { useJournalStore } from './journalStore'
+import { useManualStore } from './manualStore'
 import { useSessionStore } from './sessionStore'
 import { useToastStore } from './toastStore'
 
@@ -90,27 +93,45 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 	const fetchHistory = (login: Login, kind: ResourceKind, id: number) =>
 		api.resources.history(login, kind, id, 4)
 
-	const useItem = async (item: { id: number; name: string }, use?: ItemUse) => {
+	const useItem = async (item: UserItem, use?: ItemUse) => {
 		const toast = useToastStore()
 
 		try {
 			await api.resources.useItem(item.id, use)
-			toast.show('Использован предмет', item.name)
 			await loadMine()
 			useJournalStore().bump()
+
+			if (item.isManualChange) {
+				await useManualStore().startUse({
+					source: 'items',
+					name: item.name,
+					description: item.description,
+				})
+			} else {
+				toast.show('Использован предмет', item.name)
+			}
 		} catch (e) {
 			toast.error(e)
 		}
 	}
 
-	const usePerk = async (perkId: number, name: string, use?: ItemUse) => {
+	const usePerk = async (perk: Perk, use?: ItemUse) => {
 		const toast = useToastStore()
 
 		try {
-			await api.resources.usePerk(perkId, use)
-			toast.show('Перк использован', name)
+			await api.resources.usePerk(perk.id, use)
 			await loadMine()
 			useJournalStore().bump()
+
+			if (perk.abilityIsManualChange) {
+				await useManualStore().startUse({
+					source: 'perks',
+					name: perk.name,
+					description: perk.description,
+				})
+			} else {
+				toast.show('Перк использован', perk.name)
+			}
 		} catch (e) {
 			toast.error(e)
 		}

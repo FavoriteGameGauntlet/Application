@@ -129,6 +129,10 @@ const units = computed(() => {
 					/>
 					{{ applyModeLines[entry.applyMode ?? 'all'] }}
 				</span>
+				<span v-if="entry.isManualChange" class="hint">
+					<UiIcon name="pencil" :size="18" />
+					Потом ручное изменение
+				</span>
 			</section>
 
 			<div class="stats">
@@ -189,6 +193,10 @@ const units = computed(() => {
 						:size="18"
 					/>
 					{{ applyModeLines[ability.applyMode] }}
+				</span>
+				<span v-if="ability.isManualChange" class="hint">
+					<UiIcon name="pencil" :size="18" />
+					Потом ручное изменение
 				</span>
 				<div class="stats">
 					<div v-if="!ability.uses" class="stat">
