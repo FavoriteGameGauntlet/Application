@@ -147,9 +147,9 @@ const emptyText = computed(() => {
 
 <template>
 	<ListBar v-model:query="query">
-		<!-- the player of the tab -->
-		<slot />
 		<UiSwitch v-if="mine" v-model="showRemoved" label="Показать удалённые" />
+		<!-- the player whose list is shown -->
+		<slot />
 	</ListBar>
 
 	<div class="table" role="table" :aria-label="`Список желаемого ${user}`">

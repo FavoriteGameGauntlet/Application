@@ -140,8 +140,6 @@ const reviewedGame = computed(() =>
 
 <template>
 	<ListBar v-model:query="query" placeholder="Найти среди пройденных…">
-		<!-- the player of the tab -->
-		<slot />
 		<UiChoiceChips
 			:model-value="state"
 			:options="chips"
@@ -151,6 +149,8 @@ const reviewedGame = computed(() =>
 		<span v-if="rows.length" class="bar__note">
 			<span v-for="part in summary" :key="part">{{ part }}</span>
 		</span>
+		<!-- the player whose games are shown -->
+		<slot />
 	</ListBar>
 
 	<div class="table" role="table" aria-label="Пройденные игры">
@@ -234,7 +234,6 @@ const reviewedGame = computed(() =>
 	flex-direction: column;
 	align-items: flex-end;
 	gap: 2px;
-	margin-left: auto;
 	font: var(--type-caption);
 	color: var(--text-muted);
 }

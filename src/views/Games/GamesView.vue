@@ -11,12 +11,7 @@ import { useWishlistStore } from '../../stores/wishlistStore'
 import CompletedTab from './components/CompletedTab.vue'
 import WishlistTab from './components/WishlistTab.vue'
 
-const tabs = [
-	'Мой список желаемого',
-	'Списки желаемого игроков',
-	'Мои пройденные',
-	'Пройденные игроков',
-]
+const tabs = ['Список желаемого', 'Пройденные']
 
 const membersStore = useMembersStore()
 const sessionStore = useSessionStore()
@@ -24,30 +19,20 @@ const wishlistStore = useWishlistStore()
 
 const tab = ref(tabs[0])
 
-const otherUsers = computed(() =>
-	membersStore.users
+/** the current user comes first, the list opens on their own games */
+const users = computed(() => [
+	{ value: sessionStore.login, label: sessionStore.login },
+	...membersStore.users
 		.filter((p) => p.login !== sessionStore.login)
 		.map((p) => ({ value: p.login, label: p.login })),
-)
+])
 
-const selectedUser = ref(otherUsers.value[0]?.value ?? '')
+/** whose lists the tabs show */
+const user = ref(sessionStore.login)
 
-const isUserTab = computed(
-	() =>
-		tab.value === 'Списки желаемого игроков' ||
-		tab.value === 'Пройденные игроков',
-)
+const mine = computed(() => user.value === sessionStore.login)
 
-const isWishlistTab = computed(
-	() =>
-		tab.value === 'Мой список желаемого' ||
-		tab.value === 'Списки желаемого игроков',
-)
-
-/** whose list the tab shows */
-const user = computed(() =>
-	isUserTab.value ? selectedUser.value : sessionStore.login,
-)
+const isWishlistTab = computed(() => tab.value === 'Список желаемого')
 
 /** the completed games are counted by the state chips of their tab */
 const count = computed(() =>
@@ -63,9 +48,7 @@ const addError = ref<string>()
 /** the name that the backend refused, so a new text takes the message away */
 let refusedName = ''
 
-const addOwner = computed(() =>
-	user.value === sessionStore.login ? '' : ` ${user.value}`,
-)
+const addOwner = computed(() => (mine.value ? '' : ` ${user.value}`))
 
 const addFields = computed<FormField[]>(() => [
 	{
@@ -108,32 +91,11 @@ const onAdd = async (values: FormValues) => {
 
 		<UiTabs v-model="tab" :items="tabs" />
 
-		<WishlistTab
-			v-if="isWishlistTab"
-			:key="isUserTab ? 'others' : 'mine'"
-			:user
-			:mine="!isUserTab"
-		>
-			<UiFilterSelect
-				v-if="isUserTab"
-				v-model="selectedUser"
-				label="Игрок"
-				:options="otherUsers"
-			/>
-		</WishlistTab>
-		<CompletedTab
-			v-else
-			:key="isUserTab ? 'others' : 'mine'"
-			:user
-			:mine="!isUserTab"
-		>
-			<UiFilterSelect
-				v-if="isUserTab"
-				v-model="selectedUser"
-				label="Игрок"
-				:options="otherUsers"
-			/>
-		</CompletedTab>
+		<component :is="isWishlistTab ? WishlistTab : CompletedTab" :user :mine>
+			<div class="player">
+				<UiFilterSelect v-model="user" label="Игрок" :options="users" />
+			</div>
+		</component>
 	</div>
 
 	<FormDialog
@@ -154,5 +116,9 @@ const onAdd = async (values: FormValues) => {
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
+}
+
+.player {
+	margin-left: auto;
 }
 </style>
