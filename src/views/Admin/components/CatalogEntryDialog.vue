@@ -289,7 +289,7 @@ const sections = computed<FormSection[]>(() => {
 							check: (values) =>
 								parseSpan(textOf(values, 'duration')) === undefined
 									? {
-											text: 'Длительность должна быть вида «2 ч» или «1 день»',
+											text: 'Длительность должна быть вида «2 ч» или «1 д»',
 										}
 									: undefined,
 						},

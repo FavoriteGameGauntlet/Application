@@ -201,7 +201,7 @@ const calc = (row: Row) => {
 					  grant &&
 					  span &&
 					  parseSpan(span) === undefined
-					? 'Срок в строке % должен быть вида «2 ч» или «1 день»'
+					? 'Срок в строке % должен быть вида «2 ч» или «1 д»'
 					: '',
 	}
 }
@@ -222,7 +222,7 @@ const views = computed(() =>
 			result,
 			isShared: row.type === 'shared-points',
 			hasAmount: hasAmount(row),
-			placeholder: isNumeric(row.type) ? '0' : '1 день',
+			placeholder: isNumeric(row.type) ? '0' : '1 д',
 			resources: resourceOptions(row.type),
 			actions: actionOptions(row.type),
 			tone: failed ? 'failed' : result.changed ? 'changed' : 'same',
