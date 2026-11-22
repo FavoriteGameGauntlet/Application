@@ -6,7 +6,7 @@ import type {
 } from '../../../api-facade/contracts'
 import ListBar from '../../../components/ListBar.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
-import UiChoiceChips from '../../../components/ui/UiChoiceChips.vue'
+import UiFilterSelect from '../../../components/ui/UiFilterSelect.vue'
 import UiRowMenu, {
 	type RowMenuItem,
 } from '../../../components/ui/UiRowMenu.vue'
@@ -35,12 +35,16 @@ const statuses = {
 	rerolled: { label: 'Перекручена', tone: 'info' },
 } as const
 
-const chipLabels: Record<StateFilter, string> = {
-	all: 'Все',
-	completed: 'Пройдены',
-	cancelled: 'Отменены',
-	rerolled: 'Перекручены',
+const stateLabels: Record<StateFilter, string> = {
+	all: 'все',
+	completed: 'пройдены',
+	cancelled: 'отменены',
+	rerolled: 'перекручены',
 }
+
+const stateOptions = (Object.keys(stateLabels) as StateFilter[]).map(
+	(value) => ({ value, label: stateLabels[value] }),
+)
 
 const query = ref('')
 const state = ref<StateFilter>('all')
@@ -48,17 +52,6 @@ const state = ref<StateFilter>('all')
 const reviewing = ref<{ game: GameHistoryEntry; editing: boolean }>()
 
 const games = computed(() => completedStore.lists[user] ?? [])
-
-const chips = computed(() =>
-	(Object.keys(chipLabels) as StateFilter[]).map((value) => ({
-		value,
-		label: chipLabels[value],
-		count:
-			value === 'all'
-				? games.value.length
-				: games.value.filter((g) => g.endState === value).length,
-	})),
-)
 
 const rows = computed(() => {
 	const q = query.value.trim().toLowerCase()
@@ -139,16 +132,17 @@ const reviewedGame = computed(() =>
 </script>
 
 <template>
-	<ListBar v-model:query="query" placeholder="Найти среди пройденных…">
-		<UiChoiceChips
+	<ListBar v-model:query="query">
+		<UiFilterSelect
 			:model-value="state"
-			:options="chips"
 			label="Состояние"
+			:options="stateOptions"
+			:active="state !== 'all'"
 			@update:model-value="state = $event as StateFilter"
 		/>
-		<span v-if="rows.length" class="bar__note">
-			<span v-for="part in summary" :key="part">{{ part }}</span>
-		</span>
+		<template v-if="rows.length">
+			<UiBadge v-for="part in summary" :key="part">{{ part }}</UiBadge>
+		</template>
 		<!-- the player whose games are shown -->
 		<slot />
 	</ListBar>
@@ -229,15 +223,6 @@ const reviewedGame = computed(() =>
 </template>
 
 <style scoped>
-.bar__note {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-end;
-	gap: 2px;
-	font: var(--type-caption);
-	color: var(--text-muted);
-}
-
 .table {
 	overflow: hidden;
 	background: var(--surface-card);
