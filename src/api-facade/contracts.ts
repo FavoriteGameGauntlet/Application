@@ -135,8 +135,11 @@ export type WheelEntry = {
 	isManualChange?: boolean
 	/** changes only */
 	applyMode?: ApplyMode
-	/** changes that are applied automatically, there may be some next to isManualChange */
-	entries?: ResourceRef[]
+	/**
+	 * changes only: what applying the item does, as the entries of an item; the
+	 * user who spun is the holder. There may be some next to isManualChange.
+	 */
+	entries?: ItemEntryRow[]
 }
 
 /**
@@ -405,14 +408,12 @@ export type ExchangeUse = {
 }
 
 /**
- * What the user adds to the apply of a spin: whom the item concerns (a group of
- * changes only), the entries of an item that doesn't apply to all, and the
- * payment of the cost.
+ * What the user adds to the apply of a spin: for a group of changes the same
+ * as `ItemUse` with the user who spun as the holder, and the payment of the
+ * cost. A copy that pays the cost can't be picked for an entry too.
  */
-export type WheelApply = {
+export type WheelApply = ItemUse & {
 	payment?: Payment
-	targetLogins?: Login[]
-	entryIds?: number[]
 }
 
 // 10. Parties
@@ -620,8 +621,8 @@ export type WheelCatalogEntry = {
 	description?: string
 	/** the text of `entries`; empty = nothing changes by itself */
 	changes: string[]
-	/** a change group only: what the item grants to the chosen users, signed */
-	entries: ChangeRow[]
+	/** a change group only: what applying the item does, the user who spun is the holder */
+	entries: ItemEntryRow[]
 	/** the user makes a change by hand after the item fell, see `manual` */
 	isManualChange: boolean
 	applyMode: ApplyMode
@@ -864,10 +865,9 @@ export type Api = {
 		 * `payment` is what the user chose to give when the cost can be paid with
 		 * different copies (items of different wear): 409 INVALID_PAYMENT when it
 		 * doesn't fit the cost. Without it the server takes the most used copies.
-		 * `targetLogins` is required for a group of changes (422
-		 * WHEEL_TARGETS_INVALID without it), not allowed for a game or the wishlist.
-		 * `entryIds` is required for an item with `applyMode` `any` or `one` (exactly one for `one`) and not
-		 * accepted otherwise (422 WHEEL_ENTRIES_INVALID).
+		 * For a group of changes the use works as `ItemUse` (422
+		 * WHEEL_ENTRIES_INVALID when it doesn't fit the entries); a game or the
+		 * wishlist takes none of it (422 WHEEL_TARGETS_INVALID for targets).
 		 *
 		 * Backend: POST {party}/wheel/groups/{groupId}/spins/last/apply, the
 		 * backend applies the last spin of the user in the group. A game spin

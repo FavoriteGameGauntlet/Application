@@ -11,12 +11,13 @@ import { http, type HttpErrorResponse } from '../http'
 import { toPaymentBody } from './payment'
 import {
 	type NamedChangeEntryDto,
-	toChangeText,
+	type NamedItemEntryDto,
+	toItemEntryText,
 	toResourceRef,
 } from './changeEntry'
 import { currentLogin, getPointTypes, partyPath } from './context'
 import { latestOwnEntry } from './journal'
-import { toChangeRow } from './rows'
+import { toItemEntryRow, toUseEntries } from './rows'
 
 type RolledWheelRowDto = {
 	name: string
@@ -44,7 +45,7 @@ type WheelGroupRowDto = {
 	description?: string
 	isManualChange?: boolean
 	applyMode?: ApplyMode
-	entries?: NamedChangeEntryDto[]
+	entries?: NamedItemEntryDto[]
 }
 
 const GROUP_KINDS = {
@@ -122,8 +123,8 @@ export const toCatalogGroup = (
 		id: row.id,
 		name: row.name,
 		...(row.description !== undefined && { description: row.description }),
-		changes: (row.entries ?? []).map((e) => toChangeText(e, pointTypes)),
-		entries: (row.entries ?? []).map(toChangeRow),
+		changes: (row.entries ?? []).map((e) => toItemEntryText(e, pointTypes)),
+		entries: (row.entries ?? []).map(toItemEntryRow),
 		isManualChange: row.isManualChange === true,
 		applyMode: row.applyMode ?? 'all',
 	})),
@@ -186,10 +187,7 @@ const getGroups = async (): Promise<WheelGroup[]> => {
 					...(row.applyMode !== undefined && {
 						applyMode: row.applyMode,
 					}),
-					entries: (row.entries ?? []).map((entry) => ({
-						...toResourceRef(entry),
-						text: toChangeText(entry, pointTypes),
-					})),
+					entries: toUseEntries(row.entries ?? [], pointTypes),
 				})),
 				cost: toCost(group.cost),
 			}
@@ -241,13 +239,17 @@ export const wheel: Api['wheel'] = {
 		)
 	},
 
-	apply: async (groupId, { payment, targetLogins, entryIds } = {}) => {
+	apply: async (
+		groupId,
+		{ payment, targetLogins, entryIds, userItemIds } = {},
+	) => {
 		await http.post(
 			`${await partyPath()}/wheel/groups/${groupId}/spins/last/apply`,
 			{
 				body: {
 					...(entryIds && { entryIds }),
 					...(targetLogins && { targetLogins }),
+					...(userItemIds?.length && { userItemIds }),
 					...(payment && { payment: toPaymentBody(payment) }),
 				},
 			},

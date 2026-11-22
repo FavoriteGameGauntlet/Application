@@ -29,7 +29,7 @@ import {
 	userRefOf,
 } from './context'
 import { journal, latestOwnEntry } from './journal'
-import { toItemEntryRow } from './rows'
+import { toUseEntries } from './rows'
 
 type PointValueDto = { pointType: PointType; value: number }
 
@@ -70,13 +70,6 @@ type UserEffectDto = {
 	startedDate: string
 	source: JournalSource
 }
-
-/** the entries of a held item or perk, with the text a user picks them by */
-const toUseEntries = (entries: NamedItemEntryDto[], pointTypes: PointType[]) =>
-	entries.map((e) => ({
-		...toItemEntryRow(e),
-		text: toItemEntryText(e, pointTypes),
-	}))
 
 const toUserItem = (dto: UserItemDto, pointTypes: PointType[]): UserItem => ({
 	id: dto.id,

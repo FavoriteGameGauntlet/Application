@@ -2,12 +2,14 @@ import type {
 	ChangeRow,
 	ItemEntryRow,
 	PointModifierRow,
+	PointType,
 	SpinCostRow,
 } from '../contracts'
-import type {
-	NamedChangeEntryDto,
-	NamedItemEntryDto,
-	NamedPointModifierDto,
+import {
+	type NamedChangeEntryDto,
+	type NamedItemEntryDto,
+	type NamedPointModifierDto,
+	toItemEntryText,
 } from './changeEntry'
 
 /** ChangeEntry of the backend: exactly one target id is set */
@@ -69,6 +71,16 @@ export const toItemEntryRow = (entry: NamedItemEntryDto): ItemEntryRow => {
 
 	return { ...toChangeRow(entry), who, ...entryId }
 }
+
+/** the entries of a held item or perk or of a wheel item, with the text a user picks them by */
+export const toUseEntries = (
+	entries: NamedItemEntryDto[],
+	pointTypes: PointType[],
+): ItemEntryRow[] =>
+	entries.map((e) => ({
+		...toItemEntryRow(e),
+		text: toItemEntryText(e, pointTypes),
+	}))
 
 export const toModifierRow = (
 	modifier: NamedPointModifierDto,

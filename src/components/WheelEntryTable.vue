@@ -5,7 +5,7 @@ import type {
 	WheelCatalogGroup,
 } from '../api-facade/contracts'
 import { applyModeFacts } from '../utils/applyMode'
-import { changeTone } from './catalogTable'
+import { itemEntryTone } from './catalogTable'
 import UiCountBadge from './ui/UiCountBadge.vue'
 import UiInput from './ui/UiInput.vue'
 import UiRowMenu, { type RowMenuItem } from './ui/UiRowMenu.vue'
@@ -38,7 +38,7 @@ const found = computed(() => {
 const tagsOf = (entry: WheelCatalogEntry) =>
 	entry.changes.map((text, i) => ({
 		text,
-		tone: changeTone(entry.entries[i]?.amount ?? 0),
+		tone: entry.entries[i] ? itemEntryTone(entry.entries[i]) : 'plain',
 	}))
 </script>
 

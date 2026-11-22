@@ -2,13 +2,14 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { api } from '../api-facade/api'
 import type {
-	ResourceRef,
+	ItemUse,
 	Payment,
 	WheelGroup,
 	WheelSpinResult,
 } from '../api-facade/contracts'
+import type { UseSubject } from '../components/UseDialog.vue'
 import { StoreName } from '../enums/storeName'
-import { picksEntries } from '../utils/applyMode'
+import { needsUseForm } from '../utils/itemUse'
 import {
 	buildPayment,
 	isPicked,
@@ -52,10 +53,10 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 	let restoreSeq = 0
 	/** the cost rows with the copies to pick from, set while the choice dialog is open */
 	const pendingChoices = ref<PaymentChoice[] | null>(null)
-	/** the entries of the item that fell, set while the user picks which of them to apply */
-	const pendingEntries = ref<ResourceRef[] | null>(null)
+	/** the item that fell as a use, set while the user picks its entries, players and copies */
+	const pendingUse = ref<UseSubject>()
 	/** what the user picked in the dialog above, kept until the apply is done */
-	const pickedEntryIds = ref<number[]>()
+	const pickedUse = ref<ItemUse>()
 
 	const changeGroups = computed(() =>
 		groups.value.filter((g) => g.kind === 'changes'),
@@ -269,17 +270,30 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		await spin()
 	}
 
-	/** the user picks which entries to apply, and what to give when the cost can be paid with different copies */
+	/** the user picks the entries, players and copies of the item as for an item use, then what to give when the cost can be paid with different copies */
 	const apply = async () => {
 		const applied = result.value
 		const toast = useToastStore()
+		const login = useSessionStore().login
 
 		if (!applied) return
 
 		const entry = resultEntry.value
 
-		if (picksEntries(entry?.applyMode) && !pickedEntryIds.value) {
-			pendingEntries.value = entry.entries ?? []
+		if (
+			entry &&
+			!resultStartsGame.value &&
+			!pickedUse.value &&
+			needsUseForm(entry.entries, login, entry.applyMode ?? 'all')
+		) {
+			pendingUse.value = {
+				title: `Применить «${entry.name}»`,
+				action: 'Применить',
+				text: entry.description ?? '',
+				entries: entry.entries ?? [],
+				applyMode: entry.applyMode ?? 'all',
+				conditions: [],
+			}
 			return
 		}
 
@@ -293,13 +307,18 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		try {
 			await resourcesStore.loadMine()
 		} catch (e) {
-			pickedEntryIds.value = undefined
+			pickedUse.value = undefined
 			toast.error(e)
 			return
 		}
 
-		const mine = resourcesStore.byUser[useSessionStore().login]
-		const choices = paymentChoices(cost, mine)
+		const mine = resourcesStore.byUser[login]
+		// a copy picked for an entry can't pay the cost too
+		const picked = pickedUse.value?.userItemIds ?? []
+		const choices = paymentChoices(cost, {
+			...mine,
+			items: mine.items.filter((i) => !picked.includes(i.id)),
+		})
 
 		if (choices.some(isPicked)) {
 			pendingChoices.value = choices
@@ -321,39 +340,31 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 
 	const cancelPayment = () => {
 		pendingChoices.value = null
-		pickedEntryIds.value = undefined
+		pickedUse.value = undefined
 	}
 
-	const confirmEntries = async (entryIds: number[]) => {
-		pendingEntries.value = null
-		pickedEntryIds.value = entryIds
+	const confirmUse = async (use: ItemUse) => {
+		pendingUse.value = undefined
+		pickedUse.value = use
 
 		await apply()
 	}
 
-	const cancelEntries = () => {
-		pendingEntries.value = null
+	const cancelUse = () => {
+		pendingUse.value = undefined
 	}
 
 	const applySpin = async (applied: WheelSpinResult, payment?: Payment) => {
 		const group = resultGroup.value?.name ?? ''
 		const toast = useToastStore()
 
-		// the backend takes targets for a group of changes only (and requires them);
-		// the design has no picker yet, so the change goes to the one who spun
 		const startsGame = resultStartsGame.value
-		const targetLogins = startsGame ? undefined : [useSessionStore().login]
+		const use = pickedUse.value
 
-		const entryIds = pickedEntryIds.value
-
-		pickedEntryIds.value = undefined
+		pickedUse.value = undefined
 
 		try {
-			await api.wheel.apply(applied.source.groupId, {
-				payment,
-				targetLogins,
-				entryIds,
-			})
+			await api.wheel.apply(applied.source.groupId, { ...use, payment })
 
 			result.value = null
 
@@ -410,7 +421,7 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		resultEntry,
 		resultStartsGame,
 		pendingChoices,
-		pendingEntries,
+		pendingUse,
 		open,
 		setTab,
 		setGroup,
@@ -421,7 +432,7 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		apply,
 		confirmPayment,
 		cancelPayment,
-		confirmEntries,
-		cancelEntries,
+		confirmUse,
+		cancelUse,
 	}
 })

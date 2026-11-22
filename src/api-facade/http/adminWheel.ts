@@ -1,7 +1,7 @@
 import type { Api, WheelCatalogGroup } from '../contracts'
 import { http } from '../http'
 import { getPointTypes, partyPath } from './context'
-import { fromChangeRow, fromCostRow } from './rows'
+import { fromCostRow, fromItemEntryRow } from './rows'
 import {
 	type WheelCatalogGroupDto,
 	getCatalogGroups,
@@ -102,7 +102,7 @@ export const adminWheel: Pick<
 						...(description && { description }),
 						isManualChange,
 						applyMode,
-						entries: entries.map(fromChangeRow),
+						entries: entries.map(fromItemEntryRow),
 					}
 				: { name }
 

@@ -15,15 +15,12 @@ import { useCurrentGameStore } from '../../stores/currentGameStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useWheelStore, type WheelTab } from '../../stores/wheelStore'
 import { useWishlistStore } from '../../stores/wishlistStore'
-import {
-	formatCost,
-	formatResource,
-	type Change,
-} from '../../utils/formatResource'
+import { type CatalogTone, itemEntryTone } from '../../components/catalogTable'
+import { formatCost, type Change } from '../../utils/formatResource'
 import { affordableSpins } from '../../utils/payment'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToastStore } from '../../stores/toastStore'
-import SpinEntriesDialog from './components/SpinEntriesDialog.vue'
+import UseDialog from '../../components/UseDialog.vue'
 import PaymentDialog from '../../components/PaymentDialog.vue'
 import WheelTape from './components/WheelTape.vue'
 
@@ -74,12 +71,17 @@ const emptyText = computed(() => {
 	}
 })
 
-/** what the entry changes by itself: green adds, red takes */
+const changeTones: Record<CatalogTone, Change['tone']> = {
+	plus: 'plus',
+	minus: 'minus',
+	plain: 'neutral',
+}
+
+/** what the entry changes by itself: green adds, red takes, an action on a picked copy has no colour */
 const resultChanges = computed<Change[]>(() =>
 	(wheelStore.resultEntry?.entries ?? []).map((r) => ({
-		text: r.text ?? formatResource(r, resourcesStore.pointTypes),
-		// a perk has no amount, its sign lives only in the text
-		tone: r.text?.startsWith('−') ? 'minus' : 'plus',
+		text: r.text ?? '',
+		tone: changeTones[itemEntryTone(r)],
 	})),
 )
 
@@ -436,11 +438,10 @@ onBeforeUnmount(() => {
 		</Transition>
 	</div>
 
-	<SpinEntriesDialog
-		:entries="wheelStore.pendingEntries"
-		:apply-mode="wheelStore.resultEntry?.applyMode"
-		@close="wheelStore.cancelEntries()"
-		@confirm="wheelStore.confirmEntries($event)"
+	<UseDialog
+		:subject="wheelStore.pendingUse"
+		@close="wheelStore.cancelUse()"
+		@confirm="wheelStore.confirmUse($event)"
 	/>
 
 	<PaymentDialog

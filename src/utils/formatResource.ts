@@ -41,7 +41,7 @@ export const formatCost = (cost: CostRef, pointTypes: PointType[]) => {
 }
 
 /** one fact of a change as a plate: green adds, red takes */
-export type Change = { text: string; tone: 'plus' | 'minus' }
+export type Change = { text: string; tone: 'plus' | 'minus' | 'neutral' }
 
 /** «+50 золота» is green, «−Щит» is red; the sign is the only thing a reward row says about it */
 export const rewardChanges = (reward: Reward): Change[] =>
