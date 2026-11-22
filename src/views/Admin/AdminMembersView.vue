@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, shallowRef, useTemplateRef } from 'vue'
 import type { Login, PartyMember } from '../../api-facade/contracts'
+import ListBar from '../../components/ListBar.vue'
+import ListHead from '../../components/ListHead.vue'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
 import type { FormField, FormValues } from '../../components/formDialog'
 import FormDialog from '../../components/FormDialog.vue'
@@ -16,7 +18,6 @@ import { useToastStore } from '../../stores/toastStore'
 import { AVATAR_ACCEPT, avatarFileError } from '../../utils/avatar'
 import { formatDate } from '../../utils/format'
 import { nextMemberColor } from '../../utils/memberColor'
-import AdminListHeader from './components/AdminListHeader.vue'
 
 type Filter = 'all' | 'admins' | 'players' | 'left'
 
@@ -287,18 +288,14 @@ onMounted(() => store.loadMembers())
 
 <template>
 	<div class="members">
-		<AdminListHeader
-			v-model:query="query"
-			title="Участники и права"
-			placeholder="Найти участника…"
-			@add="openAdd"
-		>
+		<ListHead title="Участники и права" @add="openAdd" />
+		<ListBar v-model:query="query" placeholder="Найти участника…">
 			<UiChoiceChips
 				v-model="filter"
 				:options="filters"
 				label="Кого показать"
 			/>
-		</AdminListHeader>
+		</ListBar>
 
 		<div class="table" role="table" aria-label="Участники пати">
 			<div class="row row--head" role="row">

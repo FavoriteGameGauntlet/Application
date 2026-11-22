@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import CurrentGameCard from '../../components/CurrentGameCard.vue'
-import UiPageTitle from '../../components/ui/UiPageTitle.vue'
-import UiSelect from '../../components/ui/UiSelect.vue'
+import FormDialog from '../../components/FormDialog.vue'
+import type { FormField, FormValues } from '../../components/formDialog'
+import ListHead from '../../components/ListHead.vue'
+import UiFilterSelect from '../../components/ui/UiFilterSelect.vue'
 import UiTabs from '../../components/ui/UiTabs.vue'
 import { useMembersStore } from '../../stores/membersStore'
 import { useSessionStore } from '../../stores/sessionStore'
+import { useWishlistStore } from '../../stores/wishlistStore'
 import CompletedTab from './components/CompletedTab.vue'
 import WishlistTab from './components/WishlistTab.vue'
 
@@ -18,92 +20,139 @@ const tabs = [
 
 const membersStore = useMembersStore()
 const sessionStore = useSessionStore()
+const wishlistStore = useWishlistStore()
 
 const tab = ref(tabs[0])
 
 const otherUsers = computed(() =>
 	membersStore.users
 		.filter((p) => p.login !== sessionStore.login)
-		.map((p) => p.login),
+		.map((p) => ({ value: p.login, label: p.login })),
 )
 
-const selectedUser = ref(otherUsers.value[0])
+const selectedUser = ref(otherUsers.value[0]?.value ?? '')
 
 const isUserTab = computed(
 	() =>
 		tab.value === 'Списки желаемого игроков' ||
 		tab.value === 'Пройденные игроков',
 )
+
+const isWishlistTab = computed(
+	() =>
+		tab.value === 'Мой список желаемого' ||
+		tab.value === 'Списки желаемого игроков',
+)
+
+/** whose list the tab shows */
+const user = computed(() =>
+	isUserTab.value ? selectedUser.value : sessionStore.login,
+)
+
+/** the completed games are counted by the state chips of their tab */
+const count = computed(() =>
+	isWishlistTab.value
+		? (wishlistStore.lists[user.value]?.length ?? 0)
+		: undefined,
+)
+
+const addInitial: FormValues = { name: '' }
+
+const isAdding = ref(false)
+const addError = ref<string>()
+/** the name that the backend refused, so a new text takes the message away */
+let refusedName = ''
+
+const addOwner = computed(() =>
+	user.value === sessionStore.login ? '' : ` ${user.value}`,
+)
+
+const addFields = computed<FormField[]>(() => [
+	{
+		key: 'name',
+		label: 'Название',
+		placeholder: 'Название игры',
+		required: 'название',
+		error: addError.value,
+	},
+])
+
+const openAdd = () => {
+	addError.value = undefined
+	isAdding.value = true
+}
+
+const onAddChange = (values: FormValues) => {
+	if (String(values.name).trim() !== refusedName) addError.value = undefined
+}
+
+const onAdd = async (values: FormValues) => {
+	const name = String(values.name).trim()
+	const result = await wishlistStore.add(user.value, name)
+
+	refusedName = name
+
+	if (result === 'added') {
+		isAdding.value = false
+	} else if (result === 'exists') {
+		addError.value = `${name} уже в списке желаемого${addOwner.value}.`
+	} else if (result === 'picked') {
+		addError.value = `${name} уже выбирали${addOwner.value ? ` у${addOwner.value}` : ''}.`
+	}
+}
 </script>
 
 <template>
 	<div class="games">
-		<UiPageTitle>Игры</UiPageTitle>
+		<ListHead title="Игры" :count :no-add="!isWishlistTab" @add="openAdd" />
 
-		<CurrentGameCard />
+		<UiTabs v-model="tab" :items="tabs" />
 
-		<div class="games__content">
-			<UiTabs v-model="tab" :items="tabs" />
-
-			<div v-if="isUserTab" class="user">
-				<span class="user__label">Игрок</span>
-				<div class="user__select">
-					<UiSelect
-						v-model="selectedUser"
-						:options="otherUsers"
-						aria-label="Игрок"
-					/>
-				</div>
-			</div>
-
-			<WishlistTab
-				v-if="tab === 'Мой список желаемого'"
-				key="mine"
-				:user="sessionStore.login"
-				mine
+		<WishlistTab
+			v-if="isWishlistTab"
+			:key="isUserTab ? 'others' : 'mine'"
+			:user
+			:mine="!isUserTab"
+		>
+			<UiFilterSelect
+				v-if="isUserTab"
+				v-model="selectedUser"
+				label="Игрок"
+				:options="otherUsers"
 			/>
-			<WishlistTab
-				v-else-if="tab === 'Списки желаемого игроков'"
-				key="others"
-				:user="selectedUser"
+		</WishlistTab>
+		<CompletedTab
+			v-else
+			:key="isUserTab ? 'others' : 'mine'"
+			:user
+			:mine="!isUserTab"
+		>
+			<UiFilterSelect
+				v-if="isUserTab"
+				v-model="selectedUser"
+				label="Игрок"
+				:options="otherUsers"
 			/>
-			<CompletedTab
-				v-else-if="tab === 'Мои пройденные'"
-				:user="sessionStore.login"
-				mine
-			/>
-			<CompletedTab v-else :user="selectedUser" />
-		</div>
+		</CompletedTab>
 	</div>
+
+	<FormDialog
+		:open="isAdding"
+		title="Добавить игру"
+		:subtitle="addOwner ? `В список желаемого${addOwner}` : undefined"
+		:sections="[{ fields: addFields }]"
+		:initial="addInitial"
+		submit-label="Добавить"
+		@close="isAdding = false"
+		@change="onAddChange"
+		@save="onAdd"
+	/>
 </template>
 
 <style scoped>
 .games {
 	display: flex;
 	flex-direction: column;
-	gap: 20px;
-}
-
-.games__content {
-	display: flex;
-	flex-direction: column;
 	gap: 16px;
-}
-
-.user {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-}
-
-.user__label {
-	font: var(--type-label);
-	letter-spacing: var(--tracking-label);
-	text-transform: uppercase;
-	color: var(--text-muted);
-}
-
-.user__select {
-	width: 240px;
 }
 </style>

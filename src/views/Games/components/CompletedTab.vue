@@ -4,9 +4,9 @@ import type {
 	GameEndState,
 	GameHistoryEntry,
 } from '../../../api-facade/contracts'
+import ListBar from '../../../components/ListBar.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiChoiceChips from '../../../components/ui/UiChoiceChips.vue'
-import UiInput from '../../../components/ui/UiInput.vue'
 import UiRowMenu, {
 	type RowMenuItem,
 } from '../../../components/ui/UiRowMenu.vue'
@@ -139,16 +139,9 @@ const reviewedGame = computed(() =>
 </script>
 
 <template>
-	<div class="bar">
-		<div class="bar__search">
-			<UiInput
-				v-model="query"
-				compact
-				icon="search"
-				placeholder="Найти среди пройденных…"
-				aria-label="Поиск по пройденным"
-			/>
-		</div>
+	<ListBar v-model:query="query" placeholder="Найти среди пройденных…">
+		<!-- the player of the tab -->
+		<slot />
 		<UiChoiceChips
 			:model-value="state"
 			:options="chips"
@@ -158,7 +151,7 @@ const reviewedGame = computed(() =>
 		<span v-if="rows.length" class="bar__note">
 			<span v-for="part in summary" :key="part">{{ part }}</span>
 		</span>
-	</div>
+	</ListBar>
 
 	<div class="table" role="table" aria-label="Пройденные игры">
 		<div class="row row--head" role="row">
@@ -236,17 +229,6 @@ const reviewedGame = computed(() =>
 </template>
 
 <style scoped>
-.bar {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 12px;
-}
-
-.bar__search {
-	width: 260px;
-}
-
 .bar__note {
 	display: flex;
 	flex-direction: column;

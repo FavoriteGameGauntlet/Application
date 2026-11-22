@@ -5,6 +5,8 @@ import type {
 	ApplyMode,
 	SpinCostRow,
 } from '../../api-facade/contracts'
+import ListBar from '../../components/ListBar.vue'
+import ListHead from '../../components/ListHead.vue'
 import type {
 	FormField,
 	FormRow,
@@ -26,7 +28,6 @@ import {
 	parsedRows,
 	problemOf,
 } from '../../utils/formRows'
-import AdminListHeader from './components/AdminListHeader.vue'
 
 const store = useAdminCatalogStore()
 const resourcesStore = useResourcesStore()
@@ -213,15 +214,10 @@ watch(
 
 <template>
 	<div class="exchanges">
-		<AdminListHeader
-			v-model:query="query"
-			title="Обмены"
-			:count
-			placeholder="Найти обмен…"
-			@add="editing = {}"
-		>
+		<ListHead title="Обмены" :count @add="editing = {}" />
+		<ListBar v-model:query="query" placeholder="Найти обмен…">
 			<UiSwitch v-model="store.showDeleted" label="Показать удалённые" />
-		</AdminListHeader>
+		</ListBar>
 
 		<div class="table" role="table" aria-label="Обмены">
 			<div class="row row--head" role="row">

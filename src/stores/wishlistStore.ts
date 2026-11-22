@@ -25,8 +25,14 @@ export const useWishlistStore = defineStore(StoreName.Wishlist, () => {
 
 	const loadMine = () => load(useSessionStore().login)
 
-	/** @returns whether the game was added */
-	const add = async (login: Login, name: string) => {
+	/**
+	 * A refusal that the user fixes in the name they typed comes back to the form
+	 * instead of a toast.
+	 */
+	const add = async (
+		login: Login,
+		name: string,
+	): Promise<'added' | 'exists' | 'picked' | 'failed'> => {
 		const toast = useToastStore()
 		const owner = login === useSessionStore().login ? '' : ` ${login}`
 
@@ -35,19 +41,15 @@ export const useWishlistStore = defineStore(StoreName.Wishlist, () => {
 
 			lists.value[login] = [...(lists.value[login] ?? []), game]
 			toast.show(`Добавлено в список желаемого${owner}`, name)
-			return true
+			return 'added'
 		} catch (e) {
 			const code = (e as HttpErrorResponse).body?.code
 
-			if (code === 'WISHLIST_GAME_ALREADY_EXISTS') {
-				toast.show(`Уже в списке желаемого${owner}`, name, 'info')
-			} else if (code === 'GAME_ALREADY_PICKED') {
-				toast.show(`Игру уже выбирали${owner}`, name, 'info')
-			} else {
-				toast.error(e)
-			}
+			if (code === 'WISHLIST_GAME_ALREADY_EXISTS') return 'exists'
+			if (code === 'GAME_ALREADY_PICKED') return 'picked'
 
-			return false
+			toast.error(e)
+			return 'failed'
 		}
 	}
 

@@ -5,8 +5,7 @@ import type {
 	WishlistEntry,
 } from '../../../api-facade/contracts'
 import UiBadge from '../../../components/ui/UiBadge.vue'
-import UiCountBadge from '../../../components/ui/UiCountBadge.vue'
-import UiButton from '../../../components/ui/UiButton.vue'
+import ListBar from '../../../components/ListBar.vue'
 import UiIconButton from '../../../components/ui/UiIconButton.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiRowMenu, {
@@ -34,7 +33,6 @@ const sessionStore = useSessionStore()
 const toastStore = useToastStore()
 const wishlistStore = useWishlistStore()
 
-const newName = ref('')
 const query = ref('')
 const showRemoved = ref(false)
 
@@ -44,7 +42,6 @@ const editingName = ref('')
 watch(
 	() => user,
 	() => {
-		newName.value = ''
 		query.value = ''
 		wishlistStore.load(user)
 	},
@@ -143,70 +140,17 @@ const emptyText = computed(() => {
 	if (games.value.length) return 'Ничего не нашлось.'
 
 	return mine
-		? 'Список желаемого пуст. Впиши игру в поле сверху и нажми «Добавить игру».'
-		: `Список желаемого у ${user} пока пуст. Подкинь игру через поле сверху.`
+		? 'Список желаемого пуст. Нажми «Добавить».'
+		: `Список желаемого у ${user} пока пуст. Подкинь игру через «Добавить».`
 })
-
-const onAdd = async () => {
-	const name = newName.value.trim()
-
-	if (!name) {
-		toastStore.show(
-			'Впиши название',
-			'Напиши игру в поле сверху и нажми «Добавить игру».',
-			'danger',
-		)
-		return
-	}
-
-	if (await wishlistStore.add(user, name)) {
-		newName.value = ''
-	}
-}
 </script>
 
 <template>
-	<div class="add">
-		<div class="add__input">
-			<UiInput
-				v-model="newName"
-				icon="search"
-				:placeholder="
-					mine
-						? 'Название игры, чтобы добавить в список желаемого…'
-						: `Название игры, чтобы подкинуть в список желаемого ${user}…`
-				"
-				aria-label="Новая игра"
-				@keydown.enter="onAdd"
-			/>
-		</div>
-		<UiButton
-			class="add__button"
-			variant="secondary"
-			size="lg"
-			icon="plus"
-			@click="onAdd"
-		>
-			Добавить игру
-		</UiButton>
-	</div>
-
-	<div class="bar">
-		<span class="bar__label">В списке желаемого</span>
-		<UiCountBadge :value="games.length" />
-		<div class="bar__end">
-			<UiSwitch v-if="mine" v-model="showRemoved" label="Показать удалённые" />
-			<div class="bar__search">
-				<UiInput
-					v-model="query"
-					compact
-					icon="search"
-					placeholder="Найти в списке желаемого…"
-					aria-label="Поиск по списку желаемого"
-				/>
-			</div>
-		</div>
-	</div>
+	<ListBar v-model:query="query" placeholder="Найти в списке желаемого…">
+		<!-- the player of the tab -->
+		<slot />
+		<UiSwitch v-if="mine" v-model="showRemoved" label="Показать удалённые" />
+	</ListBar>
 
 	<div class="table" role="table" :aria-label="`Список желаемого ${user}`">
 		<div class="row row--head" role="row">
@@ -285,45 +229,6 @@ const onAdd = async () => {
 </template>
 
 <style scoped>
-.add {
-	display: flex;
-	align-items: flex-end;
-	gap: 12px;
-}
-
-.add__input {
-	flex: 1;
-}
-
-.add .add__button {
-	height: 44px;
-}
-
-.bar {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 12px;
-}
-
-.bar__label {
-	font: var(--type-label);
-	letter-spacing: var(--tracking-label);
-	text-transform: uppercase;
-	color: var(--text-muted);
-}
-
-.bar__end {
-	display: flex;
-	align-items: center;
-	gap: 16px;
-	margin-left: auto;
-}
-
-.bar__search {
-	width: 260px;
-}
-
 .table {
 	overflow: hidden;
 	background: var(--surface-card);

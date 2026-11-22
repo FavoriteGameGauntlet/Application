@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import type { SystemParameter } from '../../api-facade/contracts'
+import ListBar from '../../components/ListBar.vue'
+import ListHead from '../../components/ListHead.vue'
 import type { FormField, FormValues } from '../../components/formDialog'
 import FormDialog from '../../components/FormDialog.vue'
 import UiBadge from '../../components/ui/UiBadge.vue'
@@ -11,7 +13,6 @@ import {
 	checkParameterValue,
 	parameterRange,
 } from '../../utils/systemParameter'
-import AdminListHeader from './components/AdminListHeader.vue'
 
 const store = useParametersStore()
 const toastStore = useToastStore()
@@ -110,12 +111,8 @@ onMounted(async () => {
 
 <template>
 	<div class="parameters">
-		<AdminListHeader
-			v-model:query="query"
-			title="Системные параметры"
-			placeholder="Найти параметр…"
-			no-add
-		/>
+		<ListHead title="Системные параметры" no-add />
+		<ListBar v-model:query="query" placeholder="Найти параметр…" />
 
 		<div class="table" role="table" aria-label="Системные параметры">
 			<div class="table__row table__row--head" role="row">

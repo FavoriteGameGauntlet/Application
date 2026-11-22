@@ -366,10 +366,17 @@
 		},
 		{
 			"id": "ux-wishlist",
-			"title": "Bad UX 9 of 12: the «Список желаемого» screen. The add field with a magnifier icon stands right above the search with the same icon, and the two are easy to confuse. An empty add gives a toast instead of a disabled button. A rename to an empty name is cancelled silently.",
+			"title": "Bad UX 9 of 12: the «Список желаемого» screen (closed by games-list-header)",
 			"priority": 44,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-22 with games-list-header: one search field, «Добавить» opens a dialog whose button is off while the name is empty; the empty rename was already blocked."
+		},
+		{
+			"id": "games-list-header",
+			"title": "The «Игры» page gets the list header of the admin catalogues: title, count and «Добавить» on top, search and filters below; the current game card leaves the page",
+			"priority": 44.1,
+			"status": "done",
+			"evidence": "Done 2026-11-22. eslint and vue-tsc pass. The window was not run by the agent; the layout check is the user's. The full record is not archived: the cloud session has no local harness/archive."
 		},
 		{
 			"id": "ux-auth",

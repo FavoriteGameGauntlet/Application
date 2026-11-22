@@ -11,10 +11,8 @@ import {
 	catalogViews,
 	filterCatalogEntries,
 } from '../../../components/catalogTable'
-import UiButton from '../../../components/ui/UiButton.vue'
-import UiCountBadge from '../../../components/ui/UiCountBadge.vue'
-import UiInput from '../../../components/ui/UiInput.vue'
-import UiPageTitle from '../../../components/ui/UiPageTitle.vue'
+import ListBar from '../../../components/ListBar.vue'
+import ListHead from '../../../components/ListHead.vue'
 import UiRowMenu, {
 	type RowMenuItem,
 } from '../../../components/ui/UiRowMenu.vue'
@@ -42,7 +40,9 @@ const editing = ref<{ entry?: CatalogEntry }>()
 
 const kind = computed(() => catalogKindOf(view))
 
-const title = computed(() => catalogViews.find((v) => v.value === view)?.label)
+const title = computed(
+	() => catalogViews.find((v) => v.value === view)?.label ?? '',
+)
 
 /** Undefined while the list of the page is not loaded yet; the point types are split into own and shared ones. */
 const entries = computed((): CatalogEntry[] | undefined => {
@@ -125,25 +125,10 @@ watch(
 
 <template>
 	<div class="catalog">
-		<div class="head">
-			<UiPageTitle>{{ title }}</UiPageTitle>
-			<UiCountBadge v-if="count !== undefined" :value="count" />
-			<div class="spacer"></div>
-			<UiButton icon="plus" @click="editing = {}">Добавить</UiButton>
-		</div>
-
-		<div class="filters">
-			<div class="filters__search">
-				<UiInput
-					v-model="query"
-					compact
-					icon="search"
-					placeholder="Найти…"
-					aria-label="Поиск"
-				/>
-			</div>
+		<ListHead :title :count @add="editing = {}" />
+		<ListBar v-model:query="query">
 			<UiSwitch v-model="store.showDeleted" label="Показать удалённые" />
-		</div>
+		</ListBar>
 
 		<div
 			class="table"
@@ -250,25 +235,6 @@ watch(
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
-}
-
-.head,
-.filters {
-	display: flex;
-	align-items: center;
-	gap: 16px;
-}
-
-.filters {
-	gap: 24px;
-}
-
-.spacer {
-	flex: 1;
-}
-
-.filters__search {
-	width: 260px;
 }
 
 .table {
