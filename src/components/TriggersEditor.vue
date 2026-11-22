@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import type { PerkTriggerAction } from '../api-facade/contracts'
+import type {
+	HistoryEventKind,
+	PerkTriggerAction,
+} from '../api-facade/contracts'
 import { useAdminCatalogStore } from '../stores/adminCatalogStore'
 import {
 	gameEndStateLabels,
@@ -49,6 +52,16 @@ const pointTypeGroups = computed<OptionGroup[]>(() => [
 	},
 ])
 
+const exchangeGroups = computed<OptionGroup[]>(() => [
+	{ options: [{ value: ANY, label: 'Любой обмен' }] },
+	{
+		options: store.exchangeOptions.map(({ id, name }) => ({
+			value: String(id),
+			label: name,
+		})),
+	},
+])
+
 const endStateGroups: OptionGroup[] = [
 	{ options: [{ value: ANY, label: 'Любой исход' }] },
 	{
@@ -58,6 +71,18 @@ const endStateGroups: OptionGroup[] = [
 		})),
 	},
 ]
+
+/** the options of the narrowing of an event that has one */
+const filterGroups = (eventKind: HistoryEventKind): OptionGroup[] => {
+	switch (triggerFilterOf(eventKind)) {
+		case 'point-type':
+			return pointTypeGroups.value
+		case 'exchange':
+			return exchangeGroups.value
+		default:
+			return endStateGroups
+	}
+}
 
 const addRow = () => {
 	rows.value.push({
@@ -103,13 +128,9 @@ onMounted(() => store.loadTargets())
 				<UiPicker
 					v-if="triggerFilterOf(row.eventKind)"
 					compact
-					:search="triggerFilterOf(row.eventKind) === 'point-type'"
+					:search="triggerFilterOf(row.eventKind) !== 'end-state'"
 					:panel-width="240"
-					:groups="
-						triggerFilterOf(row.eventKind) === 'point-type'
-							? pointTypeGroups
-							: endStateGroups
-					"
+					:groups="filterGroups(row.eventKind)"
 					:model-value="row.filter || ANY"
 					aria-label="Уточнение"
 					@update:model-value="row.filter = $event === ANY ? '' : $event"

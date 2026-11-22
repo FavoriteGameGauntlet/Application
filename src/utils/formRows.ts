@@ -169,14 +169,20 @@ export const parseModifiers = (rows: FormRow[]): Parsed<PointModifierRow> =>
 
 /** the triggers of a saved ability as the rows of a `triggers` field */
 export const triggersToForm = (triggers: PerkTrigger[]): TriggerFormRow[] =>
-	triggers.map(({ action, eventKind, pointTypeId, gameEndState }) => ({
-		action,
-		eventKind,
-		filter:
-			pointTypeId !== undefined ? String(pointTypeId) : (gameEndState ?? ''),
-	}))
+	triggers.map(
+		({ action, eventKind, pointTypeId, gameEndState, exchangeId }) => ({
+			action,
+			eventKind,
+			filter:
+				pointTypeId !== undefined
+					? String(pointTypeId)
+					: exchangeId !== undefined
+						? String(exchangeId)
+						: (gameEndState ?? ''),
+		}),
+	)
 
-/** an empty filter matches any point type or end state */
+/** an empty filter matches any point type, exchange or end state */
 export const parseTriggers = (rows: TriggerFormRow[]): PerkTrigger[] =>
 	rows.map(({ action, eventKind, filter }) => {
 		const narrows = triggerFilterOf(eventKind)
@@ -188,5 +194,6 @@ export const parseTriggers = (rows: TriggerFormRow[]): PerkTrigger[] =>
 				narrows === 'point-type' && { pointTypeId: Number(filter) }),
 			...(filter &&
 				narrows === 'end-state' && { gameEndState: filter as GameEndState }),
+			...(filter && narrows === 'exchange' && { exchangeId: Number(filter) }),
 		}
 	})

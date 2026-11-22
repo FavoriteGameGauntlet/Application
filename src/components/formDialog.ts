@@ -164,7 +164,7 @@ export type FormRow = {
 export type TriggerFormRow = {
 	action: PerkTriggerAction
 	eventKind: HistoryEventKind
-	/** the id of the point type or the end state of the game that narrows the event; empty = any */
+	/** the id of the point type or the exchange, or the end state of the game, that narrows the event; empty = any */
 	filter: string
 }
 

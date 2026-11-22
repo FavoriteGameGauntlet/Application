@@ -457,10 +457,10 @@
 		},
 		{
 			"id": "perk-trigger-exchange-filter",
-			"title": "Testers: the «Уточнение» of a perk trigger on the event «Обмен» picks one exchange of the party or «Любой обмен», as the point type for «Очки изменились». The user's answer: only for exchanges, not for items, perks or effects. The trigger text names the exchange. Needs fgg-server and fgg-database first.",
+			"title": "Perk trigger on «Обмен» narrowed to one exchange",
 			"priority": 56,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-22. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "wheel-result-collapsed",

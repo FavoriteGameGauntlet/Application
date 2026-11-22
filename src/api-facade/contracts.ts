@@ -534,6 +534,10 @@ export type PerkTrigger = {
 	pointTypeName?: string | null
 	/** `game_ended` only: just a game that ended this way; not set = any */
 	gameEndState?: GameEndState
+	/** `exchange_used` only: just this exchange; not set = any */
+	exchangeId?: number
+	/** read only: the name of `exchangeId`, null for a removed exchange */
+	exchangeName?: string | null
 }
 
 export type CatalogEntry = {
