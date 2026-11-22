@@ -240,7 +240,7 @@ const emptyText = computed(() => {
 /* the right 60px stay free for the «⋯» of the row */
 .row {
 	display: grid;
-	grid-template-columns: minmax(0, 1.6fr) 130px minmax(0, 1fr);
+	grid-template-columns: minmax(0, 1fr) 130px 200px;
 	gap: 16px;
 	align-items: center;
 	box-sizing: border-box;
