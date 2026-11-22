@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import UiInput from './ui/UiInput.vue'
 
-type Props = {
-	placeholder?: string
-}
-
-const { placeholder = 'Найти…' } = defineProps<Props>()
-
 const query = defineModel<string>('query', { default: '' })
 </script>
 
@@ -17,7 +11,7 @@ const query = defineModel<string>('query', { default: '' })
 				v-model="query"
 				compact
 				icon="search"
-				:placeholder
+				placeholder="Найти…"
 				aria-label="Поиск"
 			/>
 		</div>

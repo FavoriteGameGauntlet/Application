@@ -54,7 +54,7 @@ const tagsOf = (entry: WheelCatalogEntry) =>
 				v-model="query"
 				compact
 				icon="search"
-				:placeholder="isChanges ? 'Найти пункт…' : 'Найти игру…'"
+				placeholder="Найти…"
 				aria-label="Поиск"
 			/>
 		</div>

@@ -83,7 +83,7 @@ onMounted(() => membersStore.load())
 					v-model="query"
 					compact
 					icon="search"
-					placeholder="Найти игрока…"
+					placeholder="Найти…"
 					aria-label="Поиск по игрокам"
 				/>
 			</div>

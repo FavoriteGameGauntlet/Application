@@ -98,7 +98,7 @@ watch(
 						v-model="query"
 						compact
 						icon="search"
-						placeholder="Найти в этой вкладке…"
+						placeholder="Найти…"
 						aria-label="Поиск по вкладке"
 					/>
 				</div>

@@ -150,7 +150,7 @@ const emptyText = computed(
 	<div class="layout">
 		<div class="panel">
 			<span class="label">Игроки</span>
-			<UiInput v-model="query" placeholder="Найти игрока…" icon="search" />
+			<UiInput v-model="query" placeholder="Найти…" icon="search" />
 
 			<div class="users">
 				<div
