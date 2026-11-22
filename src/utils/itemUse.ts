@@ -22,9 +22,17 @@ export type UseSlot = {
 export const isTransfer = (entry: ItemEntryRow) =>
 	entry.kind === 'user-item-transfer'
 
-/** an entry that acts on the chosen users, or a transfer, needs them named */
+/**
+ * An entry acts on the chosen users when its who is `chosen`, and a transfer
+ * always does: it moves copies to them or from them, whatever its who. The
+ * item form takes its rows as text, so only these two fields are required.
+ */
+export const actsOnChosen = (entry: { kind: string; who: 'self' | 'chosen' }) =>
+	entry.who === 'chosen' || entry.kind === 'user-item-transfer'
+
+/** an entry that acts on the chosen users needs them named */
 export const needsTargets = (entries: ItemEntryRow[]) =>
-	entries.some((e) => e.who === 'chosen' || isTransfer(e))
+	entries.some(actsOnChosen)
 
 /**
  * The copies the entries take, duplicate or move, in the order of the entries.

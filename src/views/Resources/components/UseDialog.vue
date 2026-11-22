@@ -21,6 +21,7 @@ import { formatUsesLeft } from '../../../utils/formatResource'
 import {
 	allowedTargets,
 	appliedEntries,
+	actsOnChosen,
 	isTransfer,
 	needsTargets,
 	useSlots,
@@ -85,7 +86,7 @@ const candidates = computed(() =>
 /** the targets only receive copies, nothing is taken from them or done to them */
 const onlyReceive = computed(() =>
 	entries.value
-		.filter((e) => e.who === 'chosen' || isTransfer(e))
+		.filter(actsOnChosen)
 		.every((e) => isTransfer(e) && e.who === 'self'),
 )
 
