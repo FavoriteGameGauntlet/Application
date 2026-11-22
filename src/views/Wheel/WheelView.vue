@@ -384,7 +384,11 @@ onBeforeUnmount(() => {
 				<div class="result__head">
 					<div class="result__name">{{ wheelStore.result.result.name }}</div>
 					<div class="result__actions">
-						<UiButton variant="outline" @click="wheelStore.discardResult()">
+						<UiButton
+							variant="outline"
+							class="result__action"
+							@click="wheelStore.discardResult()"
+						>
 							Сбросить
 						</UiButton>
 						<UiButton class="result__action" @click="onResultAction">
@@ -399,13 +403,16 @@ onBeforeUnmount(() => {
 					</div>
 				</div>
 
-				<div
-					v-if="resultHasBody"
-					class="result__body"
-					:class="{ 'result__body--closed': resultClosed }"
-					:aria-hidden="resultClosed"
+				<button
+					v-if="resultClosed"
+					type="button"
+					class="result__spoiler"
+					aria-label="Показать"
 					@click="resultOpen = true"
 				>
+					<UiIcon name="eye-off" :size="24" />
+				</button>
+				<div v-else-if="resultHasBody" class="result__body">
 					<div v-if="wheelStore.result.result.description" class="result__desc">
 						{{ wheelStore.result.result.description }}
 					</div>
@@ -658,64 +665,34 @@ onBeforeUnmount(() => {
 	gap: 8px;
 }
 
-/* one width for «Показать», «Применить» and «Взять игру» */
+/* both buttons share one width, whatever the label */
 .result__action {
-	min-width: 136px;
+	width: 136px;
 }
 
 .result__body {
-	position: relative;
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
 	min-width: 0;
 }
 
-/* the spoiler covers the body in place, so the card keeps its height when it opens */
-.result__body::after {
-	position: absolute;
-	inset: -4px -6px;
-	pointer-events: none;
-	content: '';
-	background:
-		radial-gradient(circle, var(--text-subtle) 0.8px, transparent 1.4px) 0 0 /
-			7px 7px,
-		radial-gradient(circle, var(--text-muted) 0.8px, transparent 1.4px) 3px
-			4px / 11px 9px,
-		var(--surface-sunken);
-	border-radius: var(--radius-md);
-	opacity: 0;
-	transition: opacity 360ms var(--ease-out);
-}
-
-/* nothing of the body shows through: no colours, no count of the changes */
-.result__body--closed {
+/* one plate for every entry: neither its size nor its colour tells what is under it */
+.result__spoiler {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 64px;
+	padding: 0;
+	color: var(--text-subtle);
 	cursor: pointer;
-	user-select: none;
+	background: var(--surface-sunken);
+	border: none;
+	border-radius: var(--radius-md);
 }
 
-.result__body--closed > * {
-	visibility: hidden;
-}
-
-.result__body--closed::after {
-	opacity: 1;
-	animation: result-spoiler 3s linear infinite;
-}
-
-@keyframes result-spoiler {
-	to {
-		background-position:
-			14px 7px,
-			-19px 13px,
-			0 0;
-	}
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.result__body--closed::after {
-		animation: none;
-	}
+.result__spoiler:hover {
+	color: var(--text-muted);
 }
 
 .result__desc {
