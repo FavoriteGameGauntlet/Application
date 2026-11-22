@@ -49,7 +49,7 @@ export type PerkDto = {
 		chargesMax: number
 		/** ISO 8601 duration */
 		renewalPeriod?: string
-		/** `pointTypeName` is null for a removed point type */
+		/** `pointTypeName` and `exchangeName` are null for a removed point type or exchange */
 		triggers: PerkTrigger[]
 	}
 }

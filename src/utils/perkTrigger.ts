@@ -75,24 +75,30 @@ export const gameEndStateLabels: Record<GameEndState, string> = {
 /** the events whose trigger can be narrowed, and what the narrowing is */
 export const triggerFilterOf = (
 	eventKind: HistoryEventKind,
-): 'point-type' | 'end-state' | undefined =>
+): 'point-type' | 'end-state' | 'exchange' | undefined =>
 	eventKind === 'point_changed'
 		? 'point-type'
 		: eventKind === 'game_ended'
 			? 'end-state'
-			: undefined
+			: eventKind === 'exchange_used'
+				? 'exchange'
+				: undefined
 
 const eventLabel = (eventKind: HistoryEventKind) =>
 	triggerEventGroups
 		.flatMap((g) => g.options)
 		.find((o) => o.value === eventKind)?.label ?? eventKind
 
-/** the event of a trigger with its narrowing, as one phrase: «Очки изменились (Билеты)» */
+/** the event of a trigger with its narrowing, as one phrase: «Очки изменились (Билеты)», «Обмен (Билет на перк)» */
 export const triggerEventText = (trigger: PerkTrigger) => {
 	const event = eventLabel(trigger.eventKind)
 
 	if (trigger.pointTypeId !== undefined) {
 		return `${event} (${trigger.pointTypeName ?? 'удалённые очки'})`
+	}
+
+	if (trigger.exchangeId !== undefined) {
+		return `${event} (${trigger.exchangeName ?? 'удалённый обмен'})`
 	}
 
 	if (trigger.gameEndState) {

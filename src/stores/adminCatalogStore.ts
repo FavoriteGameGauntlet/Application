@@ -28,16 +28,19 @@ export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 		perk: [],
 		effect: [],
 	})
+	/** the actual exchanges a perk trigger on «Обмен» can name */
+	const exchangeOptions = ref<CatalogOption[]>([])
 	const targetsLoaded = ref(false)
 
 	/** the lists are read once and again after the catalogue is changed */
 	const loadTargets = async () => {
 		if (targetsLoaded.value) return
 
-		const [items, perks, effects] = await Promise.all([
+		const [items, perks, effects, offers] = await Promise.all([
 			api.resources.catalog('items'),
 			api.resources.catalog('perks'),
 			api.resources.catalog('effects'),
+			api.exchanges.list(),
 		])
 
 		targets.value = {
@@ -49,6 +52,7 @@ export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 			perk: perks,
 			effect: effects,
 		}
+		exchangeOptions.value = offers.map(({ id, name }) => ({ id, name }))
 		targetsLoaded.value = true
 	}
 
@@ -147,6 +151,7 @@ export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 
 			toast.show(id === undefined ? 'Добавлено' : 'Сохранено', input.name)
 
+			targetsLoaded.value = false
 			await loadExchanges()
 			return true
 		} catch (e) {
@@ -162,6 +167,8 @@ export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 		const toast = useToastStore()
 
 		try {
+			targetsLoaded.value = false
+
 			if (deleted) {
 				await api.admin.exchanges.remove(exchange.id)
 			} else {
@@ -185,6 +192,7 @@ export const useAdminCatalogStore = defineStore(StoreName.AdminCatalog, () => {
 		exchanges,
 		showDeleted,
 		targets,
+		exchangeOptions,
 		loadTargets,
 		fetchCatalog,
 		loadCatalog,
