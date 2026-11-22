@@ -110,7 +110,7 @@ const durationPresets = [
 
 const columns = (count: number) => `repeat(${count}, minmax(0, 1fr))`
 
-/** rows with nothing in them have nothing to pick from, so their segment is off */
+/** without rows there is nothing to pick from, so the change applies in full: a pick mode would refuse every use */
 const hasEntries = ref(false)
 const hasAbilityEntries = ref(false)
 
@@ -119,7 +119,7 @@ const applies = (key: string, hasRows: boolean): FormField => ({
 	type: 'segment',
 	label: 'Что применяется',
 	options: applyModeOptions,
-	disabled: !hasRows,
+	...(!hasRows && { forced: 'all' }),
 })
 
 const sections = computed<FormSection[]>(() => {
@@ -333,7 +333,6 @@ const sections = computed<FormSection[]>(() => {
 							label: 'Когда игрок применяет',
 							type: 'rows',
 							variant: 'item-entry',
-							required: 'действие способности',
 							addLabel: 'Действие',
 							aside: applies('abilityApplies', hasAbilityEntries.value),
 							check: (values) =>
