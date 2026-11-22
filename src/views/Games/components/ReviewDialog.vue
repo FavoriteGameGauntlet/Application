@@ -50,7 +50,7 @@ const subtitle = computed(() =>
 	game
 		? [
 				game.name,
-				own ? 'Твоя игра' : login,
+				own ? 'Твоя игра' : membersStore.nameOf(login),
 				formatDuration(game.timeSpent),
 				formatPeriod(game.startedDate, game.endedDate),
 			]
@@ -120,7 +120,7 @@ onMounted(() => parametersStore.load())
 	>
 		<template #lead>
 			<UiUserAvatar
-				:name="login"
+				:name="membersStore.nameOf(login)"
 				:color="membersStore.colorOf(login)"
 				:src="membersStore.avatarOf(login)"
 				:size="36"

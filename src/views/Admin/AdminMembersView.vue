@@ -12,6 +12,7 @@ import UiIcon from '../../components/ui/UiIcon.vue'
 import UiRowMenu, { type RowMenuItem } from '../../components/ui/UiRowMenu.vue'
 import UiUserAvatar from '../../components/ui/UiUserAvatar.vue'
 import { useParametersStore } from '../../stores/parametersStore'
+import { useMembersStore } from '../../stores/membersStore'
 import { useAdminSettingsStore } from '../../stores/adminSettingsStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToastStore } from '../../stores/toastStore'
@@ -23,6 +24,7 @@ type Filter = 'all' | 'admins' | 'players' | 'left'
 
 const store = useAdminSettingsStore()
 const sessionStore = useSessionStore()
+const membersStore = useMembersStore()
 const parametersStore = useParametersStore()
 const toastStore = useToastStore()
 
@@ -130,7 +132,7 @@ const fields = computed<FormField[]>(() => [
 	},
 	{
 		...colorField,
-		login: editing.value?.login,
+		name: editing.value && membersStore.nameOf(editing.value.login),
 		avatarUrl: editing.value?.avatarUrl,
 	},
 ])
@@ -261,7 +263,7 @@ const successionText = async (member: PartyMember) => {
 		Date.parse(m.joinedDate) < Date.parse(first.joinedDate) ? m : first,
 	)
 
-	return `Админом станет ${heir.login}.`
+	return `Админом станет ${membersStore.nameOf(heir.login)}.`
 }
 
 const startRemove = async (member: PartyMember) => {
@@ -316,7 +318,7 @@ onMounted(() => store.loadMembers())
 			>
 				<div class="cell user" role="cell">
 					<UiUserAvatar
-						:name="member.login"
+						:name="membersStore.nameOf(member.login)"
 						:color="member.color"
 						:src="member.avatarUrl"
 						:size="28"
@@ -385,7 +387,7 @@ onMounted(() => store.loadMembers())
 				@click="avatarInput?.click()"
 			>
 				<UiUserAvatar
-					:name="editing.login"
+					:name="membersStore.nameOf(editing.login)"
 					:color="editing.color"
 					:src="editing.avatarUrl"
 					:size="36"
@@ -412,7 +414,9 @@ onMounted(() => store.loadMembers())
 
 	<ConfirmDialog
 		:open="!!removing"
-		:title="removing ? `Удалить ${removing.login} из пати?` : ''"
+		:title="
+			removing ? `Удалить ${membersStore.nameOf(removing.login)} из пати?` : ''
+		"
 		:text="removeText"
 		cancel-label="Оставить"
 		@close="removing = undefined"

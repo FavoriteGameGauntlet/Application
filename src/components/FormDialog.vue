@@ -487,7 +487,7 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 									v-model="texts[field.key]"
 									:label="field.label"
 									:hint="field.hint"
-									:login="field.login"
+									:name="field.name"
 									:avatar-url="field.avatarUrl"
 									:invalid="!!problemOf(field)"
 								/>

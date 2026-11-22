@@ -114,13 +114,13 @@ onMounted(() => membersStore.load())
 				:class="{ 'row--me': member.user.login === sessionStore.login }"
 				role="row"
 				tabindex="0"
-				:aria-label="`Открыть профиль: ${member.displayName ?? member.user.login}`"
+				:aria-label="`Открыть профиль: ${membersStore.nameOf(member.user.login)}`"
 				@click="openProfile(member)"
 				@keydown.enter="openProfile(member)"
 			>
 				<span class="user" role="cell">
 					<UiUserAvatar
-						:name="member.user.login"
+						:name="membersStore.nameOf(member.user.login)"
 						:color="member.user.color"
 						:src="member.user.avatarUrl"
 						:size="28"
@@ -128,7 +128,7 @@ onMounted(() => membersStore.load())
 					<span class="user__text">
 						<span class="user__line">
 							<span class="user__name">{{
-								member.displayName ?? member.user.login
+								membersStore.nameOf(member.user.login)
 							}}</span>
 							<UiBadge
 								v-if="member.user.login === sessionStore.login"

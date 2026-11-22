@@ -14,14 +14,14 @@ import UiUserAvatar from './ui/UiUserAvatar.vue'
 type Props = {
 	label: string
 	hint?: string
-	/** the avatar beside the hex field shows the color on this login */
-	login?: string
+	/** the avatar beside the hex field shows the color on this member */
+	name?: string
 	avatarUrl?: string | null
 	/** the hex is wrong: the field turns red, the form names the problem */
 	invalid?: boolean
 }
 
-const { label, hint, login, avatarUrl, invalid } = defineProps<Props>()
+const { label, hint, name, avatarUrl, invalid } = defineProps<Props>()
 
 /** lowercase hex once valid; the form does not save an invalid one */
 const color = defineModel<string>({ required: true })
@@ -162,7 +162,7 @@ const percent = (value: number) => `${Math.round(value * 100)}%`
 		<div class="picker__hex">
 			<span ref="preview" class="picker__preview">
 				<UiUserAvatar
-					:name="login"
+					:name
 					:color="shown"
 					:src="avatarUrl"
 					:ring="!!avatarUrl"

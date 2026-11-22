@@ -14,6 +14,10 @@ const membersStore = useMembersStore()
 
 /** the party screen has no session yet, only the stored login */
 const login = computed(() => authStore.login ?? '')
+/** the name is given per party, so outside of one the menu shows the login */
+const name = computed(() =>
+	inParty ? membersStore.nameOf(login.value) : login.value,
+)
 
 const menuOpen = ref(false)
 const userMenu = useTemplateRef('userMenu')
@@ -37,12 +41,12 @@ const onLogOut = () => {
 	<div ref="userMenu" class="user-menu">
 		<div class="user-menu__trigger" @click="menuOpen = !menuOpen">
 			<UiUserAvatar
-				:name="login"
+				:name
 				:color="membersStore.colorOf(login)"
 				:src="inParty ? membersStore.avatarOf(login) : undefined"
 				:size="28"
 			/>
-			{{ login }}
+			{{ name }}
 			<UiIcon name="chevron-down" :size="16" />
 		</div>
 

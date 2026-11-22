@@ -69,7 +69,10 @@ const specs = computed(() => [
 		title: 'Игрок',
 		options: [
 			{ value: ALL, label: 'все' },
-			...membersStore.users.map((p) => ({ value: p.login, label: p.login })),
+			...membersStore.users.map((p) => ({
+				value: p.login,
+				label: membersStore.nameOf(p.login),
+			})),
 		],
 	},
 	{
@@ -270,12 +273,14 @@ function showEntry(id: number) {
 				<span class="col" role="cell">
 					<span class="who">
 						<UiUserAvatar
-							:name="row.entry.actor"
+							:name="membersStore.nameOf(row.entry.actor)"
 							:color="membersStore.colorOf(row.entry.actor)"
 							:src="membersStore.avatarOf(row.entry.actor)"
 							:size="24"
 						/>
-						<span class="who__login">{{ row.entry.actor }}</span>
+						<span class="who__name">{{
+							membersStore.nameOf(row.entry.actor)
+						}}</span>
 					</span>
 					<JournalSourceLabel
 						:source="row.entry.source"
@@ -300,9 +305,14 @@ function showEntry(id: number) {
 						:class="change.tone && `change--${change.tone}`"
 					>
 						<span v-if="change.login" class="change__who">{{
-							change.login
+							membersStore.nameOf(change.login)
 						}}</span>
-						{{ change.text }}
+						{{ change.text
+						}}{{
+							change.receiver
+								? ` → ${membersStore.nameOf(change.receiver)}`
+								: ''
+						}}
 					</span>
 				</span>
 			</UiRowMenu>
@@ -429,7 +439,7 @@ function showEntry(id: number) {
 	align-items: center;
 }
 
-.who__login {
+.who__name {
 	font: 600 15px / 1.35 var(--font-body);
 	color: var(--text-strong);
 }

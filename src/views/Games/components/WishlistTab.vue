@@ -210,12 +210,14 @@ const emptyText = computed(() => {
 			<span class="author" role="cell">
 				<template v-if="game.addedBy">
 					<UiUserAvatar
-						:name="game.addedBy"
+						:name="membersStore.nameOf(game.addedBy)"
 						:color="membersStore.colorOf(game.addedBy)"
 						:src="membersStore.avatarOf(game.addedBy)"
 						:size="24"
 					/>
-					<span class="author__login">{{ game.addedBy }}</span>
+					<span class="author__name">{{
+						membersStore.nameOf(game.addedBy)
+					}}</span>
 					<UiBadge v-if="game.addedBy === sessionStore.login" tone="accent"
 						>ты</UiBadge
 					>
@@ -310,7 +312,7 @@ const emptyText = computed(() => {
 	min-width: 0;
 }
 
-.author__login {
+.author__name {
 	overflow: hidden;
 	color: var(--text-body);
 	text-overflow: ellipsis;

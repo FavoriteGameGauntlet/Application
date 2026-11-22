@@ -89,9 +89,6 @@ const onlyReceive = computed(() =>
 		.every((e) => isTransfer(e) && e.who === 'self'),
 )
 
-const nameOf = (login: Login) =>
-	membersStore.list.find((m) => m.user.login === login)?.displayName ?? login
-
 const slots = computed(() =>
 	useSlots(entries.value, sessionStore.login, targets.value),
 )
@@ -209,10 +206,10 @@ const rows = computed(() => {
 
 const heading = (owner: Login, isParty: boolean, receiver?: Login) =>
 	isParty
-		? `Какой предмет скопировать у ${nameOf(owner)}`
+		? `Какой предмет скопировать у ${membersStore.nameOf(owner)}`
 		: receiver && owner === sessionStore.login
-			? `Что передать: ${nameOf(receiver)}`
-			: `Что забрать у ${nameOf(owner)}`
+			? `Что передать: ${membersStore.nameOf(receiver)}`
+			: `Что забрать у ${membersStore.nameOf(owner)}`
 
 const sections = computed<FormSection[]>(() => {
 	const result: FormSection[] = []
@@ -249,7 +246,7 @@ const sections = computed<FormSection[]>(() => {
 					required: 'цель',
 					options: candidates.value.map((m) => ({
 						value: m.user.login,
-						label: m.displayName ?? m.user.login,
+						label: membersStore.nameOf(m.user.login),
 						color: m.user.color,
 						avatarUrl: m.user.avatarUrl,
 						...(lacksCopies(m.user.login, takesFromTargets.value) && {
@@ -290,7 +287,7 @@ const sections = computed<FormSection[]>(() => {
 
 							return {
 								value: login,
-								label: m.displayName ?? login,
+								label: membersStore.nameOf(login),
 								color: m.user.color,
 								avatarUrl: m.user.avatarUrl,
 								...(blocked && {
@@ -321,7 +318,7 @@ const sections = computed<FormSection[]>(() => {
 					? 'Нельзя выбрать предмет, который используете. Предметов для выбора нет.'
 					: row.taken
 						? 'Предметов для выбора нет: подходящий уже забирает другой пункт.'
-						: `У ${nameOf(row.owner)} не хватает предметов.`,
+						: `У ${membersStore.nameOf(row.owner)} не хватает предметов.`,
 			}),
 		}
 

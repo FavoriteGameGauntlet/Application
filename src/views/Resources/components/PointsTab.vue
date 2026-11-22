@@ -195,12 +195,14 @@ watch(() => journalStore.revision, resourcesStore.loadStandings, {
 					<span class="num num--muted" role="cell">{{ row.place }}</span>
 					<span class="user" role="cell">
 						<UiUserAvatar
-							:name="row.standing.user.login"
+							:name="membersStore.nameOf(row.standing.user.login)"
 							:color="row.standing.user.color"
 							:src="membersStore.avatarOf(row.standing.user.login)"
 							:size="28"
 						/>
-						<span class="user__name">{{ row.standing.user.login }}</span>
+						<span class="user__name">{{
+							membersStore.nameOf(row.standing.user.login)
+						}}</span>
 						<UiBadge v-if="row.isMe" tone="accent">ты</UiBadge>
 					</span>
 					<span class="meter" role="cell"
