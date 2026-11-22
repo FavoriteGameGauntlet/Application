@@ -433,6 +433,41 @@
 			"priority": 52,
 			"status": "done",
 			"evidence": "Done 2026-11-22. eslint and vue-tsc pass. Every search field shows «Найти…»; the party card shows a grey «скоро» badge and the period when the start day is after today; the player exchange cards show «на выбор» / «одна на выбор» next to «Отдаёшь» and «Получаешь», as in the admin panel. The app was not run by the agent; pending the user's check."
+		},
+		{
+			"id": "item-transfer-target-conditions",
+			"title": "Bug from the testers: an item whose only entry for the chosen players is the transfer «Передаёт: Владелец → выбранному» can't be saved with a target condition («Не на себя», «Цель в сети», «Цель не в сети»). The check of the items form in CatalogEntryDialog looks for a row with who 'chosen', but in this transfer the chosen players receive the copies while who is 'self'. A transfer row counts as acting on the chosen players. Needs the same fix in fgg-server (validateConditions) first.",
+			"priority": 53,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "perk-ability-no-entries",
+			"title": "Testers: a perk can have an ability without actions. «Когда игрок применяет» on the «Способность» tab stops being required, as «При использовании» of an item; the use then only spends a use and is recorded in the journal. Needs fgg-server to accept an ability without entries first.",
+			"priority": 54,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "item-perk-manual-change",
+			"title": "Testers and the user: the «Потом ручное изменение» check of a wheel entry also exists for an item and for the ability of a perk in the catalogue window. After the player uses such an item or ability, the manual change form opens, as after a wheel entry with isManualChange; the rows stop being required when the check is on, as for a wheel entry. The catalogue card shows the flag. Needs fgg-server and fgg-database first.",
+			"priority": 55,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "perk-trigger-exchange-filter",
+			"title": "Testers: the «Уточнение» of a perk trigger on the event «Обмен» picks one exchange of the party or «Любой обмен», as the point type for «Очки изменились». The user's answer: only for exchanges, not for items, perks or effects. The trigger text names the exchange. Needs fgg-server and fgg-database first.",
+			"priority": 56,
+			"status": "todo",
+			"evidence": ""
+		},
+		{
+			"id": "wheel-result-collapsed",
+			"title": "Testers: on the «Колесо» screen the card of the entry that fell shows its name, and its description and changes stay hidden until the player clicks the card, as in the old generator the testers used. The user's answer: the names stay visible, the whole body with the description and the changes opens on a click.",
+			"priority": 57,
+			"status": "todo",
+			"evidence": ""
 		}
 	]
 }
