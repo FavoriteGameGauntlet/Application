@@ -341,7 +341,7 @@ const valuesNow = () => {
 		} else if (field.type === 'triggers') {
 			values[field.key] = triggerLists[field.key].map((row) => ({ ...row }))
 		} else {
-			values[field.key] = texts[field.key]
+			values[field.key] = field.forced ?? texts[field.key]
 		}
 	}
 
@@ -420,10 +420,13 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 					<template v-if="section.aside || countOf(section)" #aside>
 						<UiSegmented
 							v-if="section.aside"
-							v-model="texts[section.aside.key]"
+							:model-value="section.aside.forced ?? texts[section.aside.key]"
+							@update:model-value="texts[section.aside.key] = $event"
 							:options="section.aside.options ?? []"
 							:label="section.aside.label"
-							:disabled="section.aside.disabled"
+							:disabled="
+								section.aside.disabled || section.aside.forced !== undefined
+							"
 						/>
 						<span v-else class="form__count">{{ countOf(section) }}</span>
 					</template>
@@ -504,10 +507,15 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 								>
 									<template v-if="field.aside" #aside>
 										<UiSegmented
-											v-model="texts[field.aside.key]"
+											:model-value="
+												field.aside.forced ?? texts[field.aside.key]
+											"
+											@update:model-value="texts[field.aside.key] = $event"
 											:options="field.aside.options ?? []"
 											:label="field.aside.label"
-											:disabled="field.aside.disabled"
+											:disabled="
+												field.aside.disabled || field.aside.forced !== undefined
+											"
 										/>
 									</template>
 								</RowsEditor>

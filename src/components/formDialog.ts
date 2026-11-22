@@ -43,6 +43,8 @@ export type FormField = {
 	disabledReason?: string
 	/** for a `segment`: the control shows its value but cannot be changed */
 	disabled?: boolean
+	/** for a `segment`: the only value it can hold now; the control shows it, cannot be changed and saves it in place of the picked one */
+	forced?: string
 	/** for a `line`: the refusal of the last save, red under the field in place of `hint` */
 	error?: string
 	/**

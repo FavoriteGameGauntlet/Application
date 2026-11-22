@@ -443,10 +443,10 @@
 		},
 		{
 			"id": "perk-ability-no-entries",
-			"title": "Testers: a perk can have an ability without actions. «Когда игрок применяет» on the «Способность» tab stops being required, as «При использовании» of an item; the use then only spends a use and is recorded in the journal. Needs fgg-server to accept an ability without entries first.",
+			"title": "Testers: a perk ability may have no actions",
 			"priority": 54,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-22. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "item-perk-manual-change",
