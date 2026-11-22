@@ -41,6 +41,8 @@ npx prettier -w <files> # format only the changed files
 
 `npm run build` = `vue-tsc --noEmit && vite build`. The agent checks Rust with `cargo check` in `src-tauri/`. The user runs `npm run tauri dev` to verify the window when a change touches `src-tauri/` or window behaviour.
 
+Run manual checks and checks with mocked data only when the user explicitly requests them.
+
 ## Plan before edits
 
 After the startup steps and before the first edit of any file, write a plan of changes in the reply and wait until the user has read it and answered. Until then only read, no edits.
