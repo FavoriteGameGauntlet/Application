@@ -23,6 +23,8 @@ import UiSwitch from './ui/UiSwitch.vue'
 import UiTabs from './ui/UiTabs.vue'
 import UiTag from './ui/UiTag.vue'
 import UiTextarea from './ui/UiTextarea.vue'
+import { useAdminCatalogStore } from '../stores/adminCatalogStore'
+import { useToastStore } from '../stores/toastStore'
 import { isMemberColor } from '../utils/memberColor'
 import type {
 	FormCheck,
@@ -144,14 +146,32 @@ const pickedOf = (field: FormField) =>
 		field.options?.some((o) => o.value === v && !o.disabled),
 	)
 
+/** the catalogue the rows and the triggers pick from is read once per opening */
+let hasReadTargets = false
+
+const readTargetsIfNeeded = () => {
+	if (
+		hasReadTargets ||
+		!allFields.value.some((f) => f.type === 'rows' || f.type === 'triggers')
+	)
+		return
+
+	hasReadTargets = true
+	useAdminCatalogStore()
+		.loadTargets()
+		.catch((e) => useToastStore().error(e))
+}
+
 watch(
 	() => open,
 	(isOpen) => {
 		if (!isOpen) return
 
 		chosenTab.value = ''
+		hasReadTargets = false
 
 		allFields.value.forEach(initField)
+		readTargetsIfNeeded()
 	},
 	{ immediate: true },
 )
@@ -163,6 +183,8 @@ watch(allFields, (fields) => {
 		if (!isStarted(field)) initField(field)
 		else if (field.type === 'pick') lists[field.key] = pickedOf(field)
 	}
+
+	if (open) readTargetsIfNeeded()
 })
 
 const unfold = async (field: FormField) => {

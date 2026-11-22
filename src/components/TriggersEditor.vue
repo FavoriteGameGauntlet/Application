@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import type {
 	HistoryEventKind,
 	PerkTriggerAction,
@@ -97,8 +97,6 @@ const setEvent = (row: TriggerFormRow, eventKind: string) => {
 	// a narrowing belongs to its event
 	row.filter = ''
 }
-
-onMounted(() => store.loadTargets())
 </script>
 
 <template>
