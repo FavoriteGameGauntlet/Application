@@ -275,10 +275,10 @@
 		},
 		{
 			"id": "history-paging",
-			"title": "Load older events as the user scrolls through the history tab",
+			"title": "Load older history events, filter by period, and show counts by day",
 			"priority": 31,
 			"status": "done",
-			"evidence": "Done 2026-11-21. Full record: harness/archive/features-done.json"
+			"evidence": "Done 2026-11-22. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "timer-end-sound",

@@ -45,11 +45,16 @@ const resourceKinds: { value: ResourceRef['kind']; label: string }[] = [
 	{ value: 'effect', label: 'эффекты' },
 ]
 
-/** the last day or week counted from the current moment */
-const PERIOD_MS: Record<string, number> = {
-	day: 24 * 3_600_000,
-	week: 7 * 24 * 3_600_000,
-}
+const periods: {
+	value: string
+	label: string
+	duration?: Temporal.DurationLike
+}[] = [
+	{ value: 'day', label: 'за день', duration: { hours: 24 } },
+	{ value: 'week', label: 'за неделю', duration: { hours: 168 } },
+	{ value: 'month', label: 'за месяц', duration: { months: 1 } },
+	{ value: ALL, label: 'за всё время' },
+]
 
 const filters = reactive<Record<FilterKey, string>>({
 	user: user ?? ALL,
@@ -83,10 +88,7 @@ const specs = computed(() => [
 	{
 		key: 'period' as const,
 		title: 'Период',
-		options: [
-			{ value: 'day', label: 'за день' },
-			{ value: 'week', label: 'за неделю' },
-		],
+		options: periods,
 	},
 ])
 
@@ -111,7 +113,7 @@ const { entries, cursor, pending, failed, ended, more, retry } =
 		sourceEventKinds: journalSourceGroups.find(
 			(g) => g.value === filters.source,
 		)?.kinds,
-		periodMs: PERIOD_MS[filters.period],
+		period: periods.find((period) => period.value === filters.period)?.duration,
 	}))
 
 const moreTarget = useTemplateRef<HTMLElement>('moreTarget')
@@ -246,7 +248,11 @@ function showEntry(id: number) {
 		<template v-for="group in days" :key="group.day">
 			<div class="day" role="row">
 				<span role="columnheader">{{ group.title }}</span>
-				<span class="day__count">{{ group.rows.length }}</span>
+				<UiCountBadge
+					class="day__count"
+					:value="group.rows.length"
+					role="cell"
+				/>
 			</div>
 
 			<UiRowMenu
@@ -400,9 +406,8 @@ function showEntry(id: number) {
 	border-top: 1px solid var(--border-subtle);
 }
 
-.day__count {
-	font: 500 14px / 1.2 var(--font-mono);
-	letter-spacing: 0;
+.day .day__count {
+	--ui-badge-bg: var(--surface-card);
 }
 
 .time {

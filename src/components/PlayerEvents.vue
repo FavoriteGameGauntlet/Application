@@ -10,11 +10,9 @@ type Props = {
 
 const { login } = defineProps<Props>()
 
-const DAY_MS = 24 * 60 * 60 * 1000
-
 const { entries, pending, ended, more } = useJournalPages(() => ({
 	user: login,
-	periodMs: DAY_MS,
+	period: { hours: 24 },
 }))
 </script>
 

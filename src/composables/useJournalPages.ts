@@ -1,10 +1,12 @@
+import type { Temporal } from '@js-temporal/polyfill'
 import { computed, onScopeDispose, ref, watch } from 'vue'
 import type { JournalEntry, JournalQuery } from '../api-facade/contracts'
 import { useJournalStore } from '../stores/journalStore'
 import { useToastStore } from '../stores/toastStore'
+import { periodStart } from '../utils/calendar'
 
 type PageFilters = Omit<JournalQuery, 'cursor' | 'from'> & {
-	periodMs: number
+	period?: Temporal.DurationLike
 }
 
 export const useJournalPages = (getFilters: () => PageFilters) => {
@@ -59,12 +61,9 @@ export const useJournalPages = (getFilters: () => PageFilters) => {
 			cursor.value = undefined
 			if (current !== previous) entries.value = []
 
-			const { periodMs, ...selection } = current
+			const { period, ...selection } = current
 			// The period stays fixed while the pages of this query are read.
-			query = {
-				...selection,
-				from: new Date(Date.now() - periodMs).toISOString(),
-			}
+			query = period ? { ...selection, from: periodStart(period) } : selection
 			void load('first')
 		},
 		{ immediate: true },

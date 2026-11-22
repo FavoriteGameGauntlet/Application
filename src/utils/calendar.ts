@@ -39,6 +39,12 @@ export const PERIOD_PRESETS: {
 
 export const today = (): Day => Temporal.Now.plainDateISO().toString()
 
+export const periodStart = (duration: Temporal.DurationLike): ISODate =>
+	Temporal.Now.zonedDateTimeISO()
+		.subtract(duration)
+		.toInstant()
+		.toString({ smallestUnit: 'millisecond' })
+
 export const joinPeriod = ({ start, end }: Period) => `${start}/${end}`
 
 /** undefined when the text is not a period */
