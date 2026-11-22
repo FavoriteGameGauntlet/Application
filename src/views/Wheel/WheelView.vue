@@ -664,25 +664,58 @@ onBeforeUnmount(() => {
 }
 
 .result__body {
+	position: relative;
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
 	min-width: 0;
 }
 
-.result__body > * {
-	transition: filter 360ms var(--ease-out);
+/* the spoiler covers the body in place, so the card keeps its height when it opens */
+.result__body::after {
+	position: absolute;
+	inset: -4px -6px;
+	pointer-events: none;
+	content: '';
+	background:
+		radial-gradient(circle, var(--text-subtle) 0.8px, transparent 1.4px) 0 0 /
+			7px 7px,
+		radial-gradient(circle, var(--text-muted) 0.8px, transparent 1.4px) 3px
+			4px / 11px 9px,
+		var(--surface-sunken);
+	border-radius: var(--radius-md);
+	opacity: 0;
+	transition: opacity 360ms var(--ease-out);
 }
 
-/* the body keeps its place under a blur, like a spoiler, so nothing jumps when it opens */
+/* nothing of the body shows through: no colours, no count of the changes */
 .result__body--closed {
 	cursor: pointer;
 	user-select: none;
 }
 
 .result__body--closed > * {
-	pointer-events: none;
-	filter: blur(8px);
+	visibility: hidden;
+}
+
+.result__body--closed::after {
+	opacity: 1;
+	animation: result-spoiler 3s linear infinite;
+}
+
+@keyframes result-spoiler {
+	to {
+		background-position:
+			14px 7px,
+			-19px 13px,
+			0 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.result__body--closed::after {
+		animation: none;
+	}
 }
 
 .result__desc {
