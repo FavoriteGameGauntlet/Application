@@ -4,9 +4,9 @@ import type {
 	GameEndState,
 	GameHistoryEntry,
 } from '../../../api-facade/contracts'
+import ListBar from '../../../components/ListBar.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
-import UiChoiceChips from '../../../components/ui/UiChoiceChips.vue'
-import UiInput from '../../../components/ui/UiInput.vue'
+import UiFilterSelect from '../../../components/ui/UiFilterSelect.vue'
 import UiRowMenu, {
 	type RowMenuItem,
 } from '../../../components/ui/UiRowMenu.vue'
@@ -35,12 +35,16 @@ const statuses = {
 	rerolled: { label: 'Перекручена', tone: 'info' },
 } as const
 
-const chipLabels: Record<StateFilter, string> = {
-	all: 'Все',
-	completed: 'Пройдены',
-	cancelled: 'Отменены',
-	rerolled: 'Перекручены',
+const stateLabels: Record<StateFilter, string> = {
+	all: 'все',
+	completed: 'пройдены',
+	cancelled: 'отменены',
+	rerolled: 'перекручены',
 }
+
+const stateOptions = (Object.keys(stateLabels) as StateFilter[]).map(
+	(value) => ({ value, label: stateLabels[value] }),
+)
 
 const query = ref('')
 const state = ref<StateFilter>('all')
@@ -48,17 +52,6 @@ const state = ref<StateFilter>('all')
 const reviewing = ref<{ game: GameHistoryEntry; editing: boolean }>()
 
 const games = computed(() => completedStore.lists[user] ?? [])
-
-const chips = computed(() =>
-	(Object.keys(chipLabels) as StateFilter[]).map((value) => ({
-		value,
-		label: chipLabels[value],
-		count:
-			value === 'all'
-				? games.value.length
-				: games.value.filter((g) => g.endState === value).length,
-	})),
-)
 
 const rows = computed(() => {
 	const q = query.value.trim().toLowerCase()
@@ -139,32 +132,26 @@ const reviewedGame = computed(() =>
 </script>
 
 <template>
-	<div class="bar">
-		<div class="bar__search">
-			<UiInput
-				v-model="query"
-				compact
-				icon="search"
-				placeholder="Найти среди пройденных…"
-				aria-label="Поиск по пройденным"
-			/>
-		</div>
-		<UiChoiceChips
+	<ListBar v-model:query="query">
+		<UiFilterSelect
 			:model-value="state"
-			:options="chips"
 			label="Состояние"
+			:options="stateOptions"
+			:active="state !== 'all'"
 			@update:model-value="state = $event as StateFilter"
 		/>
-		<span v-if="rows.length" class="bar__note">
-			<span v-for="part in summary" :key="part">{{ part }}</span>
-		</span>
-	</div>
+		<template v-if="rows.length">
+			<UiBadge v-for="part in summary" :key="part">{{ part }}</UiBadge>
+		</template>
+		<!-- the player whose games are shown -->
+		<slot />
+	</ListBar>
 
 	<div class="table" role="table" aria-label="Пройденные игры">
 		<div class="row row--head" role="row">
 			<span role="columnheader">{{ mine ? 'Игра' : `Игра (${user})` }}</span>
 			<span role="columnheader">Период</span>
-			<span role="columnheader" class="right">Время</span>
+			<span role="columnheader">Время</span>
 			<span role="columnheader">Статус</span>
 			<span role="columnheader">Оценка</span>
 		</div>
@@ -187,9 +174,7 @@ const reviewedGame = computed(() =>
 				<span class="period">{{ days.dates }}</span>
 				<span class="sub">{{ days.length }}</span>
 			</span>
-			<span class="num right" role="cell">{{
-				formatDuration(game.timeSpent)
-			}}</span>
+			<span class="num" role="cell">{{ formatDuration(game.timeSpent) }}</span>
 			<span class="status" role="cell">
 				<UiBadge :tone="statuses[game.endState].tone">{{
 					statuses[game.endState].label
@@ -236,27 +221,6 @@ const reviewedGame = computed(() =>
 </template>
 
 <style scoped>
-.bar {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 12px;
-}
-
-.bar__search {
-	width: 260px;
-}
-
-.bar__note {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-end;
-	gap: 2px;
-	margin-left: auto;
-	font: var(--type-caption);
-	color: var(--text-muted);
-}
-
 .table {
 	overflow: hidden;
 	background: var(--surface-card);
@@ -291,10 +255,6 @@ const reviewedGame = computed(() =>
 
 .row--body:hover {
 	background: var(--surface-sunken);
-}
-
-.right {
-	text-align: right;
 }
 
 .cell {
