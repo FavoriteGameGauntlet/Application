@@ -466,8 +466,8 @@
 			"id": "wheel-result-collapsed",
 			"title": "Hide the description and changes of the wheel result until the player opens it",
 			"priority": 57,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-22. Full record: harness/archive/features-done.json"
 		}
 	]
 }
