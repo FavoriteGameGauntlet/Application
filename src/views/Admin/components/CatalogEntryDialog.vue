@@ -148,7 +148,7 @@ const sections = computed<FormSection[]>(() => {
 			return [
 				{ fields: common },
 				{
-					title: 'Как писать в журнале',
+					title: 'Формы единиц',
 					columns: columns(3),
 					fields: [
 						{
@@ -195,15 +195,15 @@ const sections = computed<FormSection[]>(() => {
 								label: 'Начальное значение',
 								placeholder: '0',
 							},
-							'целое начальное значение',
+							'Начальное значение должно быть целым',
 						),
 						wholeField(
 							{ key: 'minimum', label: 'Минимум', placeholder: 'Без лимита' },
-							'целый минимум',
+							'Минимум должен быть целым',
 						),
 						wholeField(
 							{ key: 'maximum', label: 'Максимум', placeholder: 'Без лимита' },
-							'целый максимум',
+							'Максимум должен быть целым',
 						),
 					],
 				},
@@ -233,7 +233,7 @@ const sections = computed<FormSection[]>(() => {
 								placeholder: '1',
 								required: 'количество использований',
 							},
-							'целое количество использований больше нуля',
+							'Количество использований должно быть целым и больше нуля',
 							1,
 						),
 						{
@@ -250,7 +250,7 @@ const sections = computed<FormSection[]>(() => {
 								return conditions.includes('target_online') &&
 									conditions.includes('target_offline')
 									? {
-											text: 'одно из условий «Цель в сети» и «Цель не в сети»',
+											text: 'Условие должно быть одно: «Цель в сети» или «Цель не в сети»',
 										}
 									: undefined
 							},
@@ -288,7 +288,9 @@ const sections = computed<FormSection[]>(() => {
 							when: { key: 'durationPreset', is: 'custom' },
 							check: (values) =>
 								parseSpan(textOf(values, 'duration')) === undefined
-									? { text: 'длительность вида «2 ч» или «1 день»' }
+									? {
+											text: 'Длительность должна быть вида «2 ч» или «1 день»',
+										}
 									: undefined,
 						},
 					],
@@ -359,7 +361,7 @@ const sections = computed<FormSection[]>(() => {
 								required: 'максимум использований',
 								when: limited,
 							},
-							'целый максимум использований от 1',
+							'Максимум использований должен быть целым, от 1',
 							1,
 						),
 						wholeField(
@@ -369,7 +371,7 @@ const sections = computed<FormSection[]>(() => {
 								required: 'использования у нового владельца',
 								when: limited,
 							},
-							'целое число использований у нового владельца от 0',
+							'Использования у нового владельца должны быть целым числом от 0',
 							0,
 						),
 						{
@@ -382,7 +384,9 @@ const sections = computed<FormSection[]>(() => {
 
 								return seconds !== undefined &&
 									!(seconds >= 1 && seconds <= MAX_RENEWAL)
-									? { text: 'целый срок восстановления до 10 лет' }
+									? {
+											text: 'Восстановление должно быть целым сроком до 10 лет',
+										}
 									: undefined
 							},
 						},
@@ -400,7 +404,7 @@ const sections = computed<FormSection[]>(() => {
 								placeholder: '0',
 								when: limited,
 							},
-							'целое число зарядов от 0',
+							'Заряды должны быть целым числом от 0',
 							0,
 						),
 					],
@@ -494,7 +498,7 @@ const checks = computed<FormCheck[]>(() => {
 						const max = numberOf(values, 'maximum')
 
 						return min !== undefined && max !== undefined && min > max
-							? 'минимум не больше максимума'
+							? 'Минимум должен быть не больше максимума'
 							: undefined
 					},
 				},
@@ -507,7 +511,7 @@ const checks = computed<FormCheck[]>(() => {
 
 						return (min !== undefined && start < min) ||
 							(max !== undefined && start > max)
-							? 'начальное значение между минимумом и максимумом'
+							? 'Начальное значение должно быть между минимумом и максимумом'
 							: undefined
 					},
 				},
@@ -520,7 +524,7 @@ const checks = computed<FormCheck[]>(() => {
 						(values.conditions as ItemCondition[]).some((c) =>
 							c.startsWith('target_'),
 						) && !rowsOf(values, 'entries').some((r) => r.who === 'chosen')
-							? 'строка с выбранным игроком для условий про цели'
+							? 'Для условий про цели должна быть строка с выбранным игроком'
 							: undefined,
 				},
 			]
@@ -530,7 +534,7 @@ const checks = computed<FormCheck[]>(() => {
 					fields: ['abilityCharges', 'abilityTriggers'],
 					check: (values) =>
 						!numberOf(values, 'abilityCharges') && triggersOf(values).length > 0
-							? 'число зарядов на одно использование: их меняют триггеры'
+							? 'Зарядов на одно использование должно быть больше нуля: их меняют триггеры'
 							: undefined,
 				},
 				{
@@ -538,7 +542,7 @@ const checks = computed<FormCheck[]>(() => {
 					check: (values) =>
 						(numberOf(values, 'abilityCharges') ?? 0) > 0 &&
 						!triggersOf(values).some((t) => t.action === 'add_charge')
-							? 'триггер «Добавляет заряд»: без него заряды не копятся'
+							? 'Должен быть триггер «Добавляет заряд»: без него заряды не копятся'
 							: undefined,
 				},
 			]

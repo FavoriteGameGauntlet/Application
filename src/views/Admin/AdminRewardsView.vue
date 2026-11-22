@@ -190,9 +190,7 @@ onMounted(async () => {
 				>
 					Убрать награду
 				</UiButton>
-				<span class="card__why">{{
-					problems[block.key] ? `Нужно ${problems[block.key]?.text}` : ''
-				}}</span>
+				<span class="card__why">{{ problems[block.key]?.text }}</span>
 				<UiButton
 					variant="secondary"
 					icon="check"
@@ -248,7 +246,7 @@ onMounted(async () => {
 	flex: 1;
 	min-width: 0;
 	font: var(--type-body-sm);
-	color: var(--text-muted);
+	color: var(--danger-text);
 	text-align: right;
 }
 

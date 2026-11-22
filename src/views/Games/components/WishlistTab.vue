@@ -243,7 +243,7 @@ const onAdd = async () => {
 				<UiIconButton
 					icon="check"
 					size="sm"
-					:label="isNameEmpty ? 'Нужно название' : 'Сохранить'"
+					:label="isNameEmpty ? 'Заполните название' : 'Сохранить'"
 					:disabled="isNameEmpty"
 					@click="saveEdit"
 				/>

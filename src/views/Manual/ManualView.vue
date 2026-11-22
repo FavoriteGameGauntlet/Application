@@ -152,7 +152,10 @@ const outOfBounds = (row: Row, value: number) => {
 	)
 }
 
-/** what the row does to the resources of the user and what it needs before it can be applied, after «Нужно» */
+/**
+ * what the row does to the resources of the user; `empty` names the field to
+ * fill and `error` says what is wrong (`%` stands for the number of the row)
+ */
 const calc = (row: Row) => {
 	const was = held(row)
 	const name =
@@ -169,12 +172,13 @@ const calc = (row: Row) => {
 			was: String(was),
 			now: String(now),
 			changed: was !== now,
-			need: !amount
-				? 'количество'
+			empty: amount ? '' : 'количество в строке %',
+			error: !amount
+				? ''
 				: row.type === 'item' && now < 0
-					? `не больше, чем есть у ${row.who}: ${name}`
+					? `Количество в строке % должно быть не больше, чем есть у ${row.who}: ${name}`
 					: outOfBounds(row, now)
-						? `значение в границах «${name}»`
+						? `Значение в строке % должно быть в границах «${name}»`
 						: '',
 		}
 	}
@@ -189,14 +193,15 @@ const calc = (row: Row) => {
 		was: was ? 'есть' : 'нет',
 		now: grant ? 'есть' : 'нет',
 		changed: !!was !== grant,
-		need:
+		empty: '',
+		error:
 			!grant && !was
-				? `«${name}» у ${row.who}, чтобы забрать`
+				? `Ресурс в строке % должен быть у ${row.who}, чтобы его забрать`
 				: row.type === 'effect' &&
 					  grant &&
 					  span &&
 					  parseSpan(span) === undefined
-					? 'срок вида «2 ч» или «1 день»'
+					? 'Срок в строке % должен быть вида «2 ч» или «1 день»'
 					: '',
 	}
 }
@@ -207,7 +212,7 @@ const hasAmount = (row: Row) =>
 const views = computed(() =>
 	rows.value.map((row) => {
 		const result = calc(row)
-		const failed = !!result.need && (row.n !== '' || !isNumeric(row.type))
+		const failed = !!result.error
 
 		return {
 			row,
@@ -268,13 +273,22 @@ const toChange = (row: Row): ManualChange => {
 	}
 }
 
-/** what the form needs before it can be applied, the first problem only */
+/** the first thing that keeps the form from being applied: a wrong value before an empty field */
 const why = computed(() => {
-	if (!rows.value.length) return 'Нужно хотя бы одно изменение'
+	const at = (key: 'error' | 'empty') => {
+		const i = views.value.findIndex((v) => v.result[key])
 
-	const i = views.value.findIndex((v) => v.result.need)
+		return i < 0 ? '' : views.value[i].result[key].replace('%', String(i + 1))
+	}
+	const error = at('error')
 
-	return i < 0 ? '' : `Нужно в строке ${i + 1}: ${views.value[i].result.need}`
+	if (error) return { text: error, isError: true }
+	if (!rows.value.length)
+		return { text: 'Добавьте хотя бы одно изменение', isError: false }
+
+	const empty = at('empty')
+
+	return empty ? { text: `Заполните ${empty}`, isError: false } : undefined
 })
 
 const onApply = () => manualStore.apply(rows.value.map(toChange))
@@ -442,7 +456,11 @@ onMounted(async () => {
 						<UiButton variant="ghost" size="sm" icon="plus" @click="addRow">
 							Добавить изменение
 						</UiButton>
-						<span class="card__why">{{ why }}</span>
+						<span
+							class="card__why"
+							:class="{ 'card__why--error': why?.isError }"
+							>{{ why?.text }}</span
+						>
 						<UiButton variant="outline" @click="manualStore.close()"
 							>Отмена</UiButton
 						>
@@ -546,6 +564,10 @@ onMounted(async () => {
 	font: var(--type-body-sm);
 	color: var(--text-muted);
 	text-align: right;
+}
+
+.card__why--error {
+	color: var(--danger-text);
 }
 
 .hero {

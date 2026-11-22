@@ -281,7 +281,7 @@ const sections = computed<FormSection[]>(() => {
 						label: 'У кого скопировать',
 						type: 'pick',
 						limit: 1,
-						required: 'игрок',
+						required: 'игрока',
 						options: membersStore.list.map((m) => {
 							const login = m.user.login
 							const blocked =

@@ -72,12 +72,12 @@ export type FormField = {
 	aside?: FormField
 	/** the field stays folded behind a "+ label" link until it has a value or is asked for */
 	optional?: boolean
-	/** the form does not save without it; the noun that the footer names ("название") */
+	/** the form does not save without it; the noun that the footer names after «Заполните» ("название") */
 	required?: string
 	/**
-	 * what is wrong with the value as the footer names it after «Нужно»
-	 * ("целое число больше нуля"), checked after every edit while the field is
-	 * shown; the field turns red and the form does not save
+	 * what is wrong with the value as a sentence for the footer ("Минимум
+	 * должен быть целым"), checked after every edit while the field is shown;
+	 * the field turns red and the form does not save
 	 */
 	check?: (values: FormValues) => FormProblem | undefined
 	/** `required` does not count while the `check` field `key` is `is`: the field is one of two ways to fill the form */
@@ -97,7 +97,7 @@ export type FormField = {
 }
 
 /**
- * What is wrong in a field, as the footer names it after «Нужно». In a `rows`
+ * What is wrong in a field, as a sentence for the footer. In a `rows`
  * field `row` (from 0) and `cell` say where, and only that cell turns red.
  */
 export type FormProblem = {

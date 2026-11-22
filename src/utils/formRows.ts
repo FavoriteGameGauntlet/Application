@@ -69,12 +69,12 @@ const readAmount = (row: FormRow, signed: boolean) => {
 	return amount
 }
 
-const amountNeed = (row: FormRow, signed: boolean) =>
+const amountRule = (row: FormRow, signed: boolean) =>
 	isHeldOnce(row.kind)
-		? 'количество 1, перк или эффект у игрока один,'
+		? 'должно быть 1: перк или эффект у игрока один'
 		: signed
-			? 'целое количество, не ноль,'
-			: 'целое количество больше нуля'
+			? 'должно быть целым и не нулём'
+			: 'должно быть целым и больше нуля'
 
 const readTarget = (row: FormRow) => {
 	const id = Number(row.targetId)
@@ -92,11 +92,15 @@ const parseRows = <T>(
 
 	for (const [i, row] of rows.entries()) {
 		const targetId = readTarget(row)
-		const where = `в строке ${i + 1}`
+		const line = i + 1
 
 		if (needsTarget(row) && targetId === undefined) {
 			return {
-				problem: { text: `выбрать ресурс ${where}`, row: i, cell: 'target' },
+				problem: {
+					text: `Ресурс в строке ${line} должен быть выбран`,
+					row: i,
+					cell: 'target',
+				},
 			}
 		}
 
@@ -107,7 +111,7 @@ const parseRows = <T>(
 		if (amount === undefined)
 			return {
 				problem: {
-					text: `${amountNeed(row, rowSigned)} ${where}`,
+					text: `Количество в строке ${line} ${amountRule(row, rowSigned)}`,
 					row: i,
 					cell: 'amount',
 				},

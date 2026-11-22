@@ -60,7 +60,7 @@ const subtitle = computed(() =>
 const sections: FormSection[] = [
 	{
 		fields: [
-			{ key: 'rating', label: 'Оценка', type: 'rating', required: 'оценка' },
+			{ key: 'rating', label: 'Оценка', type: 'rating', required: 'оценку' },
 			{
 				key: 'comment',
 				label: 'Отзыв',

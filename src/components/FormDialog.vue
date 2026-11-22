@@ -251,7 +251,7 @@ const ownProblem = (
 ): FormProblem | undefined => {
 	if (field.required && !isFilled(field)) return undefined
 	if (field.type === 'color' && !isMemberColor(texts[field.key] ?? ''))
-		return { text: 'цвет в формате #rrggbb' }
+		return { text: 'Цвет должен быть в формате #rrggbb' }
 
 	return field.check?.(values)
 }
@@ -304,14 +304,16 @@ const tabItems = computed(() =>
 	}),
 )
 
-const why = computed(() => {
-	if (missing.value.length)
-		return `${missing.value.length > 1 ? 'Нужны' : 'Нужно'} ${joinNouns(missing.value)}`
+/** a wrong value comes before an empty field, and only it is red */
+const firstProblem = computed(() => problems.value.values().next().value)
 
-	const first = problems.value.values().next().value
-
-	return first ? `Нужно ${first.text}` : ''
-})
+const why = computed(() =>
+	firstProblem.value
+		? firstProblem.value.text
+		: missing.value.length
+			? `Заполните ${joinNouns(missing.value)}`
+			: '',
+)
 
 /** a field that is not started yet (its section has just appeared) holds nothing */
 const valuesNow = () => {
@@ -644,7 +646,9 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 		</div>
 
 		<template #footer>
-			<span class="form__why">{{ why }}</span>
+			<span class="form__why" :class="{ 'form__why--error': firstProblem }">{{
+				why
+			}}</span>
 			<UiButton type="button" variant="ghost" @click="emit('close')"
 				>Отмена</UiButton
 			>
@@ -704,6 +708,10 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 	min-width: 0;
 	font: var(--type-body-sm);
 	color: var(--text-muted);
+}
+
+.form__why--error {
+	color: var(--danger-text);
 }
 
 .form__check {
