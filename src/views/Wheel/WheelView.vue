@@ -381,40 +381,35 @@ onBeforeUnmount(() => {
 			<div v-if="showResult && wheelStore.result" class="result">
 				<span class="result__accent"></span>
 
+				<div class="result__head">
+					<div class="result__name">{{ wheelStore.result.result.name }}</div>
+					<div class="result__actions">
+						<UiButton variant="outline" @click="wheelStore.discardResult()">
+							Сбросить
+						</UiButton>
+						<UiButton class="result__action" @click="onResultAction">
+							{{
+								resultClosed
+									? 'Показать'
+									: wheelStore.resultStartsGame
+										? 'Взять игру'
+										: 'Применить'
+							}}
+						</UiButton>
+					</div>
+				</div>
+
 				<div
+					v-if="resultHasBody"
 					class="result__body"
 					:class="{ 'result__body--closed': resultClosed }"
-					@click="resultClosed && (resultOpen = true)"
+					:aria-hidden="resultClosed"
+					@click="resultOpen = true"
 				>
-					<button
-						v-if="resultHasBody"
-						type="button"
-						class="result__head"
-						:aria-expanded="resultOpen"
-						@click.stop="resultOpen = !resultOpen"
-					>
-						<span class="result__name">{{
-							wheelStore.result.result.name
-						}}</span>
-						<UiIcon
-							:name="resultOpen ? 'chevron-up' : 'chevron-down'"
-							:size="20"
-							class="result__chevron"
-						/>
-					</button>
-					<div v-else class="result__name">
-						{{ wheelStore.result.result.name }}
-					</div>
-					<div
-						v-if="!resultClosed && wheelStore.result.result.description"
-						class="result__desc"
-					>
+					<div v-if="wheelStore.result.result.description" class="result__desc">
 						{{ wheelStore.result.result.description }}
 					</div>
-					<div
-						v-if="!resultClosed && resultChanges.length"
-						class="result__changes"
-					>
+					<div v-if="resultChanges.length" class="result__changes">
 						<UiChange
 							v-for="(change, i) in resultChanges"
 							:key="i"
@@ -423,27 +418,12 @@ onBeforeUnmount(() => {
 						>
 					</div>
 					<div
-						v-if="!resultClosed && wheelStore.result.result.isManualChange"
+						v-if="wheelStore.result.result.isManualChange"
 						class="result__manual"
 					>
 						<UiBadge tone="info" dot>Ручное изменение</UiBadge>
 						<span>после применения нужно внести ручное изменение</span>
 					</div>
-				</div>
-
-				<div class="result__actions">
-					<UiButton variant="outline" @click="wheelStore.discardResult()">
-						Сбросить
-					</UiButton>
-					<UiButton @click="onResultAction">
-						{{
-							resultClosed
-								? 'Показать'
-								: wheelStore.resultStartsGame
-									? 'Взять игру'
-									: 'Применить'
-						}}
-					</UiButton>
 				</div>
 			</div>
 		</Transition>
@@ -636,9 +616,8 @@ onBeforeUnmount(() => {
 .result {
 	position: relative;
 	display: flex;
-	flex-wrap: wrap;
-	gap: 24px;
-	align-items: center;
+	flex-direction: column;
+	gap: 12px;
 	padding: 20px;
 	background: var(--surface-card);
 	border: 1px solid var(--border-subtle);
@@ -656,46 +635,54 @@ onBeforeUnmount(() => {
 	border-radius: 0 0 2px 2px;
 }
 
+/* the buttons stand opposite the name and never move when the body opens */
+.result__head {
+	display: flex;
+	gap: 24px;
+	align-items: center;
+}
+
+.result__name {
+	flex: 1;
+	min-width: 0;
+	font: var(--type-h3);
+	letter-spacing: var(--tracking-display);
+	text-transform: uppercase;
+	color: var(--text-strong);
+}
+
+.result__actions {
+	display: flex;
+	flex: none;
+	align-items: center;
+	gap: 8px;
+}
+
+/* one width for «Показать», «Применить» and «Взять игру» */
+.result__action {
+	min-width: 136px;
+}
+
 .result__body {
 	display: flex;
-	flex: 1 1 420px;
 	flex-direction: column;
 	gap: 8px;
 	min-width: 0;
 }
 
+.result__body > * {
+	transition: filter 360ms var(--ease-out);
+}
+
+/* the body keeps its place under a blur, like a spoiler, so nothing jumps when it opens */
 .result__body--closed {
 	cursor: pointer;
+	user-select: none;
 }
 
-.result__head {
-	display: flex;
-	gap: 8px;
-	align-items: center;
-	align-self: flex-start;
-	max-width: 100%;
-	padding: 0;
-	font: inherit;
-	color: inherit;
-	text-align: left;
-	cursor: pointer;
-	background: none;
-	border: none;
-}
-
-.result__chevron {
-	color: var(--text-muted);
-}
-
-.result__head:hover .result__chevron {
-	color: var(--text-strong);
-}
-
-.result__name {
-	font: var(--type-h3);
-	letter-spacing: var(--tracking-display);
-	text-transform: uppercase;
-	color: var(--text-strong);
+.result__body--closed > * {
+	pointer-events: none;
+	filter: blur(8px);
 }
 
 .result__desc {
@@ -715,13 +702,6 @@ onBeforeUnmount(() => {
 	gap: 8px;
 	font: var(--type-caption);
 	color: var(--text-muted);
-}
-
-.result__actions {
-	display: flex;
-	flex: none;
-	align-items: center;
-	gap: 8px;
 }
 
 .result-enter-active {
