@@ -11,6 +11,8 @@ type Props = {
 	label?: string
 	hint?: string
 	error?: string
+	/** the choice is wrong: the border turns red, the text of the problem is elsewhere */
+	invalid?: boolean
 	options?: Option[]
 	placeholder?: string
 	/** 40px high, for dense forms */
@@ -34,7 +36,7 @@ const normalizedOptions = computed(() =>
 				v-bind="$attrs"
 				class="ui-select__control"
 				:class="{
-					'ui-select__control--error': error,
+					'ui-select__control--error': error || invalid,
 					'ui-select__control--compact': compact,
 				}"
 			>

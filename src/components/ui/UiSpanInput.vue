@@ -7,6 +7,8 @@ import UiPicker from './UiPicker.vue'
 
 type Props = {
 	label?: string
+	/** the length is wrong: the number turns red */
+	invalid?: boolean
 }
 
 defineProps<Props>()
@@ -70,7 +72,7 @@ const clear = () => {
 
 <template>
 	<div class="ui-span-input" role="group" :aria-label="label">
-		<UiInput v-model="amount" numeric aria-label="Интервал" />
+		<UiInput v-model="amount" numeric :invalid aria-label="Интервал" />
 		<UiPicker v-model="unit" :groups aria-label="Единица времени" />
 		<UiIconButton
 			type="button"

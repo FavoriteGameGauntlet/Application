@@ -5,9 +5,13 @@ import type {
 	RewardRow,
 	Rewards,
 } from '../../api-facade/contracts'
-import type { FormRow } from '../../components/formDialog'
-import { changeRowsToForm, parseChangeRows } from '../../utils/formRows'
-import { useToastStore } from '../../stores/toastStore'
+import type { FormProblem, FormRow } from '../../components/formDialog'
+import {
+	changeRowsToForm,
+	parseChangeRows,
+	parsedRows,
+	problemOf,
+} from '../../utils/formRows'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiIconButton from '../../components/ui/UiIconButton.vue'
 import UiInput from '../../components/ui/UiInput.vue'
@@ -21,8 +25,6 @@ type Block = keyof Rewards
 
 const catalogStore = useAdminCatalogStore()
 const settingsStore = useAdminSettingsStore()
-
-const toastStore = useToastStore()
 
 /** the rows as the admin types them */
 const draft = reactive<Record<Block, FormRow[]>>({
@@ -61,6 +63,20 @@ const blocks = computed<{ key: Block; title: string }[]>(() => [
 	{ key: 'game_rerolled', title: 'За перекрут игры' },
 ])
 
+/** what is wrong in the rows of each block; a block with a problem does not save */
+const problems = computed(
+	() =>
+		Object.fromEntries(
+			blocks.value.map(({ key }) => [
+				key,
+				problemOf(parseChangeRows(draft[key])),
+			]),
+		) as Record<Block, FormProblem | undefined>,
+)
+
+const isWrong = (key: Block, i: number, cell: FormProblem['cell']) =>
+	problems.value[key]?.row === i && problems.value[key]?.cell === cell
+
 const targetOptions = (kind: Kind) =>
 	targets.value[kind].map((t) => ({ value: String(t.id), label: t.name }))
 
@@ -85,15 +101,8 @@ const payload = (key: Block, rows: RewardRow[]): Rewards => ({
 })
 
 const onSave = (block: { key: Block }) => {
-	const rows = parseChangeRows(draft[block.key])
-
-	if ('error' in rows) {
-		toastStore.show('Проверь награду', rows.error, 'danger')
-		return
-	}
-
 	return settingsStore.saveRewards(
-		payload(block.key, rows.value),
+		payload(block.key, parsedRows(parseChangeRows(draft[block.key]))),
 		'Награды сохранены',
 	)
 }
@@ -142,12 +151,14 @@ onMounted(async () => {
 				<UiSelect
 					:options="targetOptions(row.kind as Kind)"
 					:model-value="row.targetId"
+					:invalid="isWrong(block.key, i, 'target')"
 					aria-label="Что"
 					@update:model-value="row.targetId = $event"
 				/>
 				<UiInput
 					v-model="row.amount"
 					inputmode="numeric"
+					:invalid="isWrong(block.key, i, 'amount')"
 					aria-label="Сколько"
 				/>
 				<UiIconButton
@@ -179,8 +190,12 @@ onMounted(async () => {
 				>
 					Убрать награду
 				</UiButton>
-				<div class="card__spacer"></div>
-				<UiButton variant="secondary" icon="check" @click="onSave(block)"
+				<span class="card__why">{{ problems[block.key]?.text }}</span>
+				<UiButton
+					variant="secondary"
+					icon="check"
+					:disabled="!!problems[block.key]"
+					@click="onSave(block)"
 					>Сохранить</UiButton
 				>
 			</div>
@@ -227,8 +242,12 @@ onMounted(async () => {
 	border-top: 1px solid var(--border-subtle);
 }
 
-.card__spacer {
+.card__why {
 	flex: 1;
+	min-width: 0;
+	font: var(--type-body-sm);
+	color: var(--danger-text);
+	text-align: right;
 }
 
 .card .card__danger {

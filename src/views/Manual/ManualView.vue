@@ -15,7 +15,6 @@ import { useManualStore } from '../../stores/manualStore'
 import { useMembersStore } from '../../stores/membersStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useSessionStore } from '../../stores/sessionStore'
-import { useToastStore } from '../../stores/toastStore'
 import { formatMoment, parseSpan } from '../../utils/format'
 import { countItems } from '../../utils/userItems'
 
@@ -37,7 +36,6 @@ const manualStore = useManualStore()
 const membersStore = useMembersStore()
 const resourcesStore = useResourcesStore()
 const sessionStore = useSessionStore()
-const toastStore = useToastStore()
 
 const draft = computed(() => manualStore.draft)
 
@@ -154,7 +152,10 @@ const outOfBounds = (row: Row, value: number) => {
 	)
 }
 
-/** what the row does to the resources of the user and why it can't be applied */
+/**
+ * what the row does to the resources of the user; `empty` names the field to
+ * fill and `error` says what is wrong (`%` stands for the number of the row)
+ */
 const calc = (row: Row) => {
 	const was = held(row)
 	const name =
@@ -171,12 +172,13 @@ const calc = (row: Row) => {
 			was: String(was),
 			now: String(now),
 			changed: was !== now,
+			empty: amount ? '' : 'количество в строке %',
 			error: !amount
-				? 'Укажи, сколько'
+				? ''
 				: row.type === 'item' && now < 0
-					? `Не хватает: ${name} у ${row.who}`
+					? `Количество в строке % должно быть не больше, чем есть у ${row.who}: ${name}`
 					: outOfBounds(row, now)
-						? `${name}: значение выходит за границы`
+						? `Значение в строке % должно быть в границах «${name}»`
 						: '',
 		}
 	}
@@ -191,14 +193,15 @@ const calc = (row: Row) => {
 		was: was ? 'есть' : 'нет',
 		now: grant ? 'есть' : 'нет',
 		changed: !!was !== grant,
+		empty: '',
 		error:
 			!grant && !was
-				? `У ${row.who} нет: ${name}`
+				? `Ресурс в строке % должен быть у ${row.who}, чтобы его забрать`
 				: row.type === 'effect' &&
 					  grant &&
 					  span &&
 					  parseSpan(span) === undefined
-					? 'Срок указан неверно'
+					? 'Срок в строке % должен быть вида «2 ч» или «1 д»'
 					: '',
 	}
 }
@@ -206,20 +209,26 @@ const calc = (row: Row) => {
 const hasAmount = (row: Row) =>
 	isNumeric(row.type) || (row.type === 'effect' && row.act === 'grant')
 
+/** only the row whose error the footer names turns red */
+const firstWrong = computed(() => rows.value.find((row) => calc(row).error))
+
 const views = computed(() =>
 	rows.value.map((row) => {
 		const result = calc(row)
-		const failed = !!result.error && (row.n !== '' || !isNumeric(row.type))
+		const failed = !!result.error && row === firstWrong.value
 
 		return {
 			row,
 			result,
 			isShared: row.type === 'shared-points',
 			hasAmount: hasAmount(row),
-			placeholder: isNumeric(row.type) ? '0' : '1 день',
+			placeholder: isNumeric(row.type) ? '0' : '1 д',
 			resources: resourceOptions(row.type),
 			actions: actionOptions(row.type),
 			tone: failed ? 'failed' : result.changed ? 'changed' : 'same',
+			// a take of what the user lacks is wrong in its action, the rest in the amount
+			wrongAct: failed && !hasAmount(row),
+			wrongAmount: failed && hasAmount(row),
 		}
 	}),
 )
@@ -267,21 +276,25 @@ const toChange = (row: Row): ManualChange => {
 	}
 }
 
-const onApply = () => {
-	if (!rows.value.length) {
-		toastStore.show('Нет изменений', 'Добавь хотя бы одно изменение.', 'danger')
-		return
+/** the first thing that keeps the form from being applied: a wrong value before an empty field */
+const why = computed(() => {
+	const at = (key: 'error' | 'empty') => {
+		const i = views.value.findIndex((v) => v.result[key])
+
+		return i < 0 ? '' : views.value[i].result[key].replace('%', String(i + 1))
 	}
+	const error = at('error')
 
-	const failed = views.value.find((v) => v.result.error)
+	if (error) return { text: error, isError: true }
+	if (!rows.value.length)
+		return { text: 'Добавьте хотя бы одно изменение', isError: false }
 
-	if (failed) {
-		toastStore.show('Проверь изменения', `${failed.result.error}.`, 'danger')
-		return
-	}
+	const empty = at('empty')
 
-	manualStore.apply(rows.value.map(toChange))
-}
+	return empty ? { text: `Заполните ${empty}`, isError: false } : undefined
+})
+
+const onApply = () => manualStore.apply(rows.value.map(toChange))
 
 watch(
 	() => rows.value.map((r) => r.who),
@@ -406,6 +419,7 @@ onMounted(async () => {
 							compact
 							label="Действие"
 							:options="view.actions"
+							:invalid="view.wrongAct"
 						/>
 						<UiInput
 							v-if="view.hasAmount"
@@ -413,6 +427,7 @@ onMounted(async () => {
 							compact
 							label="Сколько"
 							:placeholder="view.placeholder"
+							:invalid="view.wrongAmount"
 						/>
 						<div class="row__result">
 							<div class="row__preview">
@@ -444,11 +459,15 @@ onMounted(async () => {
 						<UiButton variant="ghost" size="sm" icon="plus" @click="addRow">
 							Добавить изменение
 						</UiButton>
-						<span class="card__spacer"></span>
+						<span
+							class="card__why"
+							:class="{ 'card__why--error': why?.isError }"
+							>{{ why?.text }}</span
+						>
 						<UiButton variant="outline" @click="manualStore.close()"
 							>Отмена</UiButton
 						>
-						<UiButton icon="check" @click="onApply">{{
+						<UiButton icon="check" :disabled="!!why" @click="onApply">{{
 							draft.kind === 'fix' ? 'Добавить исправление' : 'Применить'
 						}}</UiButton>
 					</div>
@@ -542,8 +561,16 @@ onMounted(async () => {
 	border-top: 1px solid var(--border-subtle);
 }
 
-.card__spacer {
+.card__why {
 	flex: 1;
+	min-width: 0;
+	font: var(--type-body-sm);
+	color: var(--text-muted);
+	text-align: right;
+}
+
+.card__why--error {
+	color: var(--danger-text);
 }
 
 .hero {

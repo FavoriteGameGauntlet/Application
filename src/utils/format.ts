@@ -88,12 +88,12 @@ export const formatBounds = (
 export const formatRemaining = (iso: ISODate) =>
 	formatSpan((Date.parse(iso) - Date.now()) / 1000)
 
-const SPAN_UNITS: [prefix: string, seconds: number][] = [
-	['д', 86_400],
-	['ч', 3_600],
-	['м', 60],
-	['с', 1],
-]
+const SPAN_UNITS: Record<string, Seconds> = {
+	д: 86_400,
+	ч: 3_600,
+	м: 60,
+	с: 1,
+}
 
 /** the units of a length typed as a number and a unit, the largest first */
 export const SPAN_STEPS: { seconds: Seconds; label: string }[] = [
@@ -112,20 +112,19 @@ export const splitSpan = (seconds: Seconds) => {
 	return { amount: seconds / step.seconds, unit: step.seconds }
 }
 
-/** «1 день», «2 ч», «1 ч 40 м» → seconds; undefined when it isn't a duration */
+/**
+ * «2 ч», «1д», «1 ч 40 м» → seconds; undefined when it isn't a duration. A unit
+ * is one letter (д, ч, м, с), so a word such as «30 мутантов» is not minutes.
+ */
 export const parseSpan = (text: string): Seconds | undefined => {
 	const value = text.trim().toLowerCase()
 
-	if (!/^(\d+\s*[а-я]+\s*)+$/.test(value)) return undefined
+	if (!/^(\d+\s*[дчмс]\s*)+$/.test(value)) return undefined
 
 	let total = 0
 
-	for (const [, amount, unit] of value.matchAll(/(\d+)\s*([а-я]+)/g)) {
-		const seconds = SPAN_UNITS.find(([prefix]) => unit.startsWith(prefix))?.[1]
-
-		if (seconds === undefined) return undefined
-
-		total += Number(amount) * seconds
+	for (const [, amount, unit] of value.matchAll(/(\d+)\s*([дчмс])/g)) {
+		total += Number(amount) * SPAN_UNITS[unit]
 	}
 
 	return total

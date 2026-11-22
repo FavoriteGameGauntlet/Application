@@ -2,7 +2,7 @@
 import { computed, onMounted } from 'vue'
 import type { CatalogOption, ChangeRow } from '../api-facade/contracts'
 import { useAdminCatalogStore } from '../stores/adminCatalogStore'
-import type { FormRow, RowsVariant } from './formDialog'
+import type { FormProblem, FormRow, RowsVariant } from './formDialog'
 import UiFormSection from './ui/UiFormSection.vue'
 import UiIconButton from './ui/UiIconButton.vue'
 import type { OptionGroup } from './ui/UiOptionList.vue'
@@ -16,9 +16,14 @@ type Props = {
 	empty?: string
 	/** the text of the "+" link */
 	addLabel?: string
+	/** what is wrong: the cell it names turns red, or the title when it names none */
+	problem?: FormProblem
 }
 
-const { variant, addLabel = 'Строка' } = defineProps<Props>()
+const { variant, addLabel = 'Строка', problem } = defineProps<Props>()
+
+const isWrong = (i: number, cell: FormProblem['cell']) =>
+	problem?.row === i && problem.cell === cell
 
 const rows = defineModel<FormRow[]>({ required: true })
 
@@ -190,6 +195,7 @@ onMounted(() => store.loadTargets())
 		:is-empty="!rows.length"
 		:add-label
 		:hint
+		:invalid="!!problem && problem.row === undefined"
 		@add="addRow"
 	>
 		<template v-if="$slots.aside" #aside>
@@ -224,6 +230,7 @@ onMounted(() => store.loadTargets())
 				/>
 				<input
 					class="rows__amount"
+					:class="{ 'rows__amount--invalid': isWrong(i, 'amount') }"
 					inputmode="numeric"
 					:value="hasAction ? absolute(row) : row.amount"
 					aria-label="Количество"
@@ -237,6 +244,7 @@ onMounted(() => store.loadTargets())
 					:panel-width="260"
 					:groups="resourceGroups"
 					:model-value="resourceOf(row)"
+					:invalid="isWrong(i, 'target')"
 					placeholder="Выбери ресурс"
 					aria-label="Ресурс"
 					@update:model-value="setResource(row, $event)"
@@ -308,5 +316,10 @@ onMounted(() => store.loadTargets())
 .rows__amount:focus {
 	border-color: var(--border-strong);
 	box-shadow: var(--shadow-focus);
+}
+
+.rows__amount--invalid,
+.rows__amount--invalid:focus {
+	border-color: var(--danger);
 }
 </style>

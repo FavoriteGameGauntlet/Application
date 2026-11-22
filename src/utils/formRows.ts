@@ -6,10 +6,22 @@ import type {
 	PointModifierRow,
 	SpinCostRow,
 } from '../api-facade/contracts'
-import type { FormRow, TriggerFormRow } from '../components/formDialog'
+import type {
+	FormProblem,
+	FormRow,
+	TriggerFormRow,
+} from '../components/formDialog'
 import { triggerFilterOf } from './perkTrigger'
 
-export type Parsed<T> = { value: T[] } | { error: string }
+export type Parsed<T> = { value: T[] } | { problem: FormProblem }
+
+/** what is wrong with the rows, for the `check` of a `rows` field */
+export const problemOf = <T>(parsed: Parsed<T>) =>
+	'problem' in parsed ? parsed.problem : undefined
+
+/** the parsed rows; a form saves only once its rows parse, so a problem gives none */
+export const parsedRows = <T>(parsed: Parsed<T>) =>
+	'value' in parsed ? parsed.value : []
 
 const formRow = (row: Partial<FormRow> & Pick<FormRow, 'kind'>): FormRow => ({
 	targetId: '',
@@ -57,12 +69,12 @@ const readAmount = (row: FormRow, signed: boolean) => {
 	return amount
 }
 
-const amountError = (row: FormRow, signed: boolean) =>
+const amountRule = (row: FormRow, signed: boolean) =>
 	isHeldOnce(row.kind)
-		? 'Перк или эффект у игрока один: нужно 1.'
+		? 'должно быть 1: перк или эффект у игрока один'
 		: signed
-			? 'Количество — целое число, не ноль. Минус забирает.'
-			: 'Количество — целое число больше нуля.'
+			? 'должно быть целым и не нулём'
+			: 'должно быть целым и больше нуля'
 
 const readTarget = (row: FormRow) => {
 	const id = Number(row.targetId)
@@ -78,18 +90,32 @@ const parseRows = <T>(
 ): Parsed<T> => {
 	const value: T[] = []
 
-	for (const row of rows) {
+	for (const [i, row] of rows.entries()) {
 		const targetId = readTarget(row)
+		const line = i + 1
 
 		if (needsTarget(row) && targetId === undefined) {
-			return { error: 'В строке не выбран ресурс.' }
+			return {
+				problem: {
+					text: `Ресурс в строке ${line} должен быть выбран`,
+					row: i,
+					cell: 'target',
+				},
+			}
 		}
 
 		// a transfer moves copies, so its amount is a plain count
 		const rowSigned = signed && row.kind !== 'user-item-transfer'
 		const amount = readAmount(row, rowSigned)
 
-		if (amount === undefined) return { error: amountError(row, rowSigned) }
+		if (amount === undefined)
+			return {
+				problem: {
+					text: `Количество в строке ${line} ${amountRule(row, rowSigned)}`,
+					row: i,
+					cell: 'amount',
+				},
+			}
 
 		value.push(build(row, targetId, amount))
 	}

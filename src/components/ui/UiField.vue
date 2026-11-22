@@ -3,6 +3,8 @@ type Props = {
 	label?: string
 	hint?: string
 	error?: string
+	/** the value is wrong: the label turns red, the text of the problem is elsewhere */
+	invalid?: boolean
 	/** a quiet label for a field inside a titled group */
 	sub?: boolean
 	/** the content is not one control (chips, buttons), so a click on the label must not reach it */
@@ -17,7 +19,10 @@ defineProps<Props>()
 		<span
 			v-if="label"
 			class="ui-field__label"
-			:class="{ 'ui-field__label--sub': sub }"
+			:class="{
+				'ui-field__label--sub': sub,
+				'ui-field__label--invalid': invalid,
+			}"
 			>{{ label }}</span
 		>
 		<slot />
@@ -52,6 +57,10 @@ defineProps<Props>()
 	letter-spacing: 0;
 	text-transform: none;
 	white-space: nowrap;
+}
+
+.ui-field__label--invalid {
+	color: var(--danger-text);
 }
 
 .ui-field__note {

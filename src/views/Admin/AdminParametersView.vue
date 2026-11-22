@@ -32,9 +32,6 @@ const rows = computed(() => {
 	)
 })
 
-/** what the admin has typed so far, to say at once why it does not fit */
-const typed = ref('')
-
 const showValue = (parameter: SystemParameter, value: string) =>
 	parameter.type === 'bool' ? (value === 'true' ? 'да' : 'нет') : value
 
@@ -42,10 +39,6 @@ const textOf = (values: FormValues) =>
 	typeof values.value === 'boolean'
 		? String(values.value)
 		: String(values.value).trim()
-
-const problem = computed(() =>
-	editing.value ? checkParameterValue(editing.value, typed.value) : undefined,
-)
 
 const fields = computed<FormField[]>(() => {
 	const parameter = editing.value
@@ -63,8 +56,12 @@ const fields = computed<FormField[]>(() => {
 			label: 'Значение',
 			numeric: true,
 			required: 'значение',
-			hint: problem.value ?? (range ? `Допустимо: ${range}.` : undefined),
-			invalid: !!problem.value,
+			hint: range ? `Допустимо: ${range}.` : undefined,
+			check: (values) => {
+				const need = checkParameterValue(parameter, textOf(values))
+
+				return need ? { text: need } : undefined
+			},
 		},
 	]
 })
@@ -77,7 +74,6 @@ const initial = computed<FormValues>(() => ({
 }))
 
 const edit = (parameter: SystemParameter) => {
-	typed.value = parameter.value
 	editing.value = parameter
 }
 
@@ -99,13 +95,6 @@ const onSave = async (values: FormValues) => {
 	const value = textOf(values)
 
 	if (!parameter) return
-
-	const wrong = checkParameterValue(parameter, value)
-
-	if (wrong) {
-		toastStore.show('Проверь значение', wrong, 'danger')
-		return
-	}
 
 	if (await store.save(parameter, value)) editing.value = undefined
 }
@@ -178,7 +167,6 @@ onMounted(async () => {
 		plain-title
 		:sections="[{ fields }]"
 		:initial
-		@change="typed = textOf($event)"
 		@close="editing = undefined"
 		@save="onSave"
 	/>

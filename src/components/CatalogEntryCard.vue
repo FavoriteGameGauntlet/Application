@@ -259,7 +259,7 @@ const units = computed(() => {
 			</section>
 
 			<section class="block">
-				<span class="label">Как писать в журнале</span>
+				<span class="label">Формы единиц</span>
 				<div class="stats stats--3">
 					<div v-for="unit in units" :key="unit.label" class="stat">
 						<span class="stat__label">{{ unit.label }}</span>

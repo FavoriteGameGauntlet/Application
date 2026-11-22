@@ -17,9 +17,11 @@ type Props = {
 	/** the avatar beside the hex field shows the color on this login */
 	login?: string
 	avatarUrl?: string | null
+	/** the hex is wrong: the field turns red, the form names the problem */
+	invalid?: boolean
 }
 
-const { label, hint, login, avatarUrl } = defineProps<Props>()
+const { label, hint, login, avatarUrl, invalid } = defineProps<Props>()
 
 /** lowercase hex once valid; the form does not save an invalid one */
 const color = defineModel<string>({ required: true })
@@ -173,7 +175,7 @@ const percent = (value: number) => `${Math.round(value * 100)}%`
 					:model-value="text"
 					placeholder="#ffb000"
 					aria-label="Цвет в hex"
-					:error="isValid ? undefined : 'Цвет в формате #rrggbb'"
+					:invalid
 					:hint
 					numeric
 					@update:model-value="onType"

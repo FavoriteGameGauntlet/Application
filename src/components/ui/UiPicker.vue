@@ -11,6 +11,8 @@ type Props = {
 	groups: OptionGroup[]
 	label?: string
 	hint?: string
+	/** the choice is wrong: the border turns red, the text of the problem is elsewhere */
+	invalid?: boolean
 	/** a quiet label for a field inside a titled group */
 	sub?: boolean
 	placeholder?: string
@@ -52,7 +54,10 @@ function onClose() {
 			ref="trigger"
 			v-bind="$attrs"
 			class="ui-picker"
-			:class="[{ 'ui-picker--compact': compact }, tone && `ui-picker--${tone}`]"
+			:class="[
+				{ 'ui-picker--compact': compact, 'ui-picker--invalid': invalid },
+				tone && `ui-picker--${tone}`,
+			]"
 			type="button"
 			aria-haspopup="listbox"
 			:aria-expanded="open"
@@ -95,6 +100,11 @@ function onClose() {
 .ui-picker[aria-expanded='true'] {
 	border-color: var(--border-strong);
 	box-shadow: var(--shadow-focus);
+}
+
+.ui-picker--invalid,
+.ui-picker--invalid:focus-visible {
+	border-color: var(--danger);
 }
 
 .ui-picker--compact {
