@@ -151,7 +151,7 @@ const reviewedGame = computed(() =>
 		<div class="row row--head" role="row">
 			<span role="columnheader">{{ mine ? 'Игра' : `Игра (${user})` }}</span>
 			<span role="columnheader">Период</span>
-			<span role="columnheader" class="right">Время</span>
+			<span role="columnheader">Время</span>
 			<span role="columnheader">Статус</span>
 			<span role="columnheader">Оценка</span>
 		</div>
@@ -174,9 +174,7 @@ const reviewedGame = computed(() =>
 				<span class="period">{{ days.dates }}</span>
 				<span class="sub">{{ days.length }}</span>
 			</span>
-			<span class="num right" role="cell">{{
-				formatDuration(game.timeSpent)
-			}}</span>
+			<span class="num" role="cell">{{ formatDuration(game.timeSpent) }}</span>
 			<span class="status" role="cell">
 				<UiBadge :tone="statuses[game.endState].tone">{{
 					statuses[game.endState].label
@@ -257,10 +255,6 @@ const reviewedGame = computed(() =>
 
 .row--body:hover {
 	background: var(--surface-sunken);
-}
-
-.right {
-	text-align: right;
 }
 
 .cell {
