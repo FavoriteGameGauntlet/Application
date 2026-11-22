@@ -209,10 +209,13 @@ const calc = (row: Row) => {
 const hasAmount = (row: Row) =>
 	isNumeric(row.type) || (row.type === 'effect' && row.act === 'grant')
 
+/** only the row whose error the footer names turns red */
+const firstWrong = computed(() => rows.value.find((row) => calc(row).error))
+
 const views = computed(() =>
 	rows.value.map((row) => {
 		const result = calc(row)
-		const failed = !!result.error
+		const failed = !!result.error && row === firstWrong.value
 
 		return {
 			row,

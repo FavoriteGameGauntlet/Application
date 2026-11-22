@@ -277,13 +277,14 @@ const problems = computed(() => {
 
 		if (!text) continue
 
-		for (const key of keys) if (!found.has(key)) found.set(key, { text })
+		// one problem for all its fields, so they turn red together
+		const problem = { text }
+
+		for (const key of keys) if (!found.has(key)) found.set(key, problem)
 	}
 
 	return found
 })
-
-const problemOf = (field: FormField) => problems.value.get(field.key)
 
 const isBlocked = computed(
 	() => missing.value.length > 0 || problems.value.size > 0,
@@ -306,6 +307,13 @@ const tabItems = computed(() =>
 
 /** a wrong value comes before an empty field, and only it is red */
 const firstProblem = computed(() => problems.value.values().next().value)
+
+/** only the fields of the problem the footer names turn red */
+const problemOf = (field: FormField) => {
+	const problem = problems.value.get(field.key)
+
+	return problem && problem === firstProblem.value ? problem : undefined
+}
 
 const why = computed(() =>
 	firstProblem.value
