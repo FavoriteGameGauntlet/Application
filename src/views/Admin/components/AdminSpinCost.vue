@@ -9,13 +9,16 @@ import type {
 } from '../../../components/formDialog'
 import UiButton from '../../../components/ui/UiButton.vue'
 import { useAdminWheelStore } from '../../../stores/adminWheelStore'
-import { useToastStore } from '../../../stores/toastStore'
-import { changeRowsToForm, parseCostRows } from '../../../utils/formRows'
+import {
+	changeRowsToForm,
+	parseCostRows,
+	parsedRows,
+	problemOf,
+} from '../../../utils/formRows'
 
 const { group } = defineProps<{ group: WheelCatalogGroup }>()
 
 const store = useAdminWheelStore()
-const toastStore = useToastStore()
 
 const isEditing = ref(false)
 
@@ -27,6 +30,7 @@ const fields: FormField[] = [
 		variant: 'cost',
 		addLabel: 'Ресурс',
 		empty: 'Строк нет: прокрут бесплатный.',
+		check: (values) => problemOf(parseCostRows(values.cost as FormRow[])),
 	},
 ]
 
@@ -41,14 +45,9 @@ const initial = computed<FormValues>(() => ({
 }))
 
 const onSave = async (values: FormValues) => {
-	const parsed = parseCostRows(values.cost as FormRow[])
+	const cost = parsedRows(parseCostRows(values.cost as FormRow[]))
 
-	if ('error' in parsed) {
-		toastStore.show('Проверь цену', parsed.error, 'danger')
-		return
-	}
-
-	if (await store.saveSpinCost(group, parsed.value)) isEditing.value = false
+	if (await store.saveSpinCost(group, cost)) isEditing.value = false
 }
 </script>
 

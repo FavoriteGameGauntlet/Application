@@ -18,15 +18,18 @@ import UiRowMenu, { type RowMenuItem } from '../../components/ui/UiRowMenu.vue'
 import UiSwitch from '../../components/ui/UiSwitch.vue'
 import { useAdminCatalogStore } from '../../stores/adminCatalogStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
-import { useToastStore } from '../../stores/toastStore'
 import { applyModeFacts, applyModeOptions } from '../../utils/applyMode'
 import { formatResource } from '../../utils/formatResource'
-import { changeRowsToForm, parseCostRows } from '../../utils/formRows'
+import {
+	changeRowsToForm,
+	parseCostRows,
+	parsedRows,
+	problemOf,
+} from '../../utils/formRows'
 import AdminListHeader from './components/AdminListHeader.vue'
 
 const store = useAdminCatalogStore()
 const resourcesStore = useResourcesStore()
-const toastStore = useToastStore()
 
 /** the exchange that the dialog edits; `{}` is a new one, undefined means the dialog is closed */
 const editing = ref<{ exchange?: AdminExchange }>()
@@ -73,6 +76,8 @@ const sections = computed<FormSection[]>(() => [
 				type: 'rows',
 				variant: 'cost',
 				addLabel: 'Ресурс',
+				check: (values) =>
+					problemOf(parseCostRows(values.sourceEntries as FormRow[])),
 				aside: applies(
 					'sourceApplies',
 					'Что игрок отдаёт',
@@ -87,6 +92,8 @@ const sections = computed<FormSection[]>(() => [
 				type: 'rows',
 				variant: 'cost',
 				addLabel: 'Ресурс',
+				check: (values) =>
+					problemOf(parseCostRows(values.targetEntries as FormRow[])),
 				aside: applies(
 					'targetApplies',
 					'Что игрок получает',
@@ -180,26 +187,13 @@ const menuOf = (exchange: AdminExchange): RowMenuItem[] =>
 
 const onSave = async (values: FormValues) => {
 	const name = String(values.name).trim()
-	const sourceEntries = parseCostRows(values.sourceEntries as FormRow[])
-	const targetEntries = parseCostRows(values.targetEntries as FormRow[])
-
-	if ('error' in sourceEntries || 'error' in targetEntries) {
-		toastStore.show(
-			'Проверь стороны обмена',
-			'error' in sourceEntries
-				? sourceEntries.error
-				: (targetEntries as { error: string }).error,
-			'danger',
-		)
-		return
-	}
 
 	const input = {
 		name,
 		description: String(values.description).trim(),
-		sourceEntries: sourceEntries.value,
+		sourceEntries: parsedRows(parseCostRows(values.sourceEntries as FormRow[])),
 		sourceApplyMode: values.sourceApplies as ApplyMode,
-		targetEntries: targetEntries.value,
+		targetEntries: parsedRows(parseCostRows(values.targetEntries as FormRow[])),
 		targetApplyMode: values.targetApplies as ApplyMode,
 	}
 

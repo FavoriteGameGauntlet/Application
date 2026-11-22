@@ -74,6 +74,12 @@ export type FormField = {
 	optional?: boolean
 	/** the form does not save without it; the noun that the footer names ("название") */
 	required?: string
+	/**
+	 * what is wrong with the value as the footer names it after «Нужно»
+	 * ("целое число больше нуля"), checked after every edit while the field is
+	 * shown; the field turns red and the form does not save
+	 */
+	check?: (values: FormValues) => FormProblem | undefined
 	/** `required` does not count while the `check` field `key` is `is`: the field is one of two ways to fill the form */
 	requiredUnless?: { key: string; is: string | boolean }
 	/** a digits-only line in the mono face */
@@ -88,6 +94,25 @@ export type FormField = {
 	avatarUrl?: string | null
 	/** the field is shown only while the `check` field `key` is `is`, or the `line`, `select`, `choice` or `segment` field holds `is` */
 	when?: { key: string; is: string | boolean }
+}
+
+/**
+ * What is wrong in a field, as the footer names it after «Нужно». In a `rows`
+ * field `row` (from 0) and `cell` say where, and only that cell turns red.
+ */
+export type FormProblem = {
+	text: string
+	row?: number
+	cell?: 'target' | 'amount'
+}
+
+/**
+ * A rule over several fields (the minimum is not above the maximum): while
+ * `check` names a problem, every shown field of `fields` turns red.
+ */
+export type FormCheck = {
+	fields: string[]
+	check: (values: FormValues) => string | undefined
 }
 
 /**
@@ -107,7 +132,7 @@ export type FormSection = {
 /**
  * A tab of a form. The tab is shown while its `when` holds; the bar is shown
  * while there is more than one tab. A red dot on the tab means that a shown
- * field of it with `required` is empty.
+ * field of it with `required` is empty or a shown field of it has a problem.
  */
 export type FormTab = {
 	key: string

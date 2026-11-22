@@ -68,15 +68,16 @@ const startEdit = (game: WishlistEntry) => {
 	editingName.value = game.name
 }
 
+/** an empty name is not saved: the field turns red and the button says why */
+const isNameEmpty = computed(() => !editingName.value.trim())
+
 const saveEdit = async () => {
 	const id = editingId.value
-	const name = editingName.value.trim()
+
+	if (id === undefined || isNameEmpty.value) return
 
 	editingId.value = undefined
-
-	if (id !== undefined && name) {
-		await wishlistStore.rename(id, name)
-	}
+	await wishlistStore.rename(id, editingName.value.trim())
 }
 
 const onEditKeydown = (event: KeyboardEvent) => {
@@ -235,13 +236,15 @@ const onAdd = async () => {
 					v-model="editingName"
 					compact
 					auto-focus
+					:invalid="isNameEmpty"
 					aria-label="Название игры"
 					@keydown="onEditKeydown"
 				/>
 				<UiIconButton
 					icon="check"
 					size="sm"
-					label="Сохранить"
+					:label="isNameEmpty ? 'Нужно название' : 'Сохранить'"
+					:disabled="isNameEmpty"
 					@click="saveEdit"
 				/>
 				<UiIconButton

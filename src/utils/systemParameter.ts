@@ -3,28 +3,26 @@ import type { SystemParameter } from '../api-facade/contracts'
 /** the wheel needs a middle item, which the bounds of the backend cannot say */
 const ODD_PARAMETER_CODE = 'MinimumAvailableWheelEffectsForRoll'
 
-/** the text of what is wrong with the value, or nothing when it can be sent */
+/** what the value needs, as a form names it after «Нужно», or nothing when it can be sent */
 export const checkParameterValue = (
 	parameter: SystemParameter,
 	value: string,
 ): string | undefined => {
 	if (parameter.type === 'bool')
-		return value === 'true' || value === 'false'
-			? undefined
-			: 'Нужно «да» или «нет».'
+		return value === 'true' || value === 'false' ? undefined : '«да» или «нет»'
 
-	if (!/^-?\d+$/.test(value)) return 'Нужно целое число.'
+	if (!/^-?\d+$/.test(value)) return 'целое число'
 
 	const number = Number(value)
 
 	if (parameter.minValue !== null && number < parameter.minValue)
-		return `Не меньше ${parameter.minValue}.`
+		return `число не меньше ${parameter.minValue}`
 
 	if (parameter.maxValue !== null && number > parameter.maxValue)
-		return `Не больше ${parameter.maxValue}.`
+		return `число не больше ${parameter.maxValue}`
 
 	if (parameter.code === ODD_PARAMETER_CODE && number % 2 === 0)
-		return 'Нужно нечётное число.'
+		return 'нечётное число'
 
 	return undefined
 }

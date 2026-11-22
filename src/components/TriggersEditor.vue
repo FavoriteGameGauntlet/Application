@@ -18,6 +18,8 @@ type Props = {
 	label: string
 	/** the text of the "+" link */
 	addLabel?: string
+	/** the triggers break a rule of the form: the title turns red */
+	invalid?: boolean
 }
 
 const { addLabel = 'Строка' } = defineProps<Props>()
@@ -75,7 +77,7 @@ onMounted(() => store.loadTargets())
 </script>
 
 <template>
-	<UiFormSection :title="label" :add-label @add="addRow">
+	<UiFormSection :title="label" :add-label :invalid @add="addRow">
 		<div v-if="rows.length" class="triggers">
 			<span class="triggers__sub">Действие</span>
 			<span class="triggers__sub">Событие</span>

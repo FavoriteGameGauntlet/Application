@@ -312,8 +312,8 @@
 			"id": "ux-field-errors",
 			"title": "Bad UX 1 of 12 (found 2026-11-14): validation errors come as a toast after «Сохранить» instead of next to the field. Affects the catalogue window (units, numbers, bounds, uses, conditions, duration, ability), exchanges, rewards, the color of the party and member windows, the manual change and an empty wishlist name; a row error («В строке не выбран ресурс») does not say which row. Give FormDialog field validation: the field turns red, a «Нужно …» line in the footer names the problem, the button is off. Good examples already exist: the system parameters, the login of the member window, the login form.",
 			"priority": 36,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-22. Checks live in FormDialog (field check, form checks), row problems name the row and cell; rewards, manual change and wishlist rename follow the same rule on their own. eslint and vue-tsc pass. CatalogEntryDialog mounted alone in a scratch Vite page (not in the repo) and driven in Chromium: point types (units missing, min > max, start out of bounds, fractional start), items (uses 0, empty row amount), perk ability (charges without the add-charge trigger, negative charges, max 0) all turn the field red, name the problem in the footer and turn the button off. Not checked: the running app against the backend; exchanges, wheel, spin cost, parameters, rewards, manual change and wishlist were checked only by types and lint."
 		},
 		{
 			"id": "ux-one-rows-editor",

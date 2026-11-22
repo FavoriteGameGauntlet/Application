@@ -15,7 +15,6 @@ import { useManualStore } from '../../stores/manualStore'
 import { useMembersStore } from '../../stores/membersStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useSessionStore } from '../../stores/sessionStore'
-import { useToastStore } from '../../stores/toastStore'
 import { formatMoment, parseSpan } from '../../utils/format'
 import { countItems } from '../../utils/userItems'
 
@@ -37,7 +36,6 @@ const manualStore = useManualStore()
 const membersStore = useMembersStore()
 const resourcesStore = useResourcesStore()
 const sessionStore = useSessionStore()
-const toastStore = useToastStore()
 
 const draft = computed(() => manualStore.draft)
 
@@ -154,7 +152,7 @@ const outOfBounds = (row: Row, value: number) => {
 	)
 }
 
-/** what the row does to the resources of the user and why it can't be applied */
+/** what the row does to the resources of the user and what it needs before it can be applied, after «Нужно» */
 const calc = (row: Row) => {
 	const was = held(row)
 	const name =
@@ -171,12 +169,12 @@ const calc = (row: Row) => {
 			was: String(was),
 			now: String(now),
 			changed: was !== now,
-			error: !amount
-				? 'Укажи, сколько'
+			need: !amount
+				? 'количество'
 				: row.type === 'item' && now < 0
-					? `Не хватает: ${name} у ${row.who}`
+					? `не больше, чем есть у ${row.who}: ${name}`
 					: outOfBounds(row, now)
-						? `${name}: значение выходит за границы`
+						? `значение в границах «${name}»`
 						: '',
 		}
 	}
@@ -191,14 +189,14 @@ const calc = (row: Row) => {
 		was: was ? 'есть' : 'нет',
 		now: grant ? 'есть' : 'нет',
 		changed: !!was !== grant,
-		error:
+		need:
 			!grant && !was
-				? `У ${row.who} нет: ${name}`
+				? `«${name}» у ${row.who}, чтобы забрать`
 				: row.type === 'effect' &&
 					  grant &&
 					  span &&
 					  parseSpan(span) === undefined
-					? 'Срок указан неверно'
+					? 'срок вида «2 ч» или «1 день»'
 					: '',
 	}
 }
@@ -209,7 +207,7 @@ const hasAmount = (row: Row) =>
 const views = computed(() =>
 	rows.value.map((row) => {
 		const result = calc(row)
-		const failed = !!result.error && (row.n !== '' || !isNumeric(row.type))
+		const failed = !!result.need && (row.n !== '' || !isNumeric(row.type))
 
 		return {
 			row,
@@ -220,6 +218,9 @@ const views = computed(() =>
 			resources: resourceOptions(row.type),
 			actions: actionOptions(row.type),
 			tone: failed ? 'failed' : result.changed ? 'changed' : 'same',
+			// a take of what the user lacks is wrong in its action, the rest in the amount
+			wrongAct: failed && !hasAmount(row),
+			wrongAmount: failed && hasAmount(row),
 		}
 	}),
 )
@@ -267,21 +268,16 @@ const toChange = (row: Row): ManualChange => {
 	}
 }
 
-const onApply = () => {
-	if (!rows.value.length) {
-		toastStore.show('Нет изменений', 'Добавь хотя бы одно изменение.', 'danger')
-		return
-	}
+/** what the form needs before it can be applied, the first problem only */
+const why = computed(() => {
+	if (!rows.value.length) return 'Нужно хотя бы одно изменение'
 
-	const failed = views.value.find((v) => v.result.error)
+	const i = views.value.findIndex((v) => v.result.need)
 
-	if (failed) {
-		toastStore.show('Проверь изменения', `${failed.result.error}.`, 'danger')
-		return
-	}
+	return i < 0 ? '' : `Нужно в строке ${i + 1}: ${views.value[i].result.need}`
+})
 
-	manualStore.apply(rows.value.map(toChange))
-}
+const onApply = () => manualStore.apply(rows.value.map(toChange))
 
 watch(
 	() => rows.value.map((r) => r.who),
@@ -406,6 +402,7 @@ onMounted(async () => {
 							compact
 							label="Действие"
 							:options="view.actions"
+							:invalid="view.wrongAct"
 						/>
 						<UiInput
 							v-if="view.hasAmount"
@@ -413,6 +410,7 @@ onMounted(async () => {
 							compact
 							label="Сколько"
 							:placeholder="view.placeholder"
+							:invalid="view.wrongAmount"
 						/>
 						<div class="row__result">
 							<div class="row__preview">
@@ -444,11 +442,11 @@ onMounted(async () => {
 						<UiButton variant="ghost" size="sm" icon="plus" @click="addRow">
 							Добавить изменение
 						</UiButton>
-						<span class="card__spacer"></span>
+						<span class="card__why">{{ why }}</span>
 						<UiButton variant="outline" @click="manualStore.close()"
 							>Отмена</UiButton
 						>
-						<UiButton icon="check" @click="onApply">{{
+						<UiButton icon="check" :disabled="!!why" @click="onApply">{{
 							draft.kind === 'fix' ? 'Добавить исправление' : 'Применить'
 						}}</UiButton>
 					</div>
@@ -542,8 +540,12 @@ onMounted(async () => {
 	border-top: 1px solid var(--border-subtle);
 }
 
-.card__spacer {
+.card__why {
 	flex: 1;
+	min-width: 0;
+	font: var(--type-body-sm);
+	color: var(--text-muted);
+	text-align: right;
 }
 
 .hero {

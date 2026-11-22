@@ -12,7 +12,12 @@ import type {
 	FormValues,
 } from '../../components/formDialog'
 import { applyModeOptions } from '../../utils/applyMode'
-import { changeRowsToForm, parseChangeRows } from '../../utils/formRows'
+import {
+	changeRowsToForm,
+	parseChangeRows,
+	parsedRows,
+	problemOf,
+} from '../../utils/formRows'
 import FormDialog from '../../components/FormDialog.vue'
 import InlineAddRow from '../../components/InlineAddRow.vue'
 import UiButton from '../../components/ui/UiButton.vue'
@@ -21,7 +26,6 @@ import type { RowMenuItem } from '../../components/ui/UiRowMenu.vue'
 import UiTabs from '../../components/ui/UiTabs.vue'
 import WheelEntryTable from '../../components/WheelEntryTable.vue'
 import { useAdminWheelStore } from '../../stores/adminWheelStore'
-import { useToastStore } from '../../stores/toastStore'
 import AdminWheelGroupCard from './components/AdminWheelGroupCard.vue'
 import AdminWheelGroups from './components/AdminWheelGroups.vue'
 
@@ -31,7 +35,6 @@ type Dialog = { entry?: WheelCatalogEntry }
 type Confirm = { title: string; text: string; run: () => void }
 
 const store = useAdminWheelStore()
-const toastStore = useToastStore()
 
 const tabs = [
 	{ value: 'changes', label: 'Пункты' },
@@ -103,6 +106,8 @@ const sections = computed<FormSection[]>(() => {
 					type: 'rows',
 					variant: 'change',
 					addLabel: 'Действие',
+					check: (values) =>
+						problemOf(parseChangeRows(values.entries as FormRow[])),
 				},
 				{
 					key: 'isManualChange',
@@ -167,20 +172,15 @@ const onSave = async (values: FormValues) => {
 	if (!group.value) return
 
 	const entries = isChanges.value
-		? parseChangeRows(values.entries as FormRow[])
-		: { value: [] }
-
-	if ('error' in entries) {
-		toastStore.show('Проверь изменения', entries.error, 'danger')
-		return
-	}
+		? parsedRows(parseChangeRows(values.entries as FormRow[]))
+		: []
 
 	const isManualChange = isChanges.value && values.isManualChange === true
 
 	const input = {
 		name,
 		description,
-		entries: entries.value,
+		entries,
 		isManualChange,
 		applyMode: values.applies as ApplyMode,
 	}

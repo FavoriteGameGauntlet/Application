@@ -25,7 +25,9 @@ import UiTag from './ui/UiTag.vue'
 import UiTextarea from './ui/UiTextarea.vue'
 import { isMemberColor } from '../utils/memberColor'
 import type {
+	FormCheck,
 	FormField,
+	FormProblem,
 	FormRow,
 	FormSection,
 	FormTab,
@@ -42,6 +44,8 @@ type Props = {
 	plainTitle?: boolean
 	sections: FormSection[]
 	tabs?: FormTab[]
+	/** the rules over several fields */
+	checks?: FormCheck[]
 	/** values that the form opens with */
 	initial: FormValues
 	/** the text of the main button */
@@ -54,6 +58,7 @@ const {
 	open,
 	sections,
 	tabs = [],
+	checks = [],
 	initial,
 	submitLabel = 'Сохранить',
 	width: fixedWidth,
@@ -239,35 +244,74 @@ const missingIn = (inSections: FormSection[]) => [
 
 const missing = computed(() => missingIn(sections))
 
-/** a color field shows its own error, so the footer names nothing for it */
-const hasWrongColor = computed(() =>
-	sections
+/** an empty required field is named as missing, not as wrong */
+const ownProblem = (
+	field: FormField,
+	values: FormValues,
+): FormProblem | undefined => {
+	if (field.required && !isFilled(field)) return undefined
+	if (field.type === 'color' && !isMemberColor(texts[field.key] ?? ''))
+		return { text: 'цвет в формате #rrggbb' }
+
+	return field.check?.(values)
+}
+
+/** the problems of the shown fields by key, in the order of the fields; a field has one */
+const problems = computed(() => {
+	const values = valuesNow()
+	const shown = sections
 		.filter(inShownTab)
-		.flatMap((s) => s.fields)
-		.some(
-			(f) =>
-				f.type === 'color' && isShown(f) && !isMemberColor(texts[f.key] ?? ''),
-		),
-)
+		.flatMap(fieldsOf)
+		.filter((f) => isShown(f) && isStarted(f))
+	const found = new Map<string, FormProblem>()
+
+	for (const field of shown) {
+		const problem = ownProblem(field, values)
+
+		if (problem) found.set(field.key, problem)
+	}
+
+	for (const rule of checks) {
+		const keys = rule.fields.filter((key) => shown.some((f) => f.key === key))
+		const text = keys.length ? rule.check(values) : undefined
+
+		if (!text) continue
+
+		for (const key of keys) if (!found.has(key)) found.set(key, { text })
+	}
+
+	return found
+})
+
+const problemOf = (field: FormField) => problems.value.get(field.key)
 
 const isBlocked = computed(
-	() => missing.value.length > 0 || hasWrongColor.value,
+	() => missing.value.length > 0 || problems.value.size > 0,
 )
 
-/** the tabs with something still to fill, as the bar shows them */
+/** the tabs with something still to fill or to fix, as the bar shows them */
 const tabItems = computed(() =>
-	visibleTabs.value.map((t) => ({
-		value: t.key,
-		label: t.label,
-		mark: missingIn(sections.filter((s) => tabOf(s) === t.key)).length > 0,
-	})),
+	visibleTabs.value.map((t) => {
+		const inTab = sections.filter((s) => tabOf(s) === t.key)
+
+		return {
+			value: t.key,
+			label: t.label,
+			mark:
+				missingIn(inTab).length > 0 ||
+				inTab.flatMap(fieldsOf).some((f) => problems.value.has(f.key)),
+		}
+	}),
 )
 
-const why = computed(() =>
-	missing.value.length
-		? `${missing.value.length > 1 ? 'Нужны' : 'Нужно'} ${joinNouns(missing.value)}`
-		: '',
-)
+const why = computed(() => {
+	if (missing.value.length)
+		return `${missing.value.length > 1 ? 'Нужны' : 'Нужно'} ${joinNouns(missing.value)}`
+
+	const first = problems.value.values().next().value
+
+	return first ? `Нужно ${first.text}` : ''
+})
 
 /** a field that is not started yet (its section has just appeared) holds nothing */
 const valuesNow = () => {
@@ -419,10 +463,12 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 									:label="field.label"
 									:sub="!!section.columns"
 									:hint="field.hint"
+									:invalid="!!problemOf(field)"
 								>
 									<UiSpanInput
 										v-model="texts[field.key]"
 										:label="field.label"
+										:invalid="!!problemOf(field)"
 									/>
 								</UiField>
 
@@ -443,6 +489,7 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 									:hint="field.hint"
 									:empty="field.empty"
 									:add-label="field.addLabel"
+									:problem="problemOf(field)"
 								>
 									<template v-if="field.aside" #aside>
 										<UiSegmented
@@ -459,6 +506,7 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 									v-model="triggerLists[field.key]"
 									:label="field.label"
 									:add-label="field.addLabel"
+									:invalid="!!problemOf(field)"
 								/>
 
 								<UiField
@@ -466,6 +514,7 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 									group
 									:label="field.label"
 									:hint="field.hint"
+									:invalid="!!problemOf(field)"
 								>
 									<UiPickChips
 										v-model="lists[field.key]"
@@ -502,6 +551,7 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 									group
 									:label="field.label"
 									:hint="field.hint"
+									:invalid="!!problemOf(field)"
 								>
 									<UiChoiceChips
 										v-model="texts[field.key]"
@@ -571,6 +621,7 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 										:sub="!!section.columns"
 										:groups="groupsOf(field)"
 										:hint="field.hint"
+										:invalid="!!problemOf(field)"
 									/>
 
 									<UiInput
@@ -582,6 +633,7 @@ const ratingOf = (key: string) => Number(texts[key]) || 0
 										:placeholder="field.placeholder"
 										:hint="field.hint"
 										:error="field.error"
+										:invalid="!!problemOf(field)"
 									/>
 								</div>
 							</div>

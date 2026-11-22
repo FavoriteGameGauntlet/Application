@@ -9,6 +9,8 @@ type Props = {
 	/** the text of the quiet "+" link under the content */
 	addLabel?: string
 	hint?: string
+	/** something in the section is wrong: the title turns red */
+	invalid?: boolean
 }
 
 defineProps<Props>()
@@ -19,7 +21,13 @@ const emit = defineEmits<{ add: [] }>()
 <template>
 	<section class="ui-form-section">
 		<div v-if="title || $slots.aside" class="ui-form-section__head">
-			<h3 v-if="title" class="ui-form-section__title">{{ title }}</h3>
+			<h3
+				v-if="title"
+				class="ui-form-section__title"
+				:class="{ 'ui-form-section__title--invalid': invalid }"
+			>
+				{{ title }}
+			</h3>
 			<div v-if="$slots.aside" class="ui-form-section__aside">
 				<slot name="aside" />
 			</div>
@@ -60,6 +68,10 @@ const emit = defineEmits<{ add: [] }>()
 	letter-spacing: var(--tracking-label);
 	text-transform: uppercase;
 	color: var(--text-muted);
+}
+
+.ui-form-section__title--invalid {
+	color: var(--danger-text);
 }
 
 .ui-form-section__note {

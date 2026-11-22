@@ -15,6 +15,8 @@ type Props = {
 	label?: string
 	hint?: string
 	error?: string
+	/** the value is wrong: the border turns red, the text of the problem is elsewhere */
+	invalid?: boolean
 	icon?: string
 	disabled?: boolean
 	autoFocus?: boolean
@@ -51,7 +53,7 @@ onMounted(() => {
 		<span
 			class="ui-input"
 			:class="{
-				'ui-input--error': error,
+				'ui-input--error': error || invalid,
 				'ui-input--disabled': disabled,
 				'ui-input--compact': compact,
 				'ui-input--numeric': numeric,
