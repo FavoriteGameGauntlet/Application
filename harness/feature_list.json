@@ -480,8 +480,8 @@
 			"id": "wheel-special-actions",
 			"title": "Testers: «Реализовать специальные действия во всех местах», part 1 (user chose wheel and manual change). The rows «Когда выпал» of a wheel entry get the column «Кто» and the actions «Копирует», «Удаляет», «Передаёт» of a player-picked item, as the item entries have; the wheel result asks which copies and which player. Rewards and exchanges stay without them: nobody picks there. Needs fgg-database and fgg-server first.",
 			"priority": 59,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-22. The wheel item form has the column «Кто» and the actions on a picked copy; applying a wheel item that needs a choice, players or copies opens UseDialog (moved to components) with «Применить», SpinEntriesDialog is gone; a copy picked for an entry is not offered for the cost. eslint and vue-tsc pass. Needs FavoriteGameGauntlet/Server#231. Not checked: the running app against the backend (pending the user)."
 		},
 		{
 			"id": "manual-special-actions",

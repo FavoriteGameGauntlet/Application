@@ -13,8 +13,8 @@ import type {
 } from '../../components/formDialog'
 import { applyModeOptions } from '../../utils/applyMode'
 import {
-	changeRowsToForm,
-	parseChangeRows,
+	itemEntriesToForm,
+	parseItemEntries,
 	parsedRows,
 	problemOf,
 } from '../../utils/formRows'
@@ -102,10 +102,10 @@ const sections = computed<FormSection[]>(() => {
 					key: 'entries',
 					label: '',
 					type: 'rows',
-					variant: 'change',
+					variant: 'item-entry',
 					addLabel: 'Действие',
 					check: (values) =>
-						problemOf(parseChangeRows(values.entries as FormRow[])),
+						problemOf(parseItemEntries(values.entries as FormRow[])),
 				},
 				{
 					key: 'isManualChange',
@@ -135,7 +135,7 @@ const initial = computed<FormValues>(() => {
 	if (current?.entry) {
 		values.name = current.entry.name
 		values.description = current.entry.description ?? ''
-		values.entries = changeRowsToForm(current.entry.entries)
+		values.entries = itemEntriesToForm(current.entry.entries)
 		values.isManualChange = current.entry.isManualChange
 		values.applies = current.entry.applyMode
 	}
@@ -170,7 +170,7 @@ const onSave = async (values: FormValues) => {
 	if (!group.value) return
 
 	const entries = isChanges.value
-		? parsedRows(parseChangeRows(values.entries as FormRow[]))
+		? parsedRows(parseItemEntries(values.entries as FormRow[]))
 		: []
 
 	const isManualChange = isChanges.value && values.isManualChange === true

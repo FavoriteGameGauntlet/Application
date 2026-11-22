@@ -18,7 +18,7 @@ import { useResourcesStore } from '../../../stores/resourcesStore'
 import { useSessionStore } from '../../../stores/sessionStore'
 import { formatRemaining } from '../../../utils/format'
 import { needsUseForm } from '../../../utils/itemUse'
-import UseDialog, { type UseSubject } from './UseDialog.vue'
+import UseDialog, { type UseSubject } from '../../../components/UseDialog.vue'
 
 type Props = {
 	kind: ResourceKind

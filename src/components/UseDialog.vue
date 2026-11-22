@@ -6,18 +6,14 @@ import type {
 	ItemEntryRow,
 	ItemUse,
 	Login,
-} from '../../../api-facade/contracts'
-import FormDialog from '../../../components/FormDialog.vue'
-import type {
-	FormField,
-	FormSection,
-	FormValues,
-} from '../../../components/formDialog'
-import { useMembersStore } from '../../../stores/membersStore'
-import { useResourcesStore } from '../../../stores/resourcesStore'
-import { useSessionStore } from '../../../stores/sessionStore'
-import { picksEntries, pickLimit } from '../../../utils/applyMode'
-import { formatUsesLeft } from '../../../utils/formatResource'
+} from '../api-facade/contracts'
+import FormDialog from './FormDialog.vue'
+import type { FormField, FormSection, FormValues } from './formDialog'
+import { useMembersStore } from '../stores/membersStore'
+import { useResourcesStore } from '../stores/resourcesStore'
+import { useSessionStore } from '../stores/sessionStore'
+import { picksEntries, pickLimit } from '../utils/applyMode'
+import { formatUsesLeft } from '../utils/formatResource'
 import {
 	allowedTargets,
 	appliedEntries,
@@ -25,11 +21,13 @@ import {
 	isTransfer,
 	needsTargets,
 	useSlots,
-} from '../../../utils/itemUse'
+} from '../utils/itemUse'
 
-/** what is being used: an item copy or the ability of a perk */
+/** what is being used: an item copy, the ability of a perk or the item that fell on the wheel */
 export type UseSubject = {
 	title: string
+	/** the text of the main button, «Использовать» by default */
+	action?: string
 	text: string
 	entries: ItemEntryRow[]
 	applyMode: ApplyMode
@@ -402,7 +400,7 @@ watch(
 		:subtitle="subject?.text"
 		:sections
 		:initial
-		submit-label="Использовать"
+		:submit-label="subject?.action ?? 'Использовать'"
 		:width="480"
 		@close="emit('close')"
 		@save="onSave"
