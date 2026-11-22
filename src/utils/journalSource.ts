@@ -33,7 +33,7 @@ export const journalSourceParts = (
 		case 'timer_created':
 			return { kind: 'новый таймер' }
 		case 'timer_ended':
-			return { kind: 'таймер' }
+			return { kind: 'завершение таймера' }
 		case 'game_started':
 			return { kind: 'начало игры', name }
 		case 'game_ended':

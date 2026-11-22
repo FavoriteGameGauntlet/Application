@@ -275,10 +275,10 @@
 		},
 		{
 			"id": "history-paging",
-			"title": "The history tab loads older events as the user scrolls down. Today only the last 20 events show. HistoryTab reads one page with the default limit of 20 and ignores nextCursor of GET history.",
+			"title": "Load older history events, filter by period, and show counts by day",
 			"priority": 31,
-			"status": "todo",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-22. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "timer-end-sound",
@@ -405,6 +405,13 @@
 			"priority": 49,
 			"status": "done",
 			"evidence": "Done 2026-11-21. Full record: harness/archive/features-done.json"
+		},
+		{
+			"id": "history-timer-ended-label",
+			"title": "Label timer completion explicitly in the journal",
+			"priority": 50,
+			"status": "done",
+			"evidence": "Done 2026-11-22. Full record: harness/archive/features-done.json"
 		}
 	]
 }
