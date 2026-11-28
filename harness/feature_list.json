@@ -1,6 +1,13 @@
 {
 	"features": [
 		{
+			"id": "manual-effect-remove-duration",
+			"title": "Remove the ineffective duration field from manual effect grants",
+			"priority": 64,
+			"status": "in_progress",
+			"evidence": ""
+		},
+		{
 			"id": "effect-end-changes",
 			"title": "Configure changes on effect completion and offer manual changes from removal history",
 			"priority": 63,
