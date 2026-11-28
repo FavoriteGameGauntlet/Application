@@ -21,6 +21,14 @@ type FixDraft = {
 	user: Login
 }
 
+type EffectEndDraft = {
+	kind: 'effect-end'
+	entry: JournalEntry
+	changeIndex: number
+	user: Login
+	name: string
+}
+
 type WheelDraft = {
 	kind: 'wheel'
 	name: string
@@ -50,7 +58,12 @@ export type ManualRow = {
 	n: string
 }
 
-type ManualSource = FixDraft | WheelDraft | UseDraft | FreeDraft
+type ManualSource =
+	| FixDraft
+	| WheelDraft
+	| UseDraft
+	| FreeDraft
+	| EffectEndDraft
 
 /** Keep incomplete input as text so navigation preserves exactly what was entered. */
 export type ManualDraft = ManualSource & {
@@ -96,10 +109,14 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 	})
 
 	const setDraft = (source: ManualSource) => {
+		const user =
+			source.kind === 'fix' || source.kind === 'effect-end'
+				? source.user
+				: useSessionStore().login
 		draft.value = {
 			...source,
-			rows: source.kind === 'fix' ? [] : [newRow(useSessionStore().login)],
-			panelUser: source.kind === 'fix' ? source.user : useSessionStore().login,
+			rows: source.kind === 'fix' ? [] : [newRow(user)],
+			panelUser: user,
 		}
 	}
 
@@ -135,6 +152,35 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 		await router.push({ name: RouteName.Manual })
 	}
 
+	const startEffectEnd = async (entry: JournalEntry, changeIndex: number) => {
+		const change = entry.changes[changeIndex]
+		if (
+			!canAccess.value ||
+			!change?.isManualChange ||
+			!change.login ||
+			change.resource?.kind !== 'effect'
+		)
+			return
+		if (
+			draft.value?.kind === 'effect-end' &&
+			draft.value.entry.id === entry.id &&
+			draft.value.changeIndex === changeIndex
+		) {
+			await router.push({ name: RouteName.Manual })
+			return
+		}
+		if (!(await confirmReplacement()) || !canAccess.value) return
+
+		setDraft({
+			kind: 'effect-end',
+			entry,
+			changeIndex,
+			user: change.login,
+			name: change.resource.name,
+		})
+		await router.push({ name: RouteName.Manual })
+	}
+
 	const startWheel = async (spin: Omit<WheelDraft, 'kind'>) => {
 		if (!canAccess.value) return
 
@@ -167,6 +213,7 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 
 		switch (current?.kind) {
 			case 'fix':
+			case 'effect-end':
 				await router.push({
 					name: RouteName.Resources,
 					params: { tab: 'history' },
@@ -219,6 +266,7 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 		resolveReplacement,
 		newRow,
 		startFix,
+		startEffectEnd,
 		startWheel,
 		startUse,
 		startFree,

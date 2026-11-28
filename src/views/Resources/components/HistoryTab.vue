@@ -197,6 +197,20 @@ function rowOf(entry: JournalEntry) {
 		fix: fixOf(entry),
 		changes: entry.changes.map((c) => ({ ...c, tone: toneOf(c.text) })),
 		menu: [
+			...entry.changes.flatMap((change, i) =>
+				manualStore.canAccess &&
+				change.isManualChange &&
+				change.login &&
+				change.resource?.kind === 'effect'
+					? [
+							{
+								label: change.resource.name,
+								icon: 'pencil',
+								select: () => manualStore.startEffectEnd(entry, i),
+							},
+						]
+					: [],
+			),
 			{
 				label: 'Исправить',
 				icon: 'pencil',

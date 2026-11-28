@@ -20,6 +20,7 @@ type HistoryChangeDto = {
 	receiverLogin?: Login | null
 	resource: { kind: ResourceKindDto; id: number; name: string }
 	eventKind: HistoryEventKind
+	isManualChange?: boolean
 	desiredChangeValue?: number | null
 	actualChangeValue?: number | null
 	finalValue?: number | null
@@ -91,7 +92,15 @@ const toChange = (
 			? `−${label}`
 			: `${label} (использование)`
 
-	return { login, text, resource }
+	return {
+		login,
+		text,
+		resource,
+		...(kind === 'effect' &&
+			change.eventKind === 'effect_removed' && {
+				isManualChange: change.isManualChange === true,
+			}),
+	}
 }
 
 const toJournalEntry = (

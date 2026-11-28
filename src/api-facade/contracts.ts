@@ -305,6 +305,8 @@ export type JournalEntry = {
 		login: Login | null
 		text: string
 		resource?: ResourceRef
+		/** effect removal: offer a manual change to this holder */
+		isManualChange?: boolean
 		/** who got the item of a transfer; the screen shows their name after the text */
 		receiver?: Login
 	}[]
@@ -370,7 +372,6 @@ export type ManualChange =
 			kind: 'effect'
 			id: number
 			op: 'grant' | 'revoke'
-			duration?: Seconds
 	  }
 
 export type ManualRequest = {
@@ -541,6 +542,12 @@ export type PerkTrigger = {
 	exchangeName?: string | null
 }
 
+export type EffectEndChange = {
+	isManualChange: boolean
+	entries: ChangeRow[]
+	changes?: string[]
+}
+
 export type CatalogEntry = {
 	id: number
 	name: string
@@ -563,6 +570,7 @@ export type CatalogEntry = {
 	changes?: string[]
 	/** effects, null = no expiry */
 	duration?: Seconds | null
+	endChange?: EffectEndChange
 	/** items: more than zero; perks: the most uses of the ability */
 	usesMax?: number | null
 	/** perks: `active` when the perk has an ability */

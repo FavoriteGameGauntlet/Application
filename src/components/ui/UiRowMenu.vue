@@ -59,7 +59,7 @@ function pick(item: RowMenuItem) {
 			@close="isOpen = false"
 		>
 			<div role="menu" :aria-label="label" @click.stop>
-				<template v-for="(item, i) in items" :key="item.label">
+				<template v-for="(item, i) in items" :key="i">
 					<div
 						v-if="item.danger && i > 0 && !items[i - 1].danger"
 						class="ui-row-menu__sep"
