@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { api } from '../api-facade/api'
 import type { JournalEntry, Login, ManualChange } from '../api-facade/contracts'
 import { StoreName } from '../enums/storeName'
@@ -8,6 +8,7 @@ import { RouteName } from '../router/routeNames'
 import { plural } from '../utils/plural'
 import { useJournalStore } from './journalStore'
 import { useMembersStore } from './membersStore'
+import { useParametersStore } from './parametersStore'
 import { useResourcesStore } from './resourcesStore'
 import { useSessionStore } from './sessionStore'
 import { useToastStore } from './toastStore'
@@ -35,7 +36,7 @@ type UseDraft = {
 	description: string
 }
 
-/** an admin changes the resources of the party with no reason from the wheel or the journal */
+/** a member changes resources with no reason from the wheel or the journal */
 type FreeDraft = {
 	kind: 'free'
 }
@@ -45,8 +46,17 @@ export type ManualDraft = FixDraft | WheelDraft | UseDraft | FreeDraft
 
 export const useManualStore = defineStore(StoreName.Manual, () => {
 	const draft = ref<ManualDraft | null>(null)
+	const canAccess = computed(
+		() =>
+			useSessionStore().isAdmin ||
+			useParametersStore().parameters.some(
+				(p) => p.code === 'GrantsAdminOnly' && p.value === 'false',
+			),
+	)
 
 	const startFix = async (entry: JournalEntry) => {
+		if (!canAccess.value) return
+
 		const logins = useMembersStore().users.map((p) => p.login)
 		const actor = logins.includes(entry.actor) ? entry.actor : undefined
 		const affected = entry.changes.find(
@@ -63,18 +73,24 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 	}
 
 	const startWheel = async (spin: Omit<WheelDraft, 'kind'>) => {
+		if (!canAccess.value) return
+
 		draft.value = { kind: 'wheel', ...spin }
 
 		await router.push({ name: RouteName.Manual })
 	}
 
 	const startUse = async (use: Omit<UseDraft, 'kind'>) => {
+		if (!canAccess.value) return
+
 		draft.value = { kind: 'use', ...use }
 
 		await router.push({ name: RouteName.Manual })
 	}
 
 	const startFree = async () => {
+		if (!canAccess.value) return
+
 		draft.value = { kind: 'free' }
 
 		await router.push({ name: RouteName.Manual })
@@ -100,7 +116,7 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 				})
 				break
 			case 'free':
-				await router.push({ name: RouteName.Admin })
+				await router.push({ name: RouteName.Home })
 				break
 			default:
 				await router.push({ name: RouteName.Wheel })
@@ -111,7 +127,7 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 		const current = draft.value
 		const toast = useToastStore()
 
-		if (!current) return
+		if (!current || !canAccess.value) return
 
 		try {
 			await api.manual.apply({
@@ -132,5 +148,14 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 		}
 	}
 
-	return { draft, startFix, startWheel, startUse, startFree, close, apply }
+	return {
+		draft,
+		canAccess,
+		startFix,
+		startWheel,
+		startUse,
+		startFree,
+		close,
+		apply,
+	}
 })

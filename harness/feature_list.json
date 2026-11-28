@@ -487,8 +487,8 @@
 			"id": "manual-change-all-members",
 			"title": "Open manual changes from the party sidebar for members allowed by GrantsAdminOnly and reduce divider spacing",
 			"priority": 61,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-28. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "manual-special-actions",

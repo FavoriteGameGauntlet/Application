@@ -44,7 +44,7 @@ const parentLabel = computed(() => {
 		case 'fix':
 			return 'История'
 		case 'free':
-			return 'Панель админа'
+			return 'Главная'
 		case 'use':
 			return draft.value.source === 'items' ? 'Предметы' : 'Перки'
 		default:
@@ -323,7 +323,7 @@ onMounted(async () => {
 	const current = draft.value
 
 	// the form was restored after a restart, there is nothing to change
-	if (!current) {
+	if (!current || !manualStore.canAccess) {
 		router.replace({ name: RouteName.Home })
 		return
 	}
@@ -339,10 +339,17 @@ onMounted(async () => {
 
 	if (current.kind !== 'fix') rows.value = [newRow(sessionStore.login)]
 })
+
+watch(
+	() => manualStore.canAccess,
+	(allowed) => {
+		if (!allowed) manualStore.close()
+	},
+)
 </script>
 
 <template>
-	<div v-if="draft" class="manual">
+	<div v-if="draft && manualStore.canAccess" class="manual">
 		<div class="crumbs">
 			<a @click="manualStore.close()">{{ parentLabel }}</a>
 			<span>/</span>

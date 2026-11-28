@@ -6,6 +6,7 @@ import { RouteName } from '../../router/routeNames'
 import { useCurrentGameStore } from '../../stores/currentGameStore'
 import { useMembersStore } from '../../stores/membersStore'
 import { useMiniModeStore } from '../../stores/miniModeStore'
+import { useParametersStore } from '../../stores/parametersStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useTimerStore } from '../../stores/timerStore'
@@ -23,6 +24,8 @@ usePresence()
 const isReady = ref(false)
 
 onMounted(async () => {
+	useParametersStore().parameters = []
+
 	try {
 		await useSessionStore().load()
 
@@ -32,6 +35,7 @@ onMounted(async () => {
 		}
 
 		await Promise.all([
+			useParametersStore().load(),
 			useMembersStore().load(),
 			useResourcesStore().loadPointTypes(),
 			useResourcesStore().loadMine(),
