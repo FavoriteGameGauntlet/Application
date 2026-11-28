@@ -488,14 +488,14 @@
 			"title": "Open manual changes from the party sidebar for members allowed by GrantsAdminOnly and reduce divider spacing",
 			"priority": 61,
 			"status": "done",
-			"evidence": "Done 2026-11-28. Full record: harness/archive/features-done.json"
+			"evidence": "Done 2026-11-28. Full record: harness/archive/features-done.json Checked by the user 2026-11-28: reported that everything works."
 		},
 		{
 			"id": "manual-change-draft",
 			"title": "Preserve one manual change draft across pages and confirm replacement before applying a new source action",
 			"priority": 62,
 			"status": "done",
-			"evidence": "Done 2026-11-28. Full record: harness/archive/features-done.json"
+			"evidence": "Done 2026-11-28. Full record: harness/archive/features-done.json Checked by the user 2026-11-28: reported that everything works."
 		},
 		{
 			"id": "manual-special-actions",
