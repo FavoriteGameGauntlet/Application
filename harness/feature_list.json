@@ -494,8 +494,8 @@
 			"id": "manual-change-draft",
 			"title": "Preserve one manual change draft across pages and confirm replacement before applying a new source action",
 			"priority": 62,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-28. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "manual-special-actions",

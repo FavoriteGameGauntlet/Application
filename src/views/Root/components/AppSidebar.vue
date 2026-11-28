@@ -58,25 +58,13 @@ const adminSystem: NavItem[] = [
 	},
 ]
 
-const isFreeManual = computed(
-	() => route.name === RouteName.Manual && manualStore.draft?.kind === 'free',
-)
+const isManual = computed(() => route.name === RouteName.Manual)
 
 const isAdminArea = computed(() => route.matched.some((r) => r.meta.admin))
 
-/** the manual change form belongs to the screen it was opened from */
-const manualParent = computed(() =>
-	manualStore.draft?.kind === 'fix' || manualStore.draft?.kind === 'use'
-		? RouteName.Resources
-		: RouteName.Wheel,
-)
-
 const isActive = (item: NavItem) =>
 	route.name === item.name ||
-	!!item.alsoActiveOn?.includes(route.name as RouteName) ||
-	(route.name === RouteName.Manual &&
-		!isFreeManual.value &&
-		item.name === manualParent.value)
+	!!item.alsoActiveOn?.includes(route.name as RouteName)
 </script>
 
 <template>
@@ -147,7 +135,7 @@ const isActive = (item: NavItem) =>
 			<button
 				v-if="manualStore.canAccess"
 				class="nav-item"
-				:class="{ 'nav-item--active': isFreeManual }"
+				:class="{ 'nav-item--active': isManual }"
 				type="button"
 				:title="hint('Ручное изменение')"
 				@click="manualStore.startFree()"

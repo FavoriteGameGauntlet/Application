@@ -364,6 +364,14 @@ export const useWheelStore = defineStore(StoreName.Wheel, () => {
 		pickedUse.value = undefined
 
 		try {
+			if (
+				!startsGame &&
+				applied.result.isManualChange &&
+				useManualStore().canAccess &&
+				!(await useManualStore().confirmReplacement())
+			)
+				return
+
 			await api.wheel.apply(applied.source.groupId, { ...use, payment })
 
 			result.value = null
