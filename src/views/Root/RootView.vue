@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePresence } from '../../composables/usePresence'
+import ConfirmDialog from '../../components/ConfirmDialog.vue'
 import { RouteName } from '../../router/routeNames'
 import { useCurrentGameStore } from '../../stores/currentGameStore'
+import { useManualStore } from '../../stores/manualStore'
 import { useMembersStore } from '../../stores/membersStore'
 import { useMiniModeStore } from '../../stores/miniModeStore'
+import { useParametersStore } from '../../stores/parametersStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useTimerStore } from '../../stores/timerStore'
@@ -17,12 +20,17 @@ import MiniTimer from './components/MiniTimer.vue'
 const route = useRoute()
 const router = useRouter()
 const miniModeStore = useMiniModeStore()
+const manualStore = useManualStore()
+
+onBeforeUnmount(() => manualStore.resolveReplacement(false))
 
 usePresence()
 
 const isReady = ref(false)
 
 onMounted(async () => {
+	useParametersStore().parameters = []
+
 	try {
 		await useSessionStore().load()
 
@@ -32,6 +40,7 @@ onMounted(async () => {
 		}
 
 		await Promise.all([
+			useParametersStore().load(),
 			useMembersStore().load(),
 			useResourcesStore().loadPointTypes(),
 			useResourcesStore().loadMine(),
@@ -49,6 +58,15 @@ onMounted(async () => {
 <template>
 	<template v-if="isReady">
 		<MiniTimer v-if="miniModeStore.isMini" />
+		<ConfirmDialog
+			:open="manualStore.replacing"
+			title="Заменить ручное изменение?"
+			text="Есть незавершённое ручное изменение. Если продолжить, его черновик будет заменён новым."
+			ok-label="Заменить"
+			cancel-label="Сохранить черновик"
+			@confirm="manualStore.resolveReplacement(true)"
+			@close="manualStore.resolveReplacement(false)"
+		/>
 
 		<!-- hidden, not removed, so the screen comes back as it was -->
 		<div v-show="!miniModeStore.isMini" class="layout">

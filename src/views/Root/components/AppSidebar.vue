@@ -58,26 +58,13 @@ const adminSystem: NavItem[] = [
 	},
 ]
 
-const isFreeManual = computed(
-	() => route.name === RouteName.Manual && manualStore.draft?.kind === 'free',
-)
+const isManual = computed(() => route.name === RouteName.Manual)
 
-/** the free manual change form is opened from the admin panel and keeps its sidebar */
-const isAdminArea = computed(
-	() => route.matched.some((r) => r.meta.admin) || isFreeManual.value,
-)
-
-/** the manual change form belongs to the screen it was opened from */
-const manualParent = computed(() =>
-	manualStore.draft?.kind === 'fix' || manualStore.draft?.kind === 'use'
-		? RouteName.Resources
-		: RouteName.Wheel,
-)
+const isAdminArea = computed(() => route.matched.some((r) => r.meta.admin))
 
 const isActive = (item: NavItem) =>
 	route.name === item.name ||
-	!!item.alsoActiveOn?.includes(route.name as RouteName) ||
-	(route.name === RouteName.Manual && item.name === manualParent.value)
+	!!item.alsoActiveOn?.includes(route.name as RouteName)
 </script>
 
 <template>
@@ -128,19 +115,6 @@ const isActive = (item: NavItem) =>
 				<UiIcon :name="item.icon" :size="18" />
 				<span class="label">{{ item.label }}</span>
 			</RouterLink>
-
-			<span class="divider"></span>
-
-			<button
-				class="nav-item"
-				:class="{ 'nav-item--active': isFreeManual }"
-				type="button"
-				:title="hint('Ручное изменение')"
-				@click="manualStore.startFree()"
-			>
-				<UiIcon name="pencil" :size="18" />
-				<span class="label">Ручное изменение</span>
-			</button>
 		</template>
 
 		<template v-else>
@@ -155,6 +129,20 @@ const isActive = (item: NavItem) =>
 				<UiIcon :name="item.icon" :size="18" />
 				<span class="label">{{ item.label }}</span>
 			</RouterLink>
+
+			<span v-if="manualStore.canAccess" class="divider"></span>
+
+			<button
+				v-if="manualStore.canAccess"
+				class="nav-item"
+				:class="{ 'nav-item--active': isManual }"
+				type="button"
+				:title="hint('Ручное изменение')"
+				@click="manualStore.startFree()"
+			>
+				<UiIcon name="pencil" :size="18" />
+				<span class="label">Ручное изменение</span>
+			</button>
 
 			<template v-if="sessionStore.isAdmin">
 				<span class="divider"></span>
@@ -290,7 +278,7 @@ const isActive = (item: NavItem) =>
 .divider {
 	flex: none;
 	height: 1px;
-	margin: 12px 0;
+	margin: 6px 0;
 	background: var(--border-subtle);
 }
 </style>

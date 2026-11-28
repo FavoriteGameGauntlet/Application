@@ -1,13 +1,15 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { api } from '../api-facade/api'
 import type { JournalEntry, Login, ManualChange } from '../api-facade/contracts'
 import { StoreName } from '../enums/storeName'
 import { router } from '../router/router'
 import { RouteName } from '../router/routeNames'
 import { plural } from '../utils/plural'
+import { useAuthStore } from './authStore'
 import { useJournalStore } from './journalStore'
 import { useMembersStore } from './membersStore'
+import { useParametersStore } from './parametersStore'
 import { useResourcesStore } from './resourcesStore'
 import { useSessionStore } from './sessionStore'
 import { useToastStore } from './toastStore'
@@ -35,56 +37,133 @@ type UseDraft = {
 	description: string
 }
 
-/** an admin changes the resources of the party with no reason from the wheel or the journal */
+/** a member changes resources with no reason from the wheel or the journal */
 type FreeDraft = {
 	kind: 'free'
 }
 
-/** what the manual change form is opened for */
-export type ManualDraft = FixDraft | WheelDraft | UseDraft | FreeDraft
+export type ManualRow = {
+	who: Login
+	type: ManualChange['kind']
+	resId: string
+	act: string
+	n: string
+}
+
+type ManualSource = FixDraft | WheelDraft | UseDraft | FreeDraft
+
+/** Keep incomplete input as text so navigation preserves exactly what was entered. */
+export type ManualDraft = ManualSource & {
+	rows: ManualRow[]
+	panelUser: Login
+}
 
 export const useManualStore = defineStore(StoreName.Manual, () => {
 	const draft = ref<ManualDraft | null>(null)
+	const replacing = ref(false)
+	let replacementAnswer: ((accepted: boolean) => void) | undefined
+	const canAccess = computed(
+		() =>
+			useSessionStore().isAdmin ||
+			useParametersStore().parameters.some(
+				(p) => p.code === 'GrantsAdminOnly' && p.value === 'false',
+			),
+	)
+
+	const resolveReplacement = (accepted: boolean) => {
+		const answer = replacementAnswer
+		replacementAnswer = undefined
+		replacing.value = false
+		answer?.(accepted)
+	}
+
+	const confirmReplacement = () => {
+		if (!draft.value) return Promise.resolve(true)
+		if (replacing.value) return Promise.resolve(false)
+
+		replacing.value = true
+		return new Promise<boolean>((resolve) => {
+			replacementAnswer = resolve
+		})
+	}
+
+	const newRow = (who: Login): ManualRow => ({
+		who,
+		type: 'points',
+		resId: String(useResourcesStore().personalTypes[0]?.id ?? ''),
+		act: 'plus',
+		n: '',
+	})
+
+	const setDraft = (source: ManualSource) => {
+		draft.value = {
+			...source,
+			rows: source.kind === 'fix' ? [] : [newRow(useSessionStore().login)],
+			panelUser: source.kind === 'fix' ? source.user : useSessionStore().login,
+		}
+	}
+
+	watch(
+		[() => useSessionStore().season?.id, () => useAuthStore().login],
+		() => {
+			draft.value = null
+			resolveReplacement(false)
+		},
+		{ flush: 'sync' },
+	)
 
 	const startFix = async (entry: JournalEntry) => {
+		if (!canAccess.value) return
+		if (draft.value?.kind === 'fix' && draft.value.entry.id === entry.id) {
+			await router.push({ name: RouteName.Manual })
+			return
+		}
+		if (!(await confirmReplacement())) return
+
 		const logins = useMembersStore().users.map((p) => p.login)
 		const actor = logins.includes(entry.actor) ? entry.actor : undefined
 		const affected = entry.changes.find(
 			(c) => c.login && logins.includes(c.login),
 		)?.login
 
-		draft.value = {
+		setDraft({
 			kind: 'fix',
 			entry,
 			user: actor ?? affected ?? useSessionStore().login,
-		}
+		})
 
 		await router.push({ name: RouteName.Manual })
 	}
 
 	const startWheel = async (spin: Omit<WheelDraft, 'kind'>) => {
-		draft.value = { kind: 'wheel', ...spin }
+		if (!canAccess.value) return
+
+		setDraft({ kind: 'wheel', ...spin })
 
 		await router.push({ name: RouteName.Manual })
 	}
 
 	const startUse = async (use: Omit<UseDraft, 'kind'>) => {
-		draft.value = { kind: 'use', ...use }
+		if (!canAccess.value) return
+
+		setDraft({ kind: 'use', ...use })
 
 		await router.push({ name: RouteName.Manual })
 	}
 
 	const startFree = async () => {
-		draft.value = { kind: 'free' }
+		if (!canAccess.value) return
+
+		if (!draft.value) setDraft({ kind: 'free' })
 
 		await router.push({ name: RouteName.Manual })
 	}
 
 	/** goes back to where the form was opened from */
-	const close = async () => {
+	const close = async (discard = true) => {
 		const current = draft.value
 
-		draft.value = null
+		if (discard) draft.value = null
 
 		switch (current?.kind) {
 			case 'fix':
@@ -100,7 +179,7 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 				})
 				break
 			case 'free':
-				await router.push({ name: RouteName.Admin })
+				await router.push({ name: RouteName.Home })
 				break
 			default:
 				await router.push({ name: RouteName.Wheel })
@@ -111,7 +190,7 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 		const current = draft.value
 		const toast = useToastStore()
 
-		if (!current) return
+		if (!current || !canAccess.value) return
 
 		try {
 			await api.manual.apply({
@@ -124,13 +203,26 @@ export const useManualStore = defineStore(StoreName.Manual, () => {
 				`${changes.length} ${plural(changes.length, ['изменение', 'изменения', 'изменений'])} в журнале.`,
 			)
 
+			await close()
 			await useResourcesStore().loadMine()
 			useJournalStore().bump()
-			await close()
 		} catch (e) {
 			toast.error(e)
 		}
 	}
 
-	return { draft, startFix, startWheel, startUse, startFree, close, apply }
+	return {
+		draft,
+		canAccess,
+		replacing,
+		confirmReplacement,
+		resolveReplacement,
+		newRow,
+		startFix,
+		startWheel,
+		startUse,
+		startFree,
+		close,
+		apply,
+	}
 })

@@ -97,6 +97,13 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 		const toast = useToastStore()
 
 		try {
+			if (
+				item.isManualChange &&
+				useManualStore().canAccess &&
+				!(await useManualStore().confirmReplacement())
+			)
+				return
+
 			await api.resources.useItem(item.id, use)
 			await loadMine()
 			useJournalStore().bump()
@@ -119,6 +126,13 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 		const toast = useToastStore()
 
 		try {
+			if (
+				perk.abilityIsManualChange &&
+				useManualStore().canAccess &&
+				!(await useManualStore().confirmReplacement())
+			)
+				return
+
 			await api.resources.usePerk(perk.id, use)
 			await loadMine()
 			useJournalStore().bump()

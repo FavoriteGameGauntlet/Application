@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Login, ManualChange } from '../../api-facade/contracts'
 import JournalSourceLabel from '../../components/JournalSourceLabel.vue'
@@ -11,7 +11,7 @@ import UiInput from '../../components/ui/UiInput.vue'
 import UiPageTitle from '../../components/ui/UiPageTitle.vue'
 import UiSelect from '../../components/ui/UiSelect.vue'
 import { RouteName } from '../../router/routeNames'
-import { useManualStore } from '../../stores/manualStore'
+import { useManualStore, type ManualRow as Row } from '../../stores/manualStore'
 import { useMembersStore } from '../../stores/membersStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useSessionStore } from '../../stores/sessionStore'
@@ -19,17 +19,6 @@ import { formatMoment, parseSpan } from '../../utils/format'
 import { countItems } from '../../utils/userItems'
 
 type RowType = ManualChange['kind']
-
-type Row = {
-	who: Login
-	type: RowType
-	/** id of the point type, item, perk or effect */
-	resId: string
-	/** plus / minus for points and items, grant / revoke for perks and effects */
-	act: string
-	/** the amount, the duration for an effect */
-	n: string
-}
 
 const router = useRouter()
 const manualStore = useManualStore()
@@ -44,7 +33,7 @@ const parentLabel = computed(() => {
 		case 'fix':
 			return 'История'
 		case 'free':
-			return 'Панель админа'
+			return 'Главная'
 		case 'use':
 			return draft.value.source === 'items' ? 'Предметы' : 'Перки'
 		default:
@@ -62,8 +51,13 @@ const currentLabel = computed(() => {
 		: 'Ручное изменение'
 })
 
-const rows = ref<Row[]>([])
-const panelUser = ref(sessionStore.login)
+const rows = computed(() => draft.value?.rows ?? [])
+const panelUser = computed({
+	get: () => draft.value?.panelUser ?? sessionStore.login,
+	set: (login: Login) => {
+		if (draft.value) draft.value.panelUser = login
+	},
+})
 
 const typeOptions = [
 	{ value: 'points', label: 'Очки' },
@@ -117,14 +111,6 @@ const actionOptions = (type: RowType) =>
 				{ value: 'grant', label: 'Выдать' },
 				{ value: 'revoke', label: 'Забрать' },
 			]
-
-const newRow = (who: Login): Row => ({
-	who,
-	type: 'points',
-	resId: resourceOptions('points')[0]?.value ?? '',
-	act: 'plus',
-	n: '',
-})
 
 const held = (row: Row) => {
 	const resources = resourcesStore.byUser[row.who]
@@ -252,7 +238,7 @@ const onWho = (row: Row, who: string) => {
 	panelUser.value = who
 }
 
-const addRow = () => rows.value.push(newRow(panelUser.value))
+const addRow = () => rows.value.push(manualStore.newRow(panelUser.value))
 
 const toChange = (row: Row): ManualChange => {
 	const id = Number(row.resId)
@@ -323,12 +309,10 @@ onMounted(async () => {
 	const current = draft.value
 
 	// the form was restored after a restart, there is nothing to change
-	if (!current) {
+	if (!current || !manualStore.canAccess) {
 		router.replace({ name: RouteName.Home })
 		return
 	}
-
-	panelUser.value = current.kind === 'fix' ? current.user : sessionStore.login
 
 	await Promise.all([
 		resourcesStore.loadSharedPoints(),
@@ -336,15 +320,20 @@ onMounted(async () => {
 		resourcesStore.loadCatalog('perks'),
 		resourcesStore.loadCatalog('effects'),
 	])
-
-	if (current.kind !== 'fix') rows.value = [newRow(sessionStore.login)]
 })
+
+watch(
+	() => manualStore.canAccess,
+	(allowed) => {
+		if (!allowed) manualStore.close()
+	},
+)
 </script>
 
 <template>
-	<div v-if="draft" class="manual">
+	<div v-if="draft && manualStore.canAccess" class="manual">
 		<div class="crumbs">
-			<a @click="manualStore.close()">{{ parentLabel }}</a>
+			<a @click="manualStore.close(false)">{{ parentLabel }}</a>
 			<span>/</span>
 			<span class="crumbs__current">{{ currentLabel }}</span>
 		</div>
