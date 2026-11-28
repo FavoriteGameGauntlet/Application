@@ -1,6 +1,13 @@
 {
 	"features": [
 		{
+			"id": "effect-end-changes",
+			"title": "Configure changes on effect completion and offer manual changes from removal history",
+			"priority": 63,
+			"status": "in_progress",
+			"evidence": ""
+		},
+		{
 			"id": "windows-wheel-exchange-party",
 			"title": "Bring the windows of the wheel entry, exchanges, party, member and member removal to the mockup",
 			"priority": 1,
