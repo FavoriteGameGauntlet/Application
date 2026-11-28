@@ -12,7 +12,7 @@
 			"title": "Configure changes on effect completion and offer manual changes from removal history",
 			"priority": 63,
 			"status": "done",
-			"evidence": "Done 2026-11-28. Full record: harness/archive/features-done.json"
+			"evidence": "Done 2026-11-28. History action labels use the effect name. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "windows-wheel-exchange-party",

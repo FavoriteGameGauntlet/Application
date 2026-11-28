@@ -204,7 +204,7 @@ function rowOf(entry: JournalEntry) {
 				change.resource?.kind === 'effect'
 					? [
 							{
-								label: `Ручное изменение (${i + 1}): ${change.resource.name} (${membersStore.nameOf(change.login)})`,
+								label: change.resource.name,
 								icon: 'pencil',
 								select: () => manualStore.startEffectEnd(entry, i),
 							},
