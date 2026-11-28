@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import type {
+	Effect,
 	ItemUse,
 	Perk,
 	ResourceKind,
 	UserItem,
 } from '../../../api-facade/contracts'
 import JournalSourceLabel from '../../../components/JournalSourceLabel.vue'
+import ConfirmDialog from '../../../components/ConfirmDialog.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiIcon from '../../../components/ui/UiIcon.vue'
+import UiIconButton from '../../../components/ui/UiIconButton.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiUserAvatar from '../../../components/ui/UiUserAvatar.vue'
 import { useJournalStore } from '../../../stores/journalStore'
@@ -41,6 +44,14 @@ const emptyHints = {
 
 const query = ref('')
 const selected = ref(user ?? sessionStore.login)
+const ending = ref<{ login: string; name: string; effect: Effect }>()
+
+const confirmEnd = async () => {
+	const current = ending.value
+	ending.value = undefined
+
+	if (current) await resourcesStore.endEffect(current.login, current.effect)
+}
 /** what the open dialog uses and what happens when it is confirmed */
 const using = ref<{
 	subject: UseSubject
@@ -254,9 +265,26 @@ const emptyText = computed(
 
 			<div v-else class="cards">
 				<div v-for="effect in resources?.effects" :key="effect.id" class="card">
-					<span class="card__title" :title="effect.name">{{
-						effect.name
-					}}</span>
+					<div class="card__head">
+						<span class="card__title" :title="effect.name">{{
+							effect.name
+						}}</span>
+						<UiIconButton
+							v-if="resourcesStore.canEndEffect(selected)"
+							class="card__end"
+							icon="x"
+							size="sm"
+							label="Завершить эффект"
+							:disabled="resourcesStore.endingEffect"
+							@click="
+								ending = {
+									login: selected,
+									name: membersStore.nameOf(selected),
+									effect,
+								}
+							"
+						/>
+					</div>
 					<span class="card__desc">{{ effect.description }}</span>
 					<JournalSourceLabel class="card__source" :source="effect.source" />
 
@@ -281,6 +309,18 @@ const emptyText = computed(
 		:subject="using?.subject"
 		@close="using = undefined"
 		@confirm="onConfirmUse"
+	/>
+	<ConfirmDialog
+		:open="!!ending"
+		title="Завершить эффект?"
+		:text="
+			ending
+				? `Завершить эффект «${ending.effect.name}» у игрока ${ending.name}? Применятся настроенные последствия завершения.`
+				: ''
+		"
+		ok-label="Завершить"
+		@close="ending = undefined"
+		@confirm="confirmEnd"
 	/>
 </template>
 
@@ -399,6 +439,12 @@ const emptyText = computed(
 	letter-spacing: var(--tracking-display);
 	text-transform: uppercase;
 	color: var(--text-strong);
+}
+
+.card .card__end {
+	flex: none;
+	margin-left: auto;
+	color: var(--text-muted);
 }
 
 .card__text {

@@ -232,6 +232,10 @@ export const resources: Api['resources'] = {
 		return { journalEntry: await latestOwnEntry() }
 	},
 
+	endEffect: async (login, userEffectId) => {
+		await http.delete(`${await partyPath()}/effects/${login}/${userEffectId}`)
+	},
+
 	history: async (login, kind, id, limit = 4) => {
 		const { items } = await journal.list({
 			user: login,

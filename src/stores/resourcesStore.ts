@@ -4,6 +4,7 @@ import { api } from '../api-facade/api'
 import type {
 	CatalogEntry,
 	CatalogOption,
+	Effect,
 	ItemUse,
 	Login,
 	Perk,
@@ -17,6 +18,7 @@ import type {
 import { StoreName } from '../enums/storeName'
 import { useJournalStore } from './journalStore'
 import { useManualStore } from './manualStore'
+import { useParametersStore } from './parametersStore'
 import { useSessionStore } from './sessionStore'
 import { useToastStore } from './toastStore'
 
@@ -34,6 +36,21 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 	const summaries = ref<Partial<Record<ResourceKind, ResourceSummary[]>>>({})
 	const catalogs = ref<Partial<Record<ResourceKind, CatalogOption[]>>>({})
 	const catalogEntries = ref<Partial<Record<ResourceKind, CatalogEntry[]>>>({})
+	const endingEffect = ref(false)
+
+	const canEndEffect = (login: Login) => {
+		const parameters = useParametersStore()
+		const session = useSessionStore()
+
+		return (
+			parameters.isOn('EffectEndByHandEnabled') &&
+			(login === session.login ||
+				session.isAdmin ||
+				parameters.parameters.some(
+					(p) => p.code === 'ActingForOthersAdminOnly' && p.value === 'false',
+				))
+		)
+	}
 
 	const loadPointTypes = async () => {
 		pointTypes.value = await api.resources.pointTypes()
@@ -151,6 +168,32 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 		}
 	}
 
+	const endEffect = async (login: Login, effect: Effect) => {
+		if (endingEffect.value || !canEndEffect(login)) return
+
+		endingEffect.value = true
+		const session = useSessionStore()
+		const { me, season } = session
+		const refresh = async () => {
+			useJournalStore().bump()
+			await Promise.all([loadUser(login), loadSharedPoints()])
+		}
+
+		try {
+			await api.resources.endEffect(login, effect.id)
+			useToastStore().show('Эффект завершён', effect.name)
+			await refresh()
+
+			// Completion changes arrive through the event bus after the removal response.
+			await new Promise((resolve) => setTimeout(resolve, 1500))
+			if (session.me === me && session.season === season) await refresh()
+		} catch (e) {
+			useToastStore().error(e)
+		} finally {
+			endingEffect.value = false
+		}
+	}
+
 	return {
 		pointTypes,
 		personalTypes,
@@ -173,5 +216,8 @@ export const useResourcesStore = defineStore(StoreName.Resources, () => {
 		fetchHistory,
 		useItem,
 		usePerk,
+		canEndEffect,
+		endingEffect,
+		endEffect,
 	}
 })
