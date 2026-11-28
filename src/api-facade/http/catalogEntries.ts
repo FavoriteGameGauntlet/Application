@@ -1,6 +1,7 @@
 import type {
 	ApplyMode,
 	CatalogEntry,
+	EffectEndChange,
 	PerkTrigger,
 	PointType,
 	ResourceKind,
@@ -8,12 +9,14 @@ import type {
 import { http } from '../http'
 import {
 	type NamedItemEntryDto,
+	type NamedChangeEntryDto,
 	type NamedPointModifierDto,
 	toItemEntryText,
+	toChangeText,
 	toModifierText,
 } from './changeEntry'
 import { getMembers, partyPath, toSeconds } from './context'
-import { toItemEntryRow, toModifierRow } from './rows'
+import { toChangeRow, toItemEntryRow, toModifierRow } from './rows'
 
 export type ItemDto = {
 	id: number
@@ -32,6 +35,10 @@ export type EffectDto = {
 	description: string
 	/** ISO 8601 duration, left out for an effect that does not run out */
 	duration?: string
+	endChange?: {
+		isManualChange: boolean
+		entries: NamedChangeEntryDto[]
+	}
 	modifiers: NamedPointModifierDto[]
 }
 
@@ -123,12 +130,20 @@ export const toCatalogEntry = <K extends ResourceKind>(
 		}
 		case 'effects': {
 			const effect = dto as EffectDto
+			const endChange: EffectEndChange | undefined = effect.endChange && {
+				isManualChange: effect.endChange.isManualChange,
+				entries: effect.endChange.entries.map(toChangeRow),
+				changes: effect.endChange.entries.map((e) =>
+					toChangeText(e, pointTypes),
+				),
+			}
 
 			return {
 				...base,
 				changes: effect.modifiers.map((m) => toModifierText(m, pointTypes)),
 				modifiers: effect.modifiers.map(toModifierRow),
 				duration: effect.duration ? toSeconds(effect.duration) : null,
+				...(endChange && { endChange }),
 			}
 		}
 	}

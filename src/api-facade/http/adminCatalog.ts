@@ -15,7 +15,7 @@ import {
 	toPointTypeEntry,
 } from './catalogEntries'
 import { getPointTypes, partyPath } from './context'
-import { fromItemEntryRow } from './rows'
+import { fromChangeRow, fromItemEntryRow } from './rows'
 
 const catalogPath = {
 	'point-types': '/points/types',
@@ -113,6 +113,12 @@ const resourceBody = (kind: ResourceCatalogKind, input: CatalogEntryInput) => {
 			return {
 				name,
 				description,
+				...(input.endChange && {
+					endChange: {
+						isManualChange: input.endChange.isManualChange,
+						entries: input.endChange.entries.map(fromChangeRow),
+					},
+				}),
 				...(input.duration != null && { durationInSeconds: input.duration }),
 				...(input.modifiers?.length && {
 					modifiers: input.modifiers.map(({ pointTypeId, amount }) => ({
@@ -213,7 +219,10 @@ export const adminCatalog: Pick<
 		// a field left out keeps its value, so clearing one is sent explicitly
 		if (kind === 'effects' || kind === 'perks')
 			body.modifiers = body.modifiers ?? []
-		if (kind === 'effects') body.durationInSeconds = input.duration ?? null
+		if (kind === 'effects') {
+			body.durationInSeconds = input.duration ?? null
+			body.endChange = body.endChange ?? null
+		}
 		if (kind === 'perks' && input.ability === null) body.ability = null
 
 		const [{ body: dto }, pointTypes] = await Promise.all([

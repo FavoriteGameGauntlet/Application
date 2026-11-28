@@ -178,6 +178,23 @@ const units = computed(() => {
 			</section>
 		</template>
 
+		<section
+			v-if="view === 'effects' && entry.endChange"
+			class="block block--boxed"
+		>
+			<span class="label">При завершении</span>
+			<div v-for="(row, i) in entry.endChange.entries" :key="i" class="line">
+				<span class="label">Владелец</span>
+				<span class="line__text" :class="`tone--${changeTone(row.amount)}`">{{
+					entry.endChange.changes?.[i]
+				}}</span>
+			</div>
+			<span v-if="entry.endChange.isManualChange" class="rule rule--icon">
+				<UiIcon name="pencil" :size="18" />
+				Потом ручное изменение
+			</span>
+		</section>
+
 		<template v-if="view === 'perks'">
 			<section v-if="ability" class="block block--boxed">
 				<span class="label">Способность: когда игрок применяет</span>

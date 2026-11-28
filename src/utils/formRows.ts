@@ -138,6 +138,24 @@ export const parseChangeRows = (rows: FormRow[]): Parsed<ChangeRow> =>
 		amount,
 	}))
 
+export const parseEffectEndRows = (rows: FormRow[]): Parsed<ChangeRow> => {
+	const parsed = parseChangeRows(rows)
+	if ('problem' in parsed) return parsed
+
+	for (const [i, row] of parsed.value.entries()) {
+		const text =
+			row.amount < -2147483648 || row.amount > 2147483647
+				? `Количество в строке ${i + 1} должно быть от −2147483648 до 2147483647`
+				: row.kind === 'item' && row.amount < 0
+					? `Ресурс в строке ${i + 1} можно только выдать`
+					: undefined
+
+		if (text) return { problem: { text, row: i, cell: 'amount' } }
+	}
+
+	return parsed
+}
+
 export const parseCostRows = (rows: FormRow[]): Parsed<SpinCostRow> =>
 	parseRows(rows, false, (row, targetId, amount) => ({
 		kind: resourceKind(row),

@@ -22,9 +22,11 @@ import { itemConditionLabels } from '../../../utils/itemCondition'
 import { actsOnChosen } from '../../../utils/itemUse'
 import {
 	itemEntriesToForm,
+	changeRowsToForm,
 	modifiersToForm,
 	parsedRows,
 	parseItemEntries,
+	parseEffectEndRows,
 	parseModifiers,
 	parseTriggers,
 	problemOf,
@@ -301,6 +303,25 @@ const sections = computed<FormSection[]>(() => {
 						},
 					],
 				},
+				{
+					title: 'При завершении',
+					fields: [
+						{
+							key: 'endEntries',
+							label: 'Изменения владельца',
+							type: 'rows',
+							variant: 'effect-end',
+							addLabel: 'Изменение',
+							check: (values) =>
+								problemOf(parseEffectEndRows(rowsOf(values, 'endEntries'))),
+						},
+						{
+							key: 'endIsManualChange',
+							label: 'Потом ручное изменение',
+							type: 'check',
+						},
+					],
+				},
 			]
 		default: {
 			const modifiers: FormField = {
@@ -471,6 +492,8 @@ const initial = computed<FormValues>(() => ({
 	isManualChange: entry?.isManualChange ?? false,
 	conditions: [...(entry?.conditions ?? [])],
 	modifiers: modifiersToForm(entry?.modifiers ?? []),
+	endEntries: changeRowsToForm(entry?.endChange?.entries ?? []),
+	endIsManualChange: entry?.endChange?.isManualChange ?? false,
 	abilityEntries: itemEntriesToForm(entry?.ability?.entries ?? []),
 	abilityApplies: entry?.ability?.applyMode ?? 'all',
 	abilityIsManualChange: entry?.ability?.isManualChange ?? false,
@@ -636,6 +659,10 @@ const onSave = async (values: FormValues) => {
 
 	if (kind === 'effects') {
 		const preset = textOf(values, 'durationPreset')
+		const entries = parsedRows(parseEffectEndRows(rowsOf(values, 'endEntries')))
+		const isManualChange = values.endIsManualChange === true
+		if (entries.length || isManualChange)
+			input.endChange = { entries, isManualChange }
 
 		input.duration =
 			preset === 'none'

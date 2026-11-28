@@ -146,8 +146,14 @@ export type FormTab = {
  * `change`: any resource, the amount keeps the sign. `cost`: any resource, the
  * amount is positive. `item-entry`: like `change`, plus a chosen item copy and
  * whom the row acts on. `modifier`: a point type only, the amount keeps the sign.
+ * `effect-end`: automatic changes to the holder, with no item removal.
  */
-export type RowsVariant = 'change' | 'cost' | 'item-entry' | 'modifier'
+export type RowsVariant =
+	| 'change'
+	| 'cost'
+	| 'item-entry'
+	| 'modifier'
+	| 'effect-end'
 
 /** a row of a `rows` field as the user types it */
 export type FormRow = {

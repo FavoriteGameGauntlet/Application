@@ -31,6 +31,7 @@ const draft = computed(() => manualStore.draft)
 const parentLabel = computed(() => {
 	switch (draft.value?.kind) {
 		case 'fix':
+		case 'effect-end':
 			return 'История'
 		case 'free':
 			return 'Главная'
@@ -46,7 +47,9 @@ const currentLabel = computed(() => {
 
 	if (current?.kind === 'fix') return 'Исправление'
 
-	return current?.kind === 'wheel' || current?.kind === 'use'
+	return current?.kind === 'wheel' ||
+		current?.kind === 'use' ||
+		current?.kind === 'effect-end'
 		? current.name
 		: 'Ручное изменение'
 })
@@ -344,8 +347,17 @@ watch(
 
 		<div class="layout">
 			<div class="main">
-				<div v-if="draft.kind === 'fix'" class="card card--quiet">
-					<div class="card__label">Исходная запись</div>
+				<div
+					v-if="draft.kind === 'fix' || draft.kind === 'effect-end'"
+					class="card card--quiet"
+				>
+					<div class="card__label">
+						{{
+							draft.kind === 'fix'
+								? 'Исходная запись'
+								: `Завершён эффект: ${draft.name}`
+						}}
+					</div>
 					<div class="entry entry--head">
 						<span>Когда</span>
 						<span>Кто и через что</span>

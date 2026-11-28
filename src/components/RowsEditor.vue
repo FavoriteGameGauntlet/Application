@@ -73,6 +73,9 @@ const actionGroups = computed(() =>
 	variant === 'item-entry' ? [catalogActions, pickedActions] : [catalogActions],
 )
 
+const isGrantOnly = (row: FormRow) =>
+	variant === 'effect-end' && row.kind === 'item'
+
 const isTransfer = (row: FormRow) => row.kind === 'user-item-transfer'
 
 const isPicked = (row: FormRow) => row.kind === 'user-item' || isTransfer(row)
@@ -147,6 +150,7 @@ const setResource = (row: FormRow, value: string) => {
 
 	row.kind = kind
 	row.targetId = id
+	if (isGrantOnly(row)) row.amount = absolute(row)
 
 	// a perk or an effect is held once; a taken one keeps its minus
 	if (kind === 'perk' || kind === 'effect') {
@@ -220,7 +224,11 @@ const setAmount = (row: FormRow, event: Event) => {
 				<UiPicker
 					v-if="hasAction"
 					compact
-					:groups="actionGroups"
+					:groups="
+						isGrantOnly(row)
+							? [{ options: [catalogActions.options[0]] }]
+							: actionGroups
+					"
 					:tone="toneOf(row)"
 					:model-value="actionOf(row)"
 					aria-label="Действие"
@@ -271,6 +279,7 @@ const setAmount = (row: FormRow, event: Event) => {
 }
 
 .rows--change,
+.rows--effect-end,
 .rows--modifier {
 	grid-template-columns: 140px 64px minmax(0, 1fr) 32px;
 }
