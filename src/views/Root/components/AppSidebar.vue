@@ -142,6 +142,8 @@ const isActive = (item: NavItem) =>
 				<span class="label">{{ item.label }}</span>
 			</RouterLink>
 
+			<span v-if="manualStore.canAccess" class="divider"></span>
+
 			<button
 				v-if="manualStore.canAccess"
 				class="nav-item"
