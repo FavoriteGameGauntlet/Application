@@ -965,6 +965,8 @@ export type Api = {
 			perkId: number,
 			use?: ItemUse,
 		) => Promise<{ journalEntry: JournalEntry }>
+		/** Backend: DELETE {party}/effects/{login}/{userEffectId}, 204 */
+		endEffect: (login: Login, userEffectId: number) => Promise<void>
 		/**
 		 * Backend: GET {party}/history of the user filtered by `resource[kind]`
 		 * and `resource[id]`, the same endpoint as `journal.list`

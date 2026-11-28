@@ -4,8 +4,8 @@
 			"id": "effect-early-removal",
 			"title": "End an active effect copy from its card with confirmation and party access rules",
 			"priority": 65,
-			"status": "in_progress",
-			"evidence": ""
+			"status": "done",
+			"evidence": "Done 2026-11-28. Full record: harness/archive/features-done.json"
 		},
 		{
 			"id": "manual-effect-remove-duration",
