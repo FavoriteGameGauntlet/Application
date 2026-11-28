@@ -491,6 +491,13 @@
 			"evidence": "Done 2026-11-28. Full record: harness/archive/features-done.json"
 		},
 		{
+			"id": "manual-change-draft",
+			"title": "Preserve one manual change draft across pages and confirm replacement before applying a new source action",
+			"priority": 62,
+			"status": "in_progress",
+			"evidence": ""
+		},
+		{
 			"id": "manual-special-actions",
 			"title": "Testers: «Реализовать специальные действия во всех местах», part 2. The manual change moves to the common RowsEditor (its part of ux-one-rows-editor) and gets the same actions over a copy the admin picks. Needs fgg-database and fgg-server first.",
 			"priority": 60,
