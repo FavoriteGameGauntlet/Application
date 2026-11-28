@@ -1,6 +1,13 @@
 {
 	"features": [
 		{
+			"id": "effect-early-removal",
+			"title": "End an active effect copy from its card with confirmation and party access rules",
+			"priority": 65,
+			"status": "in_progress",
+			"evidence": ""
+		},
+		{
 			"id": "manual-effect-remove-duration",
 			"title": "Remove the ineffective duration field from manual effect grants",
 			"priority": 64,
