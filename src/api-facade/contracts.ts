@@ -372,7 +372,6 @@ export type ManualChange =
 			kind: 'effect'
 			id: number
 			op: 'grant' | 'revoke'
-			duration?: Seconds
 	  }
 
 export type ManualRequest = {

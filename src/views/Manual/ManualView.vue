@@ -15,7 +15,7 @@ import { useManualStore, type ManualRow as Row } from '../../stores/manualStore'
 import { useMembersStore } from '../../stores/membersStore'
 import { useResourcesStore } from '../../stores/resourcesStore'
 import { useSessionStore } from '../../stores/sessionStore'
-import { formatMoment, parseSpan } from '../../utils/format'
+import { formatMoment } from '../../utils/format'
 import { countItems } from '../../utils/userItems'
 
 type RowType = ManualChange['kind']
@@ -164,7 +164,6 @@ const calc = (row: Row) => {
 
 		return {
 			delta,
-			duration: undefined,
 			was: String(was),
 			now: String(now),
 			changed: was !== now,
@@ -180,12 +179,9 @@ const calc = (row: Row) => {
 	}
 
 	const grant = row.act === 'grant'
-	const span = row.n.trim()
 
 	return {
 		delta: 0,
-		duration:
-			row.type === 'effect' && grant && span ? parseSpan(span) : undefined,
 		was: was ? 'есть' : 'нет',
 		now: grant ? 'есть' : 'нет',
 		changed: !!was !== grant,
@@ -193,17 +189,9 @@ const calc = (row: Row) => {
 		error:
 			!grant && !was
 				? `Ресурс в строке % должен быть у ${row.who}, чтобы его забрать`
-				: row.type === 'effect' &&
-					  grant &&
-					  span &&
-					  parseSpan(span) === undefined
-					? 'Срок в строке % должен быть вида «2 ч» или «1 д»'
-					: '',
+				: '',
 	}
 }
-
-const hasAmount = (row: Row) =>
-	isNumeric(row.type) || (row.type === 'effect' && row.act === 'grant')
 
 /** only the row whose error the footer names turns red */
 const firstWrong = computed(() => rows.value.find((row) => calc(row).error))
@@ -217,14 +205,13 @@ const views = computed(() =>
 			row,
 			result,
 			isShared: row.type === 'shared-points',
-			hasAmount: hasAmount(row),
-			placeholder: isNumeric(row.type) ? '0' : '1 д',
+			hasAmount: isNumeric(row.type),
 			resources: resourceOptions(row.type),
 			actions: actionOptions(row.type),
 			tone: failed ? 'failed' : result.changed ? 'changed' : 'same',
 			// a take of what the user lacks is wrong in its action, the rest in the amount
-			wrongAct: failed && !hasAmount(row),
-			wrongAmount: failed && hasAmount(row),
+			wrongAct: failed && !isNumeric(row.type),
+			wrongAmount: failed && isNumeric(row.type),
 		}
 	}),
 )
@@ -267,7 +254,6 @@ const toChange = (row: Row): ManualChange => {
 				kind: 'effect',
 				id,
 				op: row.act as 'grant' | 'revoke',
-				duration: result.duration,
 			}
 	}
 }
@@ -462,7 +448,7 @@ watch(
 							v-model="view.row.n"
 							compact
 							label="Сколько"
-							:placeholder="view.placeholder"
+							placeholder="0"
 							:invalid="view.wrongAmount"
 						/>
 						<div class="row__result">
