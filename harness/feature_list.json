@@ -484,6 +484,13 @@
 			"evidence": "Done 2026-11-22. The wheel item form has the column «Кто» and the actions on a picked copy; applying a wheel item that needs a choice, players or copies opens UseDialog (moved to components) with «Применить», SpinEntriesDialog is gone; a copy picked for an entry is not offered for the cost. eslint and vue-tsc pass. Needs FavoriteGameGauntlet/Server#231. Not checked: the running app against the backend (pending the user)."
 		},
 		{
+			"id": "manual-change-all-members",
+			"title": "Open manual changes from the party sidebar for members allowed by GrantsAdminOnly and reduce divider spacing",
+			"priority": 61,
+			"status": "in_progress",
+			"evidence": ""
+		},
+		{
 			"id": "manual-special-actions",
 			"title": "Testers: «Реализовать специальные действия во всех местах», part 2. The manual change moves to the common RowsEditor (its part of ux-one-rows-editor) and gets the same actions over a copy the admin picks. Needs fgg-database and fgg-server first.",
 			"priority": 60,
